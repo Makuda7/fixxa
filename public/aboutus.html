@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About Us | Fixxa</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* About Us container */
+  .container {
+    max-width: 1100px;
+    margin: 2rem auto 4rem;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 3rem 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  h1, h2 { color: #228b22; font-weight: 700; margin-bottom: 1rem; }
+  h1 { font-size: 3rem; text-align: center; margin-bottom: 2rem; }
+  p { font-size: 1.1rem; line-height: 1.65; margin-bottom: 1.5rem; }
+  .section { margin-bottom: 3rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+  .grid img { width: 100%; border-radius: 12px; box-shadow: 0 6px 18px rgba(34, 139, 34, 0.2); object-fit: cover; max-height: 350px; }
+
+  /* Team Section */
+  .team { text-align: center; }
+  .team h2 { margin-bottom: 2rem; }
+  .team-members { display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem; }
+  .member { background: #f6f3f0; border-radius: 12px; padding: 1rem; width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.3s ease; cursor: default; }
+  .member:hover { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(34, 139, 34, 0.3); }
+  .member img { width: 100%; border-radius: 50%; margin-bottom: 1rem; object-fit: cover; height: 180px; box-shadow: 0 4px 12px rgba(34, 139, 34, 0.25); }
+  .member h3 { margin: 0.5rem 0 0.25rem; color: #228b22; font-weight: 700; }
+  .member p { font-size: 0.9rem; color: #555; margin: 0; }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+  }
+  .header .logo img { max-width: 120px; }
+  .nav-links { display: flex; align-items: center; gap: 1rem; }
+  .nav-links a { text-decoration: none; color: #333; }
+  .nav-links a:hover { color: forestgreen; }
+
+  /* User menu */
+  .user-menu { display: none; position: relative; }
+  .user-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0.5rem 1rem; }
+  .user-btn:hover { color: forestgreen; }
+  .user-dropdown { display: none; position: absolute; right: 0; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 150px; z-index: 10; }
+  .user-dropdown a { display: block; padding: 8px; text-decoration: none; color: #333; }
+  .user-dropdown a:hover { background: #f0f0f0; }
+  .user-menu.show .user-dropdown { display: block; }
+
+  /* Responsive */
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .team-members { justify-content: center; } }
+  @media (max-width: 400px) { h1 { font-size: 2rem; } }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a>
+  </div>
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About us</a>
+    <a href="join.html">Join Our Team</a>
+
+    <!-- Login link -->
+    <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <!-- User menu -->
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+<div class="user-dropdown" id="userDropdown">
+  <a href="settings.html">Settings</a>
+  <a href="clientProfile.html">Profile</a>
+  <a href="messages.html">Messages</a> <!-- <-- New link -->
+  <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+</div>
+
+    </div>
+  </nav>
+</header>
+
+<main class="container">
+  <h1>About Fixxa</h1>
+
+  <section class="section grid">
+    <div>
+      <h2>Our Story</h2>
+      <p>
+        Fixxa started as a vision to connect skilled professionals directly
+        with customers who need reliable services. We believe in quality,
+        trust, and convenience, making it easy to find experts who care.
+      </p>
+      <p>
+        From humble beginnings, our team has grown steadily with a passion
+        for helping communities access dependable and affordable services.
+      </p>
+    </div>
+    <img src="images/ourstory.jpg" alt="Our story image" />
+  </section>
+
+  <section class="section grid">
+    <img src="images/aim.jpg" alt="Our aim image" />
+    <div>
+      <h2>Our Aim</h2>
+      <p>
+        We strive to empower professionals by providing a platform to showcase
+        their skills and connect with clients. Our aim is to build lasting
+        relationships and help everyone achieve their goals through quality
+        service.
+      </p>
+      <p>
+        We are committed to innovation and continuous improvement, ensuring
+        a seamless and trustworthy experience for all users.
+      </p>
+    </div>
+  </section>
+
+  <section class="section team">
+    <h2>Meet The Team</h2>
+    <div class="team-members">
+      <div class="member">
+        <img src="images/team1.jpg" alt="Team member 1" />
+        <h3>Kuda Bushe</h3>
+        <p>Founder & CEO</p>
+      </div>
+      <div class="member">
+        <img src="images/team2.jpg" alt="Team member 2" />
+        <h3>Nomsa Dlamini</h3>
+        <p>Lead Developer</p>
+      </div>
+      <div class="member">
+        <img src="images/team3.jpg" alt="Team member 3" />
+        <h3>Thabo Mokoena</h3>
+        <p>Marketing Head</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+
+<script>
+async function checkLogin() {
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+
+    const loginLink = document.getElementById('loginLink');
+    const userMenu = document.getElementById('userMenu');
+    const userBtn = document.getElementById('userBtn');
+
+    if (data.authenticated) {
+      loginLink.style.display = 'none';
+      userMenu.style.display = 'inline-block';
+      userBtn.textContent = data.user.name + ' ▼';
+    } else {
+      loginLink.style.display = 'inline-block';
+      userMenu.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Login check failed', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkLogin();
+
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+
+  if (userBtn) {
+    userBtn.addEventListener('click', () => {
+      userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      const res = await fetch('/logout', { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) location.reload();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+});
+</script>
+
+</body>
+</html>
+

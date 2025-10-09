@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings - Fixxa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Outfit', sans-serif; background:#f6f3f0; margin:0; padding:0; color:#262626; }
+  
+  .header { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:#fff; border-bottom:1px solid #ddd; }
+  .header .logo img { max-width:120px; }
+  .nav-links { display:flex; align-items:center; gap:1rem; }
+  .nav-links a { text-decoration:none; color:#333; }
+  .nav-links a:hover { color:forestgreen; }
+  .user-menu { display:none; position:relative; }
+  .user-btn { background:none; border:none; cursor:pointer; font-size:16px; padding:0.5rem 1rem; }
+  .user-btn:hover { color:forestgreen; }
+  .user-dropdown { display:none; position:absolute; right:0; background:white; border:1px solid #ccc; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); min-width:150px; z-index:10; }
+  .user-dropdown a { display:block; padding:8px; text-decoration:none; color:#333; }
+  .user-dropdown a:hover { background:#f0f0f0; }
+
+  .settings-container { max-width:800px; margin:3rem auto; padding:0 1rem; display:none; }
+  
+  .page-header { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:2rem; margin-bottom:2rem; }
+  .page-header h1 { margin:0; color:forestgreen; font-size:2rem; }
+  .page-header p { margin:0.5rem 0 0; color:#666; }
+  .breadcrumb { margin-bottom:1rem; }
+  .breadcrumb a { color:forestgreen; text-decoration:none; }
+  .breadcrumb a:hover { text-decoration:underline; }
+
+  .settings-section { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:2rem; margin-bottom:1.5rem; }
+  .settings-section h2 { margin:0 0 1.5rem; color:forestgreen; font-size:1.5rem; border-bottom:2px solid #f0f0f0; padding-bottom:0.5rem; }
+  
+  .form-group { margin-bottom:1.5rem; }
+  .form-group label { display:block; margin-bottom:0.5rem; font-weight:600; color:#333; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-family:'Outfit', sans-serif; font-size:14px; transition:border-color 0.2s; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:forestgreen; }
+  .form-group small { display:block; margin-top:0.25rem; color:#666; font-size:0.85rem; }
+  .form-group.error input { border-color:#dc3545; }
+  .form-group .error-message { color:#dc3545; font-size:0.85rem; margin-top:0.25rem; display:none; }
+  .form-group.error .error-message { display:block; }
+
+  .profile-pic-upload { display:flex; align-items:center; gap:1.5rem; margin-bottom:1.5rem; }
+  .profile-pic-preview { width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid forestgreen; }
+  .upload-btn-wrapper { position:relative; }
+  .upload-btn { background:forestgreen; color:white; padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
+  .upload-btn:hover { background:#2d5016; }
+  .upload-btn-wrapper input[type=file] { position:absolute; left:0; top:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+
+  .checkbox-group { display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
+  .checkbox-group input[type="checkbox"] { width:auto; cursor:pointer; }
+  .checkbox-group label { margin:0; font-weight:400; cursor:pointer; }
+
+  .btn-primary { background:forestgreen; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s; }
+  .btn-primary:hover { background:#2d5016; transform:translateY(-1px); }
+  .btn-primary:disabled { background:#ccc; cursor:not-allowed; transform:none; }
+
+  .btn-secondary { background:#6c757d; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; margin-left:0.5rem; }
+  .btn-secondary:hover { background:#545b62; }
+
+  .btn-danger { background:#dc3545; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
+  .btn-danger:hover { background:#b52b37; }
+
+  .password-strength { height:4px; background:#e0e0e0; border-radius:2px; margin-top:0.5rem; overflow:hidden; }
+  .password-strength-bar { height:100%; transition:width 0.3s, background 0.3s; width:0; }
+  .password-strength-bar.weak { width:33%; background:#dc3545; }
+  .password-strength-bar.medium { width:66%; background:#ffc107; }
+  .password-strength-bar.strong { width:100%; background:#28a745; }
+
+  .notification { position:fixed; top:20px; right:20px; background:#28a745; color:white; padding:1rem 1.5rem; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:2000; transform:translateX(400px); transition:transform 0.3s ease; max-width:350px; }
+  .notification.show { transform:translateX(0); }
+  .notification.error { background:#dc3545; }
+  .notification.warning { background:#ffc107; color:#333; }
+
+  .danger-zone { border:2px solid #dc3545; border-radius:8px; padding:1.5rem; margin-top:1.5rem; background:#fff5f5; }
+  .danger-zone h3 { color:#dc3545; margin:0 0 1rem; }
+
+  .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center; }
+  .modal { background:#fff; padding:2rem; border-radius:10px; max-width:400px; width:90%; }
+  .modal h3 { margin:0 0 1rem; color:forestgreen; }
+  .modal p { margin:0 0 1.5rem; color:#666; }
+  .modal-buttons { display:flex; gap:0.5rem; justify-content:flex-end; }
+
+  @media(max-width:768px){ 
+    .settings-container { margin:1rem auto; }
+    .settings-section { padding:1.5rem; }
+    .profile-pic-upload { flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo"><a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a></div>
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+    <a href="login.html" id="loginLink">Log in / Register</a>
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="messages.html">Messages</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="settings-container" id="settingsMain">
+  
+  <div class="breadcrumb">
+    <a href="clientProfile.html">← Back to Profile</a>
+  </div>
+
+  <div class="page-header">
+    <h1>Account Settings</h1>
+    <p>Manage your profile, security, and preferences</p>
+  </div>
+
+  <!-- Profile Information Section -->
+  <section class="settings-section">
+    <h2>Profile Information</h2>
+    
+    <div class="profile-pic-upload">
+      <img id="profilePicPreview" src="images/default-profile.png" alt="Profile Picture" class="profile-pic-preview" />
+      <div>
+        <div class="upload-btn-wrapper">
+          <button class="upload-btn">Choose New Photo</button>
+          <input type="file" id="profilePicInput" accept="image/*" />
+        </div>
+        <small style="display:block; margin-top:0.5rem; color:#666;">JPG, PNG or GIF. Max 5MB.</small>
+      </div>
+    </div>
+
+    <form id="profileForm">
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" placeholder="Enter your full name" required />
+        <span class="error-message">Please enter your full name</span>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" placeholder="+1 (555) 000-0000" />
+        <small>Used for booking confirmations and important updates</small>
+      </div>
+
+      <div class="form-group">
+        <label for="address">Street Address</label>
+        <input type="text" id="address" placeholder="123 Main Street" />
+      </div>
+
+      <div class="form-group">
+        <label for="city">City</label>
+        <input type="text" id="city" placeholder="Your city" />
+      </div>
+
+      <div class="form-group">
+        <label for="postalCode">Postal Code</label>
+        <input type="text" id="postalCode" placeholder="12345" />
+      </div>
+
+      <button type="submit" class="btn-primary" id="saveProfileBtn">Save Profile Changes</button>
+    </form>
+  </section>
+
+  <!-- Account Security Section -->
+  <section class="settings-section">
+    <h2>Account Security</h2>
+    
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="currentEmail" disabled style="background:#f5f5f5; cursor:not-allowed;" />
+      <small>Contact support to change your email address</small>
+    </div>
+
+    <form id="passwordForm">
+      <div class="form-group">
+        <label for="currentPassword">Current Password</label>
+        <input type="password" id="currentPassword" placeholder="Enter current password" />
+        <span class="error-message">Current password is required</span>
+      </div>
+
+      <div class="form-group">
+        <label for="newPassword">New Password</label>
+        <input type="password" id="newPassword" placeholder="Enter new password" />
+        <small>Must be at least 8 characters with letters and numbers</small>
+        <div class="password-strength">
+          <div class="password-strength-bar" id="passwordStrengthBar"></div>
+        </div>
+        <span class="error-message">Password must be at least 8 characters</span>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm New Password</label>
+        <input type="password" id="confirmPassword" placeholder="Confirm new password" />
+        <span class="error-message">Passwords do not match</span>
+      </div>
+
+      <button type="submit" class="btn-primary" id="changePasswordBtn">Change Password</button>
+    </form>
+  </section>
+
+  <!-- Notification Preferences Section -->
+  <section class="settings-section">
+    <h2>Notification Preferences</h2>
+    
+    <form id="notificationForm">
+      <p style="margin-bottom:1rem; color:#666;">Choose how you want to be notified</p>
+      
+      <h3 style="font-size:1.1rem; margin:1.5rem 0 1rem; color:#333;">Email Notifications</h3>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="emailMessages" checked />
+        <label for="emailMessages">New messages from professionals</label>
+      </div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="emailBookings" checked />
+        <label for="emailBookings">Booking confirmations and updates</label>
+      </div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="emailCompletions" checked />
+        <label for="emailCompletions">Job completion requests</label>
+      </div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="emailReschedule" checked />
+        <label for="emailReschedule">Reschedule and cancellation responses</label>
+      </div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="emailPromotions" />
+        <label for="emailPromotions">Promotional offers and tips</label>
+      </div>
+
+      <h3 style="font-size:1.1rem; margin:1.5rem 0 1rem; color:#333;">SMS Notifications</h3>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="smsEnabled" />
+        <label for="smsEnabled">Enable SMS notifications for urgent updates</label>
+      </div>
+
+      <small style="display:block; margin:0.5rem 0 1.5rem; color:#666;">Standard messaging rates may apply</small>
+
+      <button type="submit" class="btn-primary">Save Notification Settings</button>
+    </form>
+  </section>
+
+  <!-- Privacy & Preferences Section -->
+  <section class="settings-section">
+    <h2>Privacy & Preferences</h2>
+    
+    <form id="privacyForm">
+      <div class="form-group">
+        <label for="language">Language</label>
+        <select id="language">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="timezone">Timezone</label>
+        <select id="timezone">
+          <option value="America/New_York">Eastern Time (ET)</option>
+          <option value="America/Chicago">Central Time (CT)</option>
+          <option value="America/Denver">Mountain Time (MT)</option>
+          <option value="America/Los_Angeles">Pacific Time (PT)</option>
+        </select>
+      </div>
+
+      <h3 style="font-size:1.1rem; margin:1.5rem 0 1rem; color:#333;">Privacy Options</h3>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="profileVisible" checked />
+        <label for="profileVisible">Make my profile visible to professionals</label>
+      </div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="shareData" />
+        <label for="shareData">Share usage data to help improve Fixxa</label>
+      </div>
+
+      <button type="submit" class="btn-primary">Save Privacy Settings</button>
+    </form>
+
+    <!-- Danger Zone -->
+    <div class="danger-zone">
+      <h3>Danger Zone</h3>
+      <p style="color:#666; margin-bottom:1rem;">Once you delete your account, there is no going back. Please be certain.</p>
+      <button class="btn-danger" id="deleteAccountBtn">Delete My Account</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer" style="padding:2rem; background:#fff; border-top:1px solid #ddd; margin-top:2rem;">
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; max-width:1100px; margin:0 auto;">
+    <div><h4>Fixxa</h4><a href="aboutus.html">About Us</a><br/><a href="#">Contact Us</a><br/><a href="#">FAQ</a><br/><a href="#">Feedback</a></div>
+    <div><h4>Customer</h4><a href="terms.html">Terms & Conditions</a><br/><a href="safety.html">Safety & Security</a><br/><a href="privacy.html">Privacy Policy</a></div>
+    <div><h4>Professionals</h4><a href="join.html">Join as a Professional</a><br/><a href="#">Refer a Professional</a></div>
+  </div>
+</footer>
+
+<!-- Delete Account Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h3>Delete Account</h3>
+    <p>Are you absolutely sure? This action cannot be undone. All your data, bookings, and messages will be permanently deleted.</p>
+    <div class="form-group">
+      <label for="deleteConfirmPassword">Enter your password to confirm</label>
+      <input type="password" id="deleteConfirmPassword" placeholder="Your password" />
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-secondary" id="cancelDeleteBtn">Cancel</button>
+      <button class="btn-danger" id="confirmDeleteBtn">Delete Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification container -->
+<div id="notificationContainer"></div>
+
+<script>
+let currentUser = null;
+
+// Notification system
+function showNotification(message, type = 'success', duration = 5000) {
+  const container = document.getElementById('notificationContainer');
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  
+  container.appendChild(notification);
+  setTimeout(() => notification.classList.add('show'), 100);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => container.removeChild(notification), 300);
+  }, duration);
+}
+
+// Check authentication
+async function checkLogin() {
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+    if (!data.authenticated) {
+      window.location.href = 'login.html?redirect=' + encodeURIComponent('settings.html');
+      return null;
+    }
+    return data.user;
+  } catch (e) { 
+    console.error(e); 
+    return null; 
+  }
+}
+
+// Load user data
+async function loadUserData() {
+  const user = await checkLogin();
+  if (!user) return;
+
+  currentUser = user;
+
+  document.getElementById('settingsMain').style.display = 'block';
+  document.getElementById('loginLink').style.display = 'none';
+  document.getElementById('userMenu').style.display = 'inline-block';
+  document.getElementById('userBtn').textContent = user.name + ' ▼';
+
+  // Populate profile form
+  document.getElementById('fullName').value = user.name || '';
+  document.getElementById('phone').value = user.phone || '';
+  document.getElementById('address').value = user.address || '';
+  document.getElementById('city').value = user.city || '';
+  document.getElementById('postalCode').value = user.postalCode || '';
+  document.getElementById('currentEmail').value = user.email || '';
+  document.getElementById('profilePicPreview').src = user.profilePic || 'images/default-profile.png';
+
+  // Load preferences if they exist
+  if (user.preferences) {
+    document.getElementById('language').value = user.preferences.language || 'en';
+    document.getElementById('timezone').value = user.preferences.timezone || 'America/New_York';
+    document.getElementById('emailMessages').checked = user.preferences.emailMessages !== false;
+    document.getElementById('emailBookings').checked = user.preferences.emailBookings !== false;
+    document.getElementById('emailCompletions').checked = user.preferences.emailCompletions !== false;
+    document.getElementById('emailReschedule').checked = user.preferences.emailReschedule !== false;
+    document.getElementById('emailPromotions').checked = user.preferences.emailPromotions || false;
+    document.getElementById('smsEnabled').checked = user.preferences.smsEnabled || false;
+    document.getElementById('profileVisible').checked = user.preferences.profileVisible !== false;
+    document.getElementById('shareData').checked = user.preferences.shareData || false;
+  }
+}
+
+// Profile picture upload
+document.getElementById('profilePicInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Validate file size (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showNotification('Image must be less than 5MB', 'error');
+    return;
+  }
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showNotification('Please upload an image file', 'error');
+    return;
+  }
+
+  // Preview image
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('profilePicPreview').src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to server
+  const formData = new FormData();
+  formData.append('profilePic', file);
+
+  try {
+    const res = await fetch('/update-profile-picture', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success) {
+      showNotification('Profile picture updated successfully');
+    } else {
+      showNotification(data.error || 'Failed to update profile picture', 'error');
+    }
+  } catch (e) {
+    console.error('Upload error:', e);
+    showNotification('Error uploading profile picture', 'error');
+  }
+});
+
+// Profile form submission
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const fullName = document.getElementById('fullName').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const city = document.getElementById('city').value.trim();
+  const postalCode = document.getElementById('postalCode').value.trim();
+
+  // Validation
+  if (!fullName) {
+    document.querySelector('#fullName').closest('.form-group').classList.add('error');
+    return;
+  }
+
+  const saveBtn = document.getElementById('saveProfileBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch('/update-profile', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: fullName, phone, address, city, postalCode })
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      showNotification('Profile updated successfully');
+      document.getElementById('userBtn').textContent = fullName + ' ▼';
+    } else {
+      showNotification(data.error || 'Failed to update profile', 'error');
+    }
+  } catch (e) {
+    console.error('Update error:', e);
+    showNotification('Error updating profile', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Profile Changes';
+  }
+});
+
+// Password strength checker
+document.getElementById('newPassword').addEventListener('input', (e) => {
+  const password = e.target.value;
+  const strengthBar = document.getElementById('passwordStrengthBar');
+  
+  let strength = 0;
+  if (password.length >= 8) strength++;
+  if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+  if (password.match(/[0-9]/)) strength++;
+  if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+  strengthBar.className = 'password-strength-bar';
+  if (strength <= 2) strengthBar.classList.add('weak');
+  else if (strength === 3) strengthBar.classList.add('medium');
+  else strengthBar.classList.add('strong');
+});
+
+// Password form submission
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+
+  // Clear previous errors
+  document.querySelectorAll('#passwordForm .form-group').forEach(g => g.classList.remove('error'));
+
+  // Validation
+  let hasError = false;
+  
+  if (!currentPassword) {
+    document.querySelector('#currentPassword').closest('.form-group').classList.add('error');
+    hasError = true;
+  }
+  
+  if (newPassword.length < 8) {
+    document.querySelector('#newPassword').closest('.form-group').classList.add('error');
+    hasError = true;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    document.querySelector('#confirmPassword').closest('.form-group').classList.add('error');
+    hasError = true;
+  }
+
+  if (hasError) return;
+
+  const changeBtn = document.getElementById('changePasswordBtn');
+  changeBtn.disabled = true;
+  changeBtn.textContent = 'Changing...';
+
+  try {
+    const res = await fetch('/change-password', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      showNotification('Password changed successfully');
+      document.getElementById('passwordForm').reset();
+      document.getElementById('passwordStrengthBar').className = 'password-strength-bar';
+    } else {
+      showNotification(data.error || 'Failed to change password', 'error');
+      if (data.error && data.error.includes('current password')) {
+        document.querySelector('#currentPassword').closest('.form-group').classList.add('error');
+      }
+    }
+  } catch (e) {
+    console.error('Password change error:', e);
+    showNotification('Error changing password', 'error');
+  } finally {
+    changeBtn.disabled = false;
+    changeBtn.textContent = 'Change Password';
+  }
+});
+
+// Notification preferences form
+document.getElementById('notificationForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const preferences = {
+    emailMessages: document.getElementById('emailMessages').checked,
+    emailBookings: document.getElementById('emailBookings').checked,
+    emailCompletions: document.getElementById('emailCompletions').checked,
+    emailReschedule: document.getElementById('emailReschedule').checked,
+    emailPromotions: document.getElementById('emailPromotions').checked,
+    smsEnabled: document.getElementById('smsEnabled').checked
+  };
+
+  try {
+    const res = await fetch('/update-notification-preferences', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preferences)
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      showNotification('Notification preferences saved');
+    } else {
+      showNotification(data.error || 'Failed to save preferences', 'error');
+    }
+  } catch (e) {
+    console.error('Save preferences error:', e);
+    showNotification('Error saving preferences', 'error');
+  }
+});
+
+// Privacy preferences form
+document.getElementById('privacyForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const preferences = {
+    language: document.getElementById('language').value,
+    timezone: document.getElementById('timezone').value,
+    profileVisible: document.getElementById('profileVisible').checked,
+    shareData: document.getElementById('shareData').checked
+  };
+
+  try {
+    const res = await fetch('/update-privacy-preferences', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preferences)
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      showNotification('Privacy settings saved');
+    } else {
+      showNotification(data.error || 'Failed to save settings', 'error');
+    }
+  } catch (e) {
+    console.error('Save settings error:', e);
+    showNotification('Error saving settings', 'error');
+  }
+});
+
+// Delete account
+document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+  document.getElementById('deleteModal').style.display = 'flex';
+  document.getElementById('deleteConfirmPassword').value = '';
+});
+
+document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+  document.getElementById('deleteModal').style.display = 'none';
+});
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+  const password = document.getElementById('deleteConfirmPassword').value;
+  
+  if (!password) {
+    showNotification('Please enter your password', 'warning');
+    return;
+  }
+
+  try {
+    const res = await fetch('/delete-account', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      showNotification('Account deleted successfully', 'success');
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 2000);
+    } else {
+      showNotification(data.error || 'Failed to delete account', 'error');
+    }
+  } catch (e) {
+    console.error('Delete account error:', e);
+    showNotification('Error deleting account', 'error');
+  }
+});
+
+// User menu toggle
+document.getElementById('userBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const dropdown = document.getElementById('userDropdown');
+  dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+});
+
+window.addEventListener('click', (e) => {
+  if (!document.getElementById('userMenu').contains(e.target)) {
+    document.getElementById('userDropdown').style.display = 'none';
+  }
+});
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    await fetch('/logout', { method: 'POST', credentials: 'include' });
+    showNotification('Logged out successfully', 'success', 2000);
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 1000);
+  } catch (e) {
+    console.error('Logout error:', e);
+    window.location.href = 'login.html';
+  }
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.style.display = 'none';
+  }
+});
+
+// Clear form errors on input
+document.querySelectorAll('.form-group input').forEach(input => {
+  input.addEventListener('input', () => {
+    input.closest('.form-group').classList.remove('error');
+  });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', loadUserData);
+</script>
+
+</body>
+</html>

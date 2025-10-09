@@ -1,0 +1,45 @@
+[
+  {
+    "workerId": 1,
+    "userId": 101,
+    "jobDescription": "Fixed leaking kitchen sink",
+    "rating": 5,
+    "review": "Excellent service, fast and clean!",
+    "jobCost": 350,
+    "wouldRecommend": true,
+    "timestamp": "2025-08-20T10:30:00Z"
+  },
+  {
+    "workerId": 2,
+    "userId": 102,
+    "jobDescription": "Installed shelves in living room",
+    "rating": 4,
+    "review": "Good work, arrived on time.",
+    "jobCost": 250,
+    "wouldRecommend": true,
+    "timestamp": "2025-08-21T14:15:00Z"
+  },
+  {
+    "workerId": 1,
+    "userId": 103,
+    "jobDescription": "Fixed bathroom tap",
+    "rating": 5,
+    "review": "Very professional, highly recommend!",
+    "jobCost": 200,
+    "wouldRecommend": true,
+    "timestamp": "2025-08-21T16:40:00Z"
+  }
+
+  {
+    "id": 1755885297973,
+    "userName": "test reg",
+    "userEmail": "test@test.com",
+    "workerId": 1,
+    "jobDescription": "kitchen renovatiom",
+    "rating": 4,
+    "review": "he was great",
+    "jobCost": 1000,
+    "wouldRecommend": true,
+    "completedAt": "2025-08-22T17:54:57.973Z"
+  }
+]

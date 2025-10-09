@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join Our Team - Fixxa</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  body { font-family: 'Outfit', sans-serif; margin:0; padding:0; background:#f5f5f5; }
+
+  .join-container { max-width: 1100px; margin: 3rem auto; padding: 2rem; }
+  .join-title { text-align: center; color: #228b22; font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
+  .join-subtitle { text-align: center; color: #666; font-size: 1.2rem; margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+  .cards-container { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
+  .join-card { background: rgba(255,255,255,0.95); border: 2px solid rgb(147,126,108); border-radius: 20px; padding: 2.5rem 2rem; text-align: center; box-shadow: 0 4px 20px rgba(147,126,108,0.2); transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; min-height: 500px; }
+  .join-card:hover { transform: translateY(-8px); box-shadow: 0 8px 30px rgba(34,139,34,0.3); border-color: #228b22; }
+  .card-icon { font-size: 4rem; margin-bottom: 1.5rem; }
+  .card-title { color: #228b22; font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; }
+  .card-description { color: #555; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; flex-grow: 1; }
+  .benefits-list { list-style: none; padding: 0; margin: 1.5rem 0; }
+  .benefits-list li { color: #666; margin: 0.8rem 0; padding-left: 1.5rem; position: relative; text-align: left; }
+  .benefits-list li::before { content: var(--emoji); font-size: 1.1em; position: absolute; left: 0; }
+  .join-btn { background: forestgreen; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: auto; }
+  .join-btn:hover { background: #228b22; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(34,139,34,0.4); }
+
+  .modal { display: none; position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); }
+  .modal-content { background:white; margin:10% auto; padding:2.5rem; border-radius:20px; width:90%; max-width:500px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); position:relative; }
+  .modal-icon { font-size: 3rem; color: #228b22; margin-bottom:1rem; }
+  .modal h3 { color:#228b22; font-size:1.8rem; margin-bottom:1rem; }
+  .modal p { color:#666; font-size:1.1rem; line-height:1.6; margin-bottom:1.5rem; }
+  .email-list { background:#f8f9fa; padding:1.5rem; border-radius:12px; border:1px solid #dee2e6; margin:1.5rem 0; }
+  .email-list h4 { color:#228b22; margin-bottom:1rem; font-size:1.2rem; }
+  .email-item { background:white; padding:0.8rem; margin:0.5rem 0; border-radius:8px; border-left:4px solid #228b22; text-align:left; }
+  .email-item strong { color:#228b22; }
+  .close-btn { background:#228b22; color:white; border:none; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:1rem; margin-top:1rem; }
+  .close-btn:hover { background:forestgreen; }
+
+  .header { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:#fff; border-bottom:1px solid #ddd; }
+  .header .logo img { max-width:120px; }
+  .nav-links { display:flex; align-items:center; gap:1rem; }
+  .nav-links a { text-decoration:none; color:#333; }
+  .nav-links a:hover { color:forestgreen; }
+
+  .user-menu { display:none; position:relative; }
+  .user-btn { background:none; border:none; cursor:pointer; font-size:16px; padding:0.5rem 1rem; }
+  .user-btn:hover { color:forestgreen; }
+  .user-dropdown { display:none; position:absolute; right:0; background:white; border:1px solid #ccc; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); min-width:150px; z-index:10; }
+  .user-dropdown a { display:block; padding:8px; text-decoration:none; color:#333; }
+  .user-dropdown a:hover { background:#f0f0f0; }
+  .user-menu.show .user-dropdown { display:block; }
+
+  @media (max-width:768px) { .cards-container { grid-template-columns:1fr; gap:2rem; } .join-card { min-height:auto; padding:2rem 1.5rem; } .join-title { font-size:2rem; } .modal-content { margin:5% auto; padding:2rem; } }
+  @media (max-width:480px) { .join-container { padding:1rem; } .card-title { font-size:1.5rem; } .card-description { font-size:1rem; } }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo"><a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a></div>
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+
+    <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Main -->
+<main class="join-container">
+  <h1 class="join-title">Join the Fixxa Family</h1>
+  <p class="join-subtitle">Whether you're a skilled professional or represent an organization, we'd love to have you as part of our growing community.</p>
+
+  <div class="cards-container">
+    <div class="join-card">
+      <div class="card-icon">🔧</div>
+      <h2 class="card-title">Join as a Professional</h2>
+      <p class="card-description">Connect with customers who need your expertise and grow your career with Fixxa.</p>
+      <ul class="benefits-list">
+        <li style="--emoji:'🏠';">Reach more customers</li>
+        <li style="--emoji:'💰';">Set your own rates</li>
+        <li style="--emoji:'⭐';">Build your reputation</li>
+        <li style="--emoji:'💳';">Get paid securely</li>
+        <li style="--emoji:'📝';">Access reviews and feedback</li>
+        <li style="--emoji:'📢';">Marketing support</li>
+      </ul>
+      <button class="join-btn" onclick="showModal('professional')">Join as Professional</button>
+    </div>
+
+    <div class="join-card">
+      <div class="card-icon">🏢</div>
+      <h2 class="card-title">Join as an Organization</h2>
+      <p class="card-description">Partner with Fixxa to expand your reach and manage your team more effectively.</p>
+      <ul class="benefits-list">
+        <li style="--emoji:'👥';">Manage multiple profiles</li>
+        <li style="--emoji:'📅';">Bulk service offerings</li>
+        <li style="--emoji:'📊';">Analytics and reporting</li>
+        <li style="--emoji:'🎯';">Priority customer matching</li>
+        <li style="--emoji:'🤝';">Dedicated account management</li>
+        <li style="--emoji:'🎨';">Custom branding opportunities</li>
+      </ul>
+      <button class="join-btn" onclick="showModal('organization')">Join as Organization</button>
+    </div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div id="joinModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-icon">🎉</div>
+    <h3>Thank you for joining Fixxa!</h3>
+    <p id="modalMessage">We're excited to have you as part of our community.</p>
+    <div class="email-list">
+      <h4>Please email us to complete your registration:</h4>
+      <div id="emailList"></div>
+    </div>
+    <button class="close-btn" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer" style="padding:2rem;background:#f5f5f5;text-align:center;">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+
+<script>
+const emails = {
+  professional: [
+    { label: "Professional Applications", email: "professionals@fixxa.com" },
+    { label: "General Inquiries", email: "hello@fixxa.com" },
+    { label: "Support Team", email: "support@fixxa.com" }
+  ],
+  organization: [
+    { label: "Partnership Applications", email: "partnerships@fixxa.com" },
+    { label: "Business Development", email: "business@fixxa.com" },
+    { label: "General Inquiries", email: "hello@fixxa.com" }
+  ]
+};
+
+function showModal(type) {
+  const modal = document.getElementById('joinModal');
+  const modalMessage = document.getElementById('modalMessage');
+  const emailList = document.getElementById('emailList');
+
+  modalMessage.textContent = type === 'professional'
+    ? "We're excited to have you join our network of skilled professionals!"
+    : "We're thrilled to partner with your organization!";
+
+  emailList.innerHTML = '';
+  emails[type].forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'email-item';
+    div.innerHTML = `<strong>${e.label}:</strong><br>
+      <a href="mailto:${e.email}" style="color:#228b22;text-decoration:none;">${e.email}</a>`;
+    emailList.appendChild(div);
+  });
+
+  modal.style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('joinModal').style.display = 'none';
+}
+
+window.addEventListener('click', e => {
+  const modal = document.getElementById('joinModal');
+  if(e.target === modal) closeModal();
+});
+
+// --- LOGIN-AWARE HEADER ---
+async function checkLogin() {
+  const loginLink = document.getElementById('loginLink');
+  const userMenu = document.getElementById('userMenu');
+  const userBtn = document.getElementById('userBtn');
+
+  try {
+    const res = await fetch('/check-auth', { credentials:'include' });
+    const data = await res.json();
+
+    if(data.authenticated){
+      loginLink.style.display='none';
+      userMenu.style.display='inline-block';
+      userBtn.textContent = data.user.name + ' ▼';
+    } else {
+      loginLink.style.display='inline-block';
+      userMenu.style.display='none';
+    }
+  } catch(err){
+    console.error('Login check failed', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkLogin();
+
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  if(userBtn){
+    userBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      userDropdown.style.display = userDropdown.style.display==='block'?'none':'block';
+    });
+  }
+
+  if(logoutBtn){
+    logoutBtn.addEventListener('click', async e => {
+      e.preventDefault();
+      await fetch('/logout', { method:'POST', credentials:'include' });
+      location.reload();
+    });
+  }
+
+  document.addEventListener('click', e => {
+    if(userDropdown && !userDropdown.contains(e.target) && userBtn && !userBtn.contains(e.target)){
+      userDropdown.style.display='none';
+    }
+  });
+
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+});
+</script>
+</body>
+</html>

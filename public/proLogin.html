@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worker Login | Fixxa</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body { margin:0; font-family:'Outfit',sans-serif; background:#f4f4f4; display:flex; justify-content:center; align-items:center; height:100vh; }
+.login-container { background:white; padding:2rem; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:100%; max-width:400px; }
+.login-container h1 { text-align:center; color:forestgreen; margin-bottom:1.5rem; }
+.login-container input { width:100%; padding:0.8rem 1rem; margin-bottom:1rem; border-radius:8px; border:1px solid #ccc; font-size:1rem; }
+.login-container button { width:100%; padding:0.8rem 1rem; border:none; border-radius:8px; background:forestgreen; color:white; font-weight:600; font-size:1rem; cursor:pointer; transition:0.2s; }
+.login-container button:hover { background:#0b5e2b; }
+.error-msg { color:red; margin-bottom:1rem; text-align:center; display:none; }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <h1>Worker Login</h1>
+  <div class="error-msg" id="errorMsg"></div>
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button id="loginBtn">Login</button>
+</div>
+
+<script>
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errorMsg = document.getElementById('errorMsg');
+
+  if(!email || !password) {
+    errorMsg.textContent = 'Please enter email and password.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch('/worker/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if(data.success){
+      window.location.href = '/worker/dashboard.html';
+    } else {
+      errorMsg.textContent = data.error || 'Login failed';
+      errorMsg.style.display = 'block';
+    }
+  } catch(err) {
+    console.error(err);
+    errorMsg.textContent = 'Server error. Try again later.';
+    errorMsg.style.display = 'block';
+  }
+});
+
+// Optional: Press Enter to login
+document.addEventListener('keypress', e => { if(e.key==='Enter') document.getElementById('loginBtn').click(); });
+</script>
+
+</body>
+</html>

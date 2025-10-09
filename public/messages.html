@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Messages | Fixxa</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+/* User Menu Dropdown Fix */
+.user-menu { position: relative; display: inline-block; }
+.user-btn { padding: 0.7rem 1.2rem; background: white; color: forestgreen; border: 2px solid forestgreen; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; }
+.user-btn:hover { background: #f0f8f0; }
+.user-dropdown { display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 160px; z-index: 1000; margin-top: 0.5rem; }
+.user-dropdown a { display: block; padding: 0.8rem 1rem; color: #333; text-decoration: none; border-bottom: 1px solid #eee; transition: background 0.2s; }
+.user-dropdown a:last-child { border-bottom: none; }
+.user-dropdown a:hover { background: #f5f5f5; }
+.user-dropdown a:first-child { border-radius: 8px 8px 0 0; }
+.user-dropdown a:last-child { border-radius: 0 0 8px 8px; }
+
+/* Messages Page Styles */
+.profile-container { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 2rem 1rem; min-height: calc(100vh - 120px); }
+.messages-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; max-width: 800px; width: 100%; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
+.messages-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+.messages-card h3 { margin: 0; font-size: 1.2rem; color: forestgreen; }
+.messages-card p { margin: 0; font-size: 1rem; color: #333; }
+.messages-card small { color: #666; }
+.messages-card button.delete-btn { align-self: flex-start; padding: 0.5rem 1rem; border: none; border-radius: 6px; background: #f44336; color: white; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+.messages-card button.delete-btn:hover { background: #d32f2f; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 1rem; max-width: 800px; width: 100%; margin-bottom: 1.5rem; }
+.controls input, .controls select { padding: 0.7rem 1rem; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem; flex: 1; min-width: 150px; }
+
+#messages-list { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 800px; }
+
+.pagination { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center; }
+.pagination button { padding: 0.5rem 0.8rem; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 6px; }
+.pagination button.active { background: forestgreen; color: white; border-color: forestgreen; }
+.pagination button:hover:not(.active) { background: #f0f0f0; }
+
+/* Chat Modal Styles */
+#chatModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index: 1000; }
+#chatModal .chat-content { background:white; border-radius:12px; max-width:500px; width:90%; max-height:80%; display:flex; flex-direction:column; overflow:hidden; }
+#chatModal .chat-header { padding:1rem; background:forestgreen; color:white; display:flex; justify-content:space-between; align-items:center; }
+
+/* WhatsApp-style Chat Bubbles */
+.chat-messages { padding: 1rem; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; background: #f0f0f0; }
+.chat-message { max-width: 75%; padding: 0.6rem 0.8rem; border-radius: 12px; font-size: 0.95rem; position: relative; word-wrap: break-word; display: flex; flex-direction: column; }
+.chat-message.sent { align-self: flex-end; background-color: #DCF8C6; border-bottom-right-radius: 0; }
+.chat-message.received { align-self: flex-start; background-color: white; border-bottom-left-radius: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.chat-message-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: #666; margin-bottom: 0.25rem; }
+.chat-message-body { font-size: 0.95rem; color: #333; }
+.chat-message-time { font-size: 0.7rem; color: #999; text-align: right; margin-top: 0.2rem; }
+
+#chatModal .chat-input { display:flex; border-top:1px solid #ccc; background: white; }
+#chatModal .chat-input input { flex:1; padding:0.7rem 1rem; border:none; outline:none; font-size: 1rem; }
+#chatModal .chat-input button { padding:0.7rem 1.2rem; border:none; background:forestgreen; color:white; cursor:pointer; font-weight: 600; transition: background 0.2s; }
+#chatModal .chat-input button:hover { background: #228b22; }
+
+@media (max-width: 768px) { 
+  .controls { flex-direction: column; align-items: stretch; }
+  .user-dropdown { right: 0; left: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo"><a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo"></a></div>
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+    <a href="login.html" id="loginLink">Log in / Register</a>
+    <div class="user-menu" id="userMenu" style="display:none;">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="#" id="logoutBtn" style="color:#d32f2f;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Page Title -->
+<section class="hero" style="text-align:center; padding:2rem 1rem; background: forestgreen; color: white;">
+  <h1>My Sent Messages</h1>
+  <p>View and manage your conversations with professionals</p>
+</section>
+
+<!-- Messages Container -->
+<div class="profile-container">
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search messages...">
+    <select id="sort">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+    </select>
+  </div>
+
+  <div id="messages-list"></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- Chat Modal -->
+<div id="chatModal">
+  <div class="chat-content">
+    <div class="chat-header">
+      <span id="chatTitle">Chat</span>
+      <button id="closeChat" style="background:none; color:white; border:none; font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input">
+      <input type="text" id="chatInput" placeholder="Type a message...">
+      <button id="chatSend">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/auth-check.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const loginLink = document.getElementById('loginLink');
+  const userMenu = document.getElementById('userMenu');
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  const messagesList = document.getElementById('messages-list');
+  const searchInput = document.getElementById('search');
+  const sortSelect = document.getElementById('sort');
+  const pagination = document.getElementById('pagination');
+
+  const chatModal = document.getElementById('chatModal');
+  const chatTitle = document.getElementById('chatTitle');
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  const closeChat = document.getElementById('closeChat');
+
+  let messages = [];
+  let currentPage = 1;
+  let totalPages = 1;
+  const limit = 10;
+  let userId = null;
+  let currentProfessionalId = null;
+  let currentProfessionalName = '';
+
+  const socket = io();
+
+  // Listen for incoming messages via socket
+  socket.on('receiveMessage', (msg) => {
+    // Only add to chat if it's for the currently open conversation
+    if (chatModal.style.display === 'flex' && 
+        msg.client_id === userId && 
+        msg.professional_id == currentProfessionalId &&
+        msg.sender_type === 'professional') {
+      addChatMessage(msg);
+    }
+    // Refresh message list if any message involves this user
+    if (msg.client_id === userId) {
+      loadMessages(currentPage);
+    }
+  });
+
+  async function checkLogin() {
+    try {
+      const res = await fetch('/check-auth', { credentials: 'include' });
+      const data = await res.json();
+      if (data.authenticated) {
+        loginLink.style.display = 'none';
+        userMenu.style.display = 'inline-block';
+        userBtn.textContent = `${data.user.name} ▼`;
+        userId = data.user.id;
+      } else {
+        loginLink.style.display = 'inline-block';
+        userMenu.style.display = 'none';
+        window.location.href = 'login.html?redirect=messages.html';
+      }
+    } catch (err) { console.error(err); }
+  }
+  checkLogin();
+
+  // Dropdown toggle
+  if (userBtn) {
+    userBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (userDropdown && !userMenu.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/logout', { method:'POST', credentials:'include' });
+      const data = await res.json();
+      if(data.success) window.location.href = 'index.html';
+    });
+  }
+
+  async function loadMessages(page = 1) {
+    try {
+      const res = await fetch(`/messages?limit=${limit}&page=${page}`, { credentials:'include' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to fetch messages');
+
+      messages = data.messages || [];
+      currentPage = data.page || 1;
+      totalPages = data.totalPages || 1;
+
+      renderMessages(messages);
+      renderPagination(totalPages, currentPage);
+    } catch (err) {
+      console.error(err);
+      messagesList.innerHTML = `<p style="text-align:center; color:red;">Failed to load messages.</p>`;
+    }
+  }
+
+  function renderMessages(list) {
+    if (!list.length) {
+      messagesList.innerHTML = '<p style="text-align:center;">No messages found.</p>';
+      return;
+    }
+
+    const grouped = {};
+    list.forEach(msg => {
+      if (!grouped[msg.professional_id]) grouped[msg.professional_id] = [];
+      grouped[msg.professional_id].push(msg);
+    });
+
+    messagesList.innerHTML = Object.keys(grouped).map(pid => {
+      const msgs = grouped[pid];
+      const lastMsg = msgs[msgs.length - 1];
+      return `
+        <div class="messages-card" data-professional="${pid}">
+          <h3>${lastMsg.professional_name || 'Unknown'} - ${lastMsg.professional_service || ''}</h3>
+          <p>${lastMsg.content}</p>
+          <small>${msgs.length} message(s) | Last sent: ${new Date(lastMsg.created_at).toLocaleString()}</small>
+          <button data-id="${lastMsg.id}" class="delete-btn">Delete</button>
+        </div>
+      `;
+    }).join('');
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if (confirm('Delete this message?')) {
+          const res = await fetch(`/messages/${id}`, { method:'DELETE', credentials:'include' });
+          const data = await res.json();
+          if (data.success) loadMessages(currentPage);
+        }
+      });
+    });
+
+    document.querySelectorAll('.messages-card').forEach(card => {
+      card.addEventListener('click', () => {
+        currentProfessionalId = card.dataset.professional;
+        currentProfessionalName = card.querySelector('h3').textContent.split(' - ')[0];
+        openChat(currentProfessionalId, currentProfessionalName);
+      });
+    });
+  }
+
+  function renderPagination(total, current) {
+    pagination.innerHTML = '';
+    for (let i = 1; i <= total; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i;
+      btn.className = i === current ? 'active' : '';
+      btn.addEventListener('click', () => loadMessages(i));
+      pagination.appendChild(btn);
+    }
+  }
+
+  searchInput.addEventListener('input', () => {
+    const term = searchInput.value.toLowerCase();
+    const filtered = messages.filter(m =>
+      (m.professional_name || '').toLowerCase().includes(term) ||
+      (m.professional_service || '').toLowerCase().includes(term) ||
+      (m.content || '').toLowerCase().includes(term)
+    );
+    renderMessages(filtered);
+  });
+
+  sortSelect.addEventListener('change', () => {
+    const value = sortSelect.value;
+    const sorted = [...messages].sort((a,b) =>
+      value === 'newest' ? new Date(b.created_at) - new Date(a.created_at) : new Date(a.created_at) - new Date(b.created_at)
+    );
+    renderMessages(sorted);
+  });
+
+  async function openChat(professionalId, title) {
+    chatTitle.textContent = title;
+    chatMessages.innerHTML = '<p style="text-align:center; padding:2rem;">Loading chat...</p>';
+    chatModal.style.display = 'flex';
+
+    try {
+      const res = await fetch(`/messages?professionalId=${professionalId}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        chatMessages.innerHTML = '';
+
+        const sortedMessages = data.messages.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+
+        sortedMessages.forEach(msg => addChatMessage(msg));
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    } catch (err) { 
+      console.error(err); 
+      chatMessages.innerHTML = '<p style="color:red; text-align:center;">Failed to load chat.</p>'; 
+    }
+  }
+
+  function addChatMessage(msg) {
+    const isClient = msg.sender_type === 'client';
+    const senderName = isClient ? 'You' : (msg.professional_name || 'Professional');
+    const time = new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+    const msgEl = document.createElement('div');
+    msgEl.className = `chat-message ${isClient ? 'sent' : 'received'}`;
+    msgEl.innerHTML = `
+      <div class="chat-message-header">
+        <strong>${senderName}</strong>
+      </div>
+      <div class="chat-message-body">${msg.content}</div>
+      <div class="chat-message-time">${time}</div>
+    `;
+    chatMessages.appendChild(msgEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  async function sendChatMessage() {
+    const content = chatInput.value.trim();
+    if (!content || !currentProfessionalId) return;
+
+    try {
+      const res = await fetch('/messages/contact', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ workerId: currentProfessionalId, message: content })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Add message to chat immediately
+        addChatMessage({ 
+          content, 
+          created_at: new Date(), 
+          sender_type: 'client', 
+          client_id: userId, 
+          professional_id: currentProfessionalId 
+        });
+        chatInput.value = '';
+        // Server will broadcast via socket - no need to emit here
+      } else {
+        alert(data.error || 'Failed to send message');
+      }
+    } catch (err) { 
+      console.error(err);
+      alert('Error sending message');
+    }
+  }
+
+  chatSend.addEventListener('click', sendChatMessage);
+  chatInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendChatMessage(); });
+
+  closeChat.addEventListener('click', () => {
+    chatModal.style.display = 'none';
+    currentProfessionalId = null;
+    chatInput.value = '';
+  });
+
+  loadMessages();
+});
+</script>
+
+</body>
+</html>

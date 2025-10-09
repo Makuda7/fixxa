@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Worker Dashboard | Fixxa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+/* General Styles */
+body { margin:0; font-family: 'Outfit', sans-serif; background:#f4f4f4; color:#333; }
+a { text-decoration:none; color: inherit; }
+button { cursor:pointer; }
+/* Header */
+.header { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:forestgreen; color:white; position:sticky; top:0; z-index:100; }
+.header .logo img { height:40px; }
+.header nav a { margin-left:1.5rem; color:white; font-weight:500; }
+/* Sidebar */
+.sidebar { position:fixed; top:60px; left:0; width:220px; height:calc(100vh - 60px); background:white; border-right:1px solid #ddd; padding:1rem; display:flex; flex-direction:column; gap:1rem; transition:transform 0.3s ease; }
+.sidebar a { padding:0.7rem 1rem; border-radius:8px; color:#333; font-weight:500; display:flex; align-items:center; gap:0.5rem; cursor:pointer; }
+.sidebar a:hover, .sidebar a.active { background:forestgreen; color:white; }
+/* Mobile sidebar toggle */
+#sidebarToggle { display:none; background:none; border:none; color:white; font-size:1.5rem; }
+/* Main Content */
+.main { margin-left:240px; padding:2rem; transition:margin-left 0.3s ease; display:none; }
+.main.active { display:block; }
+.dashboard-cards { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:2rem; }
+.card { flex:1; min-width:200px; background:white; padding:1.5rem; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+.card h3 { margin:0 0 0.5rem 0; font-size:1.1rem; color:forestgreen; }
+.card p { margin:0; font-size:1.5rem; font-weight:600; }
+/* Availability Toggle */
+.availability-section { background:white; border-radius:12px; padding:1.5rem; margin-bottom:2rem; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+.availability-section h3 { color:forestgreen; margin-top:0; }
+.availability-controls { display:flex; gap:2rem; flex-wrap:wrap; align-items:center; }
+.availability-status { flex:1; min-width:200px; }
+.availability-toggle { padding:0.7rem 1.2rem; border:2px solid #ccc; background:white; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.2s; }
+.availability-toggle.active { background:forestgreen; color:white; border-color:forestgreen; }
+.availability-toggle:hover { transform:translateY(-2px); }
+.availability-schedule { flex:1; min-width:200px; }
+.availability-schedule select { width:100%; padding:0.7rem; border:1px solid #ccc; border-radius:6px; }
+.availability-message { margin-top:1rem; padding:0.7rem; border-radius:6px; display:none; }
+/* Table */
+.table-container { background:white; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); overflow-x:auto; padding:1rem; }
+table { width:100%; border-collapse:collapse; }
+th, td { padding:0.75rem 1rem; text-align:left; border-bottom:1px solid #eee; }
+th { background:#f9f9f9; font-weight:600; }
+tr:hover { background:#f0f0f0; cursor:pointer; }
+/* Request Cards */
+.request-card { background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem; margin-bottom:1rem; border-left:4px solid #ffc107; }
+.request-card.reschedule { border-left-color:#17a2b8; }
+.request-card.cancellation { border-left-color:#dc3545; }
+.request-card h4 { margin:0 0 0.5rem 0; color:#333; }
+.request-card p { margin:0.25rem 0; font-size:0.95rem; color:#555; }
+.request-actions { display:flex; gap:0.5rem; margin-top:1rem; }
+.request-actions button { padding:0.5rem 1rem; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
+.approve-btn { background:#28a745; color:white; }
+.approve-btn:hover { background:#218838; }
+.reject-btn { background:#dc3545; color:white; }
+.reject-btn:hover { background:#c82333; }
+/* Messages Cards */
+.messages-card { background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem; margin-bottom:1rem; cursor:pointer; transition:0.2s; }
+.messages-card:hover { background:#e6f4ea; }
+.messages-card h4 { margin:0; color:forestgreen; }
+.messages-card p { margin:0.3rem 0 0 0; font-size:0.95rem; color:#555; }
+.messages-card small { color:#999; }
+/* Chat Modal */
+#chatModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
+#chatModal .chat-content { background:white; border-radius:12px; max-width:500px; width:90%; max-height:80%; display:flex; flex-direction:column; overflow:hidden; }
+#chatModal .chat-header { padding:1rem; background:forestgreen; color:white; display:flex; justify-content:space-between; align-items:center; }
+#chatModal .chat-messages { padding:1rem; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; }
+#chatModal .chat-input { display:flex; border-top:1px solid #ccc; }
+#chatModal .chat-input input { flex:1; padding:0.7rem 1rem; border:none; outline:none; }
+#chatModal .chat-input button { padding:0.7rem 1rem; border:none; background:forestgreen; color:white; }
+/* WhatsApp-style bubbles */
+.chat-message { max-width: 75%; padding:0.6rem 0.8rem; border-radius:12px; word-wrap:break-word; display:flex; flex-direction:column; }
+.chat-message.sent { align-self:flex-end; background:#DCF8C6; border-bottom-right-radius:0; }
+.chat-message.received { align-self:flex-start; background:#f1f0f0; border-bottom-left-radius:0; }
+.chat-message-header { display:flex; justify-content:space-between; font-size:0.7rem; color:#555; margin-bottom:0.25rem; }
+.chat-message-body { white-space:pre-wrap; word-wrap:break-word; }
+/* Profile & Settings */
+#profileStatus { font-weight:600; margin-bottom:1rem; }
+#workerProfileForm textarea, #workerProfileForm input, #workerProfileForm select { width:100%; padding:0.7rem; margin-top:0.3rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; }
+#workerProfileForm button { margin-top:0.5rem; }
+
+/* Certifications Section */
+.certifications-section { background:white; border-radius:12px; padding:1.5rem; margin-bottom:2rem; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+.certifications-section h3 { color:forestgreen; margin-top:0; display:flex; align-items:center; gap:0.5rem; }
+.verification-badge { background:#28a745; color:white; padding:0.3rem 0.8rem; border-radius:20px; font-size:0.85rem; font-weight:600; display:inline-flex; align-items:center; gap:0.3rem; }
+.verification-badge.pending { background:#ffc107; color:#333; }
+.upload-area { border:2px dashed #ccc; border-radius:8px; padding:2rem; text-align:center; margin:1rem 0; cursor:pointer; transition:0.3s; }
+.upload-area:hover { border-color:forestgreen; background:#f8f9fa; }
+.upload-area input[type="file"] { display:none; }
+.cert-list { display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem; }
+.cert-item { display:flex; justify-content:space-between; align-items:center; padding:0.75rem; background:#f8f9fa; border-radius:8px; border-left:4px solid #28a745; }
+.cert-item.pending { border-left-color:#ffc107; }
+.cert-item.rejected { border-left-color:#dc3545; }
+.cert-info { flex:1; }
+.cert-info strong { display:block; margin-bottom:0.25rem; }
+.cert-info small { color:#666; }
+.cert-status { padding:0.25rem 0.6rem; border-radius:12px; font-size:0.8rem; font-weight:600; margin-right:0.5rem; }
+.cert-status.approved { background:#d4edda; color:#155724; }
+.cert-status.pending { background:#fff3cd; color:#856404; }
+.cert-status.rejected { background:#f8d7da; color:#721c24; }
+.cert-actions { display:flex; gap:0.5rem; }
+.cert-actions button { padding:0.4rem 0.8rem; border:none; border-radius:6px; font-size:0.85rem; cursor:pointer; }
+.view-btn { background:#17a2b8; color:white; }
+.delete-btn { background:#dc3545; color:white; }
+
+/* Portfolio Section */
+.portfolio-photo-card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: white;
+  transition: transform 0.2s;
+}
+.portfolio-photo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.portfolio-photo-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+.portfolio-photo-info {
+  padding: 0.75rem;
+  background: white;
+}
+.portfolio-photo-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portfolio-photo-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid #eee;
+}
+.portfolio-photo-actions button {
+  flex: 1;
+  padding: 0.4rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Apply to be Pro Button */
+#applyProBtn { margin-top:1rem; background:forestgreen; color:white; border:none; padding:0.7rem 1rem; border-radius:6px; }
+/* Apply Form Modal */
+#applyProModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
+#applyProModal .form-content { background:white; border-radius:12px; max-width:500px; width:90%; max-height:90%; overflow-y:auto; padding:1.5rem; }
+#applyProModal .form-content h2 { margin-top:0; color:forestgreen; }
+#applyProModal .form-content input, #applyProModal .form-content textarea { width:100%; padding:0.7rem; margin:0.3rem 0; border:1px solid #ccc; border-radius:6px; }
+#applyProModal .form-content button { margin-top:0.5rem; background:forestgreen; color:white; border:none; padding:0.7rem 1rem; border-radius:6px; cursor:pointer; }
+/* Booking Form inside Dashboard */
+.booking-form { display:none; margin-top:1rem; background:#f9f9f9; padding:1rem; border-radius:8px; }
+.booking-form.show { display:block; }
+.booking-form label { display:block; margin-top:0.5rem; font-weight:600; }
+.booking-form input, .booking-form select, .booking-form textarea { width:100%; padding:0.6rem; margin-top:0.3rem; border:1px solid #ccc; border-radius:6px; }
+.booking-form button { margin-top:0.7rem; background:forestgreen; color:white; border:none; padding:0.7rem 1rem; border-radius:6px; cursor:pointer; }
+/* Booking Details Modal */
+#bookingModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1100; }
+#bookingModal .modal-content { background:white; border-radius:12px; max-width:640px; width:95%; max-height:90%; overflow-y:auto; padding:1rem; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
+#bookingModal .modal-header { display:flex; justify-content:space-between; align-items:center; padding-bottom:0.5rem; border-bottom:1px solid #eee; }
+#bookingModal .modal-body { padding-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+#bookingModal .modal-body .col { background:#fafafa; padding:0.8rem; border-radius:8px; }
+#bookingModal .modal-actions { margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap; }
+#bookingModal .btn { padding:0.6rem 0.9rem; border-radius:8px; border:none; cursor:pointer; font-weight:600; }
+#bookingModal .btn.primary { background:forestgreen; color:white; }
+#bookingModal .btn.warn { background:#ffb74d; color:#333; }
+#bookingModal .btn.danger { background:#e53935; color:white; }
+#bookingModal label { font-weight:600; font-size:0.9rem; display:block; margin-bottom:0.3rem; }
+/* Responsive */
+@media(max-width:768px){
+.sidebar { transform:translateX(-100%); position:fixed; z-index:100; }
+.sidebar.show { transform:translateX(0); }
+#sidebarToggle { display:inline-block; }
+.main { margin-left:0; }
+#bookingModal .modal-body { grid-template-columns:1fr; }
+.dashboard-cards { grid-template-columns:1fr; }
+.btn-group { flex-direction:column; }
+.availability-controls { flex-direction:column; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+<div class="logo"><img src="images/fixxaLogp.png" alt="Fixxa Logo"></div>
+<button id="sidebarToggle">☰</button>
+<nav class="nav-links">
+<a href="#">Notifications</a>
+<a href="settings.html">Settings</a>
+<a href="#" id="logoutBtn" style="color:#ffdddd;">Logout</a>
+</nav>
+</header>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+<a data-target="dashboardMain" class="active"><span>🏠</span> Dashboard</a>
+<a data-target="requestsMain"><span>📋</span> Requests <span id="requestsBadge" style="background:#dc3545;color:white;border-radius:50%;padding:2px 6px;font-size:0.8rem;display:none;">0</span></a>
+<a data-target="bookingsMain"><span>📅</span> Bookings</a>
+<a data-target="messagesMain"><span>💬</span> Messages</a>
+<a data-target="earningsMain"><span>💰</span> Earnings</a>
+<a data-target="profileMain"><span>⚙️</span> Profile & Availability</a>
+<a data-target="certificationsMain"><span>🎓</span> Certifications</a>
+</div>
+
+<!-- Dashboard -->
+<div class="main active" id="dashboardMain">
+<h1>Welcome, Worker!</h1>
+<div class="dashboard-cards">
+<div class="card"><h3>Pending Bookings</h3><p id="pendingBookings">0</p></div>
+<div class="card"><h3>Pending Requests</h3><p id="pendingRequests">0</p></div>
+<div class="card"><h3>Completed Jobs</h3><p id="completedJobs">0</p></div>
+<div class="card"><h3>Total Earnings</h3><p id="totalEarnings">R0.00</p></div>
+</div>
+
+<div class="table-container">
+<h2>Recent Bookings</h2>
+<table id="bookingsTable">
+<thead><tr><th>Client</th><th>Service</th><th>Date & Time</th><th>Status</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+
+<button id="applyProBtn">Apply to be a Pro</button>
+</div>
+
+<!-- Requests Section -->
+<div class="main" id="requestsMain">
+<h2>Client Requests</h2>
+<p style="color:#666; margin-bottom:1rem;">Review and respond to client cancellation and reschedule requests</p>
+<div id="requestsList">
+<p>Loading requests...</p>
+</div>
+</div>
+
+<!-- Bookings Section -->
+<div class="main" id="bookingsMain">
+<h2>All Bookings</h2>
+<div class="table-container">
+<table id="allBookingsTable">
+<thead><tr><th>Client</th><th>Date & Time</th><th>Service</th><th>Status</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+
+<!-- Messages -->
+<div class="main" id="messagesMain">
+<h2>Messages</h2>
+<div id="messagesList"></div>
+</div>
+
+<!-- Earnings -->
+<div class="main" id="earningsMain">
+<h2>Earnings</h2>
+<p>Your earnings summary will appear here.</p>
+</div>
+
+<!-- Profile & Availability -->
+<div class="main" id="profileMain">
+<h2>Profile & Availability Settings</h2>
+
+<!-- Availability Toggle Section -->
+<div class="availability-section">
+  <h3>Availability Status</h3>
+  
+  <div class="availability-controls">
+    <div class="availability-status">
+      <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Current Status:</label>
+      <div style="display:flex; gap:0.5rem;">
+        <button id="availableBtn" class="availability-toggle active" data-status="true">Available</button>
+        <button id="unavailableBtn" class="availability-toggle" data-status="false">Unavailable</button>
+      </div>
+      <p id="availabilityStatusText" style="margin-top:0.5rem; font-size:0.9rem; color:#28a745;">
+        You are currently accepting bookings
+      </p>
+    </div>
+    
+    <div class="availability-schedule">
+      <label for="scheduleSelect" style="display:block; font-weight:600; margin-bottom:0.5rem;">Work Schedule:</label>
+      <select id="scheduleSelect">
+        <option value="weekdays">Weekdays Only</option>
+        <option value="weekends">Weekends Only</option>
+        <option value="both" selected>Both (Weekdays & Weekends)</option>
+      </select>
+    </div>
+  </div>
+  
+  <div id="availabilityMessage" class="availability-message"></div>
+</div>
+
+<!-- Professional Profile Section -->
+<div class="availability-section">
+  <h3>Professional Profile</h3>
+  <p id="profileStatus" style="color:#666; font-size:0.9rem;"></p>
+  
+  <form id="workerProfileForm">
+    <div>
+      <label for="bio">Bio *</label>
+      <textarea id="bio" name="bio" rows="4" placeholder="Tell clients about yourself..." required></textarea>
+    </div>
+    <div>
+      <label for="experience">Experience *</label>
+      <textarea id="experience" name="experience" rows="3" placeholder="Describe your work experience" required></textarea>
+    </div>
+    <div>
+      <label for="area">Province *</label>
+      <select id="area" name="area" required>
+        <option value="">Select Province</option>
+        <option value="Eastern Cape">Eastern Cape</option>
+        <option value="Free State">Free State</option>
+        <option value="Gauteng">Gauteng</option>
+        <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+        <option value="Limpopo">Limpopo</option>
+        <option value="Mpumalanga">Mpumalanga</option>
+        <option value="Northern Cape">Northern Cape</option>
+        <option value="North West">North West</option>
+        <option value="Western Cape">Western Cape</option>
+      </select>
+    </div>
+    <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <button type="submit" style="background:forestgreen; color:white; border:none; padding:0.7rem 1rem; border-radius:6px; cursor:pointer;">Update Profile</button>
+      <button type="button" id="saveDraftBtn" style="background:#666; color:white; border:none; padding:0.7rem 1rem; border-radius:6px; cursor:pointer;">Save Profile</button>
+    </div>
+    <div id="profileUpdateMessage" style="margin-top:1rem; padding:0.7rem; border-radius:6px; display:none;"></div>
+  </form>
+</div>
+
+<!-- Portfolio Photos Section -->
+<div class="availability-section">
+  <h3>Portfolio - Previous Work Photos</h3>
+  <p style="color:#666; margin-bottom:1rem;">
+    Showcase your best work! Upload photos of completed projects to attract more clients.
+  </p>
+
+  <div class="upload-area" id="portfolioUploadArea" style="margin-bottom:1.5rem;">
+    <input type="file" id="portfolioFile" accept="image/jpeg,image/jpg,image/png,image/webp" multiple>
+    <div>
+      <p style="font-size:2rem; margin:0;">📸</p>
+      <p style="margin:0.5rem 0; font-weight:600;">Click to upload portfolio photos</p>
+      <p style="margin:0; font-size:0.85rem; color:#666;">JPG, PNG, WEBP (Max 5MB each, up to 5 photos at once)</p>
+    </div>
+  </div>
+
+  <div id="portfolioUploadStatus" style="margin-top:1rem; padding:0.7rem; border-radius:6px; display:none;"></div>
+
+  <h4 style="margin-top:1.5rem; margin-bottom:1rem;">My Portfolio Photos</h4>
+  <div id="portfolioGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:1rem;">
+    <p style="color:#666; text-align:center; padding:2rem; grid-column:1/-1;">No portfolio photos uploaded yet</p>
+  </div>
+</div>
+</div>
+
+<!-- Certifications Section -->
+<div class="main" id="certificationsMain">
+<h2>Professional Certifications</h2>
+
+<div class="certifications-section">
+  <h3>
+    Verification Status
+    <span id="verificationBadge" class="verification-badge pending" style="display:none;">
+      ⏳ Not Verified
+    </span>
+  </h3>
+  <p style="color:#666; margin-bottom:1rem;">
+    Upload your professional certifications, licenses, or qualifications for admin review. 
+    Once approved, you'll receive a verified badge on your profile!
+  </p>
+
+  <!-- Upload Area -->
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="certificationFile" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+    <div>
+      <p style="font-size:2rem; margin:0;">📄</p>
+      <p style="margin:0.5rem 0; font-weight:600;">Click to upload certification</p>
+      <p style="margin:0; font-size:0.85rem; color:#666;">Supported: JPG, PNG, PDF, DOC (Max 10MB)</p>
+    </div>
+  </div>
+
+  <!-- Upload Status -->
+  <div id="uploadStatus" style="margin-top:1rem; padding:0.7rem; border-radius:6px; display:none;"></div>
+
+  <!-- My Certifications List -->
+  <h3 style="margin-top:2rem;">My Uploaded Certifications</h3>
+  <div class="cert-list" id="certificationsList">
+    <p style="color:#666; text-align:center; padding:1rem;">No certifications uploaded yet</p>
+  </div>
+</div>
+</div>
+
+<!-- Booking Details Modal -->
+<div id="bookingModal">
+<div class="modal-content">
+<div class="modal-header">
+<h3 id="bookingModalTitle">Booking Details</h3>
+<button id="closeBookingModal" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">✕</button>
+</div>
+<div class="modal-body">
+<div class="col">
+<p><strong>Client:</strong> <span id="modalClientName"></span></p>
+<p><strong>Service:</strong> <span id="modalService"></span></p>
+<p><strong>Price:</strong> R<span id="modalPrice">0.00</span></p>
+<p><strong>Status:</strong> <span id="modalStatus"></span></p>
+<p><strong>Note:</strong> <span id="modalNote"></span></p>
+</div>
+<div class="col">
+<label for="modalDate">Reschedule Date</label>
+<input type="date" id="modalDate">
+<label for="modalTime">Reschedule Time</label>
+<input type="time" id="modalTime">
+<label for="modalStatusSelect" style="margin-top:0.6rem;">Change Status</label>
+<select id="modalStatusSelect">
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Completed">Completed</option>
+<option value="Cancelled">Cancelled</option>
+</select>
+</div>
+</div>
+<div class="modal-actions">
+<button class="btn primary" id="saveRescheduleBtn">Save Reschedule</button>
+<button class="btn warn" id="changeStatusBtn">Update Status</button>
+<button class="btn danger" id="cancelBookingBtn">Cancel Booking</button>
+<button class="btn" id="closeBookingBtn">Close</button>
+</div>
+<div id="bookingModalMsg" style="margin-top:0.6rem;color:green;display:none;">Updated successfully</div>
+</div>
+</div>
+
+<!-- Apply to be Pro Modal -->
+<div id="applyProModal">
+<div class="form-content">
+<h2>Apply to be a Pro</h2>
+<form id="applyProForm" enctype="multipart/form-data">
+<label for="proName">Full Name *</label>
+<input type="text" id="proName" name="proName" placeholder="Your full name" required>
+<label for="proBio">Bio *</label>
+<textarea id="proBio" name="proBio" rows="3" placeholder="Tell clients about yourself..." required></textarea>
+<label for="proSpecialty">Specialty *</label>
+<input type="text" id="proSpecialty" name="proSpecialty" placeholder="Your specialty" required>
+<label for="proExperience">Experience *</label>
+<textarea id="proExperience" name="proExperience" rows="3" placeholder="Describe your work experience" required></textarea>
+<label for="proArea">Area / Location *</label>
+<input type="text" id="proArea" name="proArea" placeholder="City or region" required>
+<button type="submit">Submit for Review</button>
+<button type="button" id="saveProDraftBtn">Save & Complete Later</button>
+<button type="button" id="closeApplyPro" style="background:#ccc; color:#333;">Cancel</button>
+</form>
+</div>
+</div>
+
+<!-- Chat Modal -->
+<div id="chatModal">
+<div class="chat-content">
+<div class="chat-header">
+<span id="chatTitle">Chat</span>
+<button id="closeChat" style="background:none; color:white; border:none; font-size:1.2rem; cursor:pointer;">✕</button>
+</div>
+<div class="chat-messages" id="chatMessages"></div>
+<div class="chat-input">
+<input type="text" id="chatInput" placeholder="Type a message...">
+<button id="chatSend">Send</button>
+</div>
+</div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// Global variables
+let workerId = null;
+let currentBooking = null;
+let currentClientId = null;
+let socket = null;
+let currentAvailability = { schedule: 'both', is_available: true };
+let workerCertifications = [];
+let portfolioPhotos = [];
+let isVerified = false;
+
+// Helper functions
+function escapeHTML(str) { 
+  if(!str) return ''; 
+  return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); 
+}
+
+async function apiUpdateBooking(bookingId, payload){
+  try{
+    const res = await fetch(`/bookings/worker/update/${bookingId}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  }catch(e){
+    console.error('API update failed', e);
+    return { success: false, error: e.message || 'Network error' };
+  }
+}
+
+// Certifications Functions
+async function loadCertifications() {
+  try {
+    const res = await fetch('/certifications/my-certifications', { credentials: 'include' });
+    const data = await res.json();
+    
+    if (data.success) {
+      workerCertifications = data.certifications || [];
+      renderCertifications();
+      updateVerificationBadge();
+    }
+  } catch (error) {
+    console.error('Load certifications error:', error);
+  }
+}
+
+function renderCertifications() {
+  const list = document.getElementById('certificationsList');
+  
+  if (workerCertifications.length === 0) {
+    list.innerHTML = '<p style="color:#666; text-align:center; padding:1rem;">No certifications uploaded yet</p>';
+    return;
+  }
+  
+  list.innerHTML = workerCertifications.map(cert => {
+    const statusClass = cert.status.toLowerCase();
+    const statusText = cert.status.charAt(0).toUpperCase() + cert.status.slice(1);
+    const uploadDate = new Date(cert.uploaded_at).toLocaleDateString();
+    
+    return `
+      <div class="cert-item ${statusClass}">
+        <div class="cert-info">
+          <strong>${escapeHTML(cert.document_name || 'Certification')}</strong>
+          <small>Uploaded: ${uploadDate}</small>
+          ${cert.reviewed_at ? `<small> | Reviewed: ${new Date(cert.reviewed_at).toLocaleDateString()}</small>` : ''}
+        </div>
+        <span class="cert-status ${statusClass}">${statusText}</span>
+        <div class="cert-actions">
+          <button class="view-btn" onclick="viewCertification('${cert.document_url}')">View</button>
+          <button class="delete-btn" onclick="deleteCertification(${cert.id})">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateVerificationBadge() {
+  const badge = document.getElementById('verificationBadge');
+  const hasApproved = workerCertifications.some(cert => cert.status === 'approved');
+  
+  badge.style.display = 'inline-flex';
+  
+  if (hasApproved && isVerified) {
+    badge.className = 'verification-badge';
+    badge.innerHTML = '✓ Verified Professional';
+  } else if (workerCertifications.some(cert => cert.status === 'pending')) {
+    badge.className = 'verification-badge pending';
+    badge.innerHTML = '⏳ Pending Review';
+  } else {
+    badge.className = 'verification-badge pending';
+    badge.innerHTML = '⏳ Not Verified';
+  }
+}
+
+function viewCertification(url) {
+  window.open(url, '_blank');
+}
+
+async function deleteCertification(certId) {
+  if (!confirm('Are you sure you want to delete this certification?')) return;
+  
+  try {
+    const res = await fetch(`/certifications/${certId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showUploadStatus('Certification deleted successfully', 'success');
+      await loadCertifications();
+    } else {
+      showUploadStatus(data.error || 'Failed to delete certification', 'error');
+    }
+  } catch (error) {
+    console.error('Delete certification error:', error);
+    showUploadStatus('Error deleting certification', 'error');
+  }
+}
+
+function showUploadStatus(message, type) {
+  const status = document.getElementById('uploadStatus');
+  status.textContent = message;
+  status.style.display = 'block';
+  status.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
+  status.style.color = type === 'success' ? '#155724' : '#721c24';
+  status.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
+  
+  setTimeout(() => {
+    status.style.display = 'none';
+  }, 5000);
+}
+
+// Upload Area Click Handler
+document.getElementById('uploadArea').addEventListener('click', () => {
+  document.getElementById('certificationFile').click();
+});
+
+// File Upload Handler
+document.getElementById('certificationFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  // Validate file size (10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    showUploadStatus('File too large. Maximum size is 10MB', 'error');
+    e.target.value = '';
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('certification', file);
+  
+  showUploadStatus('Uploading...', 'success');
+  
+  try {
+    const res = await fetch('/certifications/upload', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showUploadStatus('Certification uploaded successfully! Awaiting admin approval.', 'success');
+      e.target.value = '';
+      await loadCertifications();
+    } else {
+      showUploadStatus(data.error || 'Upload failed', 'error');
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    showUploadStatus('Error uploading certification', 'error');
+  }
+});
+
+// Portfolio Functions
+async function loadPortfolioPhotos() {
+  try {
+    const res = await fetch('/workers/portfolio', { credentials: 'include' });
+    const data = await res.json();
+    
+    if (data.success) {
+      portfolioPhotos = data.photos || [];
+      renderPortfolioPhotos();
+    }
+  } catch (error) {
+    console.error('Load portfolio error:', error);
+  }
+}
+
+function renderPortfolioPhotos() {
+  const grid = document.getElementById('portfolioGrid');
+  
+  if (portfolioPhotos.length === 0) {
+    grid.innerHTML = '<p style="color:#666; text-align:center; padding:2rem; grid-column:1/-1;">No portfolio photos uploaded yet</p>';
+    return;
+  }
+  
+  grid.innerHTML = portfolioPhotos.map(photo => {
+    const uploadDate = new Date(photo.uploaded_at).toLocaleDateString();
+    return `
+      <div class="portfolio-photo-card">
+        <img src="${photo.photo_url}" alt="Portfolio" onclick="window.open('${photo.photo_url}', '_blank')">
+        <div class="portfolio-photo-info">
+          <p title="${escapeHTML(photo.description || 'No description')}">${escapeHTML(photo.description || 'No description')}</p>
+          <small style="color:#999; font-size:0.75rem;">${uploadDate}</small>
+        </div>
+        <div class="portfolio-photo-actions">
+          <button style="background:#17a2b8; color:white;" onclick="viewPortfolioPhoto('${photo.photo_url}')">View</button>
+          <button style="background:#dc3545; color:white;" onclick="deletePortfolioPhoto(${photo.id})">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function viewPortfolioPhoto(url) {
+  window.open(url, '_blank');
+}
+
+async function deletePortfolioPhoto(photoId) {
+  if (!confirm('Delete this portfolio photo?')) return;
+  
+  try {
+    const res = await fetch(`/workers/portfolio/${photoId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      showPortfolioStatus('Photo deleted successfully', 'success');
+      await loadPortfolioPhotos();
+    } else {
+      showPortfolioStatus(data.error || 'Failed to delete photo', 'error');
+    }
+  } catch (error) {
+    console.error('Delete portfolio photo error:', error);
+    showPortfolioStatus('Error deleting photo', 'error');
+  }
+}
+
+function showPortfolioStatus(message, type) {
+  const status = document.getElementById('portfolioUploadStatus');
+  status.textContent = message;
+  status.style.display = 'block';
+  status.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
+  status.style.color = type === 'success' ? '#155724' : '#721c24';
+  status.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
+  
+  setTimeout(() => {
+    status.style.display = 'none';
+  }, 5000);
+}
+
+// Portfolio Upload Click Handler
+document.getElementById('portfolioUploadArea').addEventListener('click', () => {
+  document.getElementById('portfolioFile').click();
+});
+
+// Portfolio File Upload Handler
+document.getElementById('portfolioFile').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+  
+  // Limit to 5 photos at once
+  if (files.length > 5) {
+    showPortfolioStatus('Maximum 5 photos at once', 'error');
+    e.target.value = '';
+    return;
+  }
+  
+  // Validate file sizes
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) {
+      showPortfolioStatus(`File "${file.name}" is too large. Maximum 5MB per photo`, 'error');
+      e.target.value = '';
+      return;
+    }
+  }
+  
+  showPortfolioStatus(`Uploading ${files.length} photo(s)...`, 'success');
+  
+  let uploadedCount = 0;
+  let errorCount = 0;
+  
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append('photo', file);
+    
+    try {
+      const res = await fetch('/workers/portfolio/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        uploadedCount++;
+      } else {
+        errorCount++;
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      errorCount++;
+    }
+  }
+  
+  e.target.value = '';
+  
+  if (errorCount === 0) {
+    showPortfolioStatus(`Successfully uploaded ${uploadedCount} photo(s)!`, 'success');
+  } else {
+    showPortfolioStatus(`Uploaded ${uploadedCount}, failed ${errorCount}`, errorCount === files.length ? 'error' : 'success');
+  }
+  
+  await loadPortfolioPhotos();
+});
+
+// Availability Management
+async function loadAvailability() {
+  try {
+    const res = await fetch('/workers/availability', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      currentAvailability = {
+        schedule: data.availability_schedule || 'both',
+        is_available: data.is_available !== false
+      };
+      
+      // Update UI
+      document.getElementById('scheduleSelect').value = currentAvailability.schedule;
+      
+      if (currentAvailability.is_available) {
+        document.getElementById('availableBtn').classList.add('active');
+        document.getElementById('unavailableBtn').classList.remove('active');
+        document.getElementById('availabilityStatusText').textContent = 'You are currently accepting bookings';
+        document.getElementById('availabilityStatusText').style.color = '#28a745';
+      } else {
+        document.getElementById('availableBtn').classList.remove('active');
+        document.getElementById('unavailableBtn').classList.add('active');
+        document.getElementById('availabilityStatusText').textContent = 'You are currently NOT accepting bookings (clients can still message you)';
+        document.getElementById('availabilityStatusText').style.color = '#dc3545';
+      }
+    }
+  } catch (error) {
+    console.error('Load availability error:', error);
+  }
+}
+
+async function updateAvailability(updates) {
+  try {
+    const res = await fetch('/workers/availability', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    const data = await res.json();
+    
+    const msgDiv = document.getElementById('availabilityMessage');
+    if (data.success) {
+      msgDiv.textContent = 'Availability updated successfully';
+      msgDiv.style.background = '#d4edda';
+      msgDiv.style.color = '#155724';
+      msgDiv.style.display = 'block';
+      setTimeout(() => msgDiv.style.display = 'none', 3000);
+      await loadAvailability();
+    } else {
+      msgDiv.textContent = (data.error || 'Failed to update availability');
+      msgDiv.style.background = '#f8d7da';
+      msgDiv.style.color = '#721c24';
+      msgDiv.style.display = 'block';
+    }
+  } catch (error) {
+    console.error('Update availability error:', error);
+  }
+}
+
+// Profile Management
+async function loadWorkerProfile() {
+  try {
+    const res = await fetch('/workers/profile', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success && data.worker) {
+      document.getElementById('bio').value = data.worker.bio || '';
+      document.getElementById('experience').value = data.worker.experience || '';
+      document.getElementById('area').value = data.worker.area || '';
+      isVerified = data.worker.is_verified || false;
+      
+      if (data.worker.bio && data.worker.experience && data.worker.area) {
+        document.getElementById('profileStatus').textContent = 'Profile is complete ✓';
+        document.getElementById('profileStatus').style.color = '#28a745';
+      } else {
+        document.getElementById('profileStatus').textContent = 'Please complete your profile to appear in searches';
+        document.getElementById('profileStatus').style.color = '#dc3545';
+      }
+      
+      updateVerificationBadge();
+    }
+  } catch (error) {
+    console.error('Load profile error:', error);
+  }
+}
+
+function showProfileMessage(message, type) {
+  const msgDiv = document.getElementById('profileUpdateMessage');
+  msgDiv.textContent = message;
+  msgDiv.style.display = 'block';
+  
+  if (type === 'success') {
+    msgDiv.style.background = '#d4edda';
+    msgDiv.style.color = '#155724';
+    msgDiv.style.border = '1px solid #c3e6cb';
+  } else {
+    msgDiv.style.background = '#f8d7da';
+    msgDiv.style.color = '#721c24';
+    msgDiv.style.border = '1px solid #f5c6cb';
+  }
+  
+  setTimeout(() => {
+    msgDiv.style.display = 'none';
+  }, 5000);
+}
+
+// Load functions
+async function loadBookings(){
+  try{
+    const res = await fetch('/bookings/worker', { credentials:'include' });
+    const data = await res.json();
+    if(!data.success || !Array.isArray(data.bookings)) {
+      console.error('Bookings load failed:', data);
+      return;
+    }
+    
+    const bookings = data.bookings;
+
+    // Update dashboard cards
+    document.getElementById('pendingBookings').textContent = bookings.filter(b=>b.status==='Pending' || b.status==='In Progress').length;
+    document.getElementById('completedJobs').textContent = bookings.filter(b=>b.status==='Completed').length;
+
+    // Update table
+    const bookingsTableBody = document.querySelector('#bookingsTable tbody');
+    bookingsTableBody.innerHTML = '';
+    
+    bookings.slice(0, 5).forEach(b=>{
+      const dateTime = b.booking_date && b.booking_time ? 
+        `${new Date(b.booking_date).toLocaleDateString()} ${b.booking_time}` : 
+        'No date set';
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${escapeHTML(b.client_name || '')}</td><td>${escapeHTML(b.service || 'General Service')}</td><td>${escapeHTML(dateTime)}</td><td>${escapeHTML(b.status || '')}</td>`;
+      tr.addEventListener('click', ()=> openBookingModal(b));
+      bookingsTableBody.appendChild(tr);
+    });
+
+    // Update all bookings table
+    const allBookingsTableBody = document.querySelector('#allBookingsTable tbody');
+    allBookingsTableBody.innerHTML = '';
+    
+    bookings.forEach(b=>{
+      const dateTime = b.booking_date && b.booking_time ? 
+        `${new Date(b.booking_date).toLocaleDateString()} ${b.booking_time}` : 
+        'No date set';
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${escapeHTML(b.client_name || '')}</td><td>${escapeHTML(dateTime)}</td><td>${escapeHTML(b.service || 'General Service')}</td><td>${escapeHTML(b.status || '')}</td>`;
+      tr.addEventListener('click', ()=> openBookingModal(b));
+      allBookingsTableBody.appendChild(tr);
+    });
+
+  } catch(e){ 
+    console.error('Load bookings error', e); 
+  }
+}
+
+async function loadRequests(){
+  try{
+    const res = await fetch('/worker/booking-requests', { credentials:'include' });
+    const data = await res.json();
+    if(!data.success || !Array.isArray(data.requests)){
+      document.getElementById('requestsList').innerHTML = '<p>Failed to load requests.</p>';
+      return;
+    }
+    
+    const requests = data.requests;
+    document.getElementById('pendingRequests').textContent = requests.length;
+    
+    if(requests.length > 0){
+      document.getElementById('requestsBadge').textContent = requests.length;
+      document.getElementById('requestsBadge').style.display = 'inline';
+    } else {
+      document.getElementById('requestsBadge').style.display = 'none';
+    }
+
+    if(requests.length === 0){
+      document.getElementById('requestsList').innerHTML = '<p style="color:#666; padding:1rem; background:white; border-radius:8px;">No pending requests. You will see cancellation and reschedule requests here.</p>';
+      return;
+    }
+
+    document.getElementById('requestsList').innerHTML = requests.map(req => {
+      const cardClass = req.request_type === 'cancellation' ? 'cancellation' : 'reschedule';
+      const requestIcon = req.request_type === 'cancellation' ? '❌' : '📅';
+      
+      let detailsHtml = '';
+      if(req.request_type === 'reschedule'){
+        detailsHtml = `
+          <p><strong>Current Booking:</strong> ${new Date(req.booking_date).toLocaleDateString()} at ${req.booking_time}</p>
+          <p style="background:#e7f3ff; padding:0.5rem; border-radius:4px; margin:0.5rem 0;">
+            <strong>Requested New Date/Time:</strong><br/>
+            ${new Date(req.new_date).toLocaleDateString()} at ${req.new_time}
+          </p>
+        `;
+      } else {
+        detailsHtml = `
+          <p><strong>Booking Details:</strong> ${new Date(req.booking_date).toLocaleDateString()} at ${req.booking_time}</p>
+          <p style="background:#ffe7e7; padding:0.5rem; border-radius:4px; margin:0.5rem 0;">
+            <strong>Cancellation Reason:</strong> ${req.cancellation_reason || 'Not specified'}
+          </p>
+        `;
+      }
+
+      return `
+        <div class="request-card ${cardClass}">
+          <h4>${requestIcon} ${req.request_type === 'cancellation' ? 'Cancellation' : 'Reschedule'} Request</h4>
+          <p><strong>Client:</strong> ${escapeHTML(req.client_name)}</p>
+          <p><strong>Email:</strong> ${escapeHTML(req.client_email)}</p>
+          <p><strong>Service:</strong> ${escapeHTML(req.service || 'Service')}</p>
+          ${detailsHtml}
+          ${req.note ? `<p><strong>Additional Note:</strong> <em>${escapeHTML(req.note)}</em></p>` : ''}
+          <p style="font-size:0.85rem; color:#666; margin-top:0.5rem;">Requested: ${new Date(req.created_at).toLocaleString()}</p>
+          <div class="request-actions">
+            <button class="approve-btn" onclick="handleRequestResponse(${req.id}, 'approve')">
+              ${req.request_type === 'cancellation' ? '✓ Approve Cancellation' : '✓ Approve Reschedule'}
+            </button>
+            <button class="reject-btn" onclick="handleRequestResponse(${req.id}, 'reject')">
+              ✕ Decline Request
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }catch(e){
+    console.error('Load requests error', e);
+    document.getElementById('requestsList').innerHTML = '<p style="color:red;">Error loading requests. Please refresh the page.</p>';
+  }
+}
+
+async function loadMessages(){
+  try{
+    const res = await fetch('/messages/worker',{ credentials:'include' });
+    const data = await res.json();
+    if(!data.success || !Array.isArray(data.messages)) return;
+    
+    const grouped = {};
+    data.messages.forEach(m=>{
+      if(!m.client_id) return;
+      if(!grouped[m.client_id]) grouped[m.client_id] = [];
+      grouped[m.client_id].push(m);
+    });
+
+    document.getElementById('messagesList').innerHTML = Object.keys(grouped).map(clientId=>{
+      const msgs = grouped[clientId];
+      const lastMsg = msgs[msgs.length-1] || {};
+      const time = lastMsg.datetime ? new Date(lastMsg.datetime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="messages-card" data-client="${clientId}">
+        <h4>${escapeHTML(lastMsg.client_name||'Client')}</h4>
+        <p>${escapeHTML(lastMsg.content||'')}</p>
+        <small>${escapeHTML(time)}</small>
+      </div>`;
+    }).join('');
+
+    document.querySelectorAll('.messages-card').forEach(card=>{
+      card.addEventListener('click', ()=> openChat(card.dataset.client, card.querySelector('h4').textContent));
+    });
+  } catch(e){ 
+    console.error('Load messages error', e); 
+  }
+}
+
+// Modal functions
+function openBookingModal(booking){
+  currentBooking = booking;
+  document.getElementById('bookingModalTitle').textContent = `Booking #${booking.id || ''}`;
+  document.getElementById('modalClientName').textContent = booking.client_name || '';
+  document.getElementById('modalService').textContent = booking.service || 'General Service';
+  document.getElementById('modalPrice').textContent = '0.00';
+  document.getElementById('modalStatus').textContent = booking.status || '';
+  document.getElementById('modalNote').textContent = booking.note || '';
+
+  if(booking.booking_date && booking.booking_time){
+    document.getElementById('modalDate').value = booking.booking_date;
+    document.getElementById('modalTime').value = booking.booking_time;
+  }
+
+  document.getElementById('modalStatusSelect').value = booking.status || 'Pending';
+  document.getElementById('bookingModalMsg').style.display = 'none';
+  document.getElementById('bookingModal').style.display = 'flex';
+}
+
+function closeBookingModal(){
+  document.getElementById('bookingModal').style.display = 'none';
+  currentBooking = null;
+}
+
+// Chat functions
+function appendChatMessage(msg){
+  const div = document.createElement('div');
+  const sender = msg.sender_type === 'professional' ? 'worker' : 'client';
+  const time = msg.datetime ? new Date(msg.datetime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+  div.className = 'chat-message ' + (sender === 'worker' ? 'sent' : 'received');
+  div.innerHTML = `<div class="chat-message-header"><span>${escapeHTML(sender==='worker'?'You':(msg.senderName||''))}</span><span>${escapeHTML(time)}</span></div><div class="chat-message-body">${escapeHTML(msg.content||'')}</div>`;
+  document.getElementById('chatMessages').appendChild(div);
+  document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+}
+
+async function openChat(clientId, clientName){
+  if(!clientId) return;
+  currentClientId = clientId;
+  document.getElementById('chatTitle').textContent = "Chat with " + (clientName || 'Client');
+  document.getElementById('chatMessages').innerHTML = '';
+  document.getElementById('chatModal').style.display = 'flex';
+  try{
+    const res = await fetch(`/messages/worker/${clientId}`,{ credentials:'include' });
+    const data = await res.json();
+    if(!data.success || !Array.isArray(data.messages)) return;
+    data.messages.sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+    data.messages.forEach(msg=> appendChatMessage({ sender_type: msg.sender_type, senderName: msg.client_name||msg.senderName||'', content: msg.content||'', datetime: msg.datetime }));
+  } catch(e){ console.error('Open chat error', e); }
+}
+
+// Request handler
+async function handleRequestResponse(requestId, action){
+  const actionText = action === 'approve' ? 'approve' : 'decline';
+  if(!confirm(`Are you sure you want to ${actionText} this request?`)) return;
+  
+  try{
+    const res = await fetch(`/worker/booking-requests/${requestId}/respond`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if(data.success){
+      alert(`Request ${actionText}d successfully!`);
+      await loadRequests();
+      await loadBookings();
+    } else {
+      alert(data.error || `Failed to ${actionText} request`);
+    }
+  }catch(e){
+    console.error(`${actionText} request error`, e);
+    alert(`Error ${actionText}ing request`);
+  }
+}
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('Initializing app...');
+  
+  // Initialize socket
+  socket = (typeof io === 'function') ? io() : { on:()=>{}, emit:()=>{} };
+
+  // Sidebar toggle
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('show'));
+
+  // Auth check
+  try {
+    const authRes = await fetch('/worker/check-auth', { credentials: 'include' });
+    const authData = await authRes.json();
+    if(!authData || !authData.authenticated || !authData.worker){
+      window.location.href = '/index.html';
+      return;
+    }
+    workerId = authData.worker.id;
+    console.log('Authenticated as worker ID:', workerId);
+  } catch(e){
+    console.error('Auth check failed', e);
+    window.location.href = '/index.html';
+    return;
+  }
+
+  // Logout handler
+  document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+    try{
+      const res = await fetch('/logout',{ method:'POST', credentials:'include' });
+      const data = await res.json();
+      if(data.success) window.location.href='/index.html';
+      else alert('Logout failed.');
+    }catch(e){ console.error(e); alert('Logout error'); }
+  });
+
+  // Navigation
+  const sections = document.querySelectorAll('.main');
+  sidebar.querySelectorAll('a').forEach(link=>{
+    link.addEventListener('click',()=>{
+      sidebar.querySelectorAll('a').forEach(l=>l.classList.remove('active'));
+      link.classList.add('active');
+      sections.forEach(sec=>sec.classList.remove('active'));
+      const targetId = link.dataset.target;
+      const target = document.getElementById(targetId);
+      if(target) target.classList.add('active');
+    });
+  });
+
+  // Availability toggle buttons
+  document.getElementById('availableBtn').addEventListener('click', () => {
+    updateAvailability({ is_available: true });
+  });
+
+  document.getElementById('unavailableBtn').addEventListener('click', () => {
+    if (confirm('Are you sure you want to mark yourself as unavailable? Clients will still be able to message you but cannot book you.')) {
+      updateAvailability({ is_available: false });
+    }
+  });
+
+  // Schedule selector
+  document.getElementById('scheduleSelect').addEventListener('change', (e) => {
+    updateAvailability({ availability_schedule: e.target.value });
+  });
+
+  // Profile form submission
+  document.getElementById('workerProfileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const bio = document.getElementById('bio').value.trim();
+    const experience = document.getElementById('experience').value.trim();
+    const area = document.getElementById('area').value;
+    
+    if (!bio || !experience || !area) {
+      showProfileMessage('Please fill in all required fields', 'error');
+      return;
+    }
+    
+    try {
+      const res = await fetch('/worker/profile', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio, experience, area })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        showProfileMessage('Profile updated successfully! Your changes are now visible to clients.', 'success');
+        await loadWorkerProfile();
+      } else {
+        showProfileMessage(data.error || 'Failed to update profile', 'error');
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+      showProfileMessage('Error updating profile', 'error');
+    }
+  });
+
+  // Save Without Documents button
+  document.getElementById('saveDraftBtn').addEventListener('click', async () => {
+    const bio = document.getElementById('bio').value.trim();
+    const experience = document.getElementById('experience').value.trim();
+    const area = document.getElementById('area').value;
+    
+    if (!bio || !experience || !area) {
+      showProfileMessage('Please fill in all required fields (Bio, Experience, and Province)', 'error');
+      return;
+    }
+    
+    try {
+      const res = await fetch('/worker/profile', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio, experience, area })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        showProfileMessage('Profile saved successfully!', 'success');
+        await loadWorkerProfile();
+      } else {
+        showProfileMessage(data.error || 'Failed to save profile', 'error');
+      }
+    } catch (error) {
+      console.error('Save draft error:', error);
+      showProfileMessage('Error saving profile', 'error');
+    }
+  });
+
+  // Modal event listeners
+  document.getElementById('closeBookingBtn').addEventListener('click', closeBookingModal);
+  document.getElementById('closeBookingModal').addEventListener('click', closeBookingModal);
+  document.getElementById('bookingModal').addEventListener('click', (e)=>{ if(e.target === document.getElementById('bookingModal')) closeBookingModal(); });
+
+  // Booking actions
+  document.getElementById('saveRescheduleBtn').addEventListener('click', async ()=>{
+    if(!currentBooking) return;
+    const newDate = document.getElementById('modalDate').value;
+    const newTime = document.getElementById('modalTime').value;
+    if(!newDate || !newTime){
+      alert('Please pick both date and time to reschedule.');
+      return;
+    }
+    document.getElementById('saveRescheduleBtn').disabled = true;
+    const result = await apiUpdateBooking(currentBooking.id, { booking_date: newDate, booking_time: newTime });
+    document.getElementById('saveRescheduleBtn').disabled = false;
+    if(result.success){
+      document.getElementById('bookingModalMsg').textContent = 'Rescheduled successfully';
+      document.getElementById('bookingModalMsg').style.display = 'block';
+      await loadBookings();
+      setTimeout(closeBookingModal, 900);
+    } else {
+      alert('Reschedule failed: ' + (result.error || 'Unknown error'));
+    }
+  });
+
+  document.getElementById('changeStatusBtn').addEventListener('click', async ()=>{
+    if(!currentBooking) return;
+    const newStatus = document.getElementById('modalStatusSelect').value;
+    document.getElementById('changeStatusBtn').disabled = true;
+    const result = await apiUpdateBooking(currentBooking.id, { status: newStatus });
+    document.getElementById('changeStatusBtn').disabled = false;
+    if(result.success){
+      document.getElementById('bookingModalMsg').textContent = 'Status updated';
+      document.getElementById('bookingModalMsg').style.display = 'block';
+      await loadBookings();
+      setTimeout(closeBookingModal, 700);
+    } else {
+      alert('Status update failed: ' + (result.error || 'Unknown error'));
+    }
+  });
+
+  document.getElementById('cancelBookingBtn').addEventListener('click', async ()=>{
+    if(!currentBooking) return;
+    if(!confirm('Are you sure you want to cancel this booking?')) return;
+    document.getElementById('cancelBookingBtn').disabled = true;
+    const result = await apiUpdateBooking(currentBooking.id, { status: 'Cancelled' });
+    document.getElementById('cancelBookingBtn').disabled = false;
+    if(result.success){
+      document.getElementById('bookingModalMsg').textContent = 'Booking cancelled';
+      document.getElementById('bookingModalMsg').style.display = 'block';
+      await loadBookings();
+      setTimeout(closeBookingModal, 700);
+    } else {
+      alert('Cancel failed: ' + (result.error || 'Unknown error'));
+    }
+  });
+
+  // Chat event listeners
+  document.getElementById('closeChat').addEventListener('click', ()=> document.getElementById('chatModal').style.display = 'none');
+  document.getElementById('chatSend').addEventListener('click', async ()=>{
+    const message = document.getElementById('chatInput').value.trim();
+    if(!message || !currentClientId) return;
+    try{
+      const res = await fetch('/messages/worker/reply',{ 
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        credentials:'include', 
+        body:JSON.stringify({ clientId: currentClientId, message })
+      });
+      const data = await res.json();
+      if(data.success){
+        appendChatMessage({ sender_type:'professional', content:message, datetime:new Date() });
+        document.getElementById('chatInput').value = '';
+        socket.emit('sendMessage',{ to: currentClientId, content: message });
+      } else alert('Failed to send message.');
+    } catch(e){ console.error('Send message error', e); }
+  });
+
+  // Socket events
+  socket.on('receiveMessage', msg=>{
+    if(msg.from === currentClientId){
+      appendChatMessage({ sender_type:'client', senderName: msg.senderName || '', content: msg.content || '', datetime: msg.datetime });
+    } else loadMessages();
+  });
+
+  socket.on('booking-request', (data) => {
+    if(data.workerId === workerId) {
+      loadRequests();
+      if('Notification' in window && Notification.permission === 'granted') {
+        new Notification('New Booking Request', {
+          body: `Client wants to ${data.requestType} their booking`,
+          icon: '/images/fixxaLogp.png'
+        });
+      }
+    }
+  });
+
+  socket.on('booking-request-response', (data) => {
+    if(data.workerId === workerId) {
+      loadBookings();
+    }
+  });
+
+  // Apply Pro modal handlers
+  const applyProBtn = document.getElementById('applyProBtn');
+  const applyProModal = document.getElementById('applyProModal');
+  applyProBtn.addEventListener('click', ()=> applyProModal.style.display = 'flex');
+  document.getElementById('closeApplyPro').addEventListener('click', ()=> applyProModal.style.display = 'none');
+
+  // Initial load
+  console.log('Loading initial data...');
+  await loadAvailability();
+  await loadWorkerProfile();
+  await loadCertifications();
+  await loadPortfolioPhotos();
+  await loadBookings();
+  await loadRequests();
+  await loadMessages();
+  console.log('App initialized successfully!');
+});
+</script>
+</body>
+</html>

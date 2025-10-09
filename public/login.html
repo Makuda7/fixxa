@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Login - Fixxa</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+/* ---------- Container ---------- */
+.container {
+  max-width: 450px;
+  margin: 2rem auto;
+  background: #f6f3f0;
+  padding: 2rem;
+  border-radius: 20px;
+  border: 2px solid rgb(147,126,108);
+  box-shadow: 0 4px 15px rgba(147,126,108,0.2);
+  text-align: center;
+}
+h2 { color: forestgreen; margin-bottom: 1.5rem; }
+.input-group { margin-bottom: 1rem; text-align: left; }
+label { display: block; margin-bottom: 0.3rem; color: forestgreen; font-weight: 500; }
+input[type="email"], input[type="password"] { width:100%; padding:10px; border:2px solid rgb(147,126,108); border-radius:8px; font-size:16px; }
+button { width:100%; padding:12px 0; margin-top:1rem; background:forestgreen; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:background 0.3s ease; }
+button:hover { background:#228b22; }
+.link-btn { background:none; border:none; color:forestgreen; text-decoration:underline; margin-top:1rem; cursor:pointer; }
+.message { margin-bottom:1rem; padding:10px; border-radius:5px; text-align:center; }
+.error { background: rgba(220,53,69,0.1); color: #721c24; border: 1px solid rgba(220,53,69,0.3); }
+
+/* Header */
+.header { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:#fff; border-bottom:1px solid #ddd; }
+.header .logo img { max-width:120px; }
+.nav-links { display:flex; align-items:center; gap:1rem; }
+.nav-links a { text-decoration:none; color:#333; }
+.nav-links a:hover { color:forestgreen; }
+
+/* User menu */
+.user-menu { display:none; position:relative; }
+.user-btn { background:none; border:none; cursor:pointer; font-size:16px; padding:0.5rem 1rem; }
+.user-btn:hover { color:forestgreen; }
+.user-dropdown { display:none; position:absolute; right:0; background:white; border:1px solid #ccc; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); min-width:150px; z-index:10; }
+.user-dropdown a { display:block; padding:8px; text-decoration:none; color:#333; }
+.user-dropdown a:hover { background:#f0f0f0; }
+.user-menu.show .user-dropdown { display:block; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a>
+  </div>
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+    <a href="login.html" id="loginLink">Log in / Register</a>
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="container">
+    <h2>Login</h2>
+    <div id="loginMessage" aria-live="polite"></div>
+
+    <form id="loginFormElement">
+      <div class="input-group">
+        <label for="loginEmail">Email:</label>
+        <input type="email" id="loginEmail" required />
+      </div>
+      <div class="input-group">
+        <label for="loginPassword">Password:</label>
+        <input type="password" id="loginPassword" required />
+      </div>
+      <button type="submit">Login</button>
+    </form>
+
+    <button class="link-btn" onclick="window.location.href='register.html'">
+      Don't have an account? Register
+    </button>
+  </div>
+</main>
+
+<footer class="footer">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('loginFormElement');
+  const loginMessage = document.getElementById('loginMessage');
+
+  async function checkLogin() {
+    try {
+      const res = await fetch('/check-auth', { credentials:'include' });
+      const data = await res.json();
+      const loginLink = document.getElementById('loginLink');
+      const userMenu = document.getElementById('userMenu');
+      const userBtn = document.getElementById('userBtn');
+
+      if(data.authenticated){
+        loginLink.style.display='none';
+        userMenu.style.display='inline-block';
+        userBtn.textContent = data.user.name + ' ▼';
+        const redirectPage = data.user.type === 'professional' ? 'prosite.html' : 'clientProfile.html';
+        window.location.href = redirectPage;
+      } else {
+        loginLink.style.display='inline-block';
+        userMenu.style.display='none';
+      }
+    } catch(err){ console.error(err); }
+  }
+  checkLogin();
+
+  // User menu toggle & logout
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  if(userBtn) userBtn.addEventListener('click', e => { e.stopPropagation(); userDropdown.style.display = (userDropdown.style.display==='block')?'none':'block'; });
+  if(logoutBtn) logoutBtn.addEventListener('click', async e => { e.preventDefault(); await fetch('/logout',{method:'POST',credentials:'include'}); location.reload(); });
+  document.addEventListener('click', e => { if(userDropdown && !userDropdown.contains(e.target) && userBtn && !userBtn.contains(e.target)) userDropdown.style.display='none'; });
+
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    try{
+      const res = await fetch('/login',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password}),
+        credentials:'include'
+      });
+      const data = await res.json();
+      if(data.success){
+        window.location.href = data.redirect;
+      } else {
+        loginMessage.innerHTML = `<div class="message error">${data.error}</div>`;
+      }
+    } catch(err){ loginMessage.innerHTML = `<div class="message error">Server error. Try again.</div>`; console.error(err);}
+  });
+});
+</script>
+
+</body>
+</html>

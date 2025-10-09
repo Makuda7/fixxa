@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Fixxa</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #f5f6fa; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      padding-bottom: 3rem;
+    }
+    
+    .admin-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+    
+    .dashboard-header {
+      background: linear-gradient(135deg, #2d5016, #4a7c59);
+      color: white; padding: 2rem; border-radius: 16px; margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dashboard-header-left h1 { margin: 0 0 0.5rem 0; font-size: 2rem; }
+    .dashboard-header-left p { margin: 0; opacity: 0.9; }
+    .dashboard-header-right {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    .user-email {
+      background: rgba(255,255,255,0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .refresh-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.3);
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .refresh-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    .refresh-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #e0e0e0;
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 1rem 1.5rem;
+      background: none;
+      border: none;
+      color: #666;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover {
+      color: #2d5016;
+      background: #f8f9fa;
+    }
+    .nav-tab.active {
+      color: #2d5016;
+      border-bottom-color: #4a7c59;
+    }
+    .nav-tab .badge {
+      background: #e74c3c;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .loading-overlay.show {
+      display: flex;
+    }
+    .loading-spinner {
+      text-align: center;
+    }
+    .loading-spinner::after {
+      content: '';
+      display: block;
+      width: 50px;
+      height: 50px;
+      margin: 1rem auto;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #4a7c59;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #4a7c59;
+    }
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2d5016;
+      margin-bottom: 0.5rem;
+    }
+    .stat-label {
+      color: #666;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-subtext {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 0.5rem;
+    }
+
+    /* Settings Section */
+    .settings-section {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+    .settings-section h3 {
+      color: #2d5016;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+    .setting-label {
+      display: flex;
+      flex-direction: column;
+    }
+    .setting-label strong {
+      font-size: 1rem;
+      margin-bottom: 0.3rem;
+    }
+    .setting-label span {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      width: 60px;
+      height: 30px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 30px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #4a7c59;
+    }
+    input:checked + .slider:before {
+      transform: translateX(30px);
+    }
+
+    /* Tables */
+    .table-section {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .table-section h3 {
+      color: #2d5016;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+    .table-section p {
+      color: #666;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #f1f3f4;
+    }
+    th {
+      background: #f8f9fa;
+      color: #2d5016;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+    .no-data {
+      text-align: center;
+      padding: 2rem;
+      color: #999;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .status-in-progress, .status-progress {
+      background: #cce5ff;
+      color: #004085;
+    }
+    .status-completed {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-cancelled {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .status-active, .status-available {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-inactive, .status-unavailable {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .status-approved {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-rejected {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Certification Cards */
+    .cert-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 1.5rem;
+    }
+    .cert-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #ffc107;
+    }
+    .cert-card.approved {
+      border-left-color: #28a745;
+    }
+    .cert-card.rejected {
+      border-left-color: #dc3545;
+    }
+    .cert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1rem;
+    }
+    .cert-info h4 {
+      color: #2d5016;
+      margin-bottom: 0.25rem;
+    }
+    .cert-info p {
+      color: #666;
+      font-size: 0.9rem;
+      margin: 0.25rem 0;
+    }
+    .cert-details {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+    .cert-details p {
+      margin: 0.5rem 0;
+      font-size: 0.9rem;
+    }
+    .cert-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .cert-actions button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    /* Worker Cards */
+    .worker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .worker-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #4a7c59;
+    }
+    .worker-card.unavailable {
+      border-left-color: #e74c3c;
+      opacity: 0.8;
+    }
+    .worker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1rem;
+    }
+    .worker-info h4 {
+      color: #2d5016;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .verified-badge {
+      background: #28a745;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .worker-info p {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .worker-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .worker-stat {
+      text-align: center;
+    }
+    .worker-stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2d5016;
+    }
+    .worker-stat-label {
+      font-size: 0.75rem;
+      color: #666;
+      text-transform: uppercase;
+    }
+
+    /* Clients Grid */
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .client-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #4a7c59;
+    }
+    .client-card h4 {
+      color: #2d5016;
+      margin-bottom: 0.5rem;
+    }
+    .client-info {
+      color: #666;
+      font-size: 0.9rem;
+      margin: 0.25rem 0;
+    }
+    .client-stats {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #4a7c59;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2d5016;
+    }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+    .btn-success {
+      background: #27ae60;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #229954;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+    .btn-small {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+    }
+
+    /* Messages */
+    .message {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .message.show { display: block; }
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #999;
+    }
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1100;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #eee;
+    }
+    .modal-header h3 {
+      color: #2d5016;
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+    }
+    .cert-preview {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+
+    @media (max-width: 968px) {
+      .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .dashboard-header-right {
+        flex-direction: column;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .admin-container { padding: 1rem; }
+      .worker-grid, .clients-grid, .cert-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner">
+      <div style="font-size: 1.2rem; color: #2d5016; font-weight: 600;">Loading...</div>
+    </div>
+  </div>
+
+  <div class="admin-container">
+    <div class="dashboard-header">
+      <div class="dashboard-header-left">
+        <h1>Fixxa Admin Dashboard</h1>
+        <p>Manage your platform, view analytics, and control settings</p>
+      </div>
+      <div class="dashboard-header-right">
+        <div class="user-email" id="adminEmail">Loading...</div>
+        <button class="refresh-btn" id="refresh-btn" onclick="refreshDashboard()">
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <!-- Navigation -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('overview')">Overview</button>
+      <button class="nav-tab" onclick="switchTab('certifications')">
+        Certifications
+        <span class="badge" id="pendingCertsBadge" style="display:none;">0</span>
+      </button>
+      <button class="nav-tab" onclick="switchTab('workers')">Professionals</button>
+      <button class="nav-tab" onclick="switchTab('clients')">Clients</button>
+      <button class="nav-tab" onclick="switchTab('settings')">Settings</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div id="overview-tab" class="tab-content active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="totalProfessionals">-</div>
+          <div class="stat-label">Total Professionals</div>
+          <div class="stat-subtext"><span id="activeProfessionals">-</span> active | <span id="verifiedProfessionals">-</span> verified</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalClients">-</div>
+          <div class="stat-label">Registered Clients</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalBookings">-</div>
+          <div class="stat-label">Total Bookings</div>
+          <div class="stat-subtext"><span id="pendingBookings">-</span> pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="completedBookings">-</div>
+          <div class="stat-label">Completed Jobs</div>
+          <div class="stat-subtext"><span id="inProgressBookings">-</span> in progress</div>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <h3>Recent Bookings</h3>
+        <p style="color: #666;">Last 10 bookings on the platform</p>
+        <div id="bookingsTableContainer">
+          <div class="no-data">Loading bookings...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Certifications Tab -->
+    <div id="certifications-tab" class="tab-content">
+      <div class="table-section">
+        <h3>Certification Management</h3>
+        <p>Review and approve professional certifications</p>
+        
+        <div style="margin: 1rem 0; display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary btn-small" onclick="filterCertifications('pending')">Pending</button>
+          <button class="btn btn-secondary btn-small" onclick="filterCertifications('approved')">Approved</button>
+          <button class="btn btn-secondary btn-small" onclick="filterCertifications('rejected')">Rejected</button>
+          <button class="btn btn-secondary btn-small" onclick="filterCertifications('all')">All</button>
+        </div>
+
+        <div class="cert-grid" id="certifications-grid">
+          <div class="no-data">Loading certifications...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workers Tab -->
+    <div id="workers-tab" class="tab-content">
+      <div class="table-section">
+        <h3>Professional Management</h3>
+        <p>View and manage all registered professionals on the platform</p>
+        <div class="worker-grid" id="worker-grid">
+          <div class="no-data">Loading professionals...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clients Tab -->
+    <div id="clients-tab" class="tab-content">
+      <div class="table-section">
+        <h3>Client Management</h3>
+        <p>View all registered clients on the platform</p>
+        <div class="clients-grid" id="clients-grid">
+          <div class="no-data">Loading clients...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settings-tab" class="tab-content">
+      <div class="settings-section">
+        <h3>Platform Settings</h3>
+        <div class="setting-item">
+          <div class="setting-label">
+            <strong>Vacation Mode</strong>
+            <span>Temporarily disable new bookings across the entire platform</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="vacationModeToggle" onchange="toggleVacationMode()">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Certification View Modal -->
+  <div id="certModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Certification Preview</h3>
+        <button class="modal-close" onclick="closeCertModal()">×</button>
+      </div>
+      <div id="certModalBody">
+        <img id="certPreview" class="cert-preview" src="" alt="Certification">
+        <div id="certDetails"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let appState = {
+      professionals: [],
+      clients: [],
+      bookings: [],
+      certifications: [],
+      stats: {},
+      settings: {},
+      loading: false,
+      currentCertFilter: 'pending'
+    };
+
+    // Show/hide loading overlay
+    function setLoading(isLoading) {
+      appState.loading = isLoading;
+      document.getElementById('loading-overlay').classList.toggle('show', isLoading);
+      document.getElementById('refresh-btn').disabled = isLoading;
+    }
+
+    // Show message
+    function showMessage(text, type = 'success') {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.className = `message ${type} show`;
+      setTimeout(() => {
+        msg.classList.remove('show');
+      }, 5000);
+    }
+
+    // Check authentication
+    async function checkAuth() {
+      try {
+        const response = await fetch('/check-session', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (!data.loggedIn) {
+          window.location.href = '/adminLogin.html';
+          return false;
+        }
+        
+        document.getElementById('adminEmail').textContent = data.user.email;
+        return true;
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        window.location.href = '/adminLogin.html';
+        return false;
+      }
+    }
+
+    // Load dashboard stats
+    async function loadStats() {
+      try {
+        const response = await fetch('/admin/stats', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          appState.stats = data.stats;
+          renderStats();
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        showMessage('Error loading statistics', 'error');
+      }
+    }
+
+    // Load certifications
+    async function loadCertifications() {
+      try {
+        const status = appState.currentCertFilter === 'all' ? '' : appState.currentCertFilter;
+        const url = status ? `/certifications/admin/all?status=${status}` : '/certifications/admin/all';
+        
+        const response = await fetch(url, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          appState.certifications = data.certifications;
+          renderCertifications();
+          updateCertBadge();
+        }
+      } catch (error) {
+        console.error('Error loading certifications:', error);
+        document.getElementById('certifications-grid').innerHTML = 
+          '<div class="no-data">Error loading certifications</div>';
+      }
+    }
+
+    function updateCertBadge() {
+      const pendingCount = appState.certifications.filter(c => c.status === 'pending').length;
+      const badge = document.getElementById('pendingCertsBadge');
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function renderCertifications() {
+      const grid = document.getElementById('certifications-grid');
+      
+      if (!appState.certifications || appState.certifications.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No certifications found</p></div>';
+        return;
+      }
+
+      grid.innerHTML = '';
+      appState.certifications.forEach(cert => {
+        const statusClass = cert.status.toLowerCase();
+        const uploadDate = new Date(cert.uploaded_at).toLocaleDateString();
+        const reviewedDate = cert.reviewed_at ? new Date(cert.reviewed_at).toLocaleDateString() : 'Not reviewed';
+        
+        grid.innerHTML += `
+          <div class="cert-card ${statusClass}">
+            <div class="cert-header">
+              <div class="cert-info">
+                <h4>${cert.worker_name} ${cert.is_verified ? '<span class="verified-badge">✓ Verified</span>' : ''}</h4>
+                <p>${cert.worker_email}</p>
+                <p><strong>${cert.speciality}</strong></p>
+              </div>
+              <span class="status-badge status-${statusClass}">${cert.status.charAt(0).toUpperCase() + cert.status.slice(1)}</span>
+            </div>
+            
+            <div class="cert-details">
+              <p><strong>Document:</strong> ${cert.document_name || 'Certification'}</p>
+              <p><strong>Uploaded:</strong> ${uploadDate}</p>
+              <p><strong>Reviewed:</strong> ${reviewedDate}</p>
+              ${cert.reviewed_by_email ? `<p><strong>Reviewed By:</strong> ${cert.reviewed_by_email}</p>` : ''}
+            </div>
+
+            <div class="cert-actions">
+              <button class="btn btn-secondary btn-small" onclick="viewCertification(${cert.id}, '${cert.document_url}', '${cert.worker_name}', '${cert.document_name}')">
+                View Document
+              </button>
+              ${cert.status === 'pending' ? `
+                <button class="btn btn-success btn-small" onclick="approveCertification(${cert.id})">
+                  Approve
+                </button>
+                <button class="btn btn-danger btn-small" onclick="rejectCertification(${cert.id})">
+                  Reject
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function filterCertifications(filter) {
+      appState.currentCertFilter = filter;
+      loadCertifications();
+    }
+
+    function viewCertification(id, url, workerName, docName) {
+      const modal = document.getElementById('certModal');
+      const preview = document.getElementById('certPreview');
+      const details = document.getElementById('certDetails');
+      
+      if (url.toLowerCase().endsWith('.pdf')) {
+        preview.style.display = 'none';
+        details.innerHTML = `
+          <p><strong>Worker:</strong> ${workerName}</p>
+          <p><strong>Document:</strong> ${docName}</p>
+          <p style="margin-top: 1rem;"><a href="${url}" target="_blank" class="btn btn-primary">Open PDF Document</a></p>
+        `;
+      } else {
+        preview.style.display = 'block';
+        preview.src = url;
+        details.innerHTML = `
+          <p><strong>Worker:</strong> ${workerName}</p>
+          <p><strong>Document:</strong> ${docName}</p>
+        `;
+      }
+      
+      modal.classList.add('show');
+    }
+
+    function closeCertModal() {
+      document.getElementById('certModal').classList.remove('show');
+    }
+
+    async function approveCertification(certId) {
+      if (!confirm('Approve this certification? The professional will receive a verified badge.')) return;
+      
+      try {
+        const response = await fetch(`/certifications/admin/approve/${certId}`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(data.message || 'Certification approved successfully', 'success');
+          await loadCertifications();
+          await loadProfessionals();
+          await loadStats();
+        } else {
+          showMessage(data.error || 'Failed to approve certification', 'error');
+        }
+      } catch (error) {
+        console.error('Error approving certification:', error);
+        showMessage('Error approving certification', 'error');
+      }
+    }
+
+    async function rejectCertification(certId) {
+      const reason = prompt('Reason for rejection (optional):');
+      if (reason === null) return; // User cancelled
+      
+      try {
+        const response = await fetch(`/certifications/admin/reject/${certId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ reason })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('Certification rejected', 'success');
+          await loadCertifications();
+        } else {
+          showMessage(data.error || 'Failed to reject certification', 'error');
+        }
+      } catch (error) {
+        console.error('Error rejecting certification:', error);
+        showMessage('Error rejecting certification', 'error');
+      }
+    }
+
+    // Load recent bookings
+    async function loadRecentBookings() {
+      try {
+        const response = await fetch('/admin/recent-bookings?limit=10', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          appState.bookings = data.bookings;
+          renderBookings();
+        }
+      } catch (error) {
+        console.error('Error loading bookings:', error);
+        document.getElementById('bookingsTableContainer').innerHTML = 
+          '<div class="no-data">Error loading bookings</div>';
+      }
+    }
+
+    // Load professionals
+    async function loadProfessionals() {
+      try {
+        const response = await fetch('/admin/professionals', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          appState.professionals = data.professionals;
+          renderProfessionals();
+        }
+      } catch (error) {
+        console.error('Error loading professionals:', error);
+        document.getElementById('worker-grid').innerHTML = 
+          '<div class="no-data">Error loading professionals</div>';
+      }
+    }
+
+    // Load clients
+    async function loadClients() {
+      try {
+        const response = await fetch('/admin/clients', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          appState.clients = data.clients;
+          renderClients();
+        }
+      } catch (error) {
+        console.error('Error loading clients:', error);
+        document.getElementById('clients-grid').innerHTML = 
+          '<div class="no-data">Error loading clients</div>';
+      }
+    }
+
+    // Load settings
+    async function loadSettings() {
+      try {
+        const response = await fetch('/admin/settings', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          appState.settings = data.settings;
+          document.getElementById('vacationModeToggle').checked = data.settings.vacationMode;
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    }
+
+    // Render functions
+    function renderStats() {
+      const s = appState.stats;
+      document.getElementById('totalProfessionals').textContent = s.totalProfessionals || 0;
+      document.getElementById('activeProfessionals').textContent = s.activeProfessionals || 0;
+      document.getElementById('verifiedProfessionals').textContent = s.verifiedProfessionals || 0;
+      document.getElementById('totalClients').textContent = s.totalClients || 0;
+      document.getElementById('totalBookings').textContent = s.totalBookings || 0;
+      document.getElementById('pendingBookings').textContent = s.pendingBookings || 0;
+      document.getElementById('completedBookings').textContent = s.completedBookings || 0;
+      document.getElementById('inProgressBookings').textContent = s.inProgressBookings || 0;
+    }
+
+    function renderBookings() {
+      const container = document.getElementById('bookingsTableContainer');
+      
+      if (!appState.bookings || appState.bookings.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No bookings yet</p></div>';
+        return;
+      }
+
+      const table = `
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Client</th>
+              <th>Professional</th>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${appState.bookings.map(b => `
+              <tr>
+                <td>#${b.id}</td>
+                <td>${b.client_name || 'N/A'}</td>
+                <td>${b.professional_name || 'N/A'}</td>
+                <td>${b.service_type || 'N/A'}</td>
+                <td>${formatDate(b.booking_date)} ${b.booking_time || ''}</td>
+                <td><span class="status-badge status-${(b.status || '').toLowerCase().replace(' ', '-')}">${b.status || 'Unknown'}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      container.innerHTML = table;
+    }
+
+    function renderProfessionals() {
+      const grid = document.getElementById('worker-grid');
+      
+      if (!appState.professionals || appState.professionals.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No professionals registered yet</p></div>';
+        return;
+      }
+
+      grid.innerHTML = '';
+      appState.professionals.forEach(pro => {
+        const statusClass = pro.is_active ? 'available' : 'unavailable';
+        const statusText = pro.is_active ? 'Active' : 'Inactive';
+        const cardClass = pro.is_active ? '' : 'unavailable';
+        const verifiedBadge = pro.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
+        
+        grid.innerHTML += `
+          <div class="worker-card ${cardClass}">
+            <div class="worker-header">
+              <div class="worker-info">
+                <h4>${pro.name} ${verifiedBadge}</h4>
+                <p>${pro.email}</p>
+                <p style="margin-top: 0.5rem;"><strong>${pro.speciality}</strong> • ${pro.area || 'N/A'}</p>
+              </div>
+              <span class="status-badge status-${statusClass}">${statusText}</span>
+            </div>
+            <div class="worker-stats">
+              <div class="worker-stat">
+                <div class="worker-stat-number">${pro.total_bookings || 0}</div>
+                <div class="worker-stat-label">Total</div>
+              </div>
+              <div class="worker-stat">
+                <div class="worker-stat-number">${pro.completed_bookings || 0}</div>
+                <div class="worker-stat-label">Completed</div>
+              </div>
+              <div class="worker-stat">
+                <div class="worker-stat-number">${pro.rating ? pro.rating + '⭐' : 'N/A'}</div>
+                <div class="worker-stat-label">Rating</div>
+              </div>
+            </div>
+            <button class="btn ${pro.is_active ? 'btn-danger' : 'btn-success'} btn-small" 
+                    onclick="toggleProfessionalStatus(${pro.id}, ${!pro.is_active})" style="width: 100%;">
+              ${pro.is_active ? 'Deactivate' : 'Activate'} Professional
+            </button>
+          </div>
+        `;
+      });
+    }
+
+    function renderClients() {
+      const grid = document.getElementById('clients-grid');
+      
+      if (!appState.clients || appState.clients.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><p>No clients registered yet</p></div>';
+        return;
+      }
+
+      grid.innerHTML = '';
+      appState.clients.forEach(client => {
+        grid.innerHTML += `
+          <div class="client-card">
+            <h4>${client.name}</h4>
+            <div class="client-info">${client.email}</div>
+            <div class="client-info">${client.phone || 'No phone'}</div>
+            <div class="client-info">Joined: ${formatDate(client.created_at)}</div>
+            <div class="client-stats">
+              <div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: #2d5016;">${client.total_bookings || 0}</div>
+                <div style="font-size: 0.75rem; color: #666;">Total Bookings</div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Actions
+    async function toggleVacationMode() {
+      const vacationMode = document.getElementById('vacationModeToggle').checked;
+      
+      try {
+        const response = await fetch('/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ vacationMode })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(data.message, 'success');
+        } else {
+          showMessage('Failed to update settings', 'error');
+          document.getElementById('vacationModeToggle').checked = !vacationMode;
+        }
+      } catch (error) {
+        console.error('Error toggling vacation mode:', error);
+        showMessage('Error updating settings', 'error');
+        document.getElementById('vacationModeToggle').checked = !vacationMode;
+      }
+    }
+
+    async function toggleProfessionalStatus(id, isActive) {
+      try {
+        const response = await fetch(`/admin/toggle-professional/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ isActive })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(data.message, 'success');
+          await loadProfessionals();
+          await loadStats();
+        } else {
+          showMessage('Failed to update professional status', 'error');
+        }
+      } catch (error) {
+        console.error('Error toggling professional status:', error);
+        showMessage('Error updating professional status', 'error');
+      }
+    }
+
+    // Switch tabs
+    function switchTab(tabName) {
+      document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabName + '-tab').classList.add('active');
+      
+      // Load data if switching to certifications tab
+      if (tabName === 'certifications') {
+        loadCertifications();
+      }
+    }
+
+    // Refresh dashboard
+    async function refreshDashboard() {
+      showMessage('Refreshing dashboard...', 'success');
+      await loadDashboardData();
+    }
+
+    // Load all data
+    async function loadDashboardData() {
+      setLoading(true);
+      
+      try {
+        await Promise.all([
+          loadStats(),
+          loadRecentBookings(),
+          loadProfessionals(),
+          loadClients(),
+          loadCertifications(),
+          loadSettings()
+        ]);
+        
+        console.log('Dashboard loaded successfully');
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+        showMessage('Error loading dashboard data', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Format date helper
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-ZA', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+
+    // Close modal on outside click
+    document.getElementById('certModal').addEventListener('click', (e) => {
+      if (e.target.id === 'certModal') {
+        closeCertModal();
+      }
+    });
+
+    // Initialize
+    async function init() {
+      const isAuthenticated = await checkAuth();
+      if (isAuthenticated) {
+        await loadDashboardData();
+      }
+    }
+
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', init);
+
+    // Auto-refresh every 30 seconds
+    setInterval(() => {
+      if (!appState.loading) {
+        loadStats();
+        loadRecentBookings();
+        updateCertBadge();
+      }
+    }, 30000);
+  </script>
+</body>
+</html>

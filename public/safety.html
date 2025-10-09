@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safety & Security - Fixxa</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header .logo img { max-width: 120px; }
+.nav-links { display: flex; align-items: center; gap: 1rem; }
+.nav-links a { text-decoration: none; color: #333; }
+.nav-links a:hover { color: forestgreen; }
+
+/* User menu */
+.user-menu { display: none; position: relative; }
+.user-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0.5rem 1rem; }
+.user-btn:hover { color: forestgreen; }
+.user-dropdown { display: none; position: absolute; right: 0; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 150px; z-index: 10; }
+.user-dropdown a, .user-dropdown button { display: block; padding: 8px; text-decoration: none; color: #333; background:white; border:none; width:100%; text-align:left; cursor:pointer; }
+.user-dropdown a:hover, .user-dropdown button:hover { background:#f0f0f0; }
+
+/* Main container */
+.container {
+  max-width: 900px;
+  margin: 3rem auto;
+  background: white;
+  padding: 2.5rem 3rem;
+  border-radius: 15px;
+  border: 2px solid rgb(147,126,108);
+  box-shadow: 0 4px 15px rgba(147,126,108,0.2);
+}
+h1 { color: forestgreen; text-align: center; margin-bottom: 2rem; }
+h2 { color: #228b22; margin-top: 2rem; margin-bottom: 1rem; }
+p { line-height: 1.6; margin-bottom: 1rem; }
+ul { list-style: none; padding-left: 0; }
+ul li { position: relative; padding-left: 2rem; margin-bottom: 1rem; }
+ul li::before { content: "⚠️"; position: absolute; left: 0; }
+a.back-link { display: inline-block; margin-top: 2rem; color: forestgreen; text-decoration: underline; font-weight: 500; }
+a.back-link:hover { color: #228b22; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo"></a>
+  </div>
+
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+
+    <!-- Login link -->
+    <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <!-- User menu -->
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <button id="logoutBtn" style="color:red;">Log out</button>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Main Content -->
+<div class="container">
+  <h1>Safety & Security Guidelines</h1>
+
+  <p>At Fixxa, your safety is our priority. While we vet professionals as best as possible, it's important for clients to remain vigilant. Please follow these guidelines to protect yourself and your property:</p>
+
+  <h2>1. Vetting Professionals</h2>
+  <ul>
+    <li>Check the professional’s profile, reviews, and ratings before confirming a service.</li>
+    <li>Never share sensitive personal information beyond what is necessary for the service.</li>
+  </ul>
+
+  <h2>2. Payment & Financial Safety</h2>
+  <ul>
+    <li>Use the Fixxa platform for payments when applicable.</li>
+    <li>Avoid paying outside the platform before services are rendered to prevent fraud.</li>
+    <li>Do not provide credit card or banking information to professionals directly.</li>
+  </ul>
+
+  <h2>3. Personal Safety During Service</h2>
+  <ul>
+    <li>Prefer having services performed during daylight hours when possible.</li>
+    <li>Ensure someone is present during the service, if applicable.</li>
+    <li>Trust your instincts—if something feels unsafe, pause or cancel the appointment.</li>
+  </ul>
+
+  <h2>4. Reporting Issues</h2>
+  <ul>
+    <li>Immediately report any suspicious behavior or fraud to Fixxa support.</li>
+    <li>Document incidents with photos, timestamps, or any other evidence.</li>
+  </ul>
+
+  <p><strong>Disclaimer:</strong> While Fixxa strives to vet all professionals, we cannot guarantee the quality of work or safety during services. Users agree to take personal responsibility and follow these guidelines.</p>
+
+  <a class="back-link" href="register.html">Back to Register</a>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+
+<script>
+// Check if user is logged in and update header
+async function checkLogin() {
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+
+    const loginLink = document.getElementById('loginLink');
+    const userMenu = document.getElementById('userMenu');
+    const userBtn = document.getElementById('userBtn');
+
+    if (data.authenticated) {
+      loginLink.style.display = 'none';
+      userMenu.style.display = 'inline-block';
+      userBtn.textContent = data.user.name + ' ▼';
+    } else {
+      loginLink.style.display = 'inline-block';
+      userMenu.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Login check failed', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkLogin();
+
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+
+  // Toggle dropdown
+  if (userBtn) {
+    userBtn.addEventListener('click', () => {
+      userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+  }
+
+  // Logout button
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      await fetch('/logout', { method: 'POST', credentials: 'include' });
+      location.reload();
+    });
+  }
+
+  // Close dropdown if clicked outside
+  document.addEventListener('click', (e) => {
+    if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+});
+</script>
+
+</body>
+</html>

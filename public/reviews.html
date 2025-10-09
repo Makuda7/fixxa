@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reviews & Ratings - Fixxa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Outfit', sans-serif; background:#f6f3f0; margin:0; padding:0; color:#262626; }
+  
+  /* Header */
+  .header { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:#fff; border-bottom:1px solid #ddd; }
+  .header .logo img { max-width:120px; }
+  .nav-links { display:flex; align-items:center; gap:1rem; }
+  .nav-links a { text-decoration:none; color:#333; }
+  .nav-links a:hover { color:forestgreen; }
+  .user-menu { display:none; position:relative; }
+  .user-btn { background:none; border:none; cursor:pointer; font-size:16px; padding:0.5rem 1rem; }
+  .user-btn:hover { color:forestgreen; }
+  .user-dropdown { display:none; position:absolute; right:0; background:white; border:1px solid #ccc; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); min-width:150px; z-index:10; }
+  .user-dropdown a { display:block; padding:8px; text-decoration:none; color:#333; }
+  .user-dropdown a:hover { background:#f0f0f0; }
+
+  /* Main Container */
+  .reviews-container { max-width:1100px; margin:3rem auto; background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:2rem; display:none; }
+  .reviews-header { text-align:center; margin-bottom:2rem; padding-bottom:1rem; border-bottom:2px solid #f0f8f0; }
+  .reviews-header h1 { color:forestgreen; margin:0; }
+  .reviews-header p { color:#666; margin:0.5rem 0 0; }
+
+  /* Tabs */
+  .tabs { display:flex; border-bottom:2px solid #f0f0f0; margin-bottom:2rem; }
+  .tab { padding:1rem 2rem; background:none; border:none; cursor:pointer; font-size:1rem; font-weight:600; color:#666; transition:all 0.3s; }
+  .tab.active { color:forestgreen; border-bottom:3px solid forestgreen; background:#f9fff9; }
+  .tab:hover:not(.active) { color:#333; background:#f8f8f8; }
+
+  /* Tab Content */
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* Completed Jobs Grid */
+  .jobs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(350px,1fr)); gap:1.5rem; }
+  .job-card { background:#f9f9f9; border-radius:12px; padding:1.5rem; border:1px solid #e0e0e0; transition:all 0.3s; }
+  .job-card:hover { box-shadow:0 6px 20px rgba(0,0,0,0.1); transform:translateY(-2px); }
+  
+  .job-header { display:flex; justify-content:space-between; align-items:start; margin-bottom:1rem; }
+  .job-title { font-size:1.2rem; font-weight:600; color:forestgreen; margin:0; }
+  .job-date { color:#666; font-size:0.9rem; }
+  
+  .job-details { margin-bottom:1.5rem; }
+  .job-details p { margin:0.5rem 0; }
+  .job-details strong { color:#333; }
+  
+  .review-status { display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
+  .status-badge { padding:4px 12px; border-radius:15px; font-size:0.8rem; font-weight:600; }
+  .status-reviewed { background:#d4edda; color:#155724; }
+  .status-pending { background:#fff3cd; color:#856404; }
+  
+  .action-buttons { display:flex; gap:0.5rem; }
+  .btn { padding:10px 16px; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.2s; }
+  .btn-primary { background:forestgreen; color:white; }
+  .btn-primary:hover { background:#2d5016; transform:translateY(-1px); }
+  .btn-secondary { background:#6c757d; color:white; }
+  .btn-secondary:hover { background:#545b62; }
+
+  /* Review Form Modal */
+  .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center; }
+  .modal { background:#fff; padding:2rem; border-radius:12px; max-width:600px; width:90%; max-height:90vh; overflow-y:auto; }
+  .modal h3 { margin-top:0; color:forestgreen; text-align:center; }
+  
+  /* Rating System */
+  .rating-section { margin:1.5rem 0; text-align:center; }
+  .rating-categories { display:grid; grid-template-columns:1fr; gap:1rem; margin:1rem 0; }
+  .rating-category { background:#f8f9fa; padding:1rem; border-radius:8px; }
+  .rating-category h4 { margin:0 0 0.5rem; color:#333; font-size:1rem; }
+  .rating-stars { display:flex; justify-content:center; gap:0.25rem; margin:0.5rem 0; }
+  .star { font-size:1.8rem; color:#ddd; cursor:pointer; transition:color 0.2s; }
+  .star.active, .star:hover { color:#ffc107; }
+  .rating-label { font-size:0.9rem; color:#666; }
+  
+  .overall-rating { background:#e8f5e8; padding:1.5rem; border-radius:8px; margin:1rem 0; }
+  .overall-rating h4 { margin:0 0 1rem; color:forestgreen; text-align:center; }
+  .overall-stars { font-size:2.5rem; }
+  
+  /* Review Text */
+  .review-form { margin:1rem 0; }
+  .review-form label { display:block; margin:1rem 0 0.5rem; font-weight:600; color:#333; }
+  .review-form textarea { width:100%; min-height:120px; padding:12px; border:2px solid #e0e0e0; border-radius:8px; font-family:inherit; resize:vertical; }
+  .review-form textarea:focus { border-color:forestgreen; outline:none; }
+  
+  /* Character Counter */
+  .char-counter { text-align:right; font-size:0.8rem; color:#666; margin-top:0.25rem; }
+  
+  /* Photo Upload Styles */
+  .photo-section { margin: 1.5rem 0; }
+  .photo-section label { display: block; margin: 0 0 0.5rem; font-weight: 600; color: #333; }
+  
+  .upload-dropzone { 
+    border: 2px dashed #ddd; 
+    border-radius: 8px; 
+    padding: 2rem; 
+    text-align: center; 
+    background: #fafafa; 
+    cursor: pointer; 
+    transition: all 0.3s;
+    margin-bottom: 1rem;
+  }
+  .upload-dropzone:hover { border-color: forestgreen; background: #f9fff9; }
+  .upload-dropzone.dragover { border-color: forestgreen; background: #f0f8f0; }
+  
+  .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; color: #999; }
+  .upload-dropzone p { margin: 0.25rem 0; color: #666; }
+  
+  .photo-preview-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+    gap: 1rem; 
+    margin-top: 1rem;
+  }
+  
+  .photo-preview-item { 
+    position: relative; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    border: 2px solid #e0e0e0;
+    aspect-ratio: 1;
+  }
+  
+  .photo-preview-item img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+  }
+  
+  .photo-remove-btn { 
+    position: absolute; 
+    top: 4px; 
+    right: 4px; 
+    background: rgba(220, 53, 69, 0.8); 
+    color: white; 
+    border: none; 
+    border-radius: 50%; 
+    width: 24px; 
+    height: 24px; 
+    cursor: pointer; 
+    font-size: 12px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+  }
+  .photo-remove-btn:hover { background: rgba(220, 53, 69, 1); }
+  
+  .photo-upload-progress { 
+    position: absolute; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    background: rgba(0,0,0,0.7); 
+    color: white; 
+    padding: 4px; 
+    font-size: 0.8rem; 
+    text-align: center;
+  }
+  
+  /* Review Display Styles */
+  .review-photos { margin: 1rem 0; }
+  .review-photos-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+    gap: 0.5rem; 
+    margin-top: 0.5rem;
+  }
+  .review-photo { 
+    width: 100%; 
+    aspect-ratio: 1; 
+    object-fit: cover; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    transition: transform 0.2s;
+  }
+  .review-photo:hover { transform: scale(1.05); }
+  
+  /* Edit Photo Styles */
+  .edit-photo-section { margin:1rem 0; }
+  .edit-photos-grid { 
+    display:grid; 
+    grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); 
+    gap:0.5rem;
+    margin:0.5rem 0;
+  }
+  .edit-photo-item { 
+    position:relative; 
+    aspect-ratio:1;
+    border-radius:6px;
+    overflow:hidden;
+    border:2px solid #e0e0e0;
+  }
+  .edit-photo-item img { 
+    width:100%; 
+    height:100%; 
+    object-fit:cover;
+  }
+  .add-photo-btn { 
+    background:#28a745; 
+    color:white; 
+    border:none; 
+    padding:8px 12px; 
+    border-radius:6px; 
+    cursor:pointer;
+    font-size:0.9rem;
+    margin-top:0.5rem;
+  }
+  .add-photo-btn:hover { background:#218838; }
+  
+  /* Modal Actions */
+  .modal-actions { display:flex; gap:1rem; justify-content:flex-end; margin-top:2rem; }
+  
+  /* My Reviews Section */
+  .reviews-list { display:flex; flex-direction:column; gap:1.5rem; }
+  .review-card { background:#f9f9f9; border-radius:12px; padding:1.5rem; border:1px solid #e0e0e0; }
+  .review-card-header { display:flex; justify-content:space-between; align-items:start; margin-bottom:1rem; }
+  .review-professional { font-size:1.1rem; font-weight:600; color:forestgreen; }
+  .review-service { color:#666; font-size:0.9rem; }
+  .review-card-rating { display:flex; align-items:center; gap:0.5rem; margin:0.5rem 0; }
+  .review-card-text { background:#fff; padding:1rem; border-radius:8px; margin:1rem 0; border-left:4px solid forestgreen; }
+  .review-actions { display:flex; gap:0.5rem; }
+  
+  /* Statistics */
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:#f8f9fa; padding:1.5rem; border-radius:8px; text-align:center; }
+  .stat-number { font-size:2rem; font-weight:600; color:forestgreen; }
+  .stat-label { color:#666; font-size:0.9rem; }
+  
+  /* Empty States */
+  .empty-state { text-align:center; padding:3rem; color:#666; }
+  .empty-state .icon { font-size:4rem; color:#ddd; margin-bottom:1rem; }
+  .empty-state p { margin:0.5rem 0; }
+  .empty-state a { color:forestgreen; text-decoration:none; }
+  .empty-state a:hover { text-decoration:underline; }
+
+  /* Loading State */
+  .loading { text-align:center; padding:2rem; color:#666; }
+  
+  /* Notification */
+  .notification { position:fixed; top:20px; right:20px; background:#28a745; color:white; padding:1rem 1.5rem; border-radius:8px; z-index:2000; transform:translateX(100%); transition:transform 0.3s; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+  .notification.show { transform:translateX(0); }
+  .notification.error { background:#dc3545; }
+  .notification.info { background:#17a2b8; }
+
+  @media(max-width:768px) {
+    .jobs-grid { grid-template-columns:1fr; }
+    .tabs { flex-wrap:wrap; }
+    .tab { flex:1; min-width:120px; }
+    .modal { padding:1rem; }
+    .modal-actions { flex-direction:column; }
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo"><a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a></div>
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+    <a href="login.html" id="loginLink">Log in / Register</a>
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="messages.html">Messages</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="reviews-container" id="reviewsMain">
+  <div class="reviews-header">
+    <h1>Reviews & Ratings</h1>
+    <p>Share your experience and help other customers make informed decisions</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('pending')">Pending Reviews</button>
+    <button class="tab" onclick="switchTab('completed')">My Reviews</button>
+    <button class="tab" onclick="switchTab('stats')">Statistics</button>
+  </div>
+
+  <!-- Pending Reviews Tab -->
+  <div class="tab-content active" id="pendingTab">
+    <div class="jobs-grid" id="pendingReviewsList">
+      <div class="loading">Loading completed jobs...</div>
+    </div>
+  </div>
+
+  <!-- My Reviews Tab -->
+  <div class="tab-content" id="completedTab">
+    <div class="reviews-list" id="myReviewsList">
+      <div class="loading">Loading your reviews...</div>
+    </div>
+  </div>
+
+  <!-- Statistics Tab -->
+  <div class="tab-content" id="statsTab">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalReviews">0</div>
+        <div class="stat-label">Total Reviews</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="averageRating">0.0</div>
+        <div class="stat-label">Average Rating</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="pendingCount">0</div>
+        <div class="stat-label">Pending Reviews</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="thisMonthReviews">0</div>
+        <div class="stat-label">This Month</div>
+      </div>
+    </div>
+    
+    <div style="background:#f8f9fa; padding:2rem; border-radius:12px; text-align:center;">
+      <h3 style="color:forestgreen; margin-top:0;">Your Review Impact</h3>
+      <p>Your honest reviews help other customers choose the right professionals and help our service providers improve their offerings.</p>
+      <p>Thank you for being part of the Fixxa community!</p>
+    </div>
+  </div>
+</main>
+
+<!-- Review Modal -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <h3>Write Your Review</h3>
+    
+    <div id="reviewJobDetails"></div>
+    
+    <!-- Overall Rating -->
+    <div class="overall-rating">
+      <h4>Overall Rating</h4>
+      <div class="rating-stars overall-stars" id="overallRating">
+        <span class="star" data-rating="1">★</span>
+        <span class="star" data-rating="2">★</span>
+        <span class="star" data-rating="3">★</span>
+        <span class="star" data-rating="4">★</span>
+        <span class="star" data-rating="5">★</span>
+      </div>
+      <div class="rating-label" id="overallLabel">Select a rating</div>
+    </div>
+
+    <!-- Detailed Ratings -->
+    <div class="rating-categories">
+      <div class="rating-category">
+        <h4>Quality of Work</h4>
+        <div class="rating-stars" data-category="quality">
+          <span class="star" data-rating="1">★</span>
+          <span class="star" data-rating="2">★</span>
+          <span class="star" data-rating="3">★</span>
+          <span class="star" data-rating="4">★</span>
+          <span class="star" data-rating="5">★</span>
+        </div>
+        <div class="rating-label" id="qualityLabel">Rate the quality</div>
+      </div>
+      
+      <div class="rating-category">
+        <h4>Punctuality</h4>
+        <div class="rating-stars" data-category="punctuality">
+          <span class="star" data-rating="1">★</span>
+          <span class="star" data-rating="2">★</span>
+          <span class="star" data-rating="3">★</span>
+          <span class="star" data-rating="4">★</span>
+          <span class="star" data-rating="5">★</span>
+        </div>
+        <div class="rating-label" id="punctualityLabel">Rate punctuality</div>
+      </div>
+      
+      <div class="rating-category">
+        <h4>Communication</h4>
+        <div class="rating-stars" data-category="communication">
+          <span class="star" data-rating="1">★</span>
+          <span class="star" data-rating="2">★</span>
+          <span class="star" data-rating="3">★</span>
+          <span class="star" data-rating="4">★</span>
+          <span class="star" data-rating="5">★</span>
+        </div>
+        <div class="rating-label" id="communicationLabel">Rate communication</div>
+      </div>
+      
+      <div class="rating-category">
+        <h4>Value for Money</h4>
+        <div class="rating-stars" data-category="value">
+          <span class="star" data-rating="1">★</span>
+          <span class="star" data-rating="2">★</span>
+          <span class="star" data-rating="3">★</span>
+          <span class="star" data-rating="4">★</span>
+          <span class="star" data-rating="5">★</span>
+        </div>
+        <div class="rating-label" id="valueLabel">Rate value for money</div>
+      </div>
+    </div>
+
+    <!-- Review Text -->
+    <div class="review-form">
+      <label for="reviewText">Share your experience</label>
+      <textarea id="reviewText" placeholder="Tell others about your experience with this professional. What went well? What could be improved?" maxlength="1000"></textarea>
+      <div class="char-counter">
+        <span id="charCount">0</span>/1000 characters
+      </div>
+    </div>
+
+    <!-- Photo Upload Section -->
+    <div class="photo-section">
+      <label>Upload photos of the completed work (Optional)</label>
+      <p style="font-size: 0.9rem; color: #666; margin: 0.5rem 0;">Help other customers see the quality of work by sharing before/after photos</p>
+      
+      <!-- Safety Instructions -->
+      <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.75rem; border-radius: 6px; margin: 0.5rem 0;">
+        <strong style="color: #856404;">Photo Safety Guidelines:</strong>
+        <ul style="margin: 0.5rem 0; padding-left: 1.5rem; font-size: 0.85rem; color: #856404;">
+          <li>Only photograph areas that were worked on</li>
+          <li>Avoid capturing personal documents, mail, or papers</li>
+          <li>Don't include faces of people without their consent</li>
+          <li>Avoid showing full addresses or location details</li>
+          <li>Don't photograph valuables, safes, or security systems</li>
+          <li>Remove sensitive information from frame before taking photos</li>
+        </ul>
+      </div>
+      
+      <div class="photo-upload-area" id="photoUploadArea">
+        <div class="upload-dropzone" id="uploadDropzone">
+          <div class="upload-icon">📷</div>
+          <p>Click to upload photos or drag and drop</p>
+          <p style="font-size: 0.8rem; color: #999;">Max 5 photos, 5MB each (JPG, PNG, WebP)</p>
+          <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
+        </div>
+      </div>
+      
+      <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="cancelReview">Cancel</button>
+      <button class="btn btn-primary" id="submitReview">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Review Modal -->
+<div class="modal-overlay" id="editReviewModal">
+  <div class="modal">
+    <h3>Edit Your Review</h3>
+    
+    <div id="editReviewDetails"></div>
+    
+    <div class="rating-section">
+      <label>Overall Rating</label>
+      <div class="rating-stars" id="editOverallRating">
+        <span class="star" data-rating="1" data-category="overall">★</span>
+        <span class="star" data-rating="2" data-category="overall">★</span>
+        <span class="star" data-rating="3" data-category="overall">★</span>
+        <span class="star" data-rating="4" data-category="overall">★</span>
+        <span class="star" data-rating="5" data-category="overall">★</span>
+      </div>
+    </div>
+    
+    <div class="rating-section">
+      <div class="rating-category">
+        <h4>Quality of Work</h4>
+        <div class="rating-stars" id="editQualityRating">
+          <span class="star" data-rating="1" data-category="quality">★</span>
+          <span class="star" data-rating="2" data-category="quality">★</span>
+          <span class="star" data-rating="3" data-category="quality">★</span>
+          <span class="star" data-rating="4" data-category="quality">★</span>
+          <span class="star" data-rating="5" data-category="quality">★</span>
+        </div>
+      </div>
+      
+      <div class="rating-category">
+        <h4>Punctuality</h4>
+        <div class="rating-stars" id="editPunctualityRating">
+          <span class="star" data-rating="1" data-category="punctuality">★</span>
+          <span class="star" data-rating="2" data-category="punctuality">★</span>
+          <span class="star" data-rating="3" data-category="punctuality">★</span>
+          <span class="star" data-rating="4" data-category="punctuality">★</span>
+          <span class="star" data-rating="5" data-category="punctuality">★</span>
+        </div>
+      </div>
+      
+      <div class="rating-category">
+        <h4>Communication</h4>
+        <div class="rating-stars" id="editCommunicationRating">
+          <span class="star" data-rating="1" data-category="communication">★</span>
+          <span class="star" data-rating="2" data-category="communication">★</span>
+          <span class="star" data-rating="3" data-category="communication">★</span>
+          <span class="star" data-rating="4" data-category="communication">★</span>
+          <span class="star" data-rating="5" data-category="communication">★</span>
+        </div>
+      </div>
+      
+      <div class="rating-category">
+        <h4>Value for Money</h4>
+        <div class="rating-stars" id="editValueRating">
+          <span class="star" data-rating="1" data-category="value">★</span>
+          <span class="star" data-rating="2" data-category="value">★</span>
+          <span class="star" data-rating="3" data-category="value">★</span>
+          <span class="star" data-rating="4" data-category="value">★</span>
+          <span class="star" data-rating="5" data-category="value">★</span>
+        </div>
+      </div>
+    </div>
+    
+    <div>
+      <label>Review Text</label>
+      <textarea id="editReviewText" rows="4" maxlength="1000"></textarea>
+      <div class="char-counter">
+        <span id="editCharCount">0</span>/1000 characters
+      </div>
+    </div>
+    
+    <div class="edit-photo-section">
+      <label>Photos</label>
+      
+      <!-- Safety Instructions for Edit Modal -->
+      <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.75rem; border-radius: 6px; margin: 0.5rem 0; font-size: 0.85rem;">
+        <strong style="color: #856404;">Safety reminder:</strong> Only upload photos of work areas, avoid personal documents, faces, addresses, and valuables.
+      </div>
+      
+      <div class="edit-photos-grid" id="editPhotosGrid"></div>
+      <input type="file" id="editPhotoInput" accept="image/*" style="display:none;" />
+      <button class="add-photo-btn" id="addPhotoBtn">Add Photo</button>
+      <p style="font-size:0.8rem; color:#666; margin-top:0.5rem;">Max 5 photos, 5MB each</p>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="editReviewCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveEditedReviewBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Viewer Modal -->
+<div class="modal-overlay" id="photoViewModal">
+  <div class="modal">
+    <img id="photoViewImage" src="" alt="Review Photo" style="width: 100%; height: auto; max-height: 80vh; object-fit: contain; border-radius: 8px;" />
+    <div id="photoViewCaption" style="text-align: center; margin-top: 1rem; color: #666; font-style: italic;"></div>
+    <div style="margin-top:1rem; text-align:center;">
+      <button class="btn btn-secondary" id="photoViewCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
+<script>
+let currentUser = null;
+let currentBookingId = null;
+let currentEditReview = null;
+let uploadedPhotos = [];
+let ratings = {
+  overall: 0,
+  quality: 0,
+  punctuality: 0,
+  communication: 0,
+  value: 0
+};
+let editRatings = {
+  overall: 0,
+  quality: 0,
+  punctuality: 0,
+  communication: 0,
+  value: 0
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await initializePage();
+  await loadPendingReviews();
+  await loadMyReviews();
+  updateStatistics();
+  setupEventListeners();
+  setupPhotoUpload();
+  setupEditRatingSystem();
+});
+
+async function initializePage() {
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+    if (!data.authenticated) {
+      window.location.href = 'login.html?redirect=' + encodeURIComponent('reviews.html');
+      return;
+    }
+    currentUser = data.user;
+    document.getElementById('reviewsMain').style.display = 'block';
+    
+    // Setup navigation
+    document.getElementById('loginLink').style.display = 'none';
+    document.getElementById('userMenu').style.display = 'inline-block';
+    document.getElementById('userBtn').textContent = currentUser.name + ' ▼';
+  } catch (e) {
+    console.error('Auth check failed:', e);
+    window.location.href = 'login.html';
+  }
+}
+
+function setupEventListeners() {
+  // User menu toggle
+  document.getElementById('userBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  window.addEventListener('click', (e) => {
+    if (!document.getElementById('userMenu').contains(e.target)) {
+      document.getElementById('userDropdown').style.display = 'none';
+    }
+  });
+
+  // Logout
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await fetch('/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = 'login.html';
+  });
+
+  // Rating system
+  setupRatingSystem();
+
+  // Review form
+  document.getElementById('reviewText').addEventListener('input', updateCharacterCount);
+  document.getElementById('cancelReview').addEventListener('click', closeReviewModal);
+  document.getElementById('submitReview').addEventListener('click', submitReview);
+
+  // Edit review
+  document.getElementById('editReviewText').addEventListener('input', updateEditCharCount);
+  document.getElementById('editReviewCancelBtn').addEventListener('click', () => {
+    document.getElementById('editReviewModal').style.display = 'none';
+    currentEditReview = null;
+  });
+  document.getElementById('saveEditedReviewBtn').addEventListener('click', saveEditedReview);
+
+  // Photo management
+  document.getElementById('addPhotoBtn').addEventListener('click', () => {
+    document.getElementById('editPhotoInput').click();
+  });
+  
+  document.getElementById('editPhotoInput').addEventListener('change', handleEditPhotoUpload);
+
+  // Close modal when clicking outside
+  document.getElementById('reviewModal').addEventListener('click', (e) => {
+    if (e.target.id === 'reviewModal') {
+      closeReviewModal();
+    }
+  });
+  
+  document.getElementById('editReviewModal').addEventListener('click', (e) => {
+    if (e.target.id === 'editReviewModal') {
+      document.getElementById('editReviewModal').style.display = 'none';
+    }
+  });
+  
+  document.getElementById('photoViewModal').addEventListener('click', (e) => {
+    if (e.target.id === 'photoViewModal') {
+      document.getElementById('photoViewModal').style.display = 'none';
+    }
+  });
+  
+  document.getElementById('photoViewCloseBtn').addEventListener('click', () => {
+    document.getElementById('photoViewModal').style.display = 'none';
+  });
+}
+
+function setupPhotoUpload() {
+  const dropzone = document.getElementById('uploadDropzone');
+  const photoInput = document.getElementById('photoInput');
+
+  // Click to upload
+  dropzone.addEventListener('click', () => {
+    photoInput.click();
+  });
+
+  // File input change
+  photoInput.addEventListener('change', (e) => {
+    handleFileSelection(e.target.files);
+  });
+
+  // Drag and drop
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+
+  dropzone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    handleFileSelection(e.dataTransfer.files);
+  });
+}
+
+function handleFileSelection(files) {
+  const maxFiles = 5;
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+  if (uploadedPhotos.length + files.length > maxFiles) {
+    showNotification('Maximum ' + maxFiles + ' photos allowed', 'error');
+    return;
+  }
+
+  Array.from(files).forEach(file => {
+    if (!allowedTypes.includes(file.type)) {
+      showNotification(file.name + ': Only JPG, PNG, and WebP files are allowed', 'error');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      showNotification(file.name + ': File size must be less than 5MB', 'error');
+      return;
+    }
+
+    uploadFile(file);
+  });
+}
+
+async function uploadFile(file) {
+  const photoId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  
+  const previewItem = createPhotoPreview(file, photoId);
+  document.getElementById('photoPreviewGrid').appendChild(previewItem);
+
+  try {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const progressElement = previewItem.querySelector('.photo-upload-progress');
+    if (progressElement) progressElement.textContent = 'Uploading...';
+
+    const response = await fetch('/reviews/upload-photo', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      uploadedPhotos.push({
+        id: photoId,
+        url: data.url,
+        filename: file.name,
+        size: file.size
+      });
+
+      if (progressElement) {
+        progressElement.textContent = 'Uploaded';
+        setTimeout(() => {
+          progressElement.style.display = 'none';
+        }, 2000);
+      }
+    } else {
+      throw new Error(data.error || 'Upload failed');
+    }
+  } catch (error) {
+    console.error('Photo upload error:', error);
+    showNotification('Failed to upload ' + file.name, 'error');
+    
+    const failedPreview = document.querySelector('[data-photo-id="' + photoId + '"]');
+    if (failedPreview) {
+      failedPreview.remove();
+    }
+  }
+}
+
+function createPhotoPreview(file, photoId) {
+  const previewItem = document.createElement('div');
+  previewItem.className = 'photo-preview-item';
+  previewItem.setAttribute('data-photo-id', photoId);
+
+  const img = document.createElement('img');
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'photo-remove-btn';
+  removeBtn.innerHTML = '×';
+  removeBtn.onclick = () => removePhoto(photoId);
+
+  const progressDiv = document.createElement('div');
+  progressDiv.className = 'photo-upload-progress';
+  progressDiv.textContent = 'Preparing...';
+
+  previewItem.appendChild(img);
+  previewItem.appendChild(removeBtn);
+  previewItem.appendChild(progressDiv);
+
+  return previewItem;
+}
+
+function removePhoto(photoId) {
+  uploadedPhotos = uploadedPhotos.filter(photo => photo.id !== photoId);
+  
+  const previewElement = document.querySelector('[data-photo-id="' + photoId + '"]');
+  if (previewElement) {
+    previewElement.remove();
+  }
+}
+
+function setupRatingSystem() {
+  document.querySelectorAll('#reviewModal .rating-stars').forEach(container => {
+    const stars = container.querySelectorAll('.star');
+    const category = container.dataset.category || 'overall';
+    
+    stars.forEach(star => {
+      star.addEventListener('click', () => {
+        const rating = parseInt(star.dataset.rating);
+        setRating(category, rating);
+      });
+      
+      star.addEventListener('mouseenter', () => {
+        const rating = parseInt(star.dataset.rating);
+        highlightStars(container, rating);
+      });
+    });
+    
+    container.addEventListener('mouseleave', () => {
+      const category = container.dataset.category || 'overall';
+      highlightStars(container, ratings[category]);
+    });
+  });
+}
+
+function setupEditRatingSystem() {
+  document.querySelectorAll('#editReviewModal .rating-stars').forEach(container => {
+    const stars = container.querySelectorAll('.star');
+    
+    stars.forEach(star => {
+      star.addEventListener('click', () => {
+        const rating = parseInt(star.dataset.rating);
+        const category = star.dataset.category;
+        setEditRating(category, rating);
+      });
+      
+      star.addEventListener('mouseenter', () => {
+        const rating = parseInt(star.dataset.rating);
+        const category = star.dataset.category;
+        highlightEditStars(category, rating);
+      });
+    });
+    
+    container.addEventListener('mouseleave', () => {
+      const category = stars[0].dataset.category;
+      highlightEditStars(category, editRatings[category]);
+    });
+  });
+}
+
+function setRating(category, rating) {
+  ratings[category] = rating;
+  const container = document.querySelector('[data-category="' + category + '"], #overallRating');
+  highlightStars(container, rating);
+  updateRatingLabel(category, rating);
+}
+
+function setEditRating(category, rating) {
+  editRatings[category] = rating;
+  highlightEditStars(category, rating);
+}
+
+function highlightStars(container, rating) {
+  const stars = container.querySelectorAll('.star');
+  stars.forEach((star, index) => {
+    star.classList.toggle('active', index < rating);
+  });
+}
+
+function highlightEditStars(category, rating) {
+  const containerId = 'edit' + category.charAt(0).toUpperCase() + category.slice(1) + 'Rating';
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  const stars = container.querySelectorAll('.star');
+  stars.forEach((star, index) => {
+    star.classList.toggle('active', index < rating);
+  });
+}
+
+function updateRatingLabel(category, rating) {
+  const labels = {
+    1: 'Poor',
+    2: 'Fair', 
+    3: 'Good',
+    4: 'Very Good',
+    5: 'Excellent'
+  };
+  
+  const labelElement = document.getElementById(category + 'Label');
+  if (labelElement) {
+    labelElement.textContent = rating > 0 ? labels[rating] : 'Rate the ' + category;
+  }
+}
+
+function updateCharacterCount() {
+  const textarea = document.getElementById('reviewText');
+  const counter = document.getElementById('charCount');
+  counter.textContent = textarea.value.length;
+}
+
+function updateEditCharCount() {
+  const textarea = document.getElementById('editReviewText');
+  const counter = document.getElementById('editCharCount');
+  counter.textContent = textarea.value.length;
+}
+
+async function loadPendingReviews() {
+  try {
+    const res = await fetch('/bookings', { credentials: 'include' });
+    const data = await res.json();
+    
+    if (data.success && Array.isArray(data.bookings)) {
+      const completedJobs = data.bookings.filter(booking => 
+        booking.status === 'Completed' && !booking.has_review
+      );
+      
+      displayPendingReviews(completedJobs);
+    }
+  } catch (e) {
+    console.error('Failed to load pending reviews:', e);
+    showError('Failed to load completed jobs');
+  }
+}
+
+function displayPendingReviews(jobs) {
+  const container = document.getElementById('pendingReviewsList');
+  
+  if (jobs.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No pending reviews</p><p>Complete some jobs first, then you can leave reviews!</p><a href="index.html">Find Services</a></div>';
+    return;
+  }
+  
+  container.innerHTML = jobs.map(job => 
+    '<div class="job-card">' +
+      '<div class="job-header">' +
+        '<h3 class="job-title">' + (job.professional_service || 'Service') + '</h3>' +
+        '<div class="job-date">' + new Date(job.booking_date).toLocaleDateString() + '</div>' +
+      '</div>' +
+      '<div class="job-details">' +
+        '<p><strong>Professional:</strong> ' + (job.professional_name || 'Professional') + '</p>' +
+        '<p><strong>Amount:</strong> ' + (job.booking_amount ? job.booking_amount : 'Amount TBD') + '</p>' +
+        (job.note ? '<p><strong>Note:</strong> ' + job.note + '</p>' : '') +
+      '</div>' +
+      '<div class="review-status">' +
+        '<span class="status-badge status-pending">Review Pending</span>' +
+      '</div>' +
+      '<div class="action-buttons">' +
+        '<button class="btn btn-primary" onclick="openReviewModal(' + job.id + ')">Write Review</button>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+async function loadMyReviews() {
+  try {
+    const res = await fetch('/reviews/client', { credentials: 'include' });
+    const data = await res.json();
+    
+    if (data.success && Array.isArray(data.reviews)) {
+      displayMyReviews(data.reviews);
+    } else {
+      displayMyReviews([]);
+    }
+  } catch (e) {
+    console.error('Failed to load reviews:', e);
+    displayMyReviews([]);
+  }
+}
+
+function displayMyReviews(reviews) {
+  const container = document.getElementById('myReviewsList');
+  
+  if (reviews.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">⭐</div><p>No reviews yet</p><p>Your reviews will appear here after you write them</p></div>';
+    return;
+  }
+  
+  container.innerHTML = reviews.map(review => {
+    const photosHtml = review.photos && review.photos.length > 0 ? 
+      '<div class="review-photos"><strong>Photos:</strong><div class="review-photos-grid">' +
+      review.photos.map(photo => '<img src="' + photo + '" class="review-photo" onclick="viewPhoto(\'' + photo + '\', \'Work completed by ' + review.professional_name + '\')" alt="Review photo" />').join('') +
+      '</div></div>' : '';
+
+    return '<div class="review-card">' +
+      '<div class="review-card-header">' +
+        '<div>' +
+          '<div class="review-professional">' + review.professional_name + '</div>' +
+          '<div class="review-service">' + review.service + '</div>' +
+        '</div>' +
+        '<div style="text-align: right;">' +
+          '<div class="review-card-rating">' +
+            '<span class="review-stars">' + '★'.repeat(review.overall_rating) + '</span>' +
+            '<span>(' + review.overall_rating + '/5)</span>' +
+          '</div>' +
+          '<div style="font-size: 0.8rem; color: #666;">' +
+            new Date(review.created_at).toLocaleDateString() +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (review.review_text ? '<div class="review-card-text">"' + review.review_text + '"</div>' : '') +
+      photosHtml +
+      '<div class="review-actions">' +
+        '<button class="btn btn-primary" onclick="editReview(' + review.id + ')">Edit Review</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function updateStatistics() {
+  try {
+    const [reviewsRes, bookingsRes] = await Promise.all([
+      fetch('/reviews/client', { credentials: 'include' }),
+      fetch('/bookings', { credentials: 'include' })
+    ]);
+    
+    const reviewsData = await reviewsRes.json();
+    const bookingsData = await bookingsRes.json();
+    
+    const reviews = reviewsData.success ? reviewsData.reviews : [];
+    const bookings = bookingsData.success ? bookingsData.bookings : [];
+    
+    const totalReviews = reviews.length;
+    document.getElementById('totalReviews').textContent = totalReviews;
+    
+    if (totalReviews > 0) {
+      const avgRating = reviews.reduce((sum, r) => sum + (r.overall_rating || 0), 0) / totalReviews;
+      document.getElementById('averageRating').textContent = avgRating.toFixed(1);
+    } else {
+      document.getElementById('averageRating').textContent = '0.0';
+    }
+    
+    const pendingReviews = bookings.filter(b => 
+      b.status === 'Completed' && !b.has_review
+    ).length;
+    document.getElementById('pendingCount').textContent = pendingReviews;
+    
+    const now = new Date();
+    const thisMonthReviews = reviews.filter(r => {
+      const reviewDate = new Date(r.created_at);
+      return reviewDate.getMonth() === now.getMonth() && 
+             reviewDate.getFullYear() === now.getFullYear();
+    }).length;
+    document.getElementById('thisMonthReviews').textContent = thisMonthReviews;
+    
+  } catch (e) {
+    console.error('Failed to update statistics:', e);
+    document.getElementById('totalReviews').textContent = '0';
+    document.getElementById('averageRating').textContent = '0.0';
+    document.getElementById('pendingCount').textContent = '0';
+    document.getElementById('thisMonthReviews').textContent = '0';
+  }
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  document.getElementById(tabName + 'Tab').classList.add('active');
+  
+  if (tabName === 'stats') {
+    updateStatistics();
+  }
+}
+
+async function openReviewModal(bookingId) {
+  currentBookingId = bookingId;
+  
+  ratings = { overall: 0, quality: 0, punctuality: 0, communication: 0, value: 0 };
+  uploadedPhotos = [];
+  document.getElementById('reviewText').value = '';
+  document.getElementById('photoPreviewGrid').innerHTML = '';
+  updateCharacterCount();
+  
+  document.querySelectorAll('#reviewModal .rating-stars').forEach(container => {
+    highlightStars(container, 0);
+  });
+  document.querySelectorAll('#reviewModal .rating-label').forEach(label => {
+    const category = label.id.replace('Label', '');
+    label.textContent = category === 'overall' ? 'Select a rating' : 'Rate the ' + category;
+  });
+  
+  try {
+    const res = await fetch('/bookings', { credentials: 'include' });
+    const data = await res.json();
+    const booking = data.bookings.find(b => b.id === bookingId);
+    
+    if (booking) {
+      const amount = booking.booking_amount ? booking.booking_amount : 'Amount TBD';
+      document.getElementById('reviewJobDetails').innerHTML = 
+        '<div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">' +
+          '<h4 style="margin: 0; color: forestgreen;">' + booking.professional_service + '</h4>' +
+          '<p style="margin: 0.25rem 0;"><strong>Professional:</strong> ' + booking.professional_name + '</p>' +
+          '<p style="margin: 0.25rem 0;"><strong>Date:</strong> ' + new Date(booking.booking_date).toLocaleDateString() + '</p>' +
+          '<p style="margin: 0.25rem 0;"><strong>Amount:</strong> ' + amount + '</p>' +
+        '</div>';
+    }
+  } catch (e) {
+    console.error('Failed to load booking details:', e);
+  }
+  
+  document.getElementById('reviewModal').style.display = 'flex';
+}
+
+function closeReviewModal() {
+  document.getElementById('reviewModal').style.display = 'none';
+  currentBookingId = null;
+  uploadedPhotos = [];
+  document.getElementById('photoPreviewGrid').innerHTML = '';
+}
+
+async function submitReview() {
+  if (ratings.overall === 0) {
+    showNotification('Please provide an overall rating', 'error');
+    return;
+  }
+  
+  const reviewText = document.getElementById('reviewText').value.trim();
+  if (reviewText.length < 10) {
+    showNotification('Please write at least 10 characters in your review', 'error');
+    return;
+  }
+  
+  try {
+    const reviewData = {
+      booking_id: currentBookingId,
+      overall_rating: ratings.overall,
+      quality_rating: ratings.quality,
+      punctuality_rating: ratings.punctuality,
+      communication_rating: ratings.communication,
+      value_rating: ratings.value,
+      review_text: reviewText,
+      photos: uploadedPhotos.map(photo => photo.url)
+    };
+    
+    const res = await fetch('/reviews/client', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reviewData)
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      localStorage.setItem('reviewsUpdated', Date.now());
+      
+      showNotification('Review submitted successfully! Thank you for sharing your experience.', 'success');
+      closeReviewModal();
+      await loadPendingReviews();
+      await loadMyReviews();
+      updateStatistics();
+    } else {
+      showNotification(data.error || 'Failed to submit review', 'error');
+    }
+  } catch (e) {
+    console.error('Submit review error:', e);
+    showNotification('Error submitting review', 'error');
+  }
+}
+
+window.editReview = async function(reviewId) {
+  try {
+    const res = await fetch('/reviews/client', { credentials: 'include' });
+    const data = await res.json();
+    
+    if (!data.success) {
+      showNotification('Failed to load review', 'error');
+      return;
+    }
+    
+    const review = data.reviews.find(r => r.id === reviewId);
+    if (!review) {
+      showNotification('Review not found', 'error');
+      return;
+    }
+    
+    currentEditReview = review;
+    editRatings = {
+      overall: review.overall_rating || 0,
+      quality: review.quality_rating || 0,
+      punctuality: review.punctuality_rating || 0,
+      communication: review.communication_rating || 0,
+      value: review.value_rating || 0
+    };
+    
+    document.getElementById('editReviewDetails').innerHTML = `
+      <div style="background:#f8f9fa; padding:1rem; border-radius:6px; margin-bottom:1rem;">
+        <strong>${review.professional_name}</strong> - ${review.service}
+      </div>
+    `;
+    
+    document.getElementById('editReviewText').value = review.review_text || '';
+    updateEditCharCount();
+    
+    setEditRating('overall', editRatings.overall);
+    setEditRating('quality', editRatings.quality);
+    setEditRating('punctuality', editRatings.punctuality);
+    setEditRating('communication', editRatings.communication);
+    setEditRating('value', editRatings.value);
+    
+    displayEditPhotos(review.photos || []);
+    
+    document.getElementById('editReviewModal').style.display = 'flex';
+    
+  } catch (e) {
+    console.error('Open edit review error:', e);
+    showNotification('Error loading review', 'error');
+  }
+};
+
+function displayEditPhotos(photos) {
+  const grid = document.getElementById('editPhotosGrid');
+  grid.innerHTML = photos.map(photo => `
+    <div class="edit-photo-item">
+      <img src="${photo}" alt="Review photo" />
+      <button class="photo-remove-btn" onclick="removeEditPhoto('${photo}')" title="Remove photo">×</button>
+    </div>
+  `).join('');
+}
+
+window.removeEditPhoto = async function(photoUrl) {
+  if (!currentEditReview || !confirm('Remove this photo?')) return;
+  
+  try {
+    const res = await fetch(`/reviews/${currentEditReview.id}/photos`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoUrl })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      showNotification('Photo removed', 'success');
+      displayEditPhotos(data.photos);
+      currentEditReview.photos = data.photos;
+    } else {
+      showNotification(data.error || 'Failed to remove photo', 'error');
+    }
+  } catch (e) {
+    console.error('Remove photo error:', e);
+    showNotification('Error removing photo', 'error');
+  }
+};
+
+async function handleEditPhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  if (!currentEditReview) {
+    showNotification('No review selected', 'error');
+    return;
+  }
+  
+  const currentPhotoCount = currentEditReview.photos ? currentEditReview.photos.length : 0;
+  if (currentPhotoCount >= 5) {
+    showNotification('Maximum 5 photos allowed', 'error');
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) {
+    showNotification('File size must be less than 5MB', 'error');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('photo', file);
+  
+  try {
+    showNotification('Uploading...', 'info', 2000);
+    
+    const res = await fetch(`/reviews/${currentEditReview.id}/upload-photo`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      showNotification('Photo added', 'success');
+      displayEditPhotos(data.allPhotos);
+      currentEditReview.photos = data.allPhotos;
+    } else {
+      showNotification(data.error || 'Upload failed', 'error');
+    }
+  } catch (e) {
+    console.error('Upload photo error:', e);
+    showNotification('Error uploading photo', 'error');
+  }
+  
+  e.target.value = '';
+}
+
+async function saveEditedReview() {
+  if (!currentEditReview) return;
+  
+  if (editRatings.overall === 0) {
+    showNotification('Please provide an overall rating', 'error');
+    return;
+  }
+  
+  const reviewText = document.getElementById('editReviewText').value.trim();
+  
+  try {
+    const res = await fetch(`/reviews/${currentEditReview.id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        overall_rating: editRatings.overall,
+        quality_rating: editRatings.quality,
+        punctuality_rating: editRatings.punctuality,
+        communication_rating: editRatings.communication,
+        value_rating: editRatings.value,
+        review_text: reviewText
+      })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('reviewsUpdated', Date.now());
+      showNotification('Review updated successfully!', 'success');
+      document.getElementById('editReviewModal').style.display = 'none';
+      await loadMyReviews();
+      updateStatistics();
+    } else {
+      showNotification(data.error || 'Failed to update review', 'error');
+    }
+  } catch (e) {
+    console.error('Update review error:', e);
+    showNotification('Error updating review', 'error');
+  }
+}
+
+window.viewPhoto = function(photoUrl, caption) {
+  document.getElementById('photoViewImage').src = photoUrl;
+  document.getElementById('photoViewCaption').textContent = caption || '';
+  document.getElementById('photoViewModal').style.display = 'flex';
+};
+
+function showNotification(message, type) {
+  const container = document.getElementById('notificationContainer');
+  const notification = document.createElement('div');
+  notification.className = 'notification ' + (type || 'success');
+  notification.textContent = message;
+  
+  container.appendChild(notification);
+  
+  setTimeout(() => notification.classList.add('show'), 100);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      if (container.contains(notification)) {
+        container.removeChild(notification);
+      }
+    }, 300);
+  }, 5000);
+}
+
+function showError(message) {
+  showNotification(message, 'error');
+}
+
+window.openReviewModal = openReviewModal;
+
+setInterval(async () => {
+  if (currentUser && document.visibilityState === 'visible') {
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab && activeTab.textContent.includes('Pending')) {
+      await loadPendingReviews();
+    } else if (activeTab && activeTab.textContent.includes('My Reviews')) {
+      await loadMyReviews();
+    }
+  }
+}, 60000);
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'reviewsUpdated') {
+    loadMyReviews();
+    loadPendingReviews();
+    updateStatistics();
+  }
+});
+</script>
+
+</body>
+</html>

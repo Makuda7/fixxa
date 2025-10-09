@@ -1,0 +1,99 @@
+const rateLimit = require('express-rate-limit');
+
+// Global rate limiter - applies to all requests
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  message: {
+    success: false,
+    error: 'Too many requests from this IP, please try again later.'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Skip rate limiting for health checks
+  skip: (req) => req.path === '/health'
+});
+
+// Auth rate limiter - stricter for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 auth attempts per windowMs
+  message: {
+    success: false,
+    error: 'Too many authentication attempts, please try again after 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false, // Count all requests, not just failed ones
+  skipFailedRequests: false
+});
+
+// API rate limiter - for general API endpoints
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // Limit each IP to 60 requests per minute
+  message: {
+    success: false,
+    error: 'Too many API requests, please slow down.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Booking rate limiter - prevent booking spam
+const bookingLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit each IP to 10 bookings per hour
+  message: {
+    success: false,
+    error: 'Too many booking requests, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Message rate limiter - prevent spam messages
+const messageLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 20, // Limit each IP to 20 messages per minute
+  message: {
+    success: false,
+    error: 'Too many messages sent, please slow down.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// File upload rate limiter
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 uploads per 15 minutes
+  message: {
+    success: false,
+    error: 'Too many file uploads, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Review rate limiter - prevent review spam
+const reviewLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Limit each IP to 5 reviews per hour
+  message: {
+    success: false,
+    error: 'Too many reviews submitted, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+module.exports = {
+  globalLimiter,
+  authLimiter,
+  apiLimiter,
+  bookingLimiter,
+  messageLimiter,
+  uploadLimiter,
+  reviewLimiter
+};

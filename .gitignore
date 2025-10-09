@@ -1,0 +1,28 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# OS files
+.DS_Store
+
+# Uploads (keep structure, ignore files)
+uploads/profile-pics/*
+!uploads/profile-pics/.gitkeep
+uploads/worker-photos/*
+!uploads/worker-photos/.gitkeep
+
+# IDE
+.vscode/
+.idea/

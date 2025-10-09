@@ -1,0 +1,41 @@
+{
+  "name": "fixxa",
+  "version": "1.0.0",
+  "description": "",
+  "main": "count-submissions.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "csurf": "^1.11.0",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.6",
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7",
+    "winston": "^3.17.0",
+    "xss": "^1.0.15"
+  },
+  "devDependencies": {
+    "axios": "^1.12.2"
+  }
+}

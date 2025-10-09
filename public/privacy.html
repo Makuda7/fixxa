@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy - Fixxa</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+/* --- Header --- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+.header .logo img { max-width: 120px; }
+.nav-links { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.nav-links a { text-decoration: none; color: #333; }
+.nav-links a:hover { color: forestgreen; }
+
+/* --- User Menu --- */
+.user-menu { display: none; position: relative; }
+.user-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0.5rem 1rem; }
+.user-btn:hover { color: forestgreen; }
+.user-dropdown { display: none; position: absolute; right: 0; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 150px; z-index: 10; }
+.user-dropdown a { display: block; padding: 8px; text-decoration: none; color: #333; }
+.user-dropdown a:hover { background: #f0f0f0; }
+
+/* --- Main Container --- */
+.container {
+  max-width: 900px;
+  margin: 2rem auto;
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  border: 2px solid rgb(147,126,108);
+  box-shadow: 0 4px 20px rgba(147,126,108,0.2);
+}
+h1 { color: forestgreen; text-align: center; margin-bottom: 2rem; }
+p { line-height: 1.7; margin-bottom: 1.2rem; }
+ol li { margin-bottom: 1rem; }
+a.back-link { display: inline-block; margin-top: 2rem; color: forestgreen; font-weight: 500; text-decoration: underline; }
+a.back-link:hover { color: #228b22; }
+
+/* --- Responsive --- */
+@media (max-width:768px) { .container { padding: 1.5rem; margin: 1.5rem; } }
+@media (max-width:480px) { h1 { font-size: 1.8rem; } }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo"></a>
+  </div>
+
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+
+    <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Privacy Policy Content -->
+<div class="container">
+  <h1>Privacy Policy</h1>
+  <p>At Fixxa, your privacy is important to us. This policy explains how we collect, use, and protect your information.</p>
+  <ol>
+    <li>We collect personal information such as name, email, and contact details when you register.</li>
+    <li>Your data is used only to connect clients with professionals and improve our services.</li>
+    <li>We do not sell, rent, or trade your personal information to third parties.</li>
+    <li>All user data is stored securely. We implement industry-standard encryption and safety measures.</li>
+    <li>Users have the right to request access, correction, or deletion of their personal data.</li>
+    <li>Fixxa may update this policy from time to time. Continued use constitutes acceptance of updates.</li>
+  </ol>
+  <a href="register.html" class="back-link">← Back to Register</a>
+</div>
+
+<!-- Footer -->
+<footer class="footer" style="padding:2rem;background:#f5f5f5;text-align:center;">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+
+<script>
+async function checkLogin() {
+  const loginLink = document.getElementById('loginLink');
+  const userMenu = document.getElementById('userMenu');
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.authenticated) {
+      loginLink.style.display = 'none';
+      userMenu.style.display = 'inline-block';
+      userBtn.textContent = data.user.name + ' ▼';
+    } else {
+      loginLink.style.display = 'inline-block';
+      userMenu.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Login check failed', err);
+  }
+
+  if(userBtn){
+    userBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      userDropdown.style.display = userDropdown.style.display==='block'?'none':'block';
+    });
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if(logoutBtn){
+    logoutBtn.addEventListener('click', async e => {
+      e.preventDefault();
+      const res = await fetch('/logout', { method:'POST', credentials:'include' });
+      const data = await res.json();
+      if(data.success) location.reload();
+    });
+  }
+
+  document.addEventListener('click', e => {
+    if(userDropdown && !userDropdown.contains(e.target) && userBtn && !userBtn.contains(e.target)){
+      userDropdown.style.display='none';
+    }
+  });
+
+  document.addEventListener('keydown', e => { if(e.key==='Escape') userDropdown.style.display='none'; });
+}
+
+document.addEventListener('DOMContentLoaded', checkLogin);
+</script>
+
+</body>
+</html>

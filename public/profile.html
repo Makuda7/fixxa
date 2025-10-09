@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Worker Profile - Fixxa</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  /* --- Header & nav --- */
+  .header { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:#fff; border-bottom:1px solid #ddd; }
+  .header .logo img { max-width:120px; }
+  .nav-links { display:flex; align-items:center; gap:1rem; }
+  .nav-links a { text-decoration:none; color:#333; }
+  .nav-links a:hover { color:forestgreen; }
+
+  /* --- User menu --- */
+  .user-menu { display:none; position:relative; }
+  .user-btn { background:none; border:none; cursor:pointer; font-size:16px; padding:0.5rem 1rem; }
+  .user-btn:hover { color:forestgreen; }
+  .user-dropdown { display:none; position:absolute; right:0; background:white; border:1px solid #ccc; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); min-width:150px; z-index:10; }
+  .user-dropdown a, .user-dropdown button { display:block; padding:8px; text-decoration:none; color:#333; background:white; border:none; width:100%; text-align:left; cursor:pointer; }
+  .user-dropdown a:hover, .user-dropdown button:hover { background:#f0f0f0; }
+
+  /* --- Worker Profile Card --- */
+  .worker-card { max-width:400px; background:white; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,0.08); padding:2rem 1.5rem; text-align:center; margin:2rem auto; }
+  .worker-card img { width:180px; height:180px; border-radius:50%; object-fit:cover; margin:0 auto; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+  .worker-card h3 { 
+    margin:0.5rem 0; 
+    color:#333;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0.5rem;
+    flex-wrap:wrap;
+  }
+  .worker-card p { margin:0.3rem 0; color:#333; }
+  .area { color:forestgreen; font-weight:600; }
+  .profile-bio { background:#f8f9fa; padding:1rem; border-radius:8px; text-align:left; color:#444; margin-top:1rem; }
+  .profile-bio h4 { margin-bottom:0.5rem; color:forestgreen; }
+  .btn-primary { margin-top:1rem; background:forestgreen; color:white; border:none; padding:12px 28px; border-radius:8px; font-size:1.1rem; cursor:pointer; transition:background 0.3s ease; width:100%; }
+  .verified-badge {
+    background: #28a745;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* --- Work Gallery Section --- */
+  .work-gallery { margin-top:2rem; text-align:left; }
+  .work-gallery h4 { margin-bottom:0.5rem; color:forestgreen; display:flex; align-items:center; justify-content:space-between; }
+  .photo-count-badge { background:forestgreen; color:white; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:600; }
+  .gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:0.5rem; margin-top:1rem; }
+  .gallery-item { position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid #e0e0e0; transition:all 0.2s; }
+  .gallery-item:hover { border-color:forestgreen; transform:scale(1.02); }
+  .gallery-item img { width:100%; height:100%; object-fit:cover; }
+  .gallery-date { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:white; font-size:0.7rem; padding:4px; text-align:center; }
+  .no-photos { text-align:center; padding:2rem; color:#999; background:#f9f9f9; border-radius:8px; }
+  .loading-gallery { text-align:center; padding:2rem; color:#666; }
+
+  /* --- Reviews Section Enhanced --- */
+  .worker-reviews { margin-top:2rem; text-align:left; }
+  .worker-reviews h4 { margin-bottom:0.5rem; color:forestgreen; display:flex; align-items:center; justify-content:space-between; }
+  .reviews-refresh { background:none; border:1px solid forestgreen; color:forestgreen; padding:4px 8px; border-radius:4px; font-size:0.8rem; cursor:pointer; }
+  .reviews-refresh:hover { background:forestgreen; color:white; }
+  .reviews-last-updated { font-size:0.7rem; color:#666; margin-top:0.25rem; }
+  
+  .review-item { background:#f8f9fa; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid forestgreen; }
+  .review-header { display:flex; justify-content:space-between; align-items:start; margin-bottom:0.5rem; }
+  .review-author { font-weight:600; color:#333; }
+  .review-date { font-size:0.8rem; color:#666; }
+  .review-rating { margin:0.25rem 0; }
+  .review-text { color:#555; line-height:1.4; }
+  .review-categories { display:flex; gap:1rem; margin:0.5rem 0; font-size:0.8rem; color:#666; }
+  .review-category { display:flex; align-items:center; gap:0.25rem; }
+
+  /* --- Enhanced Reviews Modal --- */
+  .reviews-modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center; }
+  .reviews-modal { background:#fff; border-radius:12px; max-width:800px; width:90%; max-height:80vh; overflow-y:auto; padding:2rem; }
+  .reviews-modal h3 { margin-top:0; color:forestgreen; text-align:center; }
+  .reviews-modal-close { float:right; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666; }
+  .reviews-modal-close:hover { color:#333; }
+  
+  /* --- Review Summary --- */
+  .reviews-summary { background:#f8f9fa; padding:1.5rem; border-radius:8px; margin-bottom:2rem; text-align:center; }
+  .reviews-summary-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:1rem; margin-top:1rem; }
+  .reviews-stat { background:white; padding:1rem; border-radius:6px; }
+  .reviews-stat-number { font-size:1.5rem; font-weight:600; color:forestgreen; }
+  .reviews-stat-label { font-size:0.8rem; color:#666; }
+  
+  /* --- Guest Review Section --- */
+  .guest-reviews { background:#f8f9fa; padding:1.5rem; border-radius:8px; text-align:center; }
+  .guest-login-prompt { background:white; padding:1rem; border-radius:6px; margin-top:1rem; border:2px dashed #ddd; }
+  .guest-login-btn { background:forestgreen; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; margin-top:0.5rem; }
+  .guest-login-btn:hover { background:#2d5016; }
+  
+  /* --- View All Reviews Button --- */
+  .view-all-reviews-btn { background:forestgreen; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; margin-top:1rem; width:100%; }
+  .view-all-reviews-btn:hover { background:#2d5016; }
+  
+  /* --- Review Photos --- */
+  .review-photos { margin:0.5rem 0; }
+  .review-photos-grid { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem; }
+  .review-photo-thumb { width:60px; height:60px; object-fit:cover; border-radius:4px; cursor:pointer; border:2px solid #ddd; }
+  .review-photo-thumb:hover { border-color:forestgreen; }
+  
+  /* --- No Reviews State --- */
+  .no-reviews { text-align:center; padding:2rem; color:#666; }
+  .no-reviews-icon { font-size:3rem; margin-bottom:1rem; }
+  
+  /* --- Responsive --- */
+  @media(max-width:600px) {
+    .reviews-modal { padding:1rem; }
+    .reviews-summary-stats { grid-template-columns:repeat(2,1fr); }
+    .review-categories { flex-direction:column; gap:0.25rem; }
+    .gallery-grid { grid-template-columns:repeat(3,1fr); }
+  }
+
+  /* --- Contact & Booking Forms Animation --- */
+  .form-container { max-height:0; overflow:hidden; transition:max-height 0.4s ease, opacity 0.3s ease; opacity:0; margin-top:0.5rem; }
+  .form-container.show { max-height:500px; opacity:1; }
+
+  /* --- Loading states --- */
+  .loading { color:#666; font-style:italic; }
+  .loading-spinner { display:inline-block; margin-left:0.5rem; }
+
+  @media(max-width:420px){ 
+    .worker-card{ width:90vw; padding:1.5rem 1rem; } 
+    .worker-card img{ width:140px; height:140px; } 
+    .review-categories { flex-direction:column; gap:0.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo"><a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a></div>
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+    <a href="login.html" id="loginLink">Log in / Register</a>
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="reviews.html">My Reviews</a>
+        <a href="messages.html">Messages</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Worker Profile Container -->
+<main id="profile-container"></main>
+
+<!-- Footer -->
+<footer class="footer" style="padding:2rem;background:#f5f5f5;text-align:center;">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+<script>
+let currentWorker = null;
+let reviewsLastUpdated = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const loginLink = document.getElementById('loginLink');
+  const userMenu = document.getElementById('userMenu');
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+  let authenticated = false;
+  let currentUser = null;
+
+  async function checkLogin() {
+    try {
+      const res = await fetch('/check-auth', { credentials: 'include' }); 
+      const data = await res.json();
+      authenticated = data.authenticated;
+      currentUser = data.user || null;
+
+      if (authenticated) {
+        loginLink.style.display = 'none';
+        userMenu.style.display = 'inline-block';
+        userBtn.textContent = (currentUser.name || 'User') + ' ▼';
+      } else {
+        loginLink.style.display = 'inline-block';
+        userMenu.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('Login check failed', err);
+    }
+  }
+
+  if (userBtn) {
+    userBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async e => {
+      e.preventDefault();
+      await fetch('/logout', { method: 'POST', credentials: 'include' }); 
+      location.reload();
+    });
+  }
+
+  document.addEventListener('click', e => {
+    if (userDropdown && !userDropdown.contains(e.target) && userBtn && !userBtn.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+
+  async function loadWorkGallery(workerId) {
+    const galleryContainer = document.getElementById('work-gallery-grid');
+    const photoCountBadge = document.getElementById('photo-count-badge');
+
+    if (!galleryContainer) return;
+
+    galleryContainer.innerHTML = '<div class="loading-gallery">Loading work photos...</div>';
+
+    try {
+      // Fetch portfolio photos from the new portfolio endpoint
+      const res = await fetch(`/workers/portfolio/${workerId}`, { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.success && data.photos && data.photos.length > 0) {
+        photoCountBadge.textContent = `${data.photos.length} photos`;
+
+        galleryContainer.innerHTML = data.photos.slice(0, 12).map((photo, index) => {
+          const dateStr = photo.uploaded_at ? new Date(photo.uploaded_at).toLocaleDateString() : '';
+          const description = photo.description || 'Work example';
+          return `
+            <div class="gallery-item" onclick="viewGalleryPhoto('${photo.photo_url}', '${description}', '${dateStr}')">
+              <img src="${photo.photo_url}" alt="${description}" loading="lazy" />
+              ${dateStr ? `<div class="gallery-date">${dateStr}</div>` : ''}
+            </div>`;
+        }).join('');
+
+        if (data.photos.length > 12) {
+          galleryContainer.innerHTML += `
+            <div style="grid-column: 1/-1; text-align:center; padding:1rem;">
+              <button class="view-all-reviews-btn" onclick="viewAllGalleryPhotos(${workerId})">
+                View All ${data.photos.length} Photos
+              </button>
+            </div>`;
+        }
+      } else {
+        galleryContainer.innerHTML = `
+          <div class="no-photos" style="grid-column: 1/-1;">
+            <p>No work examples yet</p>
+            <p style="font-size:0.9rem; color:#999;">Portfolio photos will appear here</p>
+          </div>`;
+        photoCountBadge.textContent = '0 photos';
+      }
+    } catch (err) {
+      console.error('Failed to load work gallery:', err);
+      galleryContainer.innerHTML = '<div class="no-photos" style="grid-column: 1/-1;">Unable to load photos</div>';
+    }
+  }
+
+  window.viewGalleryPhoto = function(photoUrl, caption, date) {
+    const captionText = caption ? `${caption}` : 'Work completed';
+    const fullCaption = date ? `${captionText} - ${date}` : captionText;
+    viewPhoto(photoUrl, fullCaption);
+  };
+
+  window.viewAllGalleryPhotos = async function(workerId) {
+    try {
+      const res = await fetch(`/reviews/workers/${workerId}/completion-photos`, { credentials: 'include' });
+      const data = await res.json();
+      
+      if (!data.success || !data.photos || data.photos.length === 0) {
+        alert('No photos to display');
+        return;
+      }
+
+      let modal = document.getElementById('all-gallery-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'all-gallery-modal';
+        modal.className = 'reviews-modal-overlay';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="reviews-modal">
+          <button class="reviews-modal-close" onclick="closeGalleryModal()">&times;</button>
+          <h3>Work Gallery (${data.photos.length} photos)</h3>
+          
+          <div class="gallery-grid" style="margin-top:1rem; max-height:60vh; overflow-y:auto;">
+            ${data.photos.map(photo => {
+              const dateStr = photo.date ? new Date(photo.date).toLocaleDateString() : '';
+              return `
+                <div class="gallery-item" onclick="viewGalleryPhoto('${photo.url}', '${photo.caption || ''}', '${dateStr}')">
+                  <img src="${photo.url}" alt="Work example" loading="lazy" />
+                  ${dateStr ? `<div class="gallery-date">${dateStr}</div>` : ''}
+                </div>`;
+            }).join('')}
+          </div>
+          
+          <div style="text-align:center; margin-top:1rem;">
+            <button class="btn btn-secondary" onclick="closeGalleryModal()" style="background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Close</button>
+          </div>
+        </div>
+      `;
+      
+      modal.style.display = 'flex';
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeGalleryModal();
+        }
+      });
+      
+    } catch (err) {
+      console.error('Failed to load all photos:', err);
+      alert('Failed to load photos');
+    }
+  };
+
+  window.closeGalleryModal = function() {
+    const modal = document.getElementById('all-gallery-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
+
+  async function loadWorkerReviews(workerId, showLoading = true) {
+    const reviewsList = document.getElementById('reviews-list');
+    const lastUpdatedElement = document.getElementById('reviews-last-updated');
+    
+    if (showLoading) {
+      reviewsList.innerHTML = '<p class="loading">Loading reviews...<span class="loading-spinner">⏳</span></p>';
+    }
+    
+    try {
+      const res = await fetch(`/reviews?workerId=${workerId}`, { credentials: 'include' });
+      const reviews = await res.json();
+      
+      reviewsLastUpdated = new Date();
+      
+      if (Array.isArray(reviews) && reviews.length) {
+        displayReviews(reviews, workerId);
+      } else {
+        reviewsList.innerHTML = `
+          <div class="no-reviews">
+            <div class="no-reviews-icon">⭐</div>
+            <p>No reviews yet</p>
+            <p>Be the first to review this professional!</p>
+          </div>`;
+      }
+      
+      if (lastUpdatedElement) {
+        lastUpdatedElement.textContent = `Last updated: ${reviewsLastUpdated.toLocaleTimeString()}`;
+      }
+    } catch (err) {
+      reviewsList.innerHTML = '<p style="color:#dc3545;">Could not load reviews.</p>';
+      console.error('Failed to load reviews:', err);
+    }
+  }
+
+  function displayReviews(reviews, workerId) {
+    const reviewsList = document.getElementById('reviews-list');
+    
+    if (authenticated) {
+      displayAuthenticatedReviews(reviews, workerId);
+    } else {
+      displayGuestReviews(reviews);
+    }
+  }
+
+  function displayAuthenticatedReviews(reviews, workerId) {
+    const reviewsList = document.getElementById('reviews-list');
+    const totalReviews = reviews.length;
+    const avgRating = (reviews.reduce((sum, r) => sum + (r.overall_rating || 0), 0) / totalReviews).toFixed(1);
+    const recentReview = reviews[0];
+    
+    const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach(r => {
+      const rating = r.overall_rating || 0;
+      if (rating >= 1 && rating <= 5) ratingCounts[rating]++;
+    });
+
+    const summaryHtml = `
+      <div class="reviews-summary">
+        <h4>Customer Reviews Summary</h4>
+        <div class="reviews-summary-stats">
+          <div class="reviews-stat">
+            <div class="reviews-stat-number">${totalReviews}</div>
+            <div class="reviews-stat-label">Total Reviews</div>
+          </div>
+          <div class="reviews-stat">
+            <div class="reviews-stat-number">${avgRating}</div>
+            <div class="reviews-stat-label">Average Rating</div>
+          </div>
+          <div class="reviews-stat">
+            <div class="reviews-stat-number">${ratingCounts[5]}</div>
+            <div class="reviews-stat-label">5-Star Reviews</div>
+          </div>
+          <div class="reviews-stat">
+            <div class="reviews-stat-number">${ratingCounts[4] + ratingCounts[5]}</div>
+            <div class="reviews-stat-label">4+ Star Reviews</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const recentReviewHtml = formatReviewItem(recentReview, true);
+    
+    const viewAllButton = totalReviews > 1 ? 
+      `<button class="view-all-reviews-btn" onclick="openAllReviewsModal(${workerId})">
+        View All ${totalReviews} Reviews
+      </button>` : '';
+
+    reviewsList.innerHTML = summaryHtml + recentReviewHtml + viewAllButton;
+  }
+
+  function displayGuestReviews(reviews) {
+    const reviewsList = document.getElementById('reviews-list');
+    const recentReview = reviews[0];
+    const totalReviews = reviews.length;
+    
+    const guestHtml = `
+      <div class="guest-reviews">
+        <h4>Recent Customer Review</h4>
+        ${formatReviewItem(recentReview, false)}
+        <div class="guest-login-prompt">
+          <p><strong>Want to see all ${totalReviews} reviews?</strong></p>
+          <p>Login to view detailed reviews, ratings, and photos</p>
+          <button class="guest-login-btn" onclick="window.location.href='login.html'">
+            Login to View All Reviews
+          </button>
+        </div>
+      </div>
+    `;
+    
+    reviewsList.innerHTML = guestHtml;
+  }
+
+  function formatReviewItem(review, showPhotos = true) {
+    if (!review) return '';
+    
+    const overallStars = '★'.repeat(review.overall_rating || 0) + '☆'.repeat(5 - (review.overall_rating || 0));
+    const reviewDate = review.created_at ? new Date(review.created_at).toLocaleDateString() : '';
+    
+    let categoriesHtml = '';
+    if (review.quality_rating || review.punctuality_rating || review.communication_rating || review.value_rating) {
+      categoriesHtml = `
+        <div class="review-categories">
+          ${review.quality_rating ? `<div class="review-category">Quality: ${'★'.repeat(review.quality_rating)}${'☆'.repeat(5-review.quality_rating)}</div>` : ''}
+          ${review.punctuality_rating ? `<div class="review-category">Punctuality: ${'★'.repeat(review.punctuality_rating)}${'☆'.repeat(5-review.punctuality_rating)}</div>` : ''}
+          ${review.communication_rating ? `<div class="review-category">Communication: ${'★'.repeat(review.communication_rating)}${'☆'.repeat(5-review.communication_rating)}</div>` : ''}
+          ${review.value_rating ? `<div class="review-category">Value: ${'★'.repeat(review.value_rating)}${'☆'.repeat(5-review.value_rating)}</div>` : ''}
+        </div>`;
+    }
+    
+    let photosHtml = '';
+    if (showPhotos && review.photos && Array.isArray(review.photos) && review.photos.length > 0) {
+      photosHtml = `
+        <div class="review-photos">
+          <div class="review-photos-grid">
+            ${review.photos.slice(0, 3).map(photo => 
+              `<img src="${photo}" class="review-photo-thumb" onclick="viewPhoto('${photo}', 'Review by ${review.client_name}')" alt="Review photo" />`
+            ).join('')}
+            ${review.photos.length > 3 ? `<div style="font-size:0.8rem;color:#666;">+${review.photos.length - 3} more</div>` : ''}
+          </div>
+        </div>`;
+    }
+    
+    return `
+      <div class="review-item">
+        <div class="review-header">
+          <span class="review-author">${review.client_name || 'Anonymous'}</span>
+          <span class="review-date">${reviewDate}</span>
+        </div>
+        <div class="review-rating">${overallStars}</div>
+        ${categoriesHtml}
+        ${review.review_text ? `<div class="review-text">${review.review_text}</div>` : ''}
+        ${photosHtml}
+      </div>`;
+  }
+
+  window.openAllReviewsModal = async function(workerId) {
+    try {
+      const res = await fetch(`/reviews?workerId=${workerId}`, { credentials: 'include' });
+      const reviews = await res.json();
+      
+      if (!Array.isArray(reviews) || reviews.length === 0) {
+        alert('No reviews to display');
+        return;
+      }
+
+      let modal = document.getElementById('all-reviews-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'all-reviews-modal';
+        modal.className = 'reviews-modal-overlay';
+        document.body.appendChild(modal);
+      }
+
+      const totalReviews = reviews.length;
+      const avgRating = (reviews.reduce((sum, r) => sum + (r.overall_rating || 0), 0) / totalReviews).toFixed(1);
+      
+      modal.innerHTML = `
+        <div class="reviews-modal">
+          <button class="reviews-modal-close" onclick="closeAllReviewsModal()">&times;</button>
+          <h3>All Customer Reviews (${totalReviews})</h3>
+          
+          <div class="reviews-summary">
+            <div style="font-size:1.2rem; margin-bottom:1rem;">
+              <strong>Average Rating: ${avgRating}/5 ★</strong> (${totalReviews} reviews)
+            </div>
+          </div>
+          
+          <div style="max-height:400px; overflow-y:auto;">
+            ${reviews.map(review => formatReviewItem(review, true)).join('')}
+          </div>
+          
+          <div style="text-align:center; margin-top:1rem;">
+            <button class="btn btn-secondary" onclick="closeAllReviewsModal()" style="background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Close</button>
+          </div>
+        </div>
+      `;
+      
+      modal.style.display = 'flex';
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeAllReviewsModal();
+        }
+      });
+      
+    } catch (err) {
+      console.error('Failed to load all reviews:', err);
+      alert('Failed to load reviews');
+    }
+  };
+
+  window.closeAllReviewsModal = function() {
+    const modal = document.getElementById('all-reviews-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
+
+  window.viewPhoto = function(photoUrl, caption) {
+    let photoModal = document.getElementById('photo-view-modal');
+    if (!photoModal) {
+      photoModal = document.createElement('div');
+      photoModal.id = 'photo-view-modal';
+      photoModal.className = 'reviews-modal-overlay';
+      photoModal.innerHTML = `
+        <div class="reviews-modal" style="max-width:600px;">
+          <button class="reviews-modal-close" onclick="closePhotoModal()">&times;</button>
+          <img id="photo-view-image" src="" alt="Photo" style="width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:8px;" />
+          <div id="photo-view-caption" style="text-align:center;margin-top:1rem;color:#666;font-style:italic;"></div>
+        </div>
+      `;
+      document.body.appendChild(photoModal);
+      
+      photoModal.addEventListener('click', (e) => {
+        if (e.target === photoModal) {
+          closePhotoModal();
+        }
+      });
+    }
+    
+    document.getElementById('photo-view-image').src = photoUrl;
+    document.getElementById('photo-view-caption').textContent = caption || '';
+    photoModal.style.display = 'flex';
+  };
+
+  window.closePhotoModal = function() {
+    const modal = document.getElementById('photo-view-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
+
+  async function loadWorkerProfile() {
+    await checkLogin();
+
+    const params = new URLSearchParams(window.location.search);
+    const id = parseInt(params.get('id'), 10);
+    const container = document.getElementById('profile-container');
+
+    if (!id) {
+      container.innerHTML = '<p style="color:red; text-align:center;">No worker selected. Please go back and select a worker.</p>';
+      return;
+    }
+
+    let workers = [];
+    try {
+      const res = await fetch('/workers', { credentials: 'include' });
+      const data = await res.json();
+      workers = Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.error('Failed to fetch workers', err);
+      container.innerHTML = '<p style="color:red;">Unable to load worker profile.</p>';
+      return;
+    }
+
+    const worker = workers.find(w => Number(w.id) === id);
+    if (!worker) {
+      container.innerHTML = '<p style="color:red;">Worker not found.</p>';
+      return;
+    }
+
+    currentWorker = worker;
+    const ratingValue = Number(worker.rating) || 0;
+    const rating = Math.min(Math.max(ratingValue, 0), 5);
+    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
+
+    container.innerHTML = `
+      <article class="worker-card">
+        <img src="${worker.image}" alt="${worker.name}" />
+        <h3>${worker.name} ${verifiedBadge}</h3>
+        <p class="area">${worker.area}</p>
+        <p><strong>Speciality:</strong> ${worker.speciality}</p>
+        <p><strong>Experience:</strong> ${worker.experience}</p>
+        <p><strong>Availability:</strong> ${worker.availability}</p>
+        <p><strong>Rating:</strong> ${stars} (${rating})</p>
+        <section class="profile-bio">
+          <h4>About</h4>
+          <p>${worker.bio}</p>
+        </section>
+
+        <section class="work-gallery">
+          <h4>
+            Work Gallery
+            <span class="photo-count-badge" id="photo-count-badge">0 photos</span>
+          </h4>
+          <div class="gallery-grid" id="work-gallery-grid">
+            <div class="loading-gallery">Loading...</div>
+          </div>
+        </section>
+
+        <button id="contact-btn" class="btn-primary">Contact ${worker.name}</button>
+        <form id="contact-form" class="form-container">
+          <input type="text" id="visitor-name" placeholder="Your Name" required />
+          <input type="email" id="visitor-email" placeholder="Your Email" required />
+          <textarea id="visitor-message" placeholder="Your Message" required></textarea>
+          <button type="submit" class="btn-primary">Send Message</button>
+        </form>
+
+        <button id="book-btn" class="btn-primary" style="background:#007bff;">Book Now</button>
+        <form id="booking-form" class="form-container">
+          <input type="date" id="booking-date" required />
+          <input type="time" id="booking-time" required />
+          <textarea id="booking-note" placeholder="Additional note (optional)"></textarea>
+          <button type="submit" class="btn-primary">Confirm Booking</button>
+        </form>
+
+        <p id="thank-you-msg" style="display:none;color:green;margin-top:1rem;">Thank you for your message!</p>
+        <p id="booking-msg" style="display:none;color:green;margin-top:1rem;">Booking successfully submitted!</p>
+
+        <section class="worker-reviews">
+          <h4>
+            Reviews 
+            <button id="refresh-reviews" class="reviews-refresh" title="Refresh reviews">↻</button>
+          </h4>
+          <div class="reviews-last-updated" id="reviews-last-updated"></div>
+          <div id="reviews-list"><p>Loading reviews...</p></div>
+        </section>
+      </article>
+    `;
+
+    setupFormHandlers(worker);
+    await loadWorkGallery(worker.id);
+    await loadWorkerReviews(worker.id);
+    
+    document.getElementById('refresh-reviews').addEventListener('click', () => {
+      loadWorkerReviews(worker.id, true);
+    });
+  }
+
+  function setupFormHandlers(worker) {
+    const contactBtn = document.getElementById('contact-btn');
+    const contactForm = document.getElementById('contact-form');
+    const thankYouMsg = document.getElementById('thank-you-msg');
+    const bookBtn = document.getElementById('book-btn');
+    const bookingForm = document.getElementById('booking-form');
+    const bookingMsg = document.getElementById('booking-msg');
+
+    if (authenticated && currentUser) {
+      document.getElementById('visitor-name').value = currentUser.name || '';
+      document.getElementById('visitor-email').value = currentUser.email || '';
+    }
+
+    contactBtn.addEventListener('click', () => {
+      if (!authenticated) { window.location.href = 'login.html'; return; }
+      contactForm.classList.toggle('show');
+    });
+
+    contactForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!authenticated) { window.location.href = 'login.html'; return; }
+
+      const message = document.getElementById('visitor-message').value.trim();
+      if (!message) return alert('Please enter a message');
+
+      try {
+        const res = await fetch('/messages/contact', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workerId: worker.id, message })
+        });
+        const data = await res.json();
+        if (data.success) {
+          thankYouMsg.style.display = 'block';
+          contactForm.reset();
+          setTimeout(() => thankYouMsg.style.display = 'none', 3000);
+        } else {
+          alert(data.error || 'Failed to send message');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('An error occurred while sending your message');
+      }
+    });
+
+    bookBtn.addEventListener('click', () => {
+      if (!authenticated) { window.location.href = 'login.html'; return; }
+      bookingForm.classList.toggle('show');
+    });
+
+    bookingForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!authenticated) { window.location.href = 'login.html'; return; }
+
+      const date = document.getElementById('booking-date').value;
+      const time = document.getElementById('booking-time').value;
+      const note = document.getElementById('booking-note').value.trim();
+
+      if (!date || !time) return alert('Please select a date and time');
+
+      try {
+        const res = await fetch('/bookings', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workerId: worker.id, booking_date: date, booking_time: time, note })
+        });
+        const data = await res.json();
+        if (data.success) {
+          bookingMsg.style.display = 'block';
+          bookingForm.reset();
+          setTimeout(() => bookingMsg.style.display = 'none', 3000);
+        } else {
+          alert(data.error || 'Failed to submit booking');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('An error occurred while submitting booking');
+      }
+    });
+  }
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'reviewsUpdated' && currentWorker) {
+      setTimeout(() => {
+        loadWorkerReviews(currentWorker.id, false);
+      }, 1000);
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    if (currentWorker && reviewsLastUpdated) {
+      const timeSinceUpdate = Date.now() - reviewsLastUpdated.getTime();
+      if (timeSinceUpdate > 120000) {
+        loadWorkerReviews(currentWorker.id, false);
+      }
+    }
+  });
+
+  setInterval(() => {
+    if (currentWorker && document.visibilityState === 'visible') {
+      loadWorkerReviews(currentWorker.id, false);
+    }
+  }, 180000);
+
+  loadWorkerProfile();
+});
+</script>
+
+</body>
+</html>

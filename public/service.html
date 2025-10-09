@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Services - Fixxa</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+.header .logo img { max-width: 120px; }
+.nav-links { display: flex; align-items: center; gap: 1rem; }
+.nav-links a { text-decoration: none; color: #333; }
+.nav-links a:hover { color: forestgreen; }
+
+/* User menu */
+.user-menu { display: none; position: relative; }
+.user-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0.5rem 1rem; }
+.user-btn:hover { color: forestgreen; }
+.user-dropdown { display: none; position: absolute; right: 0; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 150px; z-index: 10; }
+.user-dropdown a { display: block; padding: 8px; text-decoration: none; color: #333; }
+.user-dropdown a:hover { background: #f0f0f0; }
+
+/* Location banner */
+.location-banner {
+  background: linear-gradient(135deg, #4a7c59, #2d5016);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  display: none;
+}
+.location-banner.show { display: block; }
+.location-banner button {
+  background: white;
+  color: #2d5016;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-left: 1rem;
+}
+.location-banner button:hover { background: #f0f0f0; }
+
+/* Search Section */
+.search-section {
+  padding: 2rem;
+  background: #f5f6fa;
+}
+.search-section h1 { text-align: center; margin-bottom: 1.5rem; }
+.search-form {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.search-form select, .search-form button {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+.search-form button {
+  background: forestgreen;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+.search-form button:hover { background: #228b22; }
+
+/* Results Section */
+.results-section {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.sort-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.sort-controls select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* Workers Grid */
+.workers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.worker-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 1rem;
+  transition: transform 0.2s ease;
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.worker-card:hover { transform: translateY(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.worker-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+.worker-card h3 { 
+  margin: 0.5rem 0; 
+  color: #2d5016;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.worker-card .speciality { color: #666; font-size: 0.9rem; margin: 0.25rem 0; }
+.worker-card .rating { color: gold; font-size: 1.1rem; margin: 0.5rem 0; }
+.worker-card .experience { color: #888; font-size: 0.85rem; }
+.distance-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(74, 124, 89, 0.9);
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.unavailable-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(231, 76, 60, 0.9);
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.verified-badge {
+  background: #28a745;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo"></a>
+  </div>
+
+  <nav class="nav-links">
+    <a href="index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="join.html">Join Our Team</a>
+
+    <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="messages.html">Messages</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Location Banner -->
+<div class="location-banner" id="locationBanner">
+  <span id="locationMessage">Enable location to find professionals near you</span>
+  <button id="enableLocationBtn">Enable Location</button>
+</div>
+
+<!-- Search Section -->
+<section class="search-section">
+  <h1>Find Your Professional</h1>
+  <form class="search-form" id="searchForm">
+    <select name="service" id="serviceSelect">
+      <option value="">Service Type</option>
+      <option value="Plumber">Plumber</option>
+      <option value="Painter">Painter</option>
+      <option value="Gardener">Gardener</option>
+      <option value="Electrician">Electrician</option>
+      <option value="Handyman">Handyman</option>
+      <option value="Tree Feller">Tree Feller</option>
+    </select>
+
+    <select name="province" id="provinceSelect">
+      <option value="">Province</option>
+      <option value="Gauteng">Gauteng</option>
+      <option value="Western Cape">Western Cape</option>
+      <option value="Free State">Free State</option>
+      <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+      <option value="Eastern Cape">Eastern Cape</option>
+      <option value="Northern Cape">Northern Cape</option>
+      <option value="Mpumalanga">Mpumalanga</option>
+      <option value="Limpopo">Limpopo</option>
+      <option value="North West">North West</option>
+    </select>
+
+    <select name="availability" id="availabilitySelect">
+      <option value="">Availability</option>
+      <option value="true">Available Now</option>
+    </select>
+
+    <button type="button" id="searchBtn">Search</button>
+  </form>
+</section>
+
+<!-- Results Section -->
+<section class="results-section">
+  <div class="results-header">
+    <h2 id="resultsTitle">All Professionals</h2>
+    <div class="sort-controls">
+      <label for="sortSelect">Sort by:</label>
+      <select id="sortSelect">
+        <option value="rating">Highest Rated</option>
+        <option value="reviews">Most Reviews</option>
+        <option value="recent">Recently Joined</option>
+      </select>
+    </div>
+  </div>
+  
+  <div class="workers-grid" id="workersGrid">
+    <p style="text-align:center;">Loading professionals...</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const loginLink = document.getElementById('loginLink');
+  const userMenu = document.getElementById('userMenu');
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const locationBanner = document.getElementById('locationBanner');
+  const enableLocationBtn = document.getElementById('enableLocationBtn');
+  const locationMessage = document.getElementById('locationMessage');
+  
+  const serviceSelect = document.getElementById('serviceSelect');
+  const provinceSelect = document.getElementById('provinceSelect');
+  const availabilitySelect = document.getElementById('availabilitySelect');
+  const searchBtn = document.getElementById('searchBtn');
+  const sortSelect = document.getElementById('sortSelect');
+  const workersGrid = document.getElementById('workersGrid');
+  const resultsTitle = document.getElementById('resultsTitle');
+
+  let userLocation = null;
+
+  async function checkLogin() {
+    try {
+      const res = await fetch('/check-auth', { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.authenticated) {
+        if (data.user.type === 'professional') {
+          window.location.href = '/prosite.html';
+          return;
+        }
+        loginLink.style.display = 'none';
+        userMenu.style.display = 'inline-block';
+        userBtn.textContent = (data.user.name || 'User') + ' ▼';
+      } else {
+        loginLink.style.display = 'inline-block';
+        userMenu.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('Login check failed', err);
+    }
+  }
+  checkLogin();
+
+  userBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  logoutBtn?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/logout', { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) location.reload();
+    } catch (err) { console.error('Logout failed', err); }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (userBtn && !userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('service')) serviceSelect.value = urlParams.get('service');
+  if (urlParams.get('province')) provinceSelect.value = urlParams.get('province');
+
+  async function loadWorkers() {
+    workersGrid.innerHTML = '<p style="text-align:center;">Loading...</p>';
+    
+    try {
+      const params = new URLSearchParams();
+      
+      if (serviceSelect.value) {
+        params.append('speciality', serviceSelect.value);
+      }
+      if (provinceSelect.value) {
+        params.append('area', provinceSelect.value);
+      }
+      if (availabilitySelect.value === 'true') {
+        params.append('available', 'true');
+      }
+      
+      params.append('sortBy', sortSelect.value || 'rating');
+      
+      const res = await fetch(`/search/workers?${params.toString()}`, { 
+        credentials: 'include' 
+      });
+      
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Search failed');
+      }
+
+      displayWorkers(data.workers);
+      
+      const filterCount = [serviceSelect.value, provinceSelect.value].filter(v => v).length;
+      if (filterCount > 0) {
+        resultsTitle.textContent = `Found ${data.workers.length} Professional${data.workers.length !== 1 ? 's' : ''}`;
+      } else {
+        resultsTitle.textContent = 'All Professionals';
+      }
+      
+    } catch (err) {
+      console.error('Failed to load workers', err);
+      workersGrid.innerHTML = '<p class="no-results">Unable to load professionals. Please try again.</p>';
+    }
+  }
+
+  function displayWorkers(workers) {
+    workersGrid.innerHTML = '';
+    
+    if (!workers || workers.length === 0) {
+      workersGrid.innerHTML = '<p class="no-results">No professionals found matching your criteria.</p>';
+      return;
+    }
+
+    workers.forEach(worker => {
+      const rating = parseFloat(worker.avg_rating) || 0;
+      const fullStars = Math.floor(rating);
+      const emptyStars = 5 - fullStars;
+      const stars = '★'.repeat(fullStars) + '☆'.repeat(emptyStars);
+      const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
+      
+      const card = document.createElement('a');
+      card.href = `profile.html?id=${worker.id}`;
+      card.className = 'worker-card';
+      card.innerHTML = `
+        ${!worker.is_available ? 
+          `<div class="unavailable-badge">Currently Unavailable</div>` : ''}
+        <img src="${worker.profile_pic || worker.image || 'images/default-profile.png'}" alt="${worker.name}">
+        <h3>${worker.name} ${verifiedBadge}</h3>
+        <p class="speciality">${worker.speciality || 'General Services'}</p>
+        <p class="rating">${stars} ${rating.toFixed(1)} (${worker.review_count || 0} reviews)</p>
+        <p class="experience">${worker.completed_jobs || 0} completed jobs</p>
+        ${worker.area ? `<p class="experience">${worker.area}</p>` : ''}
+        ${worker.hourly_rate ? `<p class="experience">R${worker.hourly_rate}/hr</p>` : ''}
+      `;
+      workersGrid.appendChild(card);
+    });
+  }
+
+  searchBtn.addEventListener('click', loadWorkers);
+  sortSelect.addEventListener('change', loadWorkers);
+
+  loadWorkers();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "name": "Mahle",
+    "speciality": "Electrician",
+    "experience": "7 years",
+    "rating": "★★★★☆",
+    "availability": "Weekdays/Weekends",
+    "bio": "Lorem ipsum dolor sit amet... lfngirgfnids dnglkdngskld lkdbgildsgbds kldgksgnlds kbgdlkgbd dlgkbdklbg d",
+    "image": "images/femaleid.webp",
+    "area": "Western Cape"
+  },
+  {
+    "id": 2,
+    "name": "Pravin",
+    "speciality": "Electrician",
+    "experience": "2 years",
+    "rating": 3,
+    "availability": "Weekends",
+    "bio": "Lorem ipsum dolor sit amet...",
+    "image": "images/male2.webp",
+    "area": "Kwa-Zulu-Natal"
+  },
+  {
+    "id": 3,
+    "name": "Siya",
+    "speciality": "Painter",
+    "experience": "5 years",
+    "rating": 4,
+    "availability": "Weekends",
+    "bio": "Lorem ipsum dolor sit amet lorjdsnfbkdjlgbkldfb kjdgbjdfbvjkfd kjdfgbjdbdjs jsdbgdfsjgb jkgbgkldsjg sdm gsdjgbdgbdgbdklg",
+    "image": "images/indianmanid.jpg",
+    "area": "Gauteng"
+  },
+  {
+    "id": 4,
+    "name": "Victor",
+    "speciality": "Handyman",
+    "experience": "5 years",
+    "rating": 3,
+    "availability": "Weekdays/Weekends",
+    "bio": "Lorem ipsum dolor sit amet...",
+    "image": "images/indianmanid.jpg",
+    "area": "Gauteng"
+  },
+  {
+    "id": 5,
+    "name": "Musa",
+    "speciality": "Gardener",
+    "experience": "14 years",
+    "rating": 5,
+    "availability": "Weekends",
+    "bio": "Lorem ipsum dolor sit amet...",
+    "image": "images/male2.webp",
+    "area": "Western Cape"
+  },
+  {
+    "id": 6,
+    "name": "Terrisa",
+    "speciality": "Gardener",
+    "experience": "2 years",
+    "rating": 3,
+    "availability": "Weekdays",
+    "bio": "Lorem ipsum dolor sit amet...",
+    "image": "images/femaleid.webp",
+    "area": "Kwa-Zulu-Natal"
+  },
+  {
+    "id": 7,
+    "name": "Jaco",
+    "speciality": "Plumber",
+    "experience": "10 years",
+    "rating": 4,
+    "availability": "Weekends",
+    "bio": "Lorem ipsum dolor sit amet...",
+    "image": "images/indianmanid.jpg",
+    "area": "North West"
+  }
+]
