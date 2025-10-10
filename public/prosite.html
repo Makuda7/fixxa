@@ -1178,7 +1178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try{
       const res = await fetch('/logout',{ method:'POST', credentials:'include' });
       const data = await res.json();
-      if(data.success) window.location.href='/index.html';
+      if(data.success) window.location.href='/Index.html';
       else alert('Logout failed.');
     }catch(e){ console.error(e); alert('Logout error'); }
   });

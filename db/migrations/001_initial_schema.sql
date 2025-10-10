@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS users (
   profile_pic TEXT,
   notification_preferences JSONB DEFAULT '{}',
   privacy_preferences JSONB DEFAULT '{}',
+  email_verified BOOLEAN DEFAULT true,
+  verification_token TEXT,
+  reset_token_expiry TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -42,6 +45,9 @@ CREATE TABLE IF NOT EXISTS workers (
   service_radius INTEGER DEFAULT 20,
   notification_preferences JSONB DEFAULT '{}',
   privacy_preferences JSONB DEFAULT '{}',
+  email_verified BOOLEAN DEFAULT true,
+  verification_token TEXT,
+  reset_token_expiry TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

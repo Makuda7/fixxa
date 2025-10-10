@@ -23,6 +23,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   
   // Register
   router.post('/register', authLimiter, registerValidation, async (req, res) => {
+    
     const { type, name, email, password, speciality } = req.body;
 
     try {
