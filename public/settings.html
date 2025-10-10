@@ -94,9 +94,9 @@
 <body>
 
 <header class="header">
-  <div class="logo"><a href="index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a></div>
+  <div class="logo"><a href="Index.html"><img src="images/fixxaLogp.png" alt="Fixxa Logo" /></a></div>
   <nav class="nav-links">
-    <a href="index.html">Find Service</a>
+    <a href="Index.html">Find Service</a>
     <a href="aboutus.html">About Us</a>
     <a href="join.html">Join Our Team</a>
     <a href="login.html" id="loginLink">Log in / Register</a>
@@ -665,7 +665,7 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
     if (data.success) {
       showNotification('Account deleted successfully', 'success');
       setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href = 'Index.html';
       }, 2000);
     } else {
       showNotification(data.error || 'Failed to delete account', 'error');
