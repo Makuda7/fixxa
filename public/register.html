@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const payload = { type, name, email, password };
       if (type === 'professional') payload.speciality = speciality;
 
-      const res = await fetch('/register', {
+      const res = await fetch('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
