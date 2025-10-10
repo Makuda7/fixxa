@@ -69,9 +69,9 @@ module.exports = (pool, logger, helpers) => {
       const maxRadius = parseFloat(radius);
 
       const result = await pool.query(`
-        SELECT id, name, email, speciality, area, bio, experience, rating, image, 
+        SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image,
                availability_schedule, is_available, latitude, longitude, service_radius, is_verified
-        FROM workers 
+        FROM workers
         WHERE is_available = true AND is_active = true
         ORDER BY name ASC
       `);
