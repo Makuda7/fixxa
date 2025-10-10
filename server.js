@@ -56,6 +56,9 @@ app.use(cors({
   credentials: true
 }));
 
+// Trust proxy for Railway/production environments
+app.set('trust proxy', 1);
+
 // Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
