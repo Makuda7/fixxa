@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   booking_date DATE NOT NULL,
   booking_time TIME NOT NULL,
   note TEXT,
+  booking_amount DECIMAL(10,2),
   status VARCHAR(50) DEFAULT 'Confirmed',
   cancelled_by VARCHAR(20),
   cancellation_reason TEXT,
