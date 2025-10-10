@@ -142,21 +142,23 @@ module.exports = (pool, logger, helpers) => {
     try {
       const workerId = req.session.user.id;
       const { availability_schedule, is_available } = req.body;
-      
+
       const validSchedules = ['weekdays', 'weekends', 'both'];
       if (availability_schedule && !validSchedules.includes(availability_schedule.toLowerCase())) {
         return res.status(400).json({ success: false, error: 'Invalid availability schedule' });
       }
-      
+
       const updates = [];
       const values = [];
       let idx = 1;
-      
+
       if (availability_schedule !== undefined) {
         updates.push(`availability_schedule = $${idx++}`);
-        values.push(availability_schedule.toLowerCase());
+        // Convert string to JSONB object
+        const scheduleJson = { type: availability_schedule.toLowerCase() };
+        values.push(JSON.stringify(scheduleJson));
       }
-      
+
       if (is_available !== undefined) {
         updates.push(`is_available = $${idx++}`);
         values.push(Boolean(is_available));
