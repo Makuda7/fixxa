@@ -98,7 +98,10 @@ CREATE TABLE IF NOT EXISTS reviews (
   professionalism_rating INTEGER CHECK (professionalism_rating >= 1 AND professionalism_rating <= 5),
   punctuality_rating INTEGER CHECK (punctuality_rating >= 1 AND punctuality_rating <= 5),
   quality_rating INTEGER CHECK (quality_rating >= 1 AND quality_rating <= 5),
+  communication_rating INTEGER CHECK (communication_rating >= 1 AND communication_rating <= 5),
+  value_rating INTEGER CHECK (value_rating >= 1 AND value_rating <= 5),
   review_text TEXT,
+  photos JSONB DEFAULT '[]',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(booking_id)
 );
