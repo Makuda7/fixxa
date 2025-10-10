@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   cancelled_by VARCHAR(20),
   cancellation_reason TEXT,
   completed_at TIMESTAMP,
+  has_review BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(worker_id, booking_date, booking_time)
 );
