@@ -219,6 +219,11 @@ io.on('connection', (socket) => {
   });
 });
 
+// Root route - serve Index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'Index.html'));
+});
+
 // Error handling middleware
 app.use(errorHandler);
 
