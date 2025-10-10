@@ -39,41 +39,32 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-      const verificationToken = generateVerificationToken();
-      const tokenExpiry = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY);
-      
+
       let result;
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, password, speciality, email_verified, verification_token, reset_token_expiry)
-           VALUES ($1, $2, $3, $4, false, $5, $6) RETURNING id, name, email, speciality`,
-          [name, email, hashedPassword, speciality, verificationToken, tokenExpiry]
+          `INSERT INTO workers (name, email, password, speciality)
+           VALUES ($1, $2, $3, $4) RETURNING id, name, email, speciality`,
+          [name, email, hashedPassword, speciality]
         );
       } else {
         result = await pool.query(
-          `INSERT INTO users (name, email, password, email_verified, verification_token, reset_token_expiry)
-           VALUES ($1, $2, $3, false, $4, $5) RETURNING id, name, email`,
-          [name, email, hashedPassword, verificationToken, tokenExpiry]
+          `INSERT INTO users (name, email, password)
+           VALUES ($1, $2, $3) RETURNING id, name, email`,
+          [name, email, hashedPassword]
         );
       }
 
       const user = result.rows[0];
 
-      const verificationUrl = generateVerificationUrl(verificationToken);
-      const emailContent = createVerificationEmail(name, verificationUrl);
-      
-      try {
-        await sendEmail(email, emailContent.subject, emailContent.html, logger);
-        logger.info('Verification email sent', { email, userId: user.id, type });
-      } catch (emailError) {
-        logger.error('Failed to send verification email', { error: emailError.message, email });
-      }
+      // Email verification disabled for beta - accounts are immediately active
+      logger.info('User registered successfully', { email, userId: user.id, type });
 
-      res.json({ 
-        success: true, 
-        message: `Registration successful! Please check your email (${email}) to verify your account.`,
-        requiresVerification: true,
+      res.json({
+        success: true,
+        message: `Registration successful! You can now log in.`,
+        requiresVerification: false,
         email: email
       });
 
