@@ -114,6 +114,41 @@ CREATE TABLE IF NOT EXISTS account_deletion_requests (
   admin_notes TEXT
 );
 
+-- Portfolio photos table
+CREATE TABLE IF NOT EXISTS portfolio_photos (
+  id SERIAL PRIMARY KEY,
+  worker_id INTEGER NOT NULL REFERENCES workers(id) ON DELETE CASCADE,
+  photo_url TEXT NOT NULL,
+  description TEXT,
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Certifications table
+CREATE TABLE IF NOT EXISTS certifications (
+  id SERIAL PRIMARY KEY,
+  worker_id INTEGER NOT NULL REFERENCES workers(id) ON DELETE CASCADE,
+  document_url TEXT NOT NULL,
+  document_name VARCHAR(255) NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending',
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  verified_at TIMESTAMP,
+  verified_by INTEGER
+);
+
+-- Booking requests table
+CREATE TABLE IF NOT EXISTS booking_requests (
+  id SERIAL PRIMARY KEY,
+  booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  worker_id INTEGER NOT NULL REFERENCES workers(id) ON DELETE CASCADE,
+  request_type VARCHAR(50) NOT NULL,
+  completion_notes TEXT,
+  photos JSONB DEFAULT '[]',
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  resolved_at TIMESTAMP
+);
+
 -- Platform settings table
 CREATE TABLE IF NOT EXISTS platform_settings (
   id SERIAL PRIMARY KEY,
@@ -142,3 +177,8 @@ CREATE INDEX IF NOT EXISTS idx_messages_professional_id ON messages(professional
 CREATE INDEX IF NOT EXISTS idx_reviews_worker_id ON reviews(worker_id);
 CREATE INDEX IF NOT EXISTS idx_workers_area ON workers(area);
 CREATE INDEX IF NOT EXISTS idx_workers_speciality ON workers(speciality);
+CREATE INDEX IF NOT EXISTS idx_portfolio_photos_worker_id ON portfolio_photos(worker_id);
+CREATE INDEX IF NOT EXISTS idx_certifications_worker_id ON certifications(worker_id);
+CREATE INDEX IF NOT EXISTS idx_booking_requests_booking_id ON booking_requests(booking_id);
+CREATE INDEX IF NOT EXISTS idx_booking_requests_worker_id ON booking_requests(worker_id);
+CREATE INDEX IF NOT EXISTS idx_booking_requests_status ON booking_requests(status);
