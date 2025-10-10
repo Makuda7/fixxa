@@ -19,7 +19,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
     getUserByEmail,
     getTableForUserType,
     createPasswordResetEmail
-  } = helpers;
+  } = helpers; 
   
   // Register
   router.post('/register', authLimiter, registerValidation, async (req, res) => {

@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS workers (
   city VARCHAR(100),
   postal_code VARCHAR(20),
   speciality VARCHAR(100) NOT NULL,
-  area VARCHAR(100) NOT NULL,
+  area VARCHAR(100),
   bio TEXT,
   experience TEXT,
   rating DECIMAL(3,2) DEFAULT 0,
