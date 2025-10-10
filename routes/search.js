@@ -17,9 +17,9 @@ module.exports = (pool, logger) => {
       } = req.query;
 
       let query = `
-        SELECT 
-          w.id, w.name, w.speciality, w.area, w.bio, 
-          w.profile_pic, w.is_available, w.is_verified,
+        SELECT
+          w.id, w.name, w.speciality, w.area, w.bio,
+          w.profile_pic, w.is_available,
           COALESCE(AVG(r.overall_rating), 0) as avg_rating,
           COUNT(DISTINCT r.id) as review_count,
           COUNT(DISTINCT b.id) as completed_jobs
