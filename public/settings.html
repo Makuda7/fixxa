@@ -84,6 +84,24 @@
   .modal p { margin:0 0 1.5rem; color:#666; }
   .modal-buttons { display:flex; gap:0.5rem; justify-content:flex-end; }
 
+  /* Notification Badge */
+  .notification-badge {
+    position:absolute;
+    top:6px;
+    right:8px;
+    background:#dc3545;
+    color:white;
+    border-radius:50%;
+    width:18px;
+    height:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:700;
+    box-shadow:0 2px 4px rgba(0,0,0,0.2);
+  }
+
   @media(max-width:768px){ 
     .settings-container { margin:1rem auto; }
     .settings-section { padding:1.5rem; }
@@ -105,7 +123,10 @@
       <div class="user-dropdown" id="userDropdown">
         <a href="settings.html">Settings</a>
         <a href="clientProfile.html">Profile</a>
-        <a href="messages.html">Messages</a>
+        <a href="messages.html" style="position:relative;">
+          Messages
+          <span class="notification-badge" id="dropdownMessageBadge" style="display:none;">0</span>
+        </a>
         <a href="#" id="logoutBtn" style="color:red;">Log out</a>
       </div>
     </div>
@@ -717,8 +738,33 @@ document.querySelectorAll('.form-group input').forEach(input => {
   });
 });
 
+// Load unread message count
+async function loadUnreadMessageCount() {
+  try {
+    const res = await fetch('/messages/client/unread-count', { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.success && data.unreadCount > 0) {
+      const dropdownBadge = document.getElementById('dropdownMessageBadge');
+
+      if (dropdownBadge) {
+        dropdownBadge.textContent = data.unreadCount;
+        dropdownBadge.style.display = 'flex';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load unread message count:', err);
+  }
+}
+
 // Initialize
-document.addEventListener('DOMContentLoaded', loadUserData);
+document.addEventListener('DOMContentLoaded', () => {
+  loadUserData();
+  loadUnreadMessageCount();
+
+  // Refresh unread count every 30 seconds
+  setInterval(loadUnreadMessageCount, 30000);
+});
 </script>
 
 </body>

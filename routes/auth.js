@@ -25,9 +25,11 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   router.post('/register', authLimiter, registerValidation, async (req, res) => {
 
     const { type, name, email, password, speciality } = req.body;
+
     
 
     try {
+
       // Get table name safely
       const table = getTableForUserType(type);
       if (!table) {

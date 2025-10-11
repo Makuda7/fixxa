@@ -991,15 +991,26 @@ async function loadRequests(){
     document.getElementById('requestsList').innerHTML = requests.map(req => {
       const cardClass = req.request_type === 'cancellation' ? 'cancellation' : 'reschedule';
       const requestIcon = req.request_type === 'cancellation' ? '❌' : '📅';
-      
+
       let detailsHtml = '';
-      if(req.request_type === 'reschedule'){
+      if(req.request_type === 'reschedule' || req.request_type === 'pending-reschedule'){
+        // Parse reschedule data from completion_notes JSON
+        let rescheduleData = {};
+        try {
+          rescheduleData = typeof req.completion_notes === 'string'
+            ? JSON.parse(req.completion_notes)
+            : req.completion_notes;
+        } catch(e) {
+          console.error('Failed to parse reschedule data', e);
+        }
+
         detailsHtml = `
           <p><strong>Current Booking:</strong> ${new Date(req.booking_date).toLocaleDateString()} at ${req.booking_time}</p>
           <p style="background:#e7f3ff; padding:0.5rem; border-radius:4px; margin:0.5rem 0;">
             <strong>Requested New Date/Time:</strong><br/>
-            ${new Date(req.new_date).toLocaleDateString()} at ${req.new_time}
+            ${rescheduleData.newDate ? new Date(rescheduleData.newDate).toLocaleDateString() : 'N/A'} at ${rescheduleData.newTime || 'N/A'}
           </p>
+          ${rescheduleData.reason ? `<p><strong>Reason:</strong> ${escapeHTML(rescheduleData.reason)}</p>` : ''}
         `;
       } else {
         detailsHtml = `
