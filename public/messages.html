@@ -250,6 +250,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderMessages(messages);
       renderPagination(totalPages, currentPage);
+
+      // Mark all messages as read when messages page is viewed (only on first load)
+      if (page === 1) {
+        try {
+          await fetch('/messages/client/mark-all-read', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          // Notify other pages to refresh badge
+          window.localStorage.setItem('messagesRead', Date.now().toString());
+        } catch (err) {
+          console.error('Failed to mark messages as read:', err);
+        }
+      }
     } catch (err) {
       console.error(err);
       messagesList.innerHTML = `<p style="text-align:center; color:red;">Failed to load messages.</p>`;

@@ -267,5 +267,23 @@ module.exports = (pool, logger, io, helpers) => {
     }
   });
 
+  // Mark all professional messages as read for client (when viewing messages page)
+  router.post('/client/mark-all-read', requireAuth, async (req, res) => {
+    try {
+      const clientId = req.session.user.id;
+
+      await pool.query(`
+        UPDATE messages
+        SET read = TRUE
+        WHERE client_id = $1 AND sender_type = 'professional' AND read = FALSE
+      `, [clientId]);
+
+      res.json({ success: true, message: 'All messages marked as read' });
+    } catch (err) {
+      logger.error('Failed to mark client messages as read', { error: err.message });
+      res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+
   return router;
 };
