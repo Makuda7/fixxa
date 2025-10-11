@@ -250,5 +250,22 @@ module.exports = (pool, logger, io, helpers) => {
     }
   });
 
+  // Get unread message count for client
+  router.get('/client/unread-count', requireAuth, async (req, res) => {
+    try {
+      const clientId = req.session.user.id;
+      const result = await pool.query(`
+        SELECT COUNT(*) as count
+        FROM messages
+        WHERE client_id = $1 AND read = FALSE AND sender_type = 'professional'
+      `, [clientId]);
+
+      res.json({ success: true, unreadCount: parseInt(result.rows[0].count) });
+    } catch (err) {
+      logger.error('Failed to get client unread count', { error: err.message });
+      res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+
   return router;
 };
