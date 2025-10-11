@@ -208,7 +208,7 @@ function createPasswordResetEmail(name, resetToken) {
           <p>Hi ${name},</p>
           <p>We received a request to reset your password. Click the button below to create a new password:</p>
           <p style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
+            <a href="${resetUrl}"
                style="background: forestgreen; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
               Reset Password
             </a>
@@ -222,11 +222,52 @@ function createPasswordResetEmail(name, resetToken) {
   };
 }
 
+function createCertificationSubmissionNotification(workerName, workerEmail, speciality, fileName, certificationId) {
+  const adminUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/admin.html`;
+  return {
+    subject: '🔔 New Certificate Submitted for Review - Fixxa Admin',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #ff9800; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">📄 New Certificate Submission</h1>
+        </div>
+        <div style="padding: 20px; background: #f9f9f9;">
+          <p>Hi Admin,</p>
+          <p>A professional has submitted a certificate for review. Please review and approve or reject it as soon as possible.</p>
+          <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+            <h3 style="margin-top: 0; color: #ff9800;">Professional Details</h3>
+            <p><strong>Name:</strong> ${workerName}</p>
+            <p><strong>Email:</strong> ${workerEmail}</p>
+            <p><strong>Speciality:</strong> ${speciality}</p>
+            <p><strong>Document:</strong> ${fileName}</p>
+            <p><strong>Certification ID:</strong> #${certificationId}</p>
+            <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+          <p style="background: #fff3e0; padding: 12px; border-radius: 6px; border-left: 4px solid #ff9800; margin: 20px 0;">
+            <strong>⏰ Action Required:</strong> Please review this certificate promptly to help professionals get verified faster.
+          </p>
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="${adminUrl}"
+               style="background: #ff9800; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              Review Certificate Now
+            </a>
+          </p>
+          <p style="font-size: 0.9rem; color: #666;">
+            You can approve or reject this certificate from the Admin Dashboard under the "Certifications" section.
+          </p>
+          <p>Best regards,<br>Fixxa Automated System</p>
+        </div>
+      </div>
+    `
+  };
+}
+
 module.exports = {
   sendEmail,
   createWelcomeEmail,
   createBookingConfirmationEmail,
   createCancellationEmail,
   createCompletionEmail,
-  createPasswordResetEmail
+  createPasswordResetEmail,
+  createCertificationSubmissionNotification
 };

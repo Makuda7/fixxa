@@ -38,6 +38,7 @@ const upload = multer({
 
 module.exports = (pool, logger) => {
   const { requireAuth, workerOnly, adminOnly } = require('../middleware/auth');
+  const { sendEmail, createCertificationSubmissionNotification } = require('../utils/email');
 
   // Upload certification (worker only)
   router.post('/upload', requireAuth, workerOnly, upload.single('certification'), async (req, res) => {
@@ -55,8 +56,39 @@ module.exports = (pool, logger) => {
         [workerId, fileUrl, fileName, 'pending']
       );
 
-      logger.info('Certification uploaded', { workerId, certificationId: result.rows[0].id });
-      
+      const certificationId = result.rows[0].id;
+
+      logger.info('Certification uploaded', { workerId, certificationId });
+
+      // Get worker details for the notification email
+      const workerResult = await pool.query(
+        'SELECT name, email, speciality FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      if (workerResult.rows.length > 0) {
+        const worker = workerResult.rows[0];
+
+        // Send notification email to admin
+        const emailContent = createCertificationSubmissionNotification(
+          worker.name,
+          worker.email,
+          worker.speciality,
+          fileName,
+          certificationId
+        );
+
+        // Send to admin email (fixxaapp@gmail.com)
+        await sendEmail(
+          'fixxaapp@gmail.com',
+          emailContent.subject,
+          emailContent.html,
+          logger
+        );
+
+        logger.info('Admin notification sent for certificate submission', { workerId, certificationId });
+      }
+
       res.json({
         success: true,
         message: 'Certification uploaded successfully and pending admin approval',
