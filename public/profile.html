@@ -873,10 +873,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     currentWorker = worker;
-    const ratingValue = Number(worker.rating) || 0;
-    const rating = Math.min(Math.max(ratingValue, 0), 5);
-    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
     const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
+
+    // Fetch reviews first to calculate actual average rating
+    let actualRating = 0;
+    let reviewCount = 0;
+    try {
+      const reviewsRes = await fetch(`/reviews?workerId=${worker.id}`, { credentials: 'include' });
+      const reviews = await reviewsRes.json();
+      if (Array.isArray(reviews) && reviews.length > 0) {
+        actualRating = reviews.reduce((sum, r) => sum + (r.overall_rating || 0), 0) / reviews.length;
+        reviewCount = reviews.length;
+      }
+    } catch (err) {
+      console.error('Failed to fetch reviews for rating:', err);
+    }
+
+    const rating = Math.round(actualRating * 10) / 10; // Round to 1 decimal
+    const fullStars = Math.floor(actualRating);
+    const stars = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
 
     container.innerHTML = `
       <article class="worker-card">
@@ -890,9 +905,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <div class="profile-details">
             <div class="price-section">
-              <div class="rating-display">${rating}/5</div>
-              <div class="rating-stars">${stars}</div>
+              <div class="rating-display">${rating > 0 ? rating : 'New'}/5</div>
+              <div class="rating-stars">${rating > 0 ? stars : '☆☆☆☆☆'}</div>
               ${rating >= 4.5 ? '<span class="price-badge">Top Rated</span>' : ''}
+              ${reviewCount > 0 ? `<span style="color:#666; font-size:0.9rem;">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>` : '<span style="color:#666; font-size:0.9rem;">(No reviews yet)</span>'}
             </div>
 
             <div class="worker-name-section">
