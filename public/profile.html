@@ -21,23 +21,119 @@
   .user-dropdown a, .user-dropdown button { display:block; padding:8px; text-decoration:none; color:#333; background:white; border:none; width:100%; text-align:left; cursor:pointer; }
   .user-dropdown a:hover, .user-dropdown button:hover { background:#f0f0f0; }
 
-  /* --- Worker Profile Card --- */
-  .worker-card { max-width:400px; background:white; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,0.08); padding:2rem 1.5rem; text-align:center; margin:2rem auto; }
-  .worker-card img { width:180px; height:180px; border-radius:50%; object-fit:cover; margin:0 auto; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
-  .worker-card h3 { 
-    margin:0.5rem 0; 
+  /* --- Worker Profile Card (ID Card Style) --- */
+  .worker-card {
+    max-width:900px;
+    background:white;
+    border-radius:16px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.12);
+    padding:2rem;
+    margin:2rem auto;
+    display:grid;
+    grid-template-columns:250px 1fr;
+    gap:2rem;
+    align-items:start;
+  }
+
+  .worker-card-left {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
+
+  .worker-card-right {
+    display:flex;
+    flex-direction:column;
+    gap:1.5rem;
+  }
+
+  .worker-card img {
+    width:200px;
+    height:200px;
+    border-radius:16px;
+    object-fit:cover;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    border:4px solid forestgreen;
+  }
+
+  .worker-card h3 {
+    margin:1rem 0 0.25rem 0;
     color:#333;
     display:flex;
     align-items:center;
     justify-content:center;
     gap:0.5rem;
     flex-wrap:wrap;
+    font-size:1.4rem;
   }
+
   .worker-card p { margin:0.3rem 0; color:#333; }
-  .area { color:forestgreen; font-weight:600; }
-  .profile-bio { background:#f8f9fa; padding:1rem; border-radius:8px; text-align:left; color:#444; margin-top:1rem; }
-  .profile-bio h4 { margin-bottom:0.5rem; color:forestgreen; }
-  .btn-primary { margin-top:1rem; background:forestgreen; color:white; border:none; padding:12px 28px; border-radius:8px; font-size:1.1rem; cursor:pointer; transition:background 0.3s ease; width:100%; }
+  .area { color:forestgreen; font-weight:600; font-size:1.1rem; }
+
+  .profile-info-grid {
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:1rem;
+    background:#f8f9fa;
+    padding:1.5rem;
+    border-radius:12px;
+  }
+
+  .info-item {
+    display:flex;
+    flex-direction:column;
+    gap:0.25rem;
+  }
+
+  .info-label {
+    font-size:0.85rem;
+    color:#666;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+
+  .info-value {
+    font-size:1rem;
+    color:#333;
+    font-weight:500;
+  }
+
+  .profile-bio {
+    background:#f8f9fa;
+    padding:1.5rem;
+    border-radius:12px;
+    color:#444;
+  }
+  .profile-bio h4 {
+    margin:0 0 0.75rem 0;
+    color:forestgreen;
+    font-size:1.1rem;
+  }
+  .profile-bio p {
+    line-height:1.6;
+    margin:0;
+  }
+
+  .btn-primary {
+    background:forestgreen;
+    color:white;
+    border:none;
+    padding:14px 32px;
+    border-radius:10px;
+    font-size:1.1rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:all 0.3s ease;
+    width:100%;
+    box-shadow:0 2px 8px rgba(34,139,34,0.3);
+  }
+  .btn-primary:hover {
+    background:#2d5016;
+    transform:translateY(-2px);
+    box-shadow:0 4px 12px rgba(34,139,34,0.4);
+  }
   .verified-badge {
     background: #28a745;
     color: white;
@@ -126,10 +222,41 @@
   .loading { color:#666; font-style:italic; }
   .loading-spinner { display:inline-block; margin-left:0.5rem; }
 
-  @media(max-width:420px){ 
-    .worker-card{ width:90vw; padding:1.5rem 1rem; } 
-    .worker-card img{ width:140px; height:140px; } 
-    .review-categories { flex-direction:column; gap:0.25rem; }
+  @media(max-width:768px){
+    .worker-card {
+      grid-template-columns:1fr;
+      gap:1.5rem;
+      padding:1.5rem;
+    }
+    .worker-card img {
+      width:160px;
+      height:160px;
+    }
+    .profile-info-grid {
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media(max-width:420px){
+    .worker-card {
+      width:90vw;
+      padding:1rem;
+      gap:1rem;
+    }
+    .worker-card img {
+      width:140px;
+      height:140px;
+    }
+    .worker-card h3 {
+      font-size:1.2rem;
+    }
+    .review-categories {
+      flex-direction:column;
+      gap:0.25rem;
+    }
+    .profile-info-grid {
+      padding:1rem;
+    }
   }
 </style>
 </head>
@@ -637,55 +764,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
     container.innerHTML = `
       <article class="worker-card">
-        <img src="${worker.image}" alt="${worker.name}" />
-        <h3>${worker.name} ${verifiedBadge}</h3>
-        <p class="area">${worker.area}</p>
-        <p><strong>Speciality:</strong> ${worker.speciality}</p>
-        <p><strong>Experience:</strong> ${worker.experience}</p>
-        <p><strong>Availability:</strong> ${worker.availability}</p>
-        <p><strong>Rating:</strong> ${stars} (${rating})</p>
-        <section class="profile-bio">
-          <h4>About</h4>
-          <p>${worker.bio}</p>
-        </section>
+        <div class="worker-card-left">
+          <img src="${worker.image}" alt="${worker.name}" />
+          <h3>${worker.name} ${verifiedBadge}</h3>
+          <p class="area">${worker.area}</p>
+          <p style="font-size:1.2rem; margin-top:0.5rem;">${stars}</p>
+          <p style="color:#666; font-size:0.9rem;">${rating}/5 rating</p>
 
-        <section class="work-gallery">
-          <h4>
-            Work Gallery
-            <span class="photo-count-badge" id="photo-count-badge">0 photos</span>
-          </h4>
-          <div class="gallery-grid" id="work-gallery-grid">
-            <div class="loading-gallery">Loading...</div>
+          <button id="contact-btn" class="btn-primary" style="margin-top:1.5rem;">Contact ${worker.name}</button>
+          <button id="book-btn" class="btn-primary" style="background:#007bff; margin-top:0.5rem;">Book Now</button>
+        </div>
+
+        <div class="worker-card-right">
+          <div class="profile-info-grid">
+            <div class="info-item">
+              <span class="info-label">Speciality</span>
+              <span class="info-value">${worker.speciality}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Experience</span>
+              <span class="info-value">${worker.experience}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Availability</span>
+              <span class="info-value">${worker.availability}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Area Served</span>
+              <span class="info-value">${worker.area}</span>
+            </div>
           </div>
-        </section>
 
-        <button id="contact-btn" class="btn-primary">Contact ${worker.name}</button>
-        <form id="contact-form" class="form-container">
-          <input type="text" id="visitor-name" placeholder="Your Name" required />
-          <input type="email" id="visitor-email" placeholder="Your Email" required />
-          <textarea id="visitor-message" placeholder="Your Message" required></textarea>
-          <button type="submit" class="btn-primary">Send Message</button>
-        </form>
+          <section class="profile-bio">
+            <h4>About ${worker.name}</h4>
+            <p>${worker.bio}</p>
+          </section>
 
-        <button id="book-btn" class="btn-primary" style="background:#007bff;">Book Now</button>
-        <form id="booking-form" class="form-container">
-          <input type="date" id="booking-date" required />
-          <input type="time" id="booking-time" required />
-          <textarea id="booking-note" placeholder="Additional note (optional)"></textarea>
-          <button type="submit" class="btn-primary">Confirm Booking</button>
-        </form>
+          <section class="work-gallery">
+            <h4>
+              Work Gallery
+              <span class="photo-count-badge" id="photo-count-badge">0 photos</span>
+            </h4>
+            <div class="gallery-grid" id="work-gallery-grid">
+              <div class="loading-gallery">Loading...</div>
+            </div>
+          </section>
 
-        <p id="thank-you-msg" style="display:none;color:green;margin-top:1rem;">Thank you for your message!</p>
-        <p id="booking-msg" style="display:none;color:green;margin-top:1rem;">Booking successfully submitted!</p>
+          <form id="contact-form" class="form-container">
+            <input type="text" id="visitor-name" placeholder="Your Name" required />
+            <input type="email" id="visitor-email" placeholder="Your Email" required />
+            <textarea id="visitor-message" placeholder="Your Message" required></textarea>
+            <button type="submit" class="btn-primary">Send Message</button>
+          </form>
 
-        <section class="worker-reviews">
-          <h4>
-            Reviews 
-            <button id="refresh-reviews" class="reviews-refresh" title="Refresh reviews">↻</button>
-          </h4>
-          <div class="reviews-last-updated" id="reviews-last-updated"></div>
-          <div id="reviews-list"><p>Loading reviews...</p></div>
-        </section>
+          <form id="booking-form" class="form-container">
+            <input type="date" id="booking-date" required />
+            <input type="time" id="booking-time" required />
+            <textarea id="booking-note" placeholder="Additional note (optional)"></textarea>
+            <button type="submit" class="btn-primary">Confirm Booking</button>
+          </form>
+
+          <p id="thank-you-msg" style="display:none;color:green;margin-top:1rem;">Thank you for your message!</p>
+          <p id="booking-msg" style="display:none;color:green;margin-top:1rem;">Booking successfully submitted!</p>
+
+          <section class="worker-reviews">
+            <h4>
+              Reviews
+              <button id="refresh-reviews" class="reviews-refresh" title="Refresh reviews">↻</button>
+            </h4>
+            <div class="reviews-last-updated" id="reviews-last-updated"></div>
+            <div id="reviews-list"><p>Loading reviews...</p></div>
+          </section>
+        </div>
       </article>
     `;
 
