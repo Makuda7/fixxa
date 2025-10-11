@@ -10,18 +10,19 @@ module.exports = (pool, logger, io) => {
       const workerId = req.session.user.id;
       
       const result = await pool.query(`
-        SELECT 
+        SELECT
           br.*,
           b.booking_date,
           b.booking_time,
           b.note,
+          b.status as booking_status,
           u.name as client_name,
           u.email as client_email
         FROM booking_requests br
         JOIN bookings b ON br.booking_id = b.id
         JOIN users u ON br.user_id = u.id
-        WHERE br.worker_id = $1 
-        AND br.request_type IN ('reschedule', 'cancellation')
+        WHERE br.worker_id = $1
+        AND br.request_type IN ('reschedule', 'cancellation', 'pending-reschedule')
         AND br.status = 'pending'
         ORDER BY br.created_at DESC
       `, [workerId]);
@@ -62,21 +63,26 @@ module.exports = (pool, logger, io) => {
       if (action === 'approve') {
         // Update request status
         await pool.query(`
-          UPDATE booking_requests 
-          SET status = 'approved', responded_at = CURRENT_TIMESTAMP
+          UPDATE booking_requests
+          SET status = 'approved', resolved_at = CURRENT_TIMESTAMP
           WHERE id = $1
         `, [requestId]);
 
         // Handle based on request type
-        if (request.request_type === 'reschedule') {
+        if (request.request_type === 'reschedule' || request.request_type === 'pending-reschedule') {
+          // Parse reschedule data from completion_notes (which contains JSON)
+          const rescheduleData = typeof request.completion_notes === 'string'
+            ? JSON.parse(request.completion_notes)
+            : request.completion_notes;
+
           await pool.query(`
-            UPDATE bookings 
+            UPDATE bookings
             SET booking_date = $1, booking_time = $2, status = 'Confirmed'
             WHERE id = $3
-          `, [request.new_date, request.new_time, request.booking_id]);
+          `, [rescheduleData.newDate, rescheduleData.newTime, request.booking_id]);
         } else if (request.request_type === 'cancellation') {
           await pool.query(`
-            UPDATE bookings 
+            UPDATE bookings
             SET status = 'Cancelled', cancelled_by = 'client'
             WHERE id = $1
           `, [request.booking_id]);
@@ -87,25 +93,34 @@ module.exports = (pool, logger, io) => {
             clientId: request.user_id,
             requestId,
             action: 'approved',
-            type: request.request_type
+            type: request.request_type,
+            bookingId: request.booking_id
           });
         }
 
         res.json({ success: true, message: 'Request approved' });
       } else {
-        // Reject
+        // Reject - restore original status
         await pool.query(`
-          UPDATE booking_requests 
-          SET status = 'rejected', responded_at = CURRENT_TIMESTAMP
+          UPDATE booking_requests
+          SET status = 'rejected', resolved_at = CURRENT_TIMESTAMP
           WHERE id = $1
         `, [requestId]);
+
+        // Restore booking to Confirmed status
+        await pool.query(`
+          UPDATE bookings
+          SET status = 'Confirmed'
+          WHERE id = $1
+        `, [request.booking_id]);
 
         if (io) {
           io.emit('booking-request-response', {
             clientId: request.user_id,
             requestId,
             action: 'rejected',
-            type: request.request_type
+            type: request.request_type,
+            bookingId: request.booking_id
           });
         }
 

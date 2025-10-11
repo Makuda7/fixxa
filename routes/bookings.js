@@ -149,12 +149,12 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io) => {
     }
   });
 
-  // Reschedule booking - with inline ownership check
+  // Reschedule booking - with 48-hour validation and approval required
   router.post('/:id/reschedule', requireAuth, async (req, res) => {
     try {
       const userId = req.session.user.id;
       const bookingId = req.params.id;
-      const { bookingDate, bookingTime } = req.body;
+      const { bookingDate, bookingTime, reason } = req.body;
 
       if (!bookingDate || !bookingTime)
         return res.status(400).json({ success: false, error: 'Missing new date/time' });
@@ -180,34 +180,67 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io) => {
         return res.status(403).json({ success: false, error: 'Not authorized' });
       }
 
+      // Check 48-hour restriction
+      const bookingDateTime = new Date(`${booking.booking_date} ${booking.booking_time}`);
+      const now = new Date();
+      const hoursUntilBooking = (bookingDateTime - now) / (1000 * 60 * 60);
+
+      if (hoursUntilBooking < 48) {
+        return res.status(400).json({
+          success: false,
+          error: 'Reschedule must be requested at least 48 hours before the original booking time',
+          hoursTooLate: Math.round(48 - hoursUntilBooking)
+        });
+      }
+
+      // Create reschedule request for worker approval
+      const requestData = {
+        newDate: bookingDate,
+        newTime: bookingTime,
+        originalDate: booking.booking_date,
+        originalTime: booking.booking_time,
+        reason: reason || 'Schedule conflict'
+      };
+
       await pool.query(
-        `UPDATE bookings SET booking_date=$1, booking_time=$2, status='Confirmed' WHERE id=$3 AND user_id=$4`,
-        [bookingDate, bookingTime, bookingId, userId]
+        `INSERT INTO booking_requests (booking_id, user_id, worker_id, request_type, completion_notes)
+         VALUES ($1, $2, $3, 'pending-reschedule', $4)`,
+        [bookingId, userId, booking.worker_id, JSON.stringify(requestData)]
       );
 
-      // Send reschedule emails to both parties
-      const clientEmail = emailTemplates.createRescheduleEmail(booking, booking.client_name, bookingDate, bookingTime, true);
+      // Update booking status to show pending reschedule
+      await pool.query(
+        `UPDATE bookings SET status = 'Pending Reschedule' WHERE id = $1`,
+        [bookingId]
+      );
+
+      // Send notification email to professional
       const professionalEmail = emailTemplates.createRescheduleEmail(booking, booking.professional_name, bookingDate, bookingTime, false);
-
-      sendEmail(booking.client_email, clientEmail.subject, clientEmail.html, logger).catch(err =>
-        logger.error('Failed to send reschedule email to client', { error: err.message })
-      );
-
       sendEmail(booking.professional_email, professionalEmail.subject, professionalEmail.html, logger).catch(err =>
-        logger.error('Failed to send reschedule email to professional', { error: err.message })
+        logger.error('Failed to send reschedule request email to professional', { error: err.message })
       );
 
       if (io) {
         io.emit('booking-updated', {
           bookingId,
-          booking_date: bookingDate,
-          booking_time: bookingTime,
-          user_id: userId
+          status: 'Pending Reschedule',
+          worker_id: booking.worker_id
+        });
+        io.emit('new-reschedule-request', {
+          bookingId,
+          worker_id: booking.worker_id,
+          client_name: booking.client_name,
+          newDate: bookingDate,
+          newTime: bookingTime
         });
       }
 
-      logger.info('Booking rescheduled', { bookingId, newDate: bookingDate, newTime: bookingTime });
-      res.json({ success: true, message: 'Booking rescheduled successfully' });
+      logger.info('Reschedule request created', { bookingId, newDate: bookingDate, newTime: bookingTime });
+      res.json({
+        success: true,
+        message: 'Reschedule request sent to professional. They will review and respond soon.',
+        requiresApproval: true
+      });
     } catch (err) {
       logger.error('Reschedule booking error', { error: err.message });
       console.error('Reschedule booking error:', err);
