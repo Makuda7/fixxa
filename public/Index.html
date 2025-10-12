@@ -51,26 +51,94 @@
   box-shadow:0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Location banner */
-.location-banner {
-  background: linear-gradient(135deg, #4a7c59, #2d5016);
-  color: white;
-  padding: 1rem;
-  text-align: center;
-  display: none;
+/* Location Permission Modal */
+.location-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
 }
-.location-banner.show { display: block; }
-.location-banner button {
+
+.location-modal {
   background: white;
-  color: #2d5016;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s ease;
+}
+
+.location-modal-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.location-modal h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.location-modal p {
+  margin: 0 0 2rem 0;
+  color: #666;
+  line-height: 1.6;
+}
+
+.location-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.location-btn-cancel, .location-btn-allow {
+  padding: 0.75rem 1.5rem;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  margin-left: 1rem;
+  font-size: 1rem;
+  transition: all 0.2s;
 }
-.location-banner button:hover { background: #f0f0f0; }
+
+.location-btn-cancel {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.location-btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+.location-btn-allow {
+  background: forestgreen;
+  color: white;
+}
+
+.location-btn-allow:hover {
+  background: #228b22;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 139, 34, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 
 /* Featured Professionals Grid */
 .pro-grid {
@@ -166,10 +234,17 @@
   </nav>
 </header>
 
-<!-- Location Banner -->
-<div class="location-banner" id="locationBanner">
-  <span id="locationMessage">Enable location to find professionals near you</span>
-  <button id="enableLocationBtn">Enable Location</button>
+<!-- Location Permission Modal -->
+<div class="location-modal-overlay" id="locationModal" style="display:none;">
+  <div class="location-modal">
+    <div class="location-modal-icon">📍</div>
+    <h3>Enable Location Services</h3>
+    <p>Fixxa would like to access your location to show you the nearest professionals in your area.</p>
+    <div class="location-modal-actions">
+      <button class="location-btn-cancel" id="locationDenyBtn">Not Now</button>
+      <button class="location-btn-allow" id="locationAllowBtn">Allow</button>
+    </div>
+  </div>
 </div>
 
 <!-- Hero Section -->
@@ -248,12 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const userBtn = document.getElementById('userBtn');
   const userDropdown = document.getElementById('userDropdown');
   const logoutBtn = document.getElementById('logoutBtn');
-  const locationBanner = document.getElementById('locationBanner');
-  const enableLocationBtn = document.getElementById('enableLocationBtn');
-  const locationMessage = document.getElementById('locationMessage');
+  const locationModal = document.getElementById('locationModal');
+  const locationAllowBtn = document.getElementById('locationAllowBtn');
+  const locationDenyBtn = document.getElementById('locationDenyBtn');
   const featuredTitle = document.getElementById('featuredTitle');
 
   let userLocation = null;
+  let locationPermissionAsked = localStorage.getItem('locationPermissionAsked') === 'true';
 
   async function checkLogin() {
     try {
@@ -299,33 +375,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  function showLocationModal() {
+    if (!locationPermissionAsked) {
+      locationModal.style.display = 'flex';
+    }
+  }
+
   async function requestLocation() {
     try {
       const position = await GeoLocation.getCurrentPosition();
       userLocation = position;
-      
-      locationMessage.textContent = 'Location enabled - Showing nearby professionals';
-      enableLocationBtn.textContent = 'Refresh';
-      
       sessionStorage.setItem('userLocation', JSON.stringify(userLocation));
-      
+      localStorage.setItem('locationEnabled', 'true');
+      locationModal.style.display = 'none';
       loadFeaturedPros();
     } catch (error) {
       console.error('Location error:', error);
-      locationMessage.textContent = 'Location access denied - Showing all professionals';
-      enableLocationBtn.style.display = 'none';
+      locationModal.style.display = 'none';
+      loadFeaturedPros();
     }
   }
 
-  enableLocationBtn.addEventListener('click', requestLocation);
+  locationAllowBtn.addEventListener('click', () => {
+    localStorage.setItem('locationPermissionAsked', 'true');
+    locationPermissionAsked = true;
+    requestLocation();
+  });
 
+  locationDenyBtn.addEventListener('click', () => {
+    localStorage.setItem('locationPermissionAsked', 'true');
+    locationPermissionAsked = true;
+    locationModal.style.display = 'none';
+    loadFeaturedPros();
+  });
+
+  // Check if location is already enabled
   const savedLocation = sessionStorage.getItem('userLocation');
-  if (savedLocation) {
+  const locationEnabled = localStorage.getItem('locationEnabled') === 'true';
+
+  if (savedLocation && locationEnabled) {
     userLocation = JSON.parse(savedLocation);
-    locationMessage.textContent = 'Location enabled - Showing nearby professionals';
-    enableLocationBtn.textContent = 'Refresh';
-  } else {
-    locationBanner.classList.add('show');
+  } else if (!locationPermissionAsked) {
+    // Show modal after a short delay when page loads
+    setTimeout(showLocationModal, 1500);
   }
 
   async function loadFeaturedPros() {

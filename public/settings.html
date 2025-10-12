@@ -54,6 +54,15 @@
   .checkbox-group input[type="checkbox"] { width:auto; cursor:pointer; }
   .checkbox-group label { margin:0; font-weight:400; cursor:pointer; }
 
+  /* Toggle Switch */
+  .toggle-container { display:flex; align-items:center; gap:1rem; margin:0.5rem 0; }
+  .toggle-switch { display:none; }
+  .toggle-label { position:relative; width:50px; height:26px; background:#ccc; border-radius:26px; cursor:pointer; transition:background 0.3s; display:inline-block; }
+  .toggle-slider { position:absolute; top:3px; left:3px; width:20px; height:20px; background:white; border-radius:50%; transition:transform 0.3s; box-shadow:0 2px 4px rgba(0,0,0,0.2); }
+  .toggle-switch:checked + .toggle-label { background:forestgreen; }
+  .toggle-switch:checked + .toggle-label .toggle-slider { transform:translateX(24px); }
+  .toggle-status { font-weight:600; color:#666; }
+
   .btn-primary { background:forestgreen; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s; }
   .btn-primary:hover { background:#2d5016; transform:translateY(-1px); }
   .btn-primary:disabled { background:#ccc; cursor:not-allowed; transform:none; }
@@ -226,6 +235,23 @@
 
       <button type="submit" class="btn-primary" id="changePasswordBtn">Change Password</button>
     </form>
+  </section>
+
+  <!-- Location & Privacy Section -->
+  <section class="settings-section">
+    <h2>Location & Privacy</h2>
+
+    <div class="form-group">
+      <label>Location Services</label>
+      <div class="toggle-container">
+        <input type="checkbox" id="locationToggle" class="toggle-switch" />
+        <label for="locationToggle" class="toggle-label">
+          <span class="toggle-slider"></span>
+        </label>
+        <span id="locationStatus" class="toggle-status">Disabled</span>
+      </div>
+      <small>Allow Fixxa to access your location to find nearby professionals</small>
+    </div>
   </section>
 
   <!-- Notification Preferences Section -->
@@ -757,10 +783,67 @@ async function loadUnreadMessageCount() {
   }
 }
 
+// Location Toggle Handler
+const locationToggle = document.getElementById('locationToggle');
+const locationStatus = document.getElementById('locationStatus');
+
+function initLocationToggle() {
+  const locationEnabled = localStorage.getItem('locationEnabled') === 'true';
+  locationToggle.checked = locationEnabled;
+  locationStatus.textContent = locationEnabled ? 'Enabled' : 'Disabled';
+  locationStatus.style.color = locationEnabled ? 'forestgreen' : '#666';
+}
+
+locationToggle.addEventListener('change', async (e) => {
+  const isEnabled = e.target.checked;
+
+  if (isEnabled) {
+    // Request location permission
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            // Success - store location
+            const userLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            };
+            sessionStorage.setItem('userLocation', JSON.stringify(userLocation));
+            localStorage.setItem('locationEnabled', 'true');
+            localStorage.setItem('locationPermissionAsked', 'true');
+            locationStatus.textContent = 'Enabled';
+            locationStatus.style.color = 'forestgreen';
+            showNotification('Location services enabled', 'success');
+          },
+          (error) => {
+            // User denied or error occurred
+            locationToggle.checked = false;
+            locationStatus.textContent = 'Disabled';
+            locationStatus.style.color = '#666';
+            showNotification('Location access denied', 'error');
+          }
+        );
+      }
+    } catch (error) {
+      locationToggle.checked = false;
+      locationStatus.textContent = 'Disabled';
+      showNotification('Location not supported', 'error');
+    }
+  } else {
+    // Disable location
+    localStorage.setItem('locationEnabled', 'false');
+    sessionStorage.removeItem('userLocation');
+    locationStatus.textContent = 'Disabled';
+    locationStatus.style.color = '#666';
+    showNotification('Location services disabled', 'success');
+  }
+});
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadUserData();
   loadUnreadMessageCount();
+  initLocationToggle();
 
   // Refresh unread count every 30 seconds
   setInterval(loadUnreadMessageCount, 30000);
