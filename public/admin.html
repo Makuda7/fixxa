@@ -625,6 +625,45 @@
       .worker-grid, .clients-grid, .cert-grid { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
     }
+
+    /* Footer */
+    .footer {
+      background: white;
+      border-top: 2px solid #e0e0e0;
+      padding: 2rem;
+      margin-top: 3rem;
+      display: flex;
+      justify-content: space-around;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .footer div {
+      min-width: 200px;
+    }
+    .footer h4 {
+      color: #2d5016;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+    .footer a {
+      display: block;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 0.5rem;
+      transition: color 0.3s;
+    }
+    .footer a:hover {
+      color: #4a7c59;
+    }
+    @media (max-width: 768px) {
+      .footer {
+        flex-direction: column;
+        padding: 1.5rem;
+      }
+      .footer div {
+        min-width: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1514,27 +1553,37 @@
         updatePendingWorkersBadge();
       }
     }, 30000);
+
+    // Helper function to escape HTML
+    function escapeHTML(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
   </script>
-<footer class="footer">
-  <div>
-    <h4>Fixxa</h4>
-    <a href="aboutus.html">About Us</a>
-    <a href="#">Contact Us</a>
-    <a href="#">FAQ</a>
-    <a href="#">Feedback</a>
-  </div>
-  <div>
-    <h4>Customer</h4>
-    <a href="terms.html">Terms & Conditions</a>
-    <a href="safety.html">Safety & Security</a>
-    <a href="privacy.html">Privacy Policy</a>
-  </div>
-  <div>
-    <h4>Professionals</h4>
-    <a href="join.html">Join as a Professional</a>
-    <a href="#">Refer a Professional</a>
-  </div>
-</footer>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>
+      <h4>Fixxa</h4>
+      <a href="aboutus.html">About Us</a>
+      <a href="#">Contact Us</a>
+      <a href="#">FAQ</a>
+      <a href="#">Feedback</a>
+    </div>
+    <div>
+      <h4>Customer</h4>
+      <a href="terms.html">Terms & Conditions</a>
+      <a href="safety.html">Safety & Security</a>
+      <a href="privacy.html">Privacy Policy</a>
+    </div>
+    <div>
+      <h4>Professionals</h4>
+      <a href="join.html">Join as a Professional</a>
+      <a href="#">Refer a Professional</a>
+    </div>
+  </footer>
 
 </body>
 </html>
