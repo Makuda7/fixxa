@@ -428,20 +428,39 @@ document.addEventListener('DOMContentLoaded', () => {
     
     try {
       let workers;
-      
+
       if (userLocation) {
         const res = await fetch(
           `/workers/nearby?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&radius=50`,
           { credentials: 'include' }
         );
-        workers = await res.json();
+
+        if (!res.ok) {
+          // If nearby fails, fall back to all workers
+          console.warn('Nearby workers failed, falling back to all workers');
+          const fallbackRes = await fetch('/workers', { credentials: 'include' });
+          workers = await fallbackRes.json();
+        } else {
+          workers = await res.json();
+        }
+
         featuredTitle.textContent = 'Nearest Top Rated Professionals';
       } else {
         const res = await fetch('/workers', { credentials: 'include' });
         workers = await res.json();
-        
-        workers.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+
         featuredTitle.textContent = 'Top Rated Professionals';
+      }
+
+      // Ensure workers is an array
+      if (!Array.isArray(workers)) {
+        console.error('Workers is not an array:', workers);
+        workers = [];
+      }
+
+      // Sort by rating if not already sorted by distance
+      if (!userLocation || workers.length === 0) {
+        workers.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
       }
 
       workers = workers.slice(0, 3);
