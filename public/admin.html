@@ -653,6 +653,10 @@
     <!-- Navigation -->
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="switchTab('overview')">Overview</button>
+      <button class="nav-tab" onclick="switchTab('pending-workers')">
+        Pending Workers
+        <span class="badge" id="pendingWorkersBadge" style="display:none;">0</span>
+      </button>
       <button class="nav-tab" onclick="switchTab('certifications')">
         Certifications
         <span class="badge" id="pendingCertsBadge" style="display:none;">0</span>
@@ -691,6 +695,18 @@
         <p style="color: #666;">Last 10 bookings on the platform</p>
         <div id="bookingsTableContainer">
           <div class="no-data">Loading bookings...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending Workers Tab -->
+    <div id="pending-workers-tab" class="tab-content">
+      <div class="table-section">
+        <h3>Pending Worker Applications</h3>
+        <p>Review and approve professionals who want to join Fixxa</p>
+
+        <div id="pendingWorkersContainer">
+          <div class="no-data">Loading pending applications...</div>
         </div>
       </div>
     </div>
@@ -769,6 +785,24 @@
     </div>
   </div>
 
+  <!-- Rejection Reason Modal -->
+  <div id="rejectionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Reject Worker Application</h3>
+        <button class="modal-close" onclick="closeRejectionModal()">×</button>
+      </div>
+      <div style="padding:1.5rem;">
+        <p style="color:#666; margin-bottom:1rem;">Provide a detailed reason for rejecting this application. The worker will be notified.</p>
+        <textarea id="rejectionReason" rows="5" style="width:100%; padding:0.75rem; border:1px solid #ccc; border-radius:8px; font-family:inherit;" placeholder="Enter rejection reason (minimum 10 characters)..."></textarea>
+        <div style="margin-top:1rem; display:flex; gap:0.5rem; justify-content:flex-end;">
+          <button class="btn btn-secondary" onclick="closeRejectionModal()">Cancel</button>
+          <button class="btn btn-danger" onclick="confirmRejectWorker()">Reject Application</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // State
     let appState = {
@@ -776,10 +810,12 @@
       clients: [],
       bookings: [],
       certifications: [],
+      pendingWorkers: [],
       stats: {},
       settings: {},
       loading: false,
-      currentCertFilter: 'pending'
+      currentCertFilter: 'pending',
+      currentRejectingWorkerId: null
     };
 
     // Show/hide loading overlay
@@ -1265,9 +1301,11 @@
       event.target.classList.add('active');
       document.getElementById(tabName + '-tab').classList.add('active');
       
-      // Load data if switching to certifications tab
+      // Load data if switching to tabs
       if (tabName === 'certifications') {
         loadCertifications();
+      } else if (tabName === 'pending-workers') {
+        loadPendingWorkers();
       }
     }
 
@@ -1288,6 +1326,7 @@
           loadProfessionals(),
           loadClients(),
           loadCertifications(),
+          loadPendingWorkers(),
           loadSettings()
         ]);
         
@@ -1326,6 +1365,143 @@
       }
     }
 
+    // ========== PENDING WORKERS FUNCTIONS ==========
+
+    async function loadPendingWorkers() {
+      try {
+        const res = await fetch('/admin/pending-workers', { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.success) {
+          appState.pendingWorkers = data.workers || [];
+          renderPendingWorkers();
+          updatePendingWorkersBadge();
+        }
+      } catch (err) {
+        console.error('Failed to load pending workers:', err);
+        document.getElementById('pendingWorkersContainer').innerHTML = '<div class="no-data">Failed to load applications</div>';
+      }
+    }
+
+    function renderPendingWorkers() {
+      const container = document.getElementById('pendingWorkersContainer');
+
+      if (appState.pendingWorkers.length === 0) {
+        container.innerHTML = '<div class="no-data">No pending applications</div>';
+        return;
+      }
+
+      container.innerHTML = appState.pendingWorkers.map(worker => `
+        <div class="worker-card">
+          <div class="worker-header">
+            <div class="worker-info">
+              <h4>${escapeHTML(worker.name)}</h4>
+              <p>${escapeHTML(worker.email)} ${worker.phone ? '• ' + escapeHTML(worker.phone) : ''}</p>
+              <p><strong>Speciality:</strong> ${escapeHTML(worker.speciality)}</p>
+              ${worker.address ? `<p><strong>Location:</strong> ${escapeHTML(worker.address)}, ${escapeHTML(worker.city || '')}</p>` : ''}
+            </div>
+            <div style="text-align:right;">
+              <p style="font-size:0.85rem; color:#666;">Applied: ${new Date(worker.created_at).toLocaleDateString()}</p>
+              ${worker.cert_count > 0 ? `<p style="font-size:0.85rem; color:#666;">${worker.approved_cert_count}/${worker.cert_count} certs approved</p>` : ''}
+            </div>
+          </div>
+          ${worker.bio ? `<p style="color:#666; margin-bottom:1rem;">${escapeHTML(worker.bio)}</p>` : ''}
+          ${worker.experience ? `<p style="color:#666; margin-bottom:1rem;"><strong>Experience:</strong> ${escapeHTML(worker.experience)} years</p>` : ''}
+          <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+            <button class="btn btn-success" onclick="approveWorker(${worker.id})">Approve</button>
+            <button class="btn btn-danger" onclick="openRejectWorkerModal(${worker.id})">Reject</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updatePendingWorkersBadge() {
+      const badge = document.getElementById('pendingWorkersBadge');
+      const count = appState.pendingWorkers.length;
+
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    async function approveWorker(workerId) {
+      if (!confirm('Are you sure you want to approve this worker? They will be able to accept bookings.')) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const res = await fetch(`/admin/approve-worker/${workerId}`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage(data.message, 'success');
+          await loadPendingWorkers();
+          await loadStats();
+        } else {
+          showMessage(data.error || 'Failed to approve worker', 'error');
+        }
+      } catch (err) {
+        console.error('Approve error:', err);
+        showMessage('Failed to approve worker', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function openRejectWorkerModal(workerId) {
+      appState.currentRejectingWorkerId = workerId;
+      document.getElementById('rejectionReason').value = '';
+      document.getElementById('rejectionModal').classList.add('show');
+    }
+
+    function closeRejectionModal() {
+      document.getElementById('rejectionModal').classList.remove('show');
+      appState.currentRejectingWorkerId = null;
+    }
+
+    async function confirmRejectWorker() {
+      const reason = document.getElementById('rejectionReason').value.trim();
+
+      if (reason.length < 10) {
+        showMessage('Please provide a detailed reason (at least 10 characters)', 'error');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const res = await fetch(`/admin/reject-worker/${appState.currentRejectingWorkerId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage(data.message, 'success');
+          closeRejectionModal();
+          await loadPendingWorkers();
+          await loadStats();
+        } else {
+          showMessage(data.error || 'Failed to reject worker', 'error');
+        }
+      } catch (err) {
+        console.error('Reject error:', err);
+        showMessage('Failed to reject worker', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ========== END PENDING WORKERS FUNCTIONS ==========
+
     // Run on page load
     document.addEventListener('DOMContentLoaded', init);
 
@@ -1335,6 +1511,7 @@
         loadStats();
         loadRecentBookings();
         updateCertBadge();
+        updatePendingWorkersBadge();
       }
     }, 30000);
   </script>
