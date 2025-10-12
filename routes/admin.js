@@ -505,5 +505,147 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get pending workers for approval
+  router.get('/pending-workers', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+          w.id,
+          w.name,
+          w.email,
+          w.speciality,
+          w.phone,
+          w.address,
+          w.city,
+          w.postal_code,
+          w.bio,
+          w.experience,
+          w.area,
+          w.approval_status,
+          w.created_at,
+          COUNT(c.id) as cert_count,
+          COUNT(CASE WHEN c.status = 'approved' THEN 1 END) as approved_cert_count
+        FROM workers w
+        LEFT JOIN certifications c ON w.id = c.worker_id
+        WHERE w.approval_status = 'pending'
+        GROUP BY w.id
+        ORDER BY w.created_at ASC
+      `);
+
+      res.json({
+        success: true,
+        workers: result.rows
+      });
+    } catch (error) {
+      logger.error('Error fetching pending workers', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch pending workers' });
+    }
+  });
+
+  // Approve worker
+  router.post('/approve-worker/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminEmail = req.session.user.email;
+
+      // Get worker details for email
+      const workerResult = await pool.query(
+        'SELECT name, email FROM workers WHERE id = $1',
+        [id]
+      );
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const worker = workerResult.rows[0];
+
+      // Update worker status
+      await pool.query(
+        `UPDATE workers
+         SET approval_status = 'approved',
+             is_active = true,
+             approval_date = NOW(),
+             approved_by = $1
+         WHERE id = $2`,
+        [adminEmail, id]
+      );
+
+      logger.info('Worker approved by admin', {
+        workerId: id,
+        workerEmail: worker.email,
+        adminEmail
+      });
+
+      // TODO: Send approval email to worker
+      // await sendEmail(worker.email, 'Welcome to Fixxa!', approvalEmailHtml);
+
+      res.json({
+        success: true,
+        message: `${worker.name} has been approved and is now active on the platform`
+      });
+    } catch (error) {
+      logger.error('Error approving worker', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to approve worker' });
+    }
+  });
+
+  // Reject worker
+  router.post('/reject-worker/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const adminEmail = req.session.user.email;
+
+      if (!reason || reason.trim().length < 10) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please provide a detailed reason (at least 10 characters)'
+        });
+      }
+
+      // Get worker details
+      const workerResult = await pool.query(
+        'SELECT name, email FROM workers WHERE id = $1',
+        [id]
+      );
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const worker = workerResult.rows[0];
+
+      // Update worker status
+      await pool.query(
+        `UPDATE workers
+         SET approval_status = 'rejected',
+             rejection_reason = $1,
+             approval_date = NOW(),
+             approved_by = $2
+         WHERE id = $3`,
+        [reason, adminEmail, id]
+      );
+
+      logger.info('Worker rejected by admin', {
+        workerId: id,
+        workerEmail: worker.email,
+        adminEmail,
+        reason
+      });
+
+      // TODO: Send rejection email to worker
+      // await sendEmail(worker.email, 'Application Update', rejectionEmailHtml);
+
+      res.json({
+        success: true,
+        message: `${worker.name}'s application has been rejected`
+      });
+    } catch (error) {
+      logger.error('Error rejecting worker', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to reject worker' });
+    }
+  });
+
   return router;
 };

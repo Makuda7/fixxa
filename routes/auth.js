@@ -48,8 +48,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, password, speciality)
-           VALUES ($1, $2, $3, $4) RETURNING id, name, email, speciality`,
+          `INSERT INTO workers (name, email, password, speciality, is_active, approval_status)
+           VALUES ($1, $2, $3, $4, false, 'pending') RETURNING id, name, email, speciality`,
           [name, email, hashedPassword, speciality]
         );
       } else {
@@ -65,11 +65,16 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
       // Email verification disabled for beta - accounts are immediately active
       logger.info('User registered successfully', { email, userId: user.id, type });
 
+      const message = type === USER_TYPES.PROFESSIONAL
+        ? 'Registration successful! Your application is under review. You will be notified once approved.'
+        : 'Registration successful! You can now log in.';
+
       res.json({
         success: true,
-        message: `Registration successful! You can now log in.`,
+        message,
         requiresVerification: false,
-        email: email
+        email: email,
+        pendingApproval: type === USER_TYPES.PROFESSIONAL
       });
 
     } catch (err) {
