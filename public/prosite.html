@@ -294,30 +294,44 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 
 <!-- Availability Toggle Section -->
 <div class="availability-section">
-  <h3>Availability Status</h3>
-  
+  <h3>📅 Your Availability Status</h3>
+  <p style="color:#666; font-size:0.95rem; margin-bottom:1.5rem;">
+    Control when clients can book you. Toggle "Available" to accept new bookings, or "Unavailable" when you're busy or on break.
+  </p>
+
   <div class="availability-controls">
     <div class="availability-status">
-      <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Current Status:</label>
+      <label style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:1.05rem;">
+        🔔 Can clients book you right now?
+      </label>
       <div style="display:flex; gap:0.5rem;">
-        <button id="availableBtn" class="availability-toggle active" data-status="true">Available</button>
-        <button id="unavailableBtn" class="availability-toggle" data-status="false">Unavailable</button>
+        <button id="availableBtn" class="availability-toggle active" data-status="true">
+          ✓ Available for Bookings
+        </button>
+        <button id="unavailableBtn" class="availability-toggle" data-status="false">
+          ✗ Not Accepting Bookings
+        </button>
       </div>
       <p id="availabilityStatusText" style="margin-top:0.5rem; font-size:0.9rem; color:#28a745;">
-        You are currently accepting bookings
+        ✓ You are currently accepting bookings
       </p>
     </div>
-    
+
     <div class="availability-schedule">
-      <label for="scheduleSelect" style="display:block; font-weight:600; margin-bottom:0.5rem;">Work Schedule:</label>
+      <label for="scheduleSelect" style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:1.05rem;">
+        📆 Which days do you work?
+      </label>
       <select id="scheduleSelect">
-        <option value="weekdays">Weekdays Only</option>
-        <option value="weekends">Weekends Only</option>
-        <option value="both" selected>Both (Weekdays & Weekends)</option>
+        <option value="weekdays">Monday - Friday (Weekdays Only)</option>
+        <option value="weekends">Saturday - Sunday (Weekends Only)</option>
+        <option value="both" selected>All Week (Weekdays & Weekends)</option>
       </select>
+      <p style="margin-top:0.3rem; font-size:0.85rem; color:#999;">
+        This helps clients find you when they search by schedule
+      </p>
     </div>
   </div>
-  
+
   <div id="availabilityMessage" class="availability-message"></div>
 </div>
 
@@ -841,12 +855,12 @@ async function loadAvailability() {
       if (currentAvailability.is_available) {
         document.getElementById('availableBtn').classList.add('active');
         document.getElementById('unavailableBtn').classList.remove('active');
-        document.getElementById('availabilityStatusText').textContent = 'You are currently accepting bookings';
+        document.getElementById('availabilityStatusText').textContent = '✓ You are currently accepting new bookings from clients';
         document.getElementById('availabilityStatusText').style.color = '#28a745';
       } else {
         document.getElementById('availableBtn').classList.remove('active');
         document.getElementById('unavailableBtn').classList.add('active');
-        document.getElementById('availabilityStatusText').textContent = 'You are currently NOT accepting bookings (clients can still message you)';
+        document.getElementById('availabilityStatusText').textContent = '✗ You are NOT accepting new bookings (clients can still message you)';
         document.getElementById('availabilityStatusText').style.color = '#dc3545';
       }
     }
