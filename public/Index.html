@@ -51,6 +51,52 @@
   box-shadow:0 2px 4px rgba(0,0,0,0.2);
 }
 
+/* Inbox Icon in Header */
+.inbox-icon-link {
+  position: relative;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  border: 2px solid transparent;
+}
+.inbox-icon-link:hover {
+  background: white;
+  border-color: forestgreen;
+  transform: scale(1.1);
+}
+.inbox-icon-link.show {
+  display: flex;
+}
+.inbox-icon {
+  font-size: 20px;
+  color: #333;
+}
+.inbox-notification-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #dc3545;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: none;
+  animation: pulse 2s infinite;
+}
+.inbox-notification-dot.show {
+  display: block;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
 /* Location Permission Modal */
 .location-modal-overlay {
   position: fixed;
@@ -219,6 +265,12 @@
 
     <a href="login.html" id="loginLink">Log in / Register</a>
 
+    <!-- Inbox Icon (visible when logged in) -->
+    <a href="messages.html" class="inbox-icon-link" id="inboxIconLink" title="Messages">
+      <span class="inbox-icon">✉️</span>
+      <span class="inbox-notification-dot" id="inboxNotificationDot"></span>
+    </a>
+
     <div class="user-menu" id="userMenu">
       <button class="user-btn" id="userBtn">User ▼</button>
       <div class="user-dropdown" id="userDropdown">
@@ -345,9 +397,21 @@ document.addEventListener('DOMContentLoaded', () => {
         loginLink.style.display = 'none';
         userMenu.style.display = 'inline-block';
         userBtn.textContent = (data.user.name || 'User') + ' ▼';
+
+        // Show inbox icon for logged-in clients
+        const inboxIcon = document.getElementById('inboxIconLink');
+        if (inboxIcon) {
+          inboxIcon.classList.add('show');
+        }
       } else {
         loginLink.style.display = 'inline-block';
         userMenu.style.display = 'none';
+
+        // Hide inbox icon for logged-out users
+        const inboxIcon = document.getElementById('inboxIconLink');
+        if (inboxIcon) {
+          inboxIcon.classList.remove('show');
+        }
       }
     } catch (err) {
       console.error('Login check failed', err);
@@ -500,10 +564,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (data.success && data.unreadCount > 0) {
         const dropdownBadge = document.getElementById('dropdownMessageBadge');
+        const inboxDot = document.getElementById('inboxNotificationDot');
 
         if (dropdownBadge) {
           dropdownBadge.textContent = data.unreadCount;
           dropdownBadge.style.display = 'flex';
+        }
+
+        // Show red notification dot on inbox icon
+        if (inboxDot) {
+          inboxDot.classList.add('show');
+        }
+      } else {
+        // Hide notification indicators when no unread messages
+        const dropdownBadge = document.getElementById('dropdownMessageBadge');
+        const inboxDot = document.getElementById('inboxNotificationDot');
+
+        if (dropdownBadge) {
+          dropdownBadge.style.display = 'none';
+        }
+
+        if (inboxDot) {
+          inboxDot.classList.remove('show');
         }
       }
     } catch (err) {

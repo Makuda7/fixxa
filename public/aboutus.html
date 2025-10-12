@@ -59,6 +59,52 @@
   .user-dropdown a:hover { background: #f0f0f0; }
   .user-menu.show .user-dropdown { display: block; }
 
+  /* Inbox Icon in Header */
+  .inbox-icon-link {
+    position: relative;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    border: 2px solid transparent;
+  }
+  .inbox-icon-link:hover {
+    background: white;
+    border-color: forestgreen;
+    transform: scale(1.1);
+  }
+  .inbox-icon-link.show {
+    display: flex;
+  }
+  .inbox-icon {
+    font-size: 20px;
+    color: #333;
+  }
+  .inbox-notification-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #dc3545;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid white;
+    display: none;
+    animation: pulse 2s infinite;
+  }
+  .inbox-notification-dot.show {
+    display: block;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+  }
+
   /* Responsive */
   @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .team-members { justify-content: center; } }
   @media (max-width: 400px) { h1 { font-size: 2rem; } }
@@ -78,6 +124,12 @@
 
     <!-- Login link -->
     <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <!-- Inbox Icon (visible when logged in) -->
+    <a href="messages.html" class="inbox-icon-link" id="inboxIconLink" title="Messages">
+      <span class="inbox-icon">✉️</span>
+      <span class="inbox-notification-dot" id="inboxNotificationDot"></span>
+    </a>
 
     <!-- User menu -->
     <div class="user-menu" id="userMenu">
@@ -167,9 +219,21 @@ async function checkLogin() {
       loginLink.style.display = 'none';
       userMenu.style.display = 'inline-block';
       userBtn.textContent = data.user.name + ' ▼';
+
+      // Show inbox icon for logged-in clients
+      const inboxIcon = document.getElementById('inboxIconLink');
+      if (inboxIcon) {
+        inboxIcon.classList.add('show');
+      }
     } else {
       loginLink.style.display = 'inline-block';
       userMenu.style.display = 'none';
+
+      // Hide inbox icon for logged-out users
+      const inboxIcon = document.getElementById('inboxIconLink');
+      if (inboxIcon) {
+        inboxIcon.classList.remove('show');
+      }
     }
   } catch (err) {
     console.error('Login check failed', err);
@@ -202,6 +266,46 @@ document.addEventListener('DOMContentLoaded', () => {
       userDropdown.style.display = 'none';
     }
   });
+
+  // Load unread message count
+  async function loadUnreadMessageCount() {
+    try {
+      const res = await fetch('/messages/client/unread-count', { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.success && data.unreadCount > 0) {
+        const dropdownBadge = document.getElementById('dropdownMessageBadge');
+        const inboxDot = document.getElementById('inboxNotificationDot');
+
+        if (dropdownBadge) {
+          dropdownBadge.textContent = data.unreadCount;
+          dropdownBadge.style.display = 'flex';
+        }
+
+        // Show red notification dot on inbox icon
+        if (inboxDot) {
+          inboxDot.classList.add('show');
+        }
+      } else {
+        // Hide notification indicators when no unread messages
+        const dropdownBadge = document.getElementById('dropdownMessageBadge');
+        const inboxDot = document.getElementById('inboxNotificationDot');
+
+        if (dropdownBadge) {
+          dropdownBadge.style.display = 'none';
+        }
+
+        if (inboxDot) {
+          inboxDot.classList.remove('show');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load unread message count:', err);
+    }
+  }
+
+  loadUnreadMessageCount();
+  setInterval(loadUnreadMessageCount, 30000);
 });
 </script>
 
