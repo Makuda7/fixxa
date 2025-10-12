@@ -26,8 +26,8 @@
 .messages-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; max-width: 800px; width: 100%; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; cursor: pointer; transition: transform 0.2s; }
 .messages-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
 .messages-card h3 { margin: 0; font-size: 1.2rem; color: forestgreen; }
-.messages-card p { margin: 0; font-size: 1rem; color: #333; }
-.messages-card small { color: #666; }
+.messages-card p { margin: 0; font-size: 0.95rem; color: #555; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.messages-card small { color: #999; font-size: 0.85rem; }
 .messages-card button.delete-btn { align-self: flex-start; padding: 0.5rem 1rem; border: none; border-radius: 6px; background: #f44336; color: white; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
 .messages-card button.delete-btn:hover { background: #d32f2f; }
 
@@ -282,15 +282,36 @@ document.addEventListener('DOMContentLoaded', () => {
       grouped[msg.professional_id].push(msg);
     });
 
-    messagesList.innerHTML = Object.keys(grouped).map(pid => {
+    // Sort each group by date and convert to array for sorting conversations
+    const conversations = Object.keys(grouped).map(pid => {
       const msgs = grouped[pid];
-      const lastMsg = msgs[msgs.length - 1];
+      // Sort messages by date (newest first)
+      msgs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const latestMsg = msgs[0]; // Get the most recent message
+
+      return {
+        professionalId: pid,
+        messages: msgs,
+        latestMsg: latestMsg,
+        latestDate: new Date(latestMsg.created_at)
+      };
+    });
+
+    // Sort conversations by latest message date (newest first)
+    conversations.sort((a, b) => b.latestDate - a.latestDate);
+
+    messagesList.innerHTML = conversations.map(conv => {
+      const { professionalId, messages, latestMsg } = conv;
+      const msgCount = messages.length;
+      const timeAgo = getTimeAgo(latestMsg.created_at);
+      const senderLabel = latestMsg.sender_type === 'client' ? 'You: ' : `${latestMsg.professional_name}: `;
+
       return `
-        <div class="messages-card" data-professional="${pid}">
-          <h3>${lastMsg.professional_name || 'Unknown'} - ${lastMsg.professional_service || ''}</h3>
-          <p>${lastMsg.content}</p>
-          <small>${msgs.length} message(s) | Last sent: ${new Date(lastMsg.created_at).toLocaleString()}</small>
-          <button data-id="${lastMsg.id}" class="delete-btn">Delete</button>
+        <div class="messages-card" data-professional="${professionalId}">
+          <h3>${latestMsg.professional_name || 'Unknown'} - ${latestMsg.professional_service || ''}</h3>
+          <p style="color: #555;"><strong>${senderLabel}</strong>${latestMsg.content}</p>
+          <small>${msgCount} message(s) | ${timeAgo}</small>
+          <button data-id="${latestMsg.id}" class="delete-btn">Delete</button>
         </div>
       `;
     }).join('');
@@ -425,6 +446,31 @@ document.addEventListener('DOMContentLoaded', () => {
     currentProfessionalId = null;
     chatInput.value = '';
   });
+
+  // Helper function to format time ago
+  function getTimeAgo(dateString) {
+    const now = new Date();
+    const messageDate = new Date(dateString);
+    const diffMs = now - messageDate;
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes === 1) return '1 minute ago';
+    if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+    if (diffHours === 1) return '1 hour ago';
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+
+    // For older messages, show the date
+    return messageDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: messageDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  }
 
   loadMessages();
 });
