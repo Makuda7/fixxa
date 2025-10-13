@@ -45,7 +45,7 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        'SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius FROM workers WHERE is_active = true AND approval_status = \'approved\' ORDER BY name ASC'
+        'SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount FROM workers WHERE is_active = true AND approval_status = \'approved\' ORDER BY name ASC'
       );
       res.json(result.rows);
     } catch (err) {
@@ -70,7 +70,8 @@ module.exports = (pool, logger, helpers) => {
 
       const result = await pool.query(`
         SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image,
-               availability_schedule, is_available, latitude, longitude, service_radius, is_verified
+               availability_schedule, is_available, latitude, longitude, service_radius, is_verified,
+               rate_type, rate_amount
         FROM workers
         WHERE is_available = true AND is_active = true AND approval_status = 'approved'
         ORDER BY name ASC
@@ -395,6 +396,81 @@ module.exports = (pool, logger, helpers) => {
     } catch (error) {
       logger.error('Get registration status error', { error: error.message });
       res.status(500).json({ success: false, error: 'Failed to get registration status' });
+    }
+  });
+
+  // Get worker rate
+  router.get('/rate', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      const result = await pool.query(
+        'SELECT rate_type, rate_amount FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      res.json({
+        success: true,
+        rate: {
+          rate_type: result.rows[0].rate_type,
+          rate_amount: result.rows[0].rate_amount
+        }
+      });
+    } catch (error) {
+      logger.error('Get rate error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to get rate' });
+    }
+  });
+
+  // Update worker rate
+  router.post('/rate', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const { rate_type, rate_amount } = req.body;
+
+      // Validate rate type
+      if (!rate_type || !['hourly', 'fixed'].includes(rate_type)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid rate type. Must be "hourly" or "fixed"'
+        });
+      }
+
+      // Validate rate amount
+      if (!rate_amount || isNaN(rate_amount) || parseFloat(rate_amount) <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid rate amount. Must be a positive number'
+        });
+      }
+
+      // Update worker rate
+      await pool.query(
+        `UPDATE workers
+         SET rate_type = $1,
+             rate_amount = $2
+         WHERE id = $3`,
+        [rate_type, parseFloat(rate_amount), workerId]
+      );
+
+      logger.info('Worker rate updated', {
+        workerId,
+        rate_type,
+        rate_amount
+      });
+
+      res.json({
+        success: true,
+        message: 'Rate updated successfully'
+      });
+    } catch (error) {
+      logger.error('Update rate error', { error: error.message });
+      console.error('Update rate error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update rate' });
     }
   });
 

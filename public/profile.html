@@ -428,6 +428,51 @@
     margin-top: 0.5rem;
   }
 
+  /* --- Rate Display Section --- */
+  .rate-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .rate-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+  }
+  .rate-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: forestgreen;
+    margin: 0.5rem 0;
+  }
+  .rate-type {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+  }
+  .rate-locked {
+    text-align: center;
+    padding: 1rem;
+    background: #fff3cd;
+    border: 2px dashed #ffc107;
+    border-radius: 8px;
+    color: #856404;
+  }
+  .rate-locked a {
+    color: forestgreen;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .rate-locked a:hover {
+    text-decoration: underline;
+  }
+
   /* --- Loading states --- */
   .loading { color:#666; font-style:italic; }
   .loading-spinner { display:inline-block; margin-left:0.5rem; }
@@ -1043,6 +1088,18 @@ document.addEventListener('DOMContentLoaded', () => {
               ${worker.bio}
             </div>
 
+            <!-- Rate Section -->
+            <div class="rate-section" id="rate-section">
+              <div class="rate-header">
+                💰 Rate
+              </div>
+              <div id="rate-content">
+                <div class="rate-locked">
+                  <a href="login.html">Login</a> or <a href="register.html">Register</a> to see rates
+                </div>
+              </div>
+            </div>
+
             <div class="dealer-info">
               <div class="action-buttons">
                 <button id="contact-btn" class="btn-primary">📧 Contact ${worker.name.split(' ')[0]}</button>
@@ -1111,10 +1168,44 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormHandlers(worker);
     await loadWorkGallery(worker.id);
     await loadWorkerReviews(worker.id);
-    
+    displayRate(worker);
+
     document.getElementById('refresh-reviews').addEventListener('click', () => {
       loadWorkerReviews(worker.id, true);
     });
+  }
+
+  function displayRate(worker) {
+    const rateContent = document.getElementById('rate-content');
+    if (!rateContent) return;
+
+    if (!authenticated) {
+      // Not logged in - show login prompt
+      rateContent.innerHTML = `
+        <div class="rate-locked">
+          <a href="login.html">Login</a> or <a href="register.html">Register</a> to see rates
+        </div>
+      `;
+      return;
+    }
+
+    // User is logged in - show rate
+    if (worker.rate_type && worker.rate_amount) {
+      const rateType = worker.rate_type === 'hourly' ? 'per hour' : 'fixed fee';
+      const icon = worker.rate_type === 'hourly' ? '⏱️' : '💵';
+
+      rateContent.innerHTML = `
+        <div class="rate-amount">R${parseFloat(worker.rate_amount).toFixed(2)}</div>
+        <div class="rate-type">${icon} ${rateType === 'per hour' ? 'Per Hour' : 'Fixed Labour Fee'}</div>
+      `;
+    } else {
+      // No rate set
+      rateContent.innerHTML = `
+        <div style="text-align: center; color: #999; padding: 0.5rem;">
+          Rate not set by professional
+        </div>
+      `;
+    }
   }
 
   function setupFormHandlers(worker) {

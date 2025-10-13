@@ -393,6 +393,63 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
   </form>
 </div>
 
+<!-- Rate Management Section -->
+<div class="availability-section">
+  <h3>💰 Your Rates</h3>
+  <p style="color:#666; font-size:0.95rem; margin-bottom:1.5rem;">
+    Set your pricing so clients know what to expect. Choose between hourly rates or a fixed labour fee.
+  </p>
+
+  <form id="rateForm">
+    <div style="margin-bottom:1.5rem;">
+      <label style="display:block; font-weight:600; margin-bottom:0.75rem; font-size:1.05rem;">
+        💵 Rate Type
+      </label>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.7rem 1.2rem; border:2px solid #ddd; border-radius:8px; background:white; transition:all 0.2s;">
+          <input type="radio" name="rateType" value="hourly" id="rateTypeHourly" style="width:auto; margin:0;">
+          <span>⏱️ Per Hour</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.7rem 1.2rem; border:2px solid #ddd; border-radius:8px; background:white; transition:all 0.2s;">
+          <input type="radio" name="rateType" value="fixed" id="rateTypeFixed" style="width:auto; margin:0;">
+          <span>💵 Fixed Labour Fee</span>
+        </label>
+      </div>
+      <p style="margin-top:0.5rem; font-size:0.85rem; color:#999;">
+        Per hour: Clients pay based on time worked | Fixed fee: One-time cost for the job
+      </p>
+    </div>
+
+    <div>
+      <label for="rateAmount" style="display:block; font-weight:600; margin-bottom:0.5rem; font-size:1.05rem;">
+        💳 Amount (in Rands)
+      </label>
+      <div style="position:relative;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1.2rem; font-weight:600; color:#666;">R</span>
+        <input
+          type="number"
+          id="rateAmount"
+          name="rateAmount"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          style="width:100%; padding:0.8rem 0.8rem 0.8rem 2rem; font-size:1.1rem; border:2px solid #ddd; border-radius:8px; box-sizing:border-box;"
+        >
+      </div>
+      <p style="margin-top:0.5rem; font-size:0.85rem; color:#999;">
+        Enter your rate in South African Rands (ZAR)
+      </p>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+      <button type="submit" style="background:forestgreen; color:white; border:none; padding:0.9rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:1rem; width:100%;">
+        💾 Save Rate
+      </button>
+    </div>
+    <div id="rateUpdateMessage" style="margin-top:1rem; padding:0.8rem; border-radius:8px; display:none;"></div>
+  </form>
+</div>
+
 <!-- Portfolio Photos Section -->
 <div class="availability-section">
   <h3>Portfolio - Previous Work Photos</h3>
@@ -944,6 +1001,42 @@ function showProfileMessage(message, type) {
   }, 5000);
 }
 
+// Rate Management Functions
+async function loadRate() {
+  try {
+    const res = await fetch('/workers/rate', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success && data.rate) {
+      document.getElementById('rateAmount').value = data.rate.rate_amount || '';
+      if (data.rate.rate_type) {
+        document.getElementById(data.rate.rate_type === 'hourly' ? 'rateTypeHourly' : 'rateTypeFixed').checked = true;
+      }
+    }
+  } catch (error) {
+    console.error('Load rate error:', error);
+  }
+}
+
+function showRateMessage(message, type) {
+  const msgDiv = document.getElementById('rateUpdateMessage');
+  msgDiv.textContent = message;
+  msgDiv.style.display = 'block';
+
+  if (type === 'success') {
+    msgDiv.style.background = '#d4edda';
+    msgDiv.style.color = '#155724';
+    msgDiv.style.border = '1px solid #c3e6cb';
+  } else {
+    msgDiv.style.background = '#f8d7da';
+    msgDiv.style.color = '#721c24';
+    msgDiv.style.border = '1px solid #f5c6cb';
+  }
+
+  setTimeout(() => {
+    msgDiv.style.display = 'none';
+  }, 5000);
+}
+
 // Load functions
 async function loadBookings(){
   try{
@@ -1312,6 +1405,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Rate Form Handler
+  document.getElementById('rateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const rateType = document.querySelector('input[name="rateType"]:checked');
+    const rateAmount = document.getElementById('rateAmount').value;
+
+    if (!rateType) {
+      showRateMessage('Please select a rate type (Per Hour or Fixed Fee)', 'error');
+      return;
+    }
+
+    if (!rateAmount || parseFloat(rateAmount) <= 0) {
+      showRateMessage('Please enter a valid amount', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/workers/rate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rate_type: rateType.value,
+          rate_amount: parseFloat(rateAmount)
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showRateMessage('✓ Rate updated successfully! Clients can now see your pricing.', 'success');
+      } else {
+        showRateMessage(data.error || 'Failed to update rate', 'error');
+      }
+    } catch (error) {
+      console.error('Update rate error:', error);
+      showRateMessage('Error updating rate', 'error');
+    }
+  });
+
   // Save Without Documents button
   document.getElementById('saveDraftBtn').addEventListener('click', async () => {
     const bio = document.getElementById('bio').value.trim();
@@ -1488,6 +1622,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await updateRegistrationButton();
   await loadAvailability();
   await loadWorkerProfile();
+  await loadRate();
   await loadCertifications();
   await loadPortfolioPhotos();
   await loadBookings();
