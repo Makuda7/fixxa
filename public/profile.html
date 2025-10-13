@@ -456,6 +456,19 @@
     color: #666;
     font-weight: 500;
   }
+  .rate-disclaimer {
+    font-size: 0.85rem;
+    color: #555;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #fff8e1;
+    border-left: 3px solid #ffc107;
+    border-radius: 4px;
+    line-height: 1.5;
+  }
+  .rate-disclaimer strong {
+    color: #f57c00;
+  }
   .rate-locked {
     text-align: center;
     padding: 1rem;
@@ -1197,6 +1210,9 @@ document.addEventListener('DOMContentLoaded', () => {
       rateContent.innerHTML = `
         <div class="rate-amount">R${parseFloat(worker.rate_amount).toFixed(2)}</div>
         <div class="rate-type">${icon} ${rateType === 'per hour' ? 'Per Hour' : 'Fixed Labour Fee'}</div>
+        <div class="rate-disclaimer">
+          <strong>⚠️ Important:</strong> This rate is for labour only and does not include materials, parts, or consumables required for the job.
+        </div>
       `;
     } else {
       // No rate set
