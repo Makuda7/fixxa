@@ -404,6 +404,17 @@ module.exports = (pool, logger, helpers) => {
     try {
       const workerId = req.session.user.id;
 
+      // Auto-create rate columns if they don't exist
+      try {
+        await pool.query(`
+          ALTER TABLE workers
+          ADD COLUMN IF NOT EXISTS rate_type VARCHAR(10),
+          ADD COLUMN IF NOT EXISTS rate_amount DECIMAL(10,2)
+        `);
+      } catch (alterError) {
+        // Columns likely already exist, continue
+      }
+
       const result = await pool.query(
         'SELECT rate_type, rate_amount FROM workers WHERE id = $1',
         [workerId]
