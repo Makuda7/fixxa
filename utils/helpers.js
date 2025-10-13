@@ -50,18 +50,56 @@ function formatTimeAgo(date) {
 
 function containsContactInfo(text) {
   const patterns = {
+    // Standard email pattern
     email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-    phone: /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{10,}/g,
-    whatsapp: /whatsapp|wa\.me|chat with me/gi,
-    socialMedia: /facebook\.com|instagram\.com|twitter\.com|linkedin\.com|@\w+/gi,
-    url: /(https?:\/\/[^\s]+)/g,
-    bypass: /\b(at)\s+(gmail|yahoo|outlook|hotmail)\b|email\s*me|call\s*me|text\s*me|dm\s*me/gi
+
+    // Phone numbers - various formats including SA numbers starting with 0
+    phone: /(\+?27|0)\s*[6-8]\s*[0-9](\s*[0-9]){7}|(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{10,}/g,
+
+    // Phone with spaces or characters separating
+    phoneSpaced: /\b0\s*[6-8]\s*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d\b/g,
+
+    // WhatsApp and chat references
+    whatsapp: /whatsapp|wa\.me|chat with me|whats app|wassap/gi,
+
+    // Social media
+    socialMedia: /facebook\.com|instagram\.com|twitter\.com|linkedin\.com|tiktok\.com|snapchat|telegram/gi,
+
+    // URLs
+    url: /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g,
+
+    // Email obfuscation attempts
+    emailObfuscation: /\b(at)\s+(gmail|yahoo|outlook|hotmail|icloud)\b|\b(gmail|yahoo|outlook|hotmail|icloud)\s+(dot|\.)\s+(com|co\.za)\b/gi,
+
+    // Direct contact requests
+    directContact: /email\s*me|e-?mail\s*me|call\s*me|text\s*me|dm\s*me|contact\s*me\s*(on|at|via)|reach\s*me|phone\s*me/gi,
+
+    // Number words that could be phone numbers (e.g., "zero eight one")
+    phoneWords: /(zero|one|two|three|four|five|six|seven|eight|nine)[\s-]+(zero|one|two|three|four|five|six|seven|eight|nine)[\s-]+(zero|one|two|three|four|five|six|seven|eight|nine)/gi,
+
+    // Handles and usernames on social media
+    socialHandles: /(@[a-zA-Z0-9_]{3,})|follow\s*me|add\s*me\s*on|find\s*me\s*on/gi,
+
+    // Common bypass attempts
+    bypass: /\b(at)\b.*\b(gmail|yahoo|outlook|hotmail)\b|g\s*mail|hot\s*mail|my\s*number|my\s*email|off\s*platform|outside\s*the\s*app/gi
   };
+
+  // Check each pattern
   for (const [type, pattern] of Object.entries(patterns)) {
     if (pattern.test(text)) {
       return { blocked: true, reason: type };
     }
   }
+
+  // Additional checks for obfuscated numbers (e.g., 0 8 1 2 3 4 5 6 7 8)
+  const digitSpacePattern = text.match(/\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d[\s\-]*\d/g);
+  if (digitSpacePattern) {
+    const cleaned = digitSpacePattern[0].replace(/[\s\-]/g, '');
+    if (cleaned.length >= 9) {
+      return { blocked: true, reason: 'phone_obfuscated' };
+    }
+  }
+
   return { blocked: false };
 }
 

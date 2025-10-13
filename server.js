@@ -168,7 +168,7 @@ app.get('/health', async (req, res) => {
 
 // Import routes with correct parameters
 const authRoutes = require('./routes/auth')(pool, logger, sendEmail, emailTemplates, helpers);
-const bookingsRoutes = require('./routes/bookings')(pool, logger, sendEmail, emailTemplates, io);
+const bookingsRoutes = require('./routes/bookings')(pool, logger, sendEmail, emailTemplates, io, helpers);
 const messagesRoutes = require('./routes/messages')(pool, logger, io, helpers);
 const workersRoutes = require('./routes/workers')(pool, logger, helpers);
 const reviewsRoutes = require('./routes/reviews')(pool, logger, reviewPhotoUpload);

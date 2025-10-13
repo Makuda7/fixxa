@@ -3,14 +3,27 @@ const router = express.Router();
 const { createBookingValidation, updateBookingStatusValidation } = require('../middleware/validation');
 const { bookingLimiter } = require('../middleware/rateLimiter');
 
-module.exports = (pool, logger, sendEmail, emailTemplates, io) => {
+module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
   const { requireAuth, clientOnly, workerOnly } = require('../middleware/auth');
+  const { containsContactInfo } = helpers;
 
   // Create booking - THIS MUST BE FIRST
   router.post('/', requireAuth, bookingLimiter, createBookingValidation, async (req, res) => {
     const { workerId, booking_date, booking_time, note } = req.body;
     if (!workerId || !booking_date || !booking_time)
       return res.status(400).json({ success: false, error: 'Missing required fields' });
+
+    // Check booking note for contact information
+    if (note && note.trim()) {
+      const filterResult = containsContactInfo(note);
+      if (filterResult.blocked) {
+        return res.status(400).json({
+          success: false,
+          error: 'Booking notes cannot contain contact information. Please keep all communication on the platform.',
+          blockedReason: filterResult.reason
+        });
+      }
+    }
 
     const client = await pool.connect();
     try {
