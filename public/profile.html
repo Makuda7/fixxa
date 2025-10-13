@@ -378,8 +378,55 @@
   }
 
   /* --- Contact & Booking Forms Animation --- */
-  .form-container { max-height:0; overflow:hidden; transition:max-height 0.4s ease, opacity 0.3s ease; opacity:0; margin-top:0.5rem; }
-  .form-container.show { max-height:500px; opacity:1; }
+  .form-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 0;
+    margin-top: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 0 1.5rem;
+  }
+  .form-container.show {
+    max-height: 600px;
+    opacity: 1;
+    padding: 1.5rem;
+    border: 2px solid #e0e0e0;
+  }
+
+  .form-container input[type="text"],
+  .form-container input[type="email"],
+  .form-container input[type="date"],
+  .form-container input[type="time"],
+  .form-container textarea {
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: white;
+  }
+
+  .form-container input:focus,
+  .form-container textarea:focus {
+    outline: none;
+    border-color: forestgreen;
+    box-shadow: 0 0 0 3px rgba(34, 139, 34, 0.1);
+  }
+
+  .form-container textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .form-container button[type="submit"] {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
 
   /* --- Loading states --- */
   .loading { color:#666; font-style:italic; }
@@ -397,6 +444,10 @@
     }
     .section-outside-card {
       padding:1.5rem;
+    }
+    /* Make booking calendar single column on mobile */
+    #booking-form > div[style*="grid"] {
+      grid-template-columns: 1fr !important;
     }
   }
 
@@ -1000,17 +1051,39 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <form id="contact-form" class="form-container">
-              <input type="text" id="visitor-name" placeholder="Your Name" required />
-              <input type="email" id="visitor-email" placeholder="Your Email" required />
-              <textarea id="visitor-message" placeholder="Your Message" required></textarea>
-              <button type="submit" class="btn-primary">Send Message</button>
+              <h4 style="margin: 0 0 1.5rem 0; color: forestgreen; font-size: 1.2rem;">📧 Send a Message</h4>
+              <div>
+                <label for="visitor-name" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Your Name</label>
+                <input type="text" id="visitor-name" placeholder="e.g., John Smith" required />
+              </div>
+              <div>
+                <label for="visitor-email" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Your Email</label>
+                <input type="email" id="visitor-email" placeholder="e.g., john@example.com" required />
+              </div>
+              <div>
+                <label for="visitor-message" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Your Message</label>
+                <textarea id="visitor-message" placeholder="Tell the professional what you need help with..." required></textarea>
+              </div>
+              <button type="submit" class="btn-primary">📤 Send Message</button>
             </form>
 
             <form id="booking-form" class="form-container">
-              <input type="date" id="booking-date" required />
-              <input type="time" id="booking-time" required />
-              <textarea id="booking-note" placeholder="Additional note (optional)"></textarea>
-              <button type="submit" class="btn-primary">Confirm Booking</button>
+              <h4 style="margin: 0 0 1.5rem 0; color: forestgreen; font-size: 1.2rem;">📅 Book an Appointment</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                  <label for="booking-date" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">📆 Date</label>
+                  <input type="date" id="booking-date" required />
+                </div>
+                <div>
+                  <label for="booking-time" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">🕐 Time</label>
+                  <input type="time" id="booking-time" required />
+                </div>
+              </div>
+              <div>
+                <label for="booking-note" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Additional Details (Optional)</label>
+                <textarea id="booking-note" placeholder="Any specific requirements or notes for the professional..."></textarea>
+              </div>
+              <button type="submit" class="btn-primary">✓ Confirm Booking</button>
             </form>
 
             <p id="thank-you-msg" style="display:none;color:green;margin-top:1rem;">✓ Message sent successfully!</p>
