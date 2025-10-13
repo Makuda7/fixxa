@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete Your Registration - Fixxa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Outfit', sans-serif; background: #f5f6fa; }
+
+/* Header */
+.header {
+  background: linear-gradient(to right, forestgreen 0%, rgba(34, 139, 34, 0.7) 30%, rgba(34, 139, 34, 0.3) 60%, white 85%);
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.header h1 { color: white; font-size: 1.8rem; }
+.header p { color: rgba(255,255,255,0.9); margin-top: 0.5rem; }
+
+/* Container */
+.container {
+  max-width: 900px;
+  margin: 2rem auto;
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+/* Progress Bar */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, forestgreen, #4CAF50);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* Status Banner */
+.status-banner {
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.status-incomplete {
+  background: #fff3cd;
+  color: #856404;
+  border: 2px solid #ffc107;
+}
+.status-pending {
+  background: #cce5ff;
+  color: #004085;
+  border: 2px solid #0066cc;
+}
+.status-approved {
+  background: #d4edda;
+  color: #155724;
+  border: 2px solid #28a745;
+}
+
+/* Form Sections */
+.form-section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+.form-section:last-child { border-bottom: none; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.section-number {
+  background: forestgreen;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.section-title {
+  font-size: 1.3rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.form-group label .required {
+  color: #dc3545;
+  margin-left: 2px;
+}
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s;
+}
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: forestgreen;
+}
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* File Upload */
+.file-upload {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.file-upload:hover {
+  border-color: forestgreen;
+  background: #f8fff8;
+}
+.file-upload input[type="file"] {
+  display: none;
+}
+.file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.file-icon {
+  font-size: 2.5rem;
+}
+.file-text {
+  color: #666;
+  font-size: 0.9rem;
+}
+.file-preview {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: #f0f0f0;
+  border-radius: 6px;
+  display: none;
+}
+.file-preview.show {
+  display: block;
+}
+.file-name {
+  color: forestgreen;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+/* Help Text */
+.help-text {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.3rem;
+  font-style: italic;
+}
+
+/* Reference Fields */
+.reference-group {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+.reference-header {
+  font-weight: 600;
+  color: forestgreen;
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+}
+
+/* Disclosure Box */
+.disclosure-box {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+.disclosure-box h3 {
+  color: #856404;
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+}
+.disclosure-box p {
+  color: #856404;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+/* Buttons */
+.btn-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 0.9rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: forestgreen;
+  color: white;
+  flex: 1;
+  min-width: 200px;
+}
+.btn-primary:hover {
+  background: #228b22;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 139, 34, 0.3);
+}
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  flex: 1;
+  min-width: 200px;
+}
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+/* Messages */
+.message {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: none;
+}
+.message.show { display: block; }
+.message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.loading-overlay.show {
+  display: flex;
+}
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid forestgreen;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  .btn-group {
+    flex-direction: column;
+  }
+  .btn {
+    width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div>
+    <div class="spinner"></div>
+    <p style="margin-top: 1rem; color: forestgreen; font-weight: 600;">Saving...</p>
+  </div>
+</div>
+
+<header class="header">
+  <h1>Complete Your Professional Registration</h1>
+  <p>Fill out all required information to get approved and start accepting bookings</p>
+</header>
+
+<div class="container">
+  <!-- Status Banner -->
+  <div class="status-banner" id="statusBanner">
+    📋 Please complete all sections below to submit for approval
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div id="messageBox" class="message"></div>
+
+  <form id="registrationForm" enctype="multipart/form-data">
+
+    <!-- Section 1: Identity Documents -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-number">1</span>
+        <h2 class="section-title">Identity Documents</h2>
+      </div>
+
+      <div class="form-group">
+        <label>South African ID Document <span class="required">*</span></label>
+        <div class="file-upload" onclick="document.getElementById('idDocument').click()">
+          <label class="file-upload-label">
+            <span class="file-icon">🆔</span>
+            <span class="file-text">Click to upload your SA ID (Front and Back)</span>
+            <span class="file-text" style="font-size: 0.8rem; color: #999;">JPG, PNG, or PDF - Max 5MB</span>
+          </label>
+          <input type="file" id="idDocument" name="idDocument" accept="image/*,.pdf">
+        </div>
+        <div class="file-preview" id="idPreview">
+          <span class="file-name" id="idFileName"></span>
+        </div>
+        <p class="help-text">Clear photo of both sides of your ID document</p>
+      </div>
+
+      <div class="form-group">
+        <label>Proof of Address <span class="required">*</span></label>
+        <div class="file-upload" onclick="document.getElementById('proofOfAddress').click()">
+          <label class="file-upload-label">
+            <span class="file-icon">🏠</span>
+            <span class="file-text">Upload utility bill or bank statement (not older than 3 months)</span>
+            <span class="file-text" style="font-size: 0.8rem; color: #999;">JPG, PNG, or PDF - Max 5MB</span>
+          </label>
+          <input type="file" id="proofOfAddress" name="proofOfAddress" accept="image/*,.pdf">
+        </div>
+        <div class="file-preview" id="addressPreview">
+          <span class="file-name" id="addressFileName"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Professional Qualifications -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-number">2</span>
+        <h2 class="section-title">Professional Qualifications</h2>
+      </div>
+
+      <div class="form-group">
+        <label>Trade/Qualification Certificate <span class="required">*</span></label>
+        <div class="file-upload" onclick="document.getElementById('certificate').click()">
+          <label class="file-upload-label">
+            <span class="file-icon">📜</span>
+            <span class="file-text">Upload your professional certificate or license</span>
+            <span class="file-text" style="font-size: 0.8rem; color: #999;">JPG, PNG, or PDF - Max 5MB</span>
+          </label>
+          <input type="file" id="certificate" name="certificate" accept="image/*,.pdf">
+        </div>
+        <div class="file-preview" id="certPreview">
+          <span class="file-name" id="certFileName"></span>
+        </div>
+        <p class="help-text">e.g., Plumbing Certificate, Electrical License, Trade Certification</p>
+      </div>
+
+      <div class="form-group">
+        <label>Additional Certifications (Optional)</label>
+        <div class="file-upload" onclick="document.getElementById('additionalCerts').click()">
+          <label class="file-upload-label">
+            <span class="file-icon">📑</span>
+            <span class="file-text">Upload additional certificates if applicable</span>
+            <span class="file-text" style="font-size: 0.8rem; color: #999;">Multiple files accepted</span>
+          </label>
+          <input type="file" id="additionalCerts" name="additionalCerts" accept="image/*,.pdf" multiple>
+        </div>
+        <div class="file-preview" id="additionalPreview">
+          <span class="file-name" id="additionalFileName"></span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Professional Registration Number (if applicable)</label>
+        <input type="text" id="registrationNumber" name="registrationNumber" placeholder="e.g., PIRB Number, ECSA Number">
+        <p class="help-text">Enter your professional body registration number if you have one</p>
+      </div>
+    </div>
+
+    <!-- Section 3: Professional References -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-number">3</span>
+        <h2 class="section-title">Professional References</h2>
+      </div>
+      <p style="color: #666; margin-bottom: 1.5rem;">Provide 2 professional references who can vouch for your work quality</p>
+
+      <!-- Reference 1 -->
+      <div class="reference-group">
+        <div class="reference-header">Reference 1 <span class="required">*</span></div>
+        <div class="form-group">
+          <label>Full Name <span class="required">*</span></label>
+          <input type="text" id="ref1Name" name="ref1Name" placeholder="John Smith" required>
+        </div>
+        <div class="form-group">
+          <label>Relationship <span class="required">*</span></label>
+          <input type="text" id="ref1Relationship" name="ref1Relationship" placeholder="e.g., Previous Client, Colleague, Manager" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number <span class="required">*</span></label>
+          <input type="tel" id="ref1Phone" name="ref1Phone" placeholder="0821234567" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="ref1Email" name="ref1Email" placeholder="john@example.com">
+        </div>
+      </div>
+
+      <!-- Reference 2 -->
+      <div class="reference-group">
+        <div class="reference-header">Reference 2 <span class="required">*</span></div>
+        <div class="form-group">
+          <label>Full Name <span class="required">*</span></label>
+          <input type="text" id="ref2Name" name="ref2Name" placeholder="Jane Doe" required>
+        </div>
+        <div class="form-group">
+          <label>Relationship <span class="required">*</span></label>
+          <input type="text" id="ref2Relationship" name="ref2Relationship" placeholder="e.g., Previous Client, Colleague, Manager" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number <span class="required">*</span></label>
+          <input type="tel" id="ref2Phone" name="ref2Phone" placeholder="0829876543" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="ref2Email" name="ref2Email" placeholder="jane@example.com">
+        </div>
+      </div>
+    </div>
+
+    <!-- Disclosure -->
+    <div class="disclosure-box">
+      <h3>⏱️ Approval Process</h3>
+      <p><strong>Please note:</strong> Our verification process may take up to <strong>7 business days</strong>.</p>
+      <p>We manually verify all documents and contact your references to ensure the highest quality service for our clients.</p>
+      <p>You will receive an email notification once your application has been reviewed.</p>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-group">
+      <button type="button" class="btn btn-secondary" id="saveForLaterBtn">💾 Save for Later</button>
+      <button type="submit" class="btn btn-primary" id="submitBtn">📤 Submit for Approval</button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const form = document.getElementById('registrationForm');
+  const statusBanner = document.getElementById('statusBanner');
+  const progressFill = document.getElementById('progressFill');
+  const messageBox = document.getElementById('messageBox');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const submitBtn = document.getElementById('submitBtn');
+  const saveForLaterBtn = document.getElementById('saveForLaterBtn');
+
+  let approvalStatus = 'incomplete'; // incomplete, pending, approved
+
+  // Check current approval status
+  async function checkApprovalStatus() {
+    try {
+      const res = await fetch('/check-auth', { credentials: 'include' });
+      const data = await res.json();
+
+      if (!data.authenticated || data.user.type !== 'professional') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Get worker details including approval status
+      const workerRes = await fetch('/workers/registration-status', { credentials: 'include' });
+      const workerData = await workerRes.json();
+
+      if (workerData.success) {
+        approvalStatus = workerData.approval_status || 'incomplete';
+        updateUI(workerData);
+      }
+    } catch (err) {
+      console.error('Status check failed:', err);
+    }
+  }
+
+  function updateUI(data) {
+    if (approvalStatus === 'approved') {
+      statusBanner.className = 'status-banner status-approved';
+      statusBanner.innerHTML = '✅ You are Approved! You can now accept bookings.';
+      submitBtn.disabled = true;
+      submitBtn.textContent = '✓ Approved';
+      form.querySelectorAll('input, textarea').forEach(el => el.disabled = true);
+    } else if (approvalStatus === 'pending') {
+      statusBanner.className = 'status-banner status-pending';
+      statusBanner.innerHTML = '⏳ Waiting for Approval - Your application is under review';
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Waiting for Approval';
+    } else {
+      statusBanner.className = 'status-banner status-incomplete';
+      statusBanner.innerHTML = '📋 Please complete all sections below to submit for approval';
+    }
+
+    // Load saved data if exists
+    if (data.savedFormData) {
+      loadSavedData(data.savedFormData);
+    }
+
+    updateProgress();
+  }
+
+  function loadSavedData(savedData) {
+    // Populate form fields with saved data
+    Object.keys(savedData).forEach(key => {
+      const field = document.getElementById(key);
+      if (field && field.type !== 'file') {
+        field.value = savedData[key];
+      }
+    });
+  }
+
+  // File upload previews
+  const fileInputs = [
+    { input: 'idDocument', preview: 'idPreview', fileName: 'idFileName' },
+    { input: 'proofOfAddress', preview: 'addressPreview', fileName: 'addressFileName' },
+    { input: 'certificate', preview: 'certPreview', fileName: 'certFileName' },
+    { input: 'additionalCerts', preview: 'additionalPreview', fileName: 'additionalFileName' }
+  ];
+
+  fileInputs.forEach(({ input, preview, fileName }) => {
+    const inputEl = document.getElementById(input);
+    inputEl?.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files.length > 0) {
+        const previewEl = document.getElementById(preview);
+        const fileNameEl = document.getElementById(fileName);
+
+        if (files.length === 1) {
+          fileNameEl.textContent = `✓ ${files[0].name}`;
+        } else {
+          fileNameEl.textContent = `✓ ${files.length} files selected`;
+        }
+
+        previewEl.classList.add('show');
+        updateProgress();
+      }
+    });
+  });
+
+  // Update progress bar
+  function updateProgress() {
+    const requiredFields = [
+      'idDocument', 'proofOfAddress', 'certificate',
+      'ref1Name', 'ref1Relationship', 'ref1Phone',
+      'ref2Name', 'ref2Relationship', 'ref2Phone'
+    ];
+
+    let completed = 0;
+    requiredFields.forEach(fieldId => {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        if (field.type === 'file' && field.files.length > 0) completed++;
+        else if (field.type !== 'file' && field.value.trim()) completed++;
+      }
+    });
+
+    const progress = (completed / requiredFields.length) * 100;
+    progressFill.style.width = progress + '%';
+  }
+
+  // Monitor form changes
+  form.addEventListener('input', updateProgress);
+  form.addEventListener('change', updateProgress);
+
+  // Save for later
+  saveForLaterBtn.addEventListener('click', async () => {
+    showMessage('Saving your progress...', 'success');
+    // TODO: Implement save for later API call
+    showMessage('Progress saved! You can come back anytime.', 'success');
+  });
+
+  // Submit form
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (approvalStatus !== 'incomplete') return;
+
+    // Validate required files
+    const requiredFiles = ['idDocument', 'proofOfAddress', 'certificate'];
+    for (const fileId of requiredFiles) {
+      const fileInput = document.getElementById(fileId);
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showMessage(`Please upload ${fileId.replace(/([A-Z])/g, ' $1').toLowerCase()}`, 'error');
+        return;
+      }
+    }
+
+    // Validate references
+    const requiredRefs = ['ref1Name', 'ref1Relationship', 'ref1Phone', 'ref2Name', 'ref2Relationship', 'ref2Phone'];
+    for (const refId of requiredRefs) {
+      const field = document.getElementById(refId);
+      if (!field.value.trim()) {
+        showMessage('Please fill in all reference information', 'error');
+        return;
+      }
+    }
+
+    loadingOverlay.classList.add('show');
+
+    try {
+      const formData = new FormData(form);
+
+      const res = await fetch('/workers/submit-registration', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        approvalStatus = 'pending';
+        updateUI({ approval_status: 'pending' });
+        showMessage('✓ Application submitted successfully! We will review your documents and contact your references within 7 business days.', 'success');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        showMessage(data.error || 'Failed to submit application', 'error');
+      }
+    } catch (err) {
+      console.error('Submission error:', err);
+      showMessage('Error submitting application. Please try again.', 'error');
+    } finally {
+      loadingOverlay.classList.remove('show');
+    }
+  });
+
+  function showMessage(text, type) {
+    messageBox.textContent = text;
+    messageBox.className = `message ${type} show`;
+    setTimeout(() => {
+      messageBox.classList.remove('show');
+    }, 5000);
+  }
+
+  // Initialize
+  await checkApprovalStatus();
+});
+</script>
+
+</body>
+</html>

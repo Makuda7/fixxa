@@ -374,5 +374,95 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get worker registration status
+  router.get('/registration-status', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      const result = await pool.query(
+        'SELECT approval_status FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      res.json({
+        success: true,
+        approval_status: result.rows[0].approval_status || 'incomplete'
+      });
+    } catch (error) {
+      logger.error('Get registration status error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to get registration status' });
+    }
+  });
+
+  // Submit registration documents
+  router.post('/submit-registration', requireAuth, workerOnly, uploadLimiter, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      // TODO: Handle file uploads for ID, proof of address, certificates
+      // For now, we'll just store the reference information and update status
+
+      const {
+        registrationNumber,
+        ref1Name, ref1Relationship, ref1Phone, ref1Email,
+        ref2Name, ref2Relationship, ref2Phone, ref2Email
+      } = req.body;
+
+      // Validate required fields
+      if (!ref1Name || !ref1Relationship || !ref1Phone ||
+          !ref2Name || !ref2Relationship || !ref2Phone) {
+        return res.status(400).json({
+          success: false,
+          error: 'All reference information is required'
+        });
+      }
+
+      // Store references in JSON format
+      const references = {
+        reference1: {
+          name: ref1Name,
+          relationship: ref1Relationship,
+          phone: ref1Phone,
+          email: ref1Email || null
+        },
+        reference2: {
+          name: ref2Name,
+          relationship: ref2Relationship,
+          phone: ref2Phone,
+          email: ref2Email || null
+        }
+      };
+
+      // Update worker record
+      await pool.query(
+        `UPDATE workers
+         SET approval_status = 'pending',
+             professional_registration_number = $1,
+             references = $2,
+             registration_submitted_at = NOW()
+         WHERE id = $3`,
+        [registrationNumber || null, JSON.stringify(references), workerId]
+      );
+
+      logger.info('Worker submitted registration', {
+        workerId,
+        references: `${ref1Name}, ${ref2Name}`
+      });
+
+      res.json({
+        success: true,
+        message: 'Registration submitted successfully! We will review your application within 7 business days.'
+      });
+    } catch (error) {
+      logger.error('Submit registration error', { error: error.message });
+      console.error('Submit registration error:', error);
+      res.status(500).json({ success: false, error: 'Failed to submit registration' });
+    }
+  });
+
   return router;
 };
