@@ -182,7 +182,43 @@ module.exports = (pool, logger, io, helpers) => {
     }
   });
 
-  // Get worker chat history with specific client (and mark as read)
+  // Get unread message count for worker - MUST BE BEFORE /worker/:clientId
+  router.get('/worker/unread-count', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const result = await pool.query(`
+        SELECT COUNT(*) as count
+        FROM messages
+        WHERE professional_id = $1 AND read = FALSE AND sender_type = 'client'
+      `, [workerId]);
+
+      res.json({ success: true, unreadCount: parseInt(result.rows[0].count) });
+    } catch (err) {
+      logger.error('Failed to get unread count', { error: err.message });
+      res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+
+  // Mark message as read
+  router.post('/worker/mark-read/:messageId', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const messageId = req.params.messageId;
+
+      await pool.query(`
+        UPDATE messages
+        SET read = TRUE
+        WHERE id = $1 AND professional_id = $2
+      `, [messageId, workerId]);
+
+      res.json({ success: true, message: 'Message marked as read' });
+    } catch (err) {
+      logger.error('Failed to mark message as read', { error: err.message });
+      res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+
+  // Get worker chat history with specific client (and mark as read) - MUST BE AFTER specific routes
   router.get('/worker/:clientId', requireAuth, workerOnly, async (req, res) => {
     try {
       const workerId = req.session.user.id;
@@ -211,42 +247,6 @@ module.exports = (pool, logger, io, helpers) => {
       logger.error('Failed to fetch chat history', { error: err.message });
       console.error('Failed to fetch chat history:', err);
       res.status(500).json({ success: false, error: 'Database error', detail: err.message });
-    }
-  });
-
-  // Mark message as read
-  router.post('/worker/mark-read/:messageId', requireAuth, workerOnly, async (req, res) => {
-    try {
-      const workerId = req.session.user.id;
-      const messageId = req.params.messageId;
-
-      await pool.query(`
-        UPDATE messages
-        SET read = TRUE
-        WHERE id = $1 AND professional_id = $2
-      `, [messageId, workerId]);
-
-      res.json({ success: true, message: 'Message marked as read' });
-    } catch (err) {
-      logger.error('Failed to mark message as read', { error: err.message });
-      res.status(500).json({ success: false, error: 'Database error' });
-    }
-  });
-
-  // Get unread message count for worker
-  router.get('/worker/unread-count', requireAuth, workerOnly, async (req, res) => {
-    try {
-      const workerId = req.session.user.id;
-      const result = await pool.query(`
-        SELECT COUNT(*) as count
-        FROM messages
-        WHERE professional_id = $1 AND read = FALSE AND sender_type = 'client'
-      `, [workerId]);
-
-      res.json({ success: true, unreadCount: parseInt(result.rows[0].count) });
-    } catch (err) {
-      logger.error('Failed to get unread count', { error: err.message });
-      res.status(500).json({ success: false, error: 'Database error' });
     }
   });
 

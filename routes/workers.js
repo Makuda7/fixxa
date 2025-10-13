@@ -406,11 +406,8 @@ module.exports = (pool, logger, helpers) => {
 
       // Auto-create rate columns if they don't exist
       try {
-        await pool.query(`
-          ALTER TABLE workers
-          ADD COLUMN IF NOT EXISTS rate_type VARCHAR(10),
-          ADD COLUMN IF NOT EXISTS rate_amount DECIMAL(10,2)
-        `);
+        await pool.query('ALTER TABLE workers ADD COLUMN IF NOT EXISTS rate_type VARCHAR(10)');
+        await pool.query('ALTER TABLE workers ADD COLUMN IF NOT EXISTS rate_amount DECIMAL(10,2)');
       } catch (alterError) {
         // Columns likely already exist, continue
       }
@@ -442,6 +439,14 @@ module.exports = (pool, logger, helpers) => {
     try {
       const workerId = req.session.user.id;
       const { rate_type, rate_amount } = req.body;
+
+      // Auto-create rate columns if they don't exist
+      try {
+        await pool.query('ALTER TABLE workers ADD COLUMN IF NOT EXISTS rate_type VARCHAR(10)');
+        await pool.query('ALTER TABLE workers ADD COLUMN IF NOT EXISTS rate_amount DECIMAL(10,2)');
+      } catch (alterError) {
+        // Columns likely already exist, continue
+      }
 
       // Validate rate type
       if (!rate_type || !['hourly', 'fixed'].includes(rate_type)) {
