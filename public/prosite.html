@@ -1109,20 +1109,6 @@ function showProfileCompletionModal(hasBio, hasExperience, hasArea) {
   modal.style.display = 'flex';
 }
 
-// Modal button handlers
-document.getElementById('completeProfileBtn').addEventListener('click', () => {
-  document.getElementById('profileCompletionModal').style.display = 'none';
-  // Navigate to Profile & Settings section
-  const profileLink = document.querySelector('[data-target="profileSection"]');
-  if (profileLink) profileLink.click();
-});
-
-document.getElementById('laterBtn').addEventListener('click', () => {
-  document.getElementById('profileCompletionModal').style.display = 'none';
-  // Remember dismissal for this session only
-  sessionStorage.setItem('profileModalDismissed', 'true');
-});
-
 function showProfileMessage(message, type) {
   const msgDiv = document.getElementById('profileUpdateMessage');
   msgDiv.textContent = message;
@@ -1625,6 +1611,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('closeBookingBtn').addEventListener('click', closeBookingModal);
   document.getElementById('closeBookingModal').addEventListener('click', closeBookingModal);
   document.getElementById('bookingModal').addEventListener('click', (e)=>{ if(e.target === document.getElementById('bookingModal')) closeBookingModal(); });
+
+  // Profile completion modal button handlers
+  document.getElementById('completeProfileBtn').addEventListener('click', () => {
+    document.getElementById('profileCompletionModal').style.display = 'none';
+    // Navigate to Profile & Settings section
+    const profileLink = document.querySelector('[data-target="profileMain"]');
+    if (profileLink) profileLink.click();
+  });
+
+  document.getElementById('laterBtn').addEventListener('click', () => {
+    document.getElementById('profileCompletionModal').style.display = 'none';
+    // Remember dismissal for this session only
+    sessionStorage.setItem('profileModalDismissed', 'true');
+  });
 
   // Booking actions
   document.getElementById('saveRescheduleBtn').addEventListener('click', async ()=>{
