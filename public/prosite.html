@@ -217,6 +217,101 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 #bookingModal .btn.warn { background:#ffb74d; color:#333; }
 #bookingModal .btn.danger { background:#e53935; color:white; }
 #bookingModal label { font-weight:600; font-size:0.9rem; display:block; margin-bottom:0.3rem; }
+/* Profile Completion Modal */
+#profileCompletionModal {
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  justify-content:center;
+  align-items:center;
+  z-index:2000;
+  animation:fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity:0; }
+  to { opacity:1; }
+}
+#profileCompletionModal .modal-content {
+  background:white;
+  border-radius:16px;
+  max-width:500px;
+  width:90%;
+  padding:2rem;
+  box-shadow:0 10px 40px rgba(0,0,0,0.3);
+  animation:slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from { transform:translateY(-50px); opacity:0; }
+  to { transform:translateY(0); opacity:1; }
+}
+#profileCompletionModal h2 {
+  margin:0 0 1rem 0;
+  color:forestgreen;
+  font-size:1.5rem;
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+#profileCompletionModal p {
+  margin:0.5rem 0 1.5rem 0;
+  color:#555;
+  line-height:1.6;
+}
+#profileCompletionModal .modal-actions {
+  display:flex;
+  gap:1rem;
+  margin-top:1.5rem;
+}
+#profileCompletionModal button {
+  flex:1;
+  padding:0.75rem 1.5rem;
+  border:none;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  font-size:1rem;
+}
+#profileCompletionModal .btn-primary {
+  background:forestgreen;
+  color:white;
+}
+#profileCompletionModal .btn-primary:hover {
+  background:#2d5016;
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(34,139,34,0.3);
+}
+#profileCompletionModal .btn-secondary {
+  background:#e0e0e0;
+  color:#333;
+}
+#profileCompletionModal .btn-secondary:hover {
+  background:#c0c0c0;
+}
+#profileCompletionModal .checklist {
+  background:#f8f9fa;
+  border-radius:8px;
+  padding:1rem;
+  margin:1rem 0;
+}
+#profileCompletionModal .checklist-item {
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+  padding:0.5rem 0;
+  color:#666;
+}
+#profileCompletionModal .checklist-item.incomplete {
+  color:#dc3545;
+}
+#profileCompletionModal .checklist-icon {
+  font-size:1.2rem;
+}
+
 /* Responsive */
 @media(max-width:768px){
 .sidebar { transform:translateX(-100%); position:fixed; z-index:100; }
@@ -227,6 +322,7 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 .dashboard-cards { grid-template-columns:1fr; }
 .btn-group { flex-direction:column; }
 .availability-controls { flex-direction:column; }
+#profileCompletionModal .modal-actions { flex-direction:column; }
 }
 </style>
 </head>
@@ -965,21 +1061,67 @@ async function loadWorkerProfile() {
       document.getElementById('experience').value = data.worker.experience || '';
       document.getElementById('area').value = data.worker.area || '';
       isVerified = data.worker.is_verified || false;
-      
-      if (data.worker.bio && data.worker.experience && data.worker.area) {
+
+      const hasBio = data.worker.bio && data.worker.bio.trim();
+      const hasExperience = data.worker.experience && data.worker.experience.trim();
+      const hasArea = data.worker.area && data.worker.area.trim();
+      const isComplete = hasBio && hasExperience && hasArea;
+
+      if (isComplete) {
         document.getElementById('profileStatus').textContent = 'Profile is complete ✓';
         document.getElementById('profileStatus').style.color = '#28a745';
       } else {
         document.getElementById('profileStatus').textContent = 'Please complete your profile to appear in searches';
         document.getElementById('profileStatus').style.color = '#dc3545';
+
+        // Show completion modal if profile is incomplete and not dismissed
+        const modalDismissed = sessionStorage.getItem('profileModalDismissed');
+        if (!modalDismissed) {
+          showProfileCompletionModal(hasBio, hasExperience, hasArea);
+        }
       }
-      
+
       updateVerificationBadge();
     }
   } catch (error) {
     console.error('Load profile error:', error);
   }
 }
+
+function showProfileCompletionModal(hasBio, hasExperience, hasArea) {
+  const modal = document.getElementById('profileCompletionModal');
+  const checklist = document.getElementById('profileChecklist');
+
+  // Build checklist
+  const items = [
+    { label: 'Professional Bio', complete: hasBio },
+    { label: 'Work Experience', complete: hasExperience },
+    { label: 'Service Area', complete: hasArea }
+  ];
+
+  checklist.innerHTML = items.map(item => `
+    <div class="checklist-item ${item.complete ? '' : 'incomplete'}">
+      <span class="checklist-icon">${item.complete ? '✅' : '❌'}</span>
+      <span>${item.label}</span>
+    </div>
+  `).join('');
+
+  modal.style.display = 'flex';
+}
+
+// Modal button handlers
+document.getElementById('completeProfileBtn').addEventListener('click', () => {
+  document.getElementById('profileCompletionModal').style.display = 'none';
+  // Navigate to Profile & Settings section
+  const profileLink = document.querySelector('[data-target="profileSection"]');
+  if (profileLink) profileLink.click();
+});
+
+document.getElementById('laterBtn').addEventListener('click', () => {
+  document.getElementById('profileCompletionModal').style.display = 'none';
+  // Remember dismissal for this session only
+  sessionStorage.setItem('profileModalDismissed', 'true');
+});
 
 function showProfileMessage(message, type) {
   const msgDiv = document.getElementById('profileUpdateMessage');
@@ -1656,6 +1798,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     <a href="#">Refer a Professional</a>
   </div>
 </footer>
+
+<!-- Profile Completion Modal -->
+<div id="profileCompletionModal">
+  <div class="modal-content">
+    <h2>
+      <span>⚠️</span>
+      Complete Your Profile
+    </h2>
+    <p>Your professional profile is incomplete. To start receiving bookings and appear in client searches, please complete the following:</p>
+
+    <div class="checklist" id="profileChecklist">
+      <!-- Checklist items will be dynamically inserted here -->
+    </div>
+
+    <p style="font-size:0.9rem; color:#666;">
+      <strong>Note:</strong> Once your profile is complete, it will be reviewed by our team for approval.
+    </p>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="completeProfileBtn">Complete Profile Now</button>
+      <button class="btn-secondary" id="laterBtn">I'll Do It Later</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
