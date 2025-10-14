@@ -602,6 +602,14 @@ async function initializePage() {
       window.location.href = 'login.html?redirect=' + encodeURIComponent('reviews.html');
       return;
     }
+
+    // Prevent workers from accessing client pages
+    if (data.user.type === 'professional') {
+      alert('Workers cannot access client pages. Redirecting to worker dashboard...');
+      window.location.href = 'prosite.html';
+      return;
+    }
+
     currentUser = data.user;
     document.getElementById('reviewsMain').style.display = 'block';
     
@@ -1436,5 +1444,3 @@ window.addEventListener('storage', (e) => {
 
 </body>
 </html>
-
-

@@ -608,10 +608,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function checkLogin() {
     try {
-      const res = await fetch('/check-auth', { credentials: 'include' }); 
+      const res = await fetch('/check-auth', { credentials: 'include' });
       const data = await res.json();
       authenticated = data.authenticated;
       currentUser = data.user || null;
+
+      // Prevent workers from accessing client pages
+      if (authenticated && currentUser && currentUser.type === 'professional') {
+        alert('Workers cannot access client pages. Redirecting to worker dashboard...');
+        window.location.href = 'prosite.html';
+        return;
+      }
 
       if (authenticated) {
         loginLink.style.display = 'none';

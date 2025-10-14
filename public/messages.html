@@ -201,6 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/check-auth', { credentials: 'include' });
       const data = await res.json();
       if (data.authenticated) {
+        // Prevent workers from accessing client pages
+        if (data.user.type === 'professional') {
+          alert('Workers cannot access client pages. Redirecting to worker dashboard...');
+          window.location.href = 'prosite.html';
+          return;
+        }
+
         loginLink.style.display = 'none';
         userMenu.style.display = 'inline-block';
         userBtn.textContent = `${data.user.name} ▼`;

@@ -655,6 +655,14 @@ async function checkLogin() {
       window.location.href = 'login.html?redirect=' + encodeURIComponent('clientProfile.html');
       return null;
     }
+
+    // Prevent workers from accessing client pages
+    if (data.user.type === 'professional') {
+      alert('Workers cannot access client pages. Redirecting to worker dashboard...');
+      window.location.href = 'prosite.html';
+      return null;
+    }
+
     return data.user;
   } catch (e) { console.error(e); return null; }
 }
