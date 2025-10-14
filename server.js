@@ -175,7 +175,7 @@ const reviewsRoutes = require('./routes/reviews')(pool, logger, reviewPhotoUploa
 const settingsRoutes = require('./routes/settings')(pool, logger, bcrypt, profilePicUpload, SALT_ROUNDS);
 const adminRoutes = require('./routes/admin')(pool, logger, helpers);
 const completionRoutes = require('./routes/completion')(pool, logger, sendEmail, emailTemplates, io);
-const workerRequestsRoutes = require('./routes/worker-requests')(pool, logger, io);
+const workerRequestsRoutes = require('./routes/worker-requests')(pool, logger, sendEmail, emailTemplates, io);
 const searchRoutes = require('./routes/search')(pool, logger);
 const certificationsRoutes = require('./routes/certifications')(pool, logger);
 

@@ -1145,7 +1145,17 @@ document.addEventListener('DOMContentLoaded', () => {
             </form>
 
             <form id="booking-form" class="form-container">
-              <h4 style="margin: 0 0 1.5rem 0; color: forestgreen; font-size: 1.2rem;">📅 Book an Appointment</h4>
+              <h4 style="margin: 0 0 1rem 0; color: forestgreen; font-size: 1.2rem;">📅 Book an Appointment</h4>
+
+              <!-- Important Notice -->
+              <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-size: 0.95rem; color: #856404; line-height: 1.5;">
+                  <strong>⚠️ Important:</strong> Please message the professional first to check their availability before booking.
+                  This helps avoid disappointment if they're not available on your preferred date/time.
+                  Your booking will require professional approval.
+                </p>
+              </div>
+
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div>
                   <label for="booking-date" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">📆 Date</label>
@@ -1160,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <label for="booking-note" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Additional Details (Optional)</label>
                 <textarea id="booking-note" placeholder="Any specific requirements or notes for the professional..."></textarea>
               </div>
-              <button type="submit" class="btn-primary">✓ Confirm Booking</button>
+              <button type="submit" class="btn-primary">✓ Submit Booking Request</button>
             </form>
 
             <p id="thank-you-msg" style="display:none;color:green;margin-top:1rem;">✓ Message sent successfully!</p>

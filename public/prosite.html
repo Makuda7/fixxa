@@ -1241,6 +1241,31 @@ async function loadRequests(){
     }
 
     document.getElementById('requestsList').innerHTML = requests.map(req => {
+      // Handle new booking requests differently
+      if(req.request_type === 'new_booking'){
+        return `
+          <div class="request-card" style="border-left-color:#28a745;">
+            <h4>🆕 New Booking Request</h4>
+            <p><strong>Client:</strong> ${escapeHTML(req.client_name)}</p>
+            <p><strong>Email:</strong> ${escapeHTML(req.client_email)}</p>
+            <p><strong>Service:</strong> ${escapeHTML(req.service || 'Service')}</p>
+            <p><strong>Requested Date:</strong> ${new Date(req.booking_date).toLocaleDateString()}</p>
+            <p><strong>Requested Time:</strong> ${req.booking_time}</p>
+            ${req.note ? `<p><strong>Client Note:</strong> <em>${escapeHTML(req.note)}</em></p>` : ''}
+            <p style="font-size:0.85rem; color:#666; margin-top:0.5rem;">Received: ${new Date(req.created_at).toLocaleString()}</p>
+            <div class="request-actions">
+              <button class="approve-btn" onclick="handleNewBookingResponse(${req.booking_id}, 'approve')">
+                ✓ Approve Booking
+              </button>
+              <button class="reject-btn" onclick="openDeclineModal(${req.booking_id}, '${escapeHTML(req.client_name)}')">
+                ✕ Decline Booking
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Handle reschedule/cancellation requests
       const cardClass = req.request_type === 'cancellation' ? 'cancellation' : 'reschedule';
       const requestIcon = req.request_type === 'cancellation' ? '❌' : '📅';
 
@@ -1405,11 +1430,50 @@ async function openChat(clientId, clientName){
   } catch(e){ console.error('Open chat error', e); }
 }
 
-// Request handler
+// New booking approval/decline handlers
+let currentDeclineBookingId = null;
+
+function openDeclineModal(bookingId, clientName) {
+  currentDeclineBookingId = bookingId;
+  document.getElementById('declineClientName').textContent = `Decline booking request from ${clientName}?`;
+  document.getElementById('declineReasonSelect').value = '';
+  document.getElementById('customReasonDiv').style.display = 'none';
+  document.getElementById('customReasonText').value = '';
+  document.getElementById('declineModal').style.display = 'flex';
+}
+
+async function handleNewBookingResponse(bookingId, action) {
+  if(action === 'approve') {
+    if(!confirm('Are you sure you want to approve this booking?')) return;
+
+    try {
+      const res = await fetch(`/worker/booking/${bookingId}/respond`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'approve' })
+      });
+      const data = await res.json();
+
+      if(data.success) {
+        alert('Booking approved successfully!');
+        await loadRequests();
+        await loadBookings();
+      } else {
+        alert(data.error || 'Failed to approve booking');
+      }
+    } catch(e) {
+      console.error('Approve booking error', e);
+      alert('Error approving booking');
+    }
+  }
+}
+
+// Request handler (for reschedule/cancellation requests)
 async function handleRequestResponse(requestId, action){
   const actionText = action === 'approve' ? 'approve' : 'decline';
   if(!confirm(`Are you sure you want to ${actionText} this request?`)) return;
-  
+
   try{
     const res = await fetch(`/worker/booking-requests/${requestId}/respond`, {
       method: 'POST',
@@ -1775,6 +1839,60 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Refresh unread count every 30 seconds
   setInterval(loadUnreadMessageCount, 30000);
 
+  // Decline modal event listeners
+  document.getElementById('declineReasonSelect').addEventListener('change', (e) => {
+    const customDiv = document.getElementById('customReasonDiv');
+    if(e.target.value === 'custom') {
+      customDiv.style.display = 'block';
+    } else {
+      customDiv.style.display = 'none';
+    }
+  });
+
+  document.getElementById('cancelDeclineBtn').addEventListener('click', () => {
+    document.getElementById('declineModal').style.display = 'none';
+    currentDeclineBookingId = null;
+  });
+
+  document.getElementById('confirmDeclineBtn').addEventListener('click', async () => {
+    const reasonSelect = document.getElementById('declineReasonSelect').value;
+    const customReason = document.getElementById('customReasonText').value.trim();
+
+    if(!reasonSelect) {
+      alert('Please select a reason for declining');
+      return;
+    }
+
+    if(reasonSelect === 'custom' && !customReason) {
+      alert('Please provide a custom reason');
+      return;
+    }
+
+    const declineReason = reasonSelect === 'custom' ? customReason : reasonSelect;
+
+    try {
+      const res = await fetch(`/worker/booking/${currentDeclineBookingId}/respond`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'decline', declineReason })
+      });
+      const data = await res.json();
+
+      if(data.success) {
+        alert('Booking declined successfully');
+        document.getElementById('declineModal').style.display = 'none';
+        await loadRequests();
+        await loadBookings();
+      } else {
+        alert(data.error || 'Failed to decline booking');
+      }
+    } catch(e) {
+      console.error('Decline booking error', e);
+      alert('Error declining booking');
+    }
+  });
+
   console.log('App initialized successfully!');
 });
 </script>
@@ -1819,6 +1937,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     <div class="modal-actions">
       <button class="btn-primary" id="completeProfileBtn">Complete Profile Now</button>
       <button class="btn-secondary" id="laterBtn">I'll Do It Later</button>
+    </div>
+  </div>
+</div>
+
+<!-- Decline Booking Modal -->
+<div id="declineModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000;">
+  <div style="background:white; border-radius:16px; max-width:500px; width:90%; padding:2rem; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <h2 style="margin:0 0 1rem 0; color:#dc3545; font-size:1.5rem;">Decline Booking</h2>
+    <p id="declineClientName" style="margin:0.5rem 0 1.5rem 0; color:#555; font-size:1rem;"></p>
+
+    <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:#333;">Select Reason:</label>
+    <select id="declineReasonSelect" style="width:100%; padding:0.75rem; border:2px solid #ddd; border-radius:8px; font-size:1rem; margin-bottom:1rem;">
+      <option value="">-- Select a reason --</option>
+      <option value="Already booked for that time">Already booked for that time</option>
+      <option value="Not available on requested date">Not available on requested date</option>
+      <option value="Outside my service area">Outside my service area</option>
+      <option value="Job is outside my specialty">Job is outside my specialty</option>
+      <option value="Taking a break/vacation">Taking a break/vacation</option>
+      <option value="Client didn't consult availability first">Client didn't consult availability first</option>
+      <option value="custom">Other (provide custom reason)</option>
+    </select>
+
+    <div id="customReasonDiv" style="display:none; margin-bottom:1rem;">
+      <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:#333;">Custom Reason:</label>
+      <textarea id="customReasonText" rows="3" style="width:100%; padding:0.75rem; border:2px solid #ddd; border-radius:8px; font-family:inherit; resize:vertical;" placeholder="Please explain why you're declining this booking..."></textarea>
+    </div>
+
+    <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+      <button id="confirmDeclineBtn" style="flex:1; padding:0.75rem 1.5rem; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:1rem; background:#dc3545; color:white;">
+        Decline Booking
+      </button>
+      <button id="cancelDeclineBtn" style="flex:1; padding:0.75rem 1.5rem; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:1rem; background:#e0e0e0; color:#333;">
+        Cancel
+      </button>
     </div>
   </div>
 </div>

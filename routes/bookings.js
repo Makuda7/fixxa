@@ -29,10 +29,10 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
     try {
       await client.query('BEGIN');
 
-      // Insert booking
+      // Insert booking with Pending status (requires worker approval)
       const result = await client.query(
         `INSERT INTO bookings (user_id, worker_id, booking_date, booking_time, note, status)
-         VALUES ($1, $2, $3, $4, $5, 'Confirmed') RETURNING *`,
+         VALUES ($1, $2, $3, $4, $5, 'Pending') RETURNING *`,
         [req.session.user.id, workerId, booking_date, booking_time, note || '']
       );
 

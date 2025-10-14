@@ -1,33 +1,62 @@
 const express = require('express');
 const router = express.Router();
 
-module.exports = (pool, logger, io) => {
+module.exports = (pool, logger, sendEmail, emailTemplates, io) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
 
-  // Get worker's booking requests (reschedule/cancellation requests)
+  // Get worker's booking requests (new bookings + reschedule/cancellation requests)
   router.get('/worker/booking-requests', requireAuth, workerOnly, async (req, res) => {
     try {
       const workerId = req.session.user.id;
-      
-      const result = await pool.query(`
+
+      // Get reschedule/cancellation requests
+      const requestsResult = await pool.query(`
         SELECT
           br.*,
           b.booking_date,
           b.booking_time,
           b.note,
           b.status as booking_status,
+          b.service,
           u.name as client_name,
-          u.email as client_email
+          u.email as client_email,
+          'change_request' as request_category
         FROM booking_requests br
         JOIN bookings b ON br.booking_id = b.id
         JOIN users u ON br.user_id = u.id
         WHERE br.worker_id = $1
         AND br.request_type IN ('reschedule', 'cancellation', 'pending-reschedule')
         AND br.status = 'pending'
-        ORDER BY br.created_at DESC
       `, [workerId]);
 
-      res.json({ success: true, requests: result.rows });
+      // Get pending new bookings (awaiting worker approval)
+      const pendingBookingsResult = await pool.query(`
+        SELECT
+          b.id as booking_id,
+          b.booking_date,
+          b.booking_time,
+          b.note,
+          b.service,
+          b.status as booking_status,
+          b.created_at,
+          u.name as client_name,
+          u.email as client_email,
+          'new_booking' as request_type,
+          'new_booking' as request_category
+        FROM bookings b
+        JOIN users u ON b.user_id = u.id
+        WHERE b.worker_id = $1
+        AND b.status = 'Pending'
+        ORDER BY b.created_at DESC
+      `, [workerId]);
+
+      // Combine both types of requests
+      const allRequests = [
+        ...pendingBookingsResult.rows,
+        ...requestsResult.rows
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      res.json({ success: true, requests: allRequests });
     } catch (error) {
       logger.error('Failed to fetch worker booking requests', { error: error.message });
       console.error('Failed to fetch worker booking requests:', error);
@@ -130,6 +159,103 @@ module.exports = (pool, logger, io) => {
     } catch (error) {
       logger.error('Worker booking request response error', { error: error.message });
       console.error('Worker booking request response error:', error);
+      res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+
+  // Worker approves/declines new booking with optional reason
+  router.post('/worker/booking/:bookingId/respond', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const bookingId = req.params.bookingId;
+      const { action, declineReason } = req.body;
+
+      if (!['approve', 'decline'].includes(action)) {
+        return res.status(400).json({ success: false, error: 'Invalid action' });
+      }
+
+      // Verify this booking belongs to this worker and is pending
+      const bookingCheck = await pool.query(`
+        SELECT b.*, u.name as client_name, u.email as client_email
+        FROM bookings b
+        JOIN users u ON b.user_id = u.id
+        WHERE b.id = $1 AND b.worker_id = $2 AND b.status = 'Pending'
+      `, [bookingId, workerId]);
+
+      if (bookingCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Booking not found or already processed' });
+      }
+
+      const booking = bookingCheck.rows[0];
+
+      if (action === 'approve') {
+        // Approve booking - change status to Confirmed
+        await pool.query(`
+          UPDATE bookings
+          SET status = 'Confirmed', updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1
+        `, [bookingId]);
+
+        // Send approval email to client
+        const approvalEmail = emailTemplates.createBookingApprovedEmail(
+          booking,
+          booking.client_name,
+          req.session.user.name
+        );
+        sendEmail(booking.client_email, approvalEmail.subject, approvalEmail.html, logger).catch(err =>
+          logger.error('Failed to send booking approval email', { error: err.message })
+        );
+
+        if (io) {
+          io.emit('booking-approved', {
+            clientId: booking.user_id,
+            bookingId,
+            workerName: req.session.user.name
+          });
+        }
+
+        logger.info('Booking approved by worker', { bookingId, workerId });
+        res.json({ success: true, message: 'Booking approved successfully' });
+
+      } else {
+        // Decline booking with reason
+        const reason = declineReason || 'No reason provided';
+
+        await pool.query(`
+          UPDATE bookings
+          SET status = 'Declined',
+              cancellation_reason = $1,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2
+        `, [reason, bookingId]);
+
+        // Send decline email to client
+        const declineEmail = emailTemplates.createBookingDeclinedEmail(
+          booking,
+          booking.client_name,
+          req.session.user.name,
+          reason
+        );
+        sendEmail(booking.client_email, declineEmail.subject, declineEmail.html, logger).catch(err =>
+          logger.error('Failed to send booking decline email', { error: err.message })
+        );
+
+        if (io) {
+          io.emit('booking-declined', {
+            clientId: booking.user_id,
+            bookingId,
+            reason,
+            workerName: req.session.user.name
+          });
+        }
+
+        logger.info('Booking declined by worker', { bookingId, workerId, reason });
+        res.json({ success: true, message: 'Booking declined', reason });
+      }
+
+    } catch (error) {
+      logger.error('Worker booking response error', { error: error.message });
+      console.error('Worker booking response error:', error);
       res.status(500).json({ success: false, error: 'Database error' });
     }
   });
