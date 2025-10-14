@@ -80,7 +80,12 @@ button:hover { background:#228b22; }
 
       <div class="input-group">
         <label for="registerName">Full Name:</label>
-        <input type="text" id="registerName" required />
+        <input type="text" id="registerName" required
+               pattern="^[a-zA-Z\s'\-]{2,100}$"
+               title="Name must be 2-100 characters and can only contain letters, spaces, hyphens, and apostrophes" />
+        <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+          Only letters, spaces, hyphens (-), and apostrophes (') allowed
+        </small>
       </div>
 
       <div class="input-group">
@@ -91,7 +96,9 @@ button:hover { background:#228b22; }
       <div class="input-group">
         <label for="registerPassword">Password:</label>
         <div style="position: relative;">
-          <input type="password" id="registerPassword" required minlength="8" style="padding-right: 40px;" />
+          <input type="password" id="registerPassword" required minlength="8" style="padding-right: 40px;"
+                 pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$"
+                 title="Password must be at least 8 characters with uppercase, lowercase, and a number" />
           <span onclick="togglePassword('registerPassword')" style="position: absolute; right: 12px; top: 12px; cursor: pointer; user-select: none;">👁️</span>
         </div>
         <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
@@ -213,10 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         messageDiv.innerHTML = `<div class="message success">${data.message}</div>`;
-        
+
         // If email verification is required, show message and don't redirect
         if (data.requiresVerification) {
           messageDiv.innerHTML += '<div class="message info">Please check your email to verify your account before logging in.</div>';
@@ -229,7 +236,19 @@ document.addEventListener('DOMContentLoaded', () => {
           }, 1500);
         }
       } else {
-        messageDiv.innerHTML = `<div class="message error">${data.error || 'Registration failed'}</div>`;
+        // Show main error
+        let errorHtml = `<div class="message error">${data.error || 'Registration failed'}</div>`;
+
+        // Show detailed validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          errorHtml += '<ul style="text-align: left; margin-top: 0.5rem; padding-left: 1.5rem; color: #721c24;">';
+          data.details.forEach(detail => {
+            errorHtml += `<li><strong>${detail.field}:</strong> ${detail.message}</li>`;
+          });
+          errorHtml += '</ul>';
+        }
+
+        messageDiv.innerHTML = errorHtml;
       }
     } catch (err) {
       messageDiv.innerHTML = `<div class="message error">Error: ${err.message}</div>`;
