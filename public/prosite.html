@@ -348,6 +348,7 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 <a data-target="earningsMain"><span>💰</span> Earnings</a>
 <a data-target="profileMain"><span>⚙️</span> Profile & Availability</a>
 <a data-target="certificationsMain"><span>🎓</span> Certifications</a>
+<a data-target="contactMain"><span>📞</span> Contact & Feedback</a>
 </div>
 
 <!-- Dashboard -->
@@ -604,6 +605,95 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
   <h3 style="margin-top:2rem;">My Uploaded Certifications</h3>
   <div class="cert-list" id="certificationsList">
     <p style="color:#666; text-align:center; padding:1rem;">No certifications uploaded yet</p>
+  </div>
+</div>
+</div>
+
+<!-- Contact & Feedback Section -->
+<div class="main" id="contactMain">
+<h2>Contact & Feedback</h2>
+
+<!-- Contact Admin Section -->
+<div class="availability-section">
+  <h3>📞 Contact Admin Support</h3>
+  <p style="color:#666; margin-bottom:1rem;">
+    Have a question, issue, or need help? Send us a message and we'll get back to you as soon as possible.
+  </p>
+
+  <form id="contactAdminForm">
+    <div style="margin-bottom:1rem;">
+      <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:#333;">Subject *</label>
+      <select id="contactSubject" required style="width:100%; padding:0.75rem; border:2px solid #ddd; border-radius:8px; font-size:1rem;">
+        <option value="">-- Select a topic --</option>
+        <option value="Account Issue">Account Issue</option>
+        <option value="Payment/Billing Question">Payment/Billing Question</option>
+        <option value="Booking Problem">Booking Problem</option>
+        <option value="Technical Issue">Technical Issue</option>
+        <option value="Profile/Verification Help">Profile/Verification Help</option>
+        <option value="Client Dispute">Client Dispute</option>
+        <option value="General Question">General Question</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:#333;">Message *</label>
+      <textarea id="contactMessage" rows="6" required style="width:100%; padding:0.75rem; border:2px solid #ddd; border-radius:8px; font-family:inherit; resize:vertical;" placeholder="Please describe your question or issue in detail..."></textarea>
+      <small style="color:#666; font-size:0.85rem;">Be as specific as possible so we can help you quickly</small>
+    </div>
+
+    <button type="submit" style="background:forestgreen; color:white; border:none; padding:0.9rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:1rem; width:100%;">
+      📤 Send Message to Admin
+    </button>
+  </form>
+
+  <div id="contactAdminMessage" style="margin-top:1rem; padding:0.8rem; border-radius:8px; display:none;"></div>
+</div>
+
+<!-- Feature Suggestions Section -->
+<div class="availability-section">
+  <h3>💡 Suggest a Feature or Improvement</h3>
+  <p style="color:#666; margin-bottom:1rem;">
+    We're constantly improving Fixxa! Share your ideas for new features or improvements you'd like to see.
+  </p>
+
+  <form id="featureSuggestionForm">
+    <div style="margin-bottom:1rem;">
+      <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:#333;">Feature Category</label>
+      <select id="suggestionCategory" style="width:100%; padding:0.75rem; border:2px solid #ddd; border-radius:8px; font-size:1rem;">
+        <option value="">-- Optional: Select category --</option>
+        <option value="Booking System">Booking System</option>
+        <option value="Messaging">Messaging</option>
+        <option value="Profile/Portfolio">Profile/Portfolio</option>
+        <option value="Payments">Payments</option>
+        <option value="Search/Discovery">Search/Discovery</option>
+        <option value="Mobile App">Mobile App</option>
+        <option value="Notifications">Notifications</option>
+        <option value="Analytics/Reports">Analytics/Reports</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:#333;">Your Suggestion *</label>
+      <textarea id="suggestionText" rows="6" required style="width:100%; padding:0.75rem; border:2px solid #ddd; border-radius:8px; font-family:inherit; resize:vertical;" placeholder="Describe your feature idea or improvement suggestion..."></textarea>
+      <small style="color:#666; font-size:0.85rem;">What problem would this solve? How would it help you?</small>
+    </div>
+
+    <button type="submit" style="background:#17a2b8; color:white; border:none; padding:0.9rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:1rem; width:100%;">
+      💡 Submit Suggestion
+    </button>
+  </form>
+
+  <div id="suggestionMessage" style="margin-top:1rem; padding:0.8rem; border-radius:8px; display:none;"></div>
+</div>
+
+<!-- Recent Submissions -->
+<div class="availability-section">
+  <h3>📝 Your Recent Submissions</h3>
+  <p style="color:#666; margin-bottom:1rem;">Track your support tickets and feature suggestions</p>
+  <div id="recentSubmissions" style="display:flex; flex-direction:column; gap:0.75rem;">
+    <p style="color:#999; text-align:center; padding:2rem;">No submissions yet</p>
   </div>
 </div>
 </div>
@@ -1893,8 +1983,127 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Contact Admin Form Handler
+  document.getElementById('contactAdminForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const subject = document.getElementById('contactSubject').value;
+    const message = document.getElementById('contactMessage').value.trim();
+
+    if(!subject || !message) {
+      showContactMessage('Please fill in all required fields', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/worker/contact-admin', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ subject, message })
+      });
+
+      const data = await res.json();
+
+      if(data.success) {
+        showContactMessage('✓ Message sent successfully! We\'ll get back to you soon.', 'success');
+        document.getElementById('contactAdminForm').reset();
+        loadRecentSubmissions();
+      } else {
+        showContactMessage(data.error || 'Failed to send message', 'error');
+      }
+    } catch(e) {
+      console.error('Contact admin error', e);
+      showContactMessage('Error sending message. Please try again.', 'error');
+    }
+  });
+
+  // Feature Suggestion Form Handler
+  document.getElementById('featureSuggestionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const category = document.getElementById('suggestionCategory').value || 'General';
+    const suggestion = document.getElementById('suggestionText').value.trim();
+
+    if(!suggestion) {
+      showSuggestionMessage('Please describe your suggestion', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/worker/feature-suggestion', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ category, suggestion })
+      });
+
+      const data = await res.json();
+
+      if(data.success) {
+        showSuggestionMessage('✓ Thank you for your suggestion! We review all feedback.', 'success');
+        document.getElementById('featureSuggestionForm').reset();
+        loadRecentSubmissions();
+      } else {
+        showSuggestionMessage(data.error || 'Failed to submit suggestion', 'error');
+      }
+    } catch(e) {
+      console.error('Feature suggestion error', e);
+      showSuggestionMessage('Error submitting suggestion. Please try again.', 'error');
+    }
+  });
+
   console.log('App initialized successfully!');
 });
+
+// Helper functions for contact & feedback
+function showContactMessage(message, type) {
+  const msgDiv = document.getElementById('contactAdminMessage');
+  msgDiv.textContent = message;
+  msgDiv.style.display = 'block';
+  msgDiv.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
+  msgDiv.style.color = type === 'success' ? '#155724' : '#721c24';
+  msgDiv.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
+  setTimeout(() => msgDiv.style.display = 'none', 5000);
+}
+
+function showSuggestionMessage(message, type) {
+  const msgDiv = document.getElementById('suggestionMessage');
+  msgDiv.textContent = message;
+  msgDiv.style.display = 'block';
+  msgDiv.style.background = type === 'success' ? '#d4edda' : '#f8d7da';
+  msgDiv.style.color = type === 'success' ? '#155724' : '#721c24';
+  msgDiv.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
+  setTimeout(() => msgDiv.style.display = 'none', 5000);
+}
+
+async function loadRecentSubmissions() {
+  try {
+    const res = await fetch('/worker/submissions', { credentials: 'include' });
+    const data = await res.json();
+
+    if(data.success && data.submissions && data.submissions.length > 0) {
+      const container = document.getElementById('recentSubmissions');
+      container.innerHTML = data.submissions.map(sub => {
+        const date = new Date(sub.created_at).toLocaleString();
+        const typeIcon = sub.type === 'contact' ? '📞' : '💡';
+        const typeLabel = sub.type === 'contact' ? 'Support' : 'Suggestion';
+
+        return `
+          <div style="background:#f8f9fa; padding:1rem; border-radius:8px; border-left:4px solid ${sub.type === 'contact' ? '#28a745' : '#17a2b8'};">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.5rem;">
+              <strong>${typeIcon} ${sub.subject || sub.category || typeLabel}</strong>
+              <small style="color:#666;">${date}</small>
+            </div>
+            <p style="margin:0; color:#666; font-size:0.9rem;">${escapeHTML(sub.message || sub.suggestion).substring(0, 150)}${(sub.message || sub.suggestion).length > 150 ? '...' : ''}</p>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch(e) {
+    console.error('Load submissions error', e);
+  }
+}
 </script>
 <footer class="footer">
   <div>

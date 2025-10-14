@@ -178,6 +178,7 @@ const completionRoutes = require('./routes/completion')(pool, logger, sendEmail,
 const workerRequestsRoutes = require('./routes/worker-requests')(pool, logger, sendEmail, emailTemplates, io);
 const searchRoutes = require('./routes/search')(pool, logger);
 const certificationsRoutes = require('./routes/certifications')(pool, logger);
+const contactFeedbackRoutes = require('./routes/contact-feedback')(pool, logger, sendEmail, emailTemplates);
 
 // Mount routes
 app.use('/', authRoutes);
@@ -191,6 +192,7 @@ app.use('/', completionRoutes);
 app.use('/', workerRequestsRoutes);
 app.use('/', searchRoutes);
 app.use('/certifications', certificationsRoutes);
+app.use('/', contactFeedbackRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
