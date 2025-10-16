@@ -125,14 +125,30 @@ button:hover { background:#228b22; }
         </div>
       </div>
 
-      <div class="input-group">
-        <input type="checkbox" id="safetyCheckbox" required />
-        <label for="safetyCheckbox">
-          I have read and accept the 
-          <a href="safety.html" target="_blank">Safety & Security Guidelines</a>, 
-          <a href="terms.html" target="_blank">Terms & Conditions</a>, and 
-          <a href="privacy.html" target="_blank">Privacy Policy</a>.
-        </label>
+      <!-- Legal Consent -->
+      <div class="input-group" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <input type="checkbox" id="safetyCheckbox" required style="margin-top: 4px; width: auto; cursor: pointer;" />
+          <label for="safetyCheckbox" style="margin: 0; font-size: 14px; line-height: 1.6; cursor: pointer;">
+            I confirm that I am at least 18 years old and agree to Fixxa's
+            <a href="terms.html" target="_blank" style="color: forestgreen; font-weight: 600; text-decoration: underline;">Terms & Conditions</a>,
+            <a href="privacy.html" target="_blank" style="color: forestgreen; font-weight: 600; text-decoration: underline;">Privacy Policy</a> (POPIA compliant), and
+            <a href="safety.html" target="_blank" style="color: forestgreen; font-weight: 600; text-decoration: underline;">Safety Guidelines</a>.
+          </label>
+        </div>
+        <div style="margin-top: 8px; text-align: center;">
+          <a href="/legal-pack.pdf" download style="font-size: 12px; color: #666; text-decoration: underline;">
+            📄 Download Complete Legal Pack (PDF)
+          </a>
+        </div>
+      </div>
+
+      <!-- Beta Notice -->
+      <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 1rem;">
+        <p style="margin: 0; font-size: 13px; color: #856404;">
+          ⚠️ <strong>Beta Testing Phase:</strong> Fixxa is currently in beta. The platform may contain bugs or limitations.
+          We appreciate your patience and feedback as we improve our service.
+        </p>
       </div>
 
       <button type="submit">Register</button>

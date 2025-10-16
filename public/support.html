@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Support & Complaints - Fixxa</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: #f6f3f0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: linear-gradient(to right, forestgreen 0%, rgba(34, 139, 34, 0.7) 30%, rgba(34, 139, 34, 0.3) 60%, white 85%);
+    border-bottom: 2px solid rgb(147,126,108);
+  }
+  .header .logo img { max-height: 50px; border-radius:10px; }
+  .nav-links { display: flex; align-items: center; gap: 1rem; }
+  .nav-links a { text-decoration: none; color: forestgreen; font-weight: 500; }
+  .nav-links a:hover { color: #228b22; }
+
+  .container {
+    max-width: 800px;
+    margin: 2rem auto;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    border: 2px solid rgb(147,126,108);
+    box-shadow: 0 4px 20px rgba(147,126,108,0.2);
+  }
+
+  h1 { color: forestgreen; text-align: center; margin-bottom: 0.5rem; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 2rem; }
+
+  .response-promise {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+  }
+
+  .response-promise h3 {
+    margin-top: 0;
+    color: #155724;
+  }
+
+  .contact-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .contact-card {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+  }
+
+  .contact-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .contact-card h3 {
+    color: #2d5016;
+    margin-bottom: 0.5rem;
+  }
+
+  .contact-card a {
+    color: forestgreen;
+    font-weight: 600;
+    text-decoration: none;
+    word-break: break-word;
+  }
+
+  .contact-card a:hover {
+    text-decoration: underline;
+  }
+
+  .form-section {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .form-section h2 {
+    color: #2d5016;
+    margin-top: 0;
+  }
+
+  .input-group {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2d5016;
+    font-weight: 600;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  button {
+    width: 100%;
+    padding: 1rem;
+    background: forestgreen;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  button:hover {
+    background: #228b22;
+  }
+
+  button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  .message {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  .message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    display: block;
+  }
+
+  .message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    display: block;
+  }
+
+  .faq-section {
+    margin-top: 3rem;
+  }
+
+  .faq-item {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+  }
+
+  .faq-item h4 {
+    color: #2d5016;
+    margin-top: 0;
+  }
+
+  footer.footer {
+    display: flex;
+    justify-content: space-around;
+    padding: 2rem;
+    background: #fff;
+    border-top: 2px solid rgb(147,126,108);
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  footer.footer h4 { margin-bottom: 0.8rem; color: forestgreen; }
+  footer.footer a { display: block; margin-bottom: 0.4rem; color: #333; text-decoration: none; }
+  footer.footer a:hover { color: #228b22; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <a href="Index.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo" /></a>
+  </div>
+  <nav class="nav-links">
+    <a href="Index.html">Find Service</a>
+    <a href="aboutus.html">About Us</a>
+    <a href="support.html">Support</a>
+    <a href="login.html">Log in</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h1>Support & Complaints</h1>
+  <p class="subtitle">We're here to help. Get in touch with us.</p>
+
+  <div class="response-promise">
+    <h3>⏱️ Our Response Promise</h3>
+    <p style="margin: 0; font-size: 1.1rem;">
+      <strong>We respond to all inquiries within 48 hours</strong> (usually much faster during business hours, Mon-Fri 9AM-5PM SAST).
+    </p>
+  </div>
+
+  <div class="contact-methods">
+    <div class="contact-card">
+      <div class="contact-icon">📧</div>
+      <h3>Email Support</h3>
+      <a href="mailto:fixxaapp@gmail.com">fixxaapp@gmail.com</a>
+      <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
+        For general inquiries, complaints, and support requests
+      </p>
+    </div>
+
+    <div class="contact-card">
+      <div class="contact-icon">⚠️</div>
+      <h3>Urgent Issues</h3>
+      <p style="margin: 0; font-size: 0.9rem; color: #666;">
+        Email with subject: <strong>"URGENT"</strong><br>
+        For safety concerns or immediate problems
+      </p>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h2>Submit a Complaint or Support Request</h2>
+    <div id="formMessage" class="message"></div>
+
+    <form id="supportForm">
+      <div class="input-group">
+        <label for="name">Your Name *</label>
+        <input type="text" id="name" required />
+      </div>
+
+      <div class="input-group">
+        <label for="email">Your Email *</label>
+        <input type="email" id="email" required />
+      </div>
+
+      <div class="input-group">
+        <label for="userType">I am a *</label>
+        <select id="userType" required>
+          <option value="">Select...</option>
+          <option value="client">Client / Customer</option>
+          <option value="professional">Professional / Worker</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="category">Issue Category *</label>
+        <select id="category" required>
+          <option value="">Select category...</option>
+          <option value="complaint">Complaint about Service</option>
+          <option value="complaint-professional">Complaint about a Professional</option>
+          <option value="complaint-client">Complaint about a Client</option>
+          <option value="technical">Technical Issue / Bug</option>
+          <option value="account">Account Issue</option>
+          <option value="payment">Payment Issue</option>
+          <option value="safety">Safety Concern</option>
+          <option value="feedback">General Feedback</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="subject">Subject *</label>
+        <input type="text" id="subject" required placeholder="Brief description of your issue" />
+      </div>
+
+      <div class="input-group">
+        <label for="message">Detailed Description *</label>
+        <textarea id="message" required placeholder="Please provide as much detail as possible about your issue or complaint. Include dates, names, booking IDs if applicable."></textarea>
+      </div>
+
+      <div class="input-group">
+        <label for="bookingId">Booking ID (if applicable)</label>
+        <input type="text" id="bookingId" placeholder="e.g., #12345" />
+      </div>
+
+      <button type="submit" id="submitBtn">Submit Request</button>
+    </form>
+  </div>
+
+  <div class="faq-section">
+    <h2 style="color: #2d5016;">Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+      <h4>How long does it take to get a response?</h4>
+      <p>We respond to all requests within 48 hours. Urgent safety concerns are prioritized and typically addressed within a few hours during business hours.</p>
+    </div>
+
+    <div class="faq-item">
+      <h4>What if I have a dispute with a Professional/Client?</h4>
+      <p>Please submit a complaint using the form above with category "Complaint about Service". Include all relevant details, booking ID, and what outcome you're seeking. We'll investigate and mediate where appropriate.</p>
+    </div>
+
+    <div class="faq-item">
+      <h4>Can Fixxa guarantee refunds for poor service?</h4>
+      <p>Fixxa is a platform connecting clients with independent professionals. We are not responsible for the quality of services performed. However, we will investigate complaints and may remove professionals who consistently provide poor service.</p>
+    </div>
+
+    <div class="faq-item">
+      <h4>How do I report a safety concern?</h4>
+      <p>Select "Safety Concern" as the category and provide all details. For immediate emergencies, contact local authorities (Police: 10111) first, then report to us.</p>
+    </div>
+
+    <div class="faq-item">
+      <h4>How do I delete my account and data?</h4>
+      <p>Email us at fixxaapp@gmail.com with subject "POPIA Data Deletion Request" from your registered email address. We'll process your request within 30 days as required by South African law.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="support.html">Support</a>
+    <a href="#">FAQ</a>
+  </div>
+  <div>
+    <h4>Legal</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="join.html">Join as a Professional</a>
+  </div>
+</footer>
+
+<script>
+document.getElementById('supportForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const submitBtn = document.getElementById('submitBtn');
+  const messageDiv = document.getElementById('formMessage');
+
+  const formData = {
+    name: document.getElementById('name').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    userType: document.getElementById('userType').value,
+    category: document.getElementById('category').value,
+    subject: document.getElementById('subject').value.trim(),
+    message: document.getElementById('message').value.trim(),
+    bookingId: document.getElementById('bookingId').value.trim() || 'N/A'
+  };
+
+  // Simple validation
+  if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+    messageDiv.className = 'message error';
+    messageDiv.textContent = 'Please fill in all required fields.';
+    return;
+  }
+
+  // Disable button
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending...';
+
+  try {
+    // Send to backend (you'll need to create this endpoint)
+    const response = await fetch('/support/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(formData)
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      messageDiv.className = 'message success';
+      messageDiv.textContent = '✅ Thank you! Your request has been submitted. You\'ll receive a confirmation email shortly, and we\'ll respond within 48 hours.';
+      document.getElementById('supportForm').reset();
+    } else {
+      throw new Error(data.error || 'Submission failed');
+    }
+  } catch (error) {
+    console.error('Support form error:', error);
+    messageDiv.className = 'message error';
+    messageDiv.textContent = `Error: ${error.message}. Please email us directly at fixxaapp@gmail.com`;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Request';
+  }
+});
+</script>
+
+</body>
+</html>
