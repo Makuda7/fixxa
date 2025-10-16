@@ -34,7 +34,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
       );
 
       // Send email notification to admin
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@fixxa.co.za';
+      const adminEmails = (process.env.ADMIN_EMAILS || 'admin@fixxa.co.za').split(',').map(e => e.trim()).filter(e => e);
+      const adminEmail = adminEmails[0];
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #dc3545;">New Support Message from Professional</h1>
@@ -102,7 +103,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
       );
 
       // Send email notification to admin
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@fixxa.co.za';
+      const adminEmails = (process.env.ADMIN_EMAILS || 'admin@fixxa.co.za').split(',').map(e => e.trim()).filter(e => e);
+      const adminEmail = adminEmails[0];
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #17a2b8;">New Feature Suggestion</h1>
@@ -181,7 +183,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
   router.get('/admin/support-messages', requireAuth, async (req, res) => {
     try {
       // Check if user is admin (you may have a different admin check)
-      if (!req.session.user || req.session.user.email !== process.env.ADMIN_EMAIL) {
+      const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(e => e);
+      if (!req.session.user || !adminEmails.includes(req.session.user.email)) {
         return res.status(403).json({ success: false, error: 'Admin access required' });
       }
 
@@ -218,7 +221,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
   router.post('/admin/support-messages/:messageId/resolve', requireAuth, async (req, res) => {
     try {
       // Check if user is admin
-      if (!req.session.user || req.session.user.email !== process.env.ADMIN_EMAIL) {
+      const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(e => e);
+      if (!req.session.user || !adminEmails.includes(req.session.user.email)) {
         return res.status(403).json({ success: false, error: 'Admin access required' });
       }
 
@@ -243,7 +247,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
   router.get('/admin/feature-suggestions', requireAuth, async (req, res) => {
     try {
       // Check if user is admin
-      if (!req.session.user || req.session.user.email !== process.env.ADMIN_EMAIL) {
+      const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(e => e);
+      if (!req.session.user || !adminEmails.includes(req.session.user.email)) {
         return res.status(403).json({ success: false, error: 'Admin access required' });
       }
 
@@ -280,7 +285,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
   router.post('/admin/feature-suggestions/:suggestionId/review', requireAuth, async (req, res) => {
     try {
       // Check if user is admin
-      if (!req.session.user || req.session.user.email !== process.env.ADMIN_EMAIL) {
+      const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(e => e);
+      if (!req.session.user || !adminEmails.includes(req.session.user.email)) {
         return res.status(403).json({ success: false, error: 'Admin access required' });
       }
 
