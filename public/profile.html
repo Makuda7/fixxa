@@ -598,6 +598,34 @@
 let currentWorker = null;
 let reviewsLastUpdated = null;
 
+// Helper function to parse availability schedule
+function getAvailabilityText(availability_schedule) {
+  if (!availability_schedule) return 'Not specified';
+
+  try {
+    // If it's already parsed
+    const schedule = typeof availability_schedule === 'string'
+      ? JSON.parse(availability_schedule)
+      : availability_schedule;
+
+    const type = schedule.type || schedule;
+
+    switch(type.toLowerCase()) {
+      case 'weekdays':
+        return 'Weekdays only';
+      case 'weekends':
+        return 'Weekends only';
+      case 'both':
+        return 'Weekdays & Weekends';
+      default:
+        return type;
+    }
+  } catch (e) {
+    // If parsing fails, try to return as string
+    return availability_schedule;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const loginLink = document.getElementById('loginLink');
   const userMenu = document.getElementById('userMenu');
@@ -1100,7 +1128,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="quick-specs">
               <span class="spec-badge">📍 ${worker.area}</span>
               <span class="spec-badge">⭐ ${worker.experience}</span>
-              <span class="spec-badge" title="Days this professional is available to work">📅 Works: ${worker.availability}</span>
+              <span class="spec-badge" title="Days this professional is available to work">📅 Works: ${getAvailabilityText(worker.availability_schedule)}</span>
             </div>
 
             <div class="profile-bio">
