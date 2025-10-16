@@ -1602,14 +1602,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const authRes = await fetch('/worker/check-auth', { credentials: 'include' });
     const authData = await authRes.json();
     if(!authData || !authData.authenticated || !authData.worker){
-      window.location.href = '/index.html';
+      window.location.href = '/Index.html';
       return;
     }
     workerId = authData.worker.id;
     console.log('Authenticated as worker ID:', workerId);
   } catch(e){
     console.error('Auth check failed', e);
-    window.location.href = '/index.html';
+    window.location.href = '/Index.html';
     return;
   }
 
