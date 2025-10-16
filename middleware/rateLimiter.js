@@ -28,6 +28,43 @@ const authLimiter = rateLimit({
   skipFailedRequests: false
 });
 
+// Login rate limiter - very strict for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per 15 minutes
+  message: {
+    success: false,
+    error: 'Too many login attempts. Please try again in 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Only count failed login attempts
+});
+
+// Registration rate limiter - prevent fake account spam
+const registrationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 registrations per hour
+  message: {
+    success: false,
+    error: 'Too many registration attempts. Please try again in 1 hour.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Password reset rate limiter - prevent abuse
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 password reset requests per hour
+  message: {
+    success: false,
+    error: 'Too many password reset requests. Please try again in 1 hour.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // API rate limiter - for general API endpoints
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
@@ -91,6 +128,9 @@ const reviewLimiter = rateLimit({
 module.exports = {
   globalLimiter,
   authLimiter,
+  loginLimiter,
+  registrationLimiter,
+  passwordResetLimiter,
   apiLimiter,
   bookingLimiter,
   messageLimiter,

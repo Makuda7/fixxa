@@ -9,7 +9,7 @@ const {
   resetPasswordValidation,
   resendVerificationValidation
 } = require('../middleware/validation');
-const { authLimiter } = require('../middleware/rateLimiter');
+const { authLimiter, loginLimiter, registrationLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 
 module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   const {
@@ -22,7 +22,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   } = helpers; 
   
   // Register
-  router.post('/register', authLimiter, registerValidation, async (req, res) => {
+  router.post('/register', registrationLimiter, registerValidation, async (req, res) => {
 
     const { type, name, email, password, speciality } = req.body;
 
@@ -240,7 +240,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   });
 
   // Forgot password
-  router.post('/forgot-password', authLimiter, forgotPasswordValidation, async (req, res) => {
+  router.post('/forgot-password', passwordResetLimiter, forgotPasswordValidation, async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
@@ -346,7 +346,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   });
 
   // Login
-  router.post('/login', authLimiter, loginValidation, async (req, res) => {
+  router.post('/login', loginLimiter, loginValidation, async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Missing fields' });
