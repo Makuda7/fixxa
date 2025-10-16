@@ -700,6 +700,14 @@
         Certifications
         <span class="badge" id="pendingCertsBadge" style="display:none;">0</span>
       </button>
+      <button class="nav-tab" onclick="switchTab('support')">
+        Worker Support
+        <span class="badge" id="supportBadge" style="display:none;">0</span>
+      </button>
+      <button class="nav-tab" onclick="switchTab('suggestions')">
+        Feature Suggestions
+        <span class="badge" id="suggestionsBadge" style="display:none;">0</span>
+      </button>
       <button class="nav-tab" onclick="switchTab('workers')">Professionals</button>
       <button class="nav-tab" onclick="switchTab('clients')">Clients</button>
       <button class="nav-tab" onclick="switchTab('settings')">Settings</button>
@@ -788,6 +796,30 @@
         <div class="clients-grid" id="clients-grid">
           <div class="no-data">Loading clients...</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Worker Support Tab -->
+    <div id="support-tab" class="tab-content">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterSupport('pending')">Pending</button>
+        <button class="filter-tab" onclick="filterSupport('responded')">Responded</button>
+        <button class="filter-tab" onclick="filterSupport('all')">All</button>
+      </div>
+      <div id="supportMessages" style="margin-top:1rem;">
+        <p style="text-align:center; padding:2rem; color:#999;">Loading support messages...</p>
+      </div>
+    </div>
+
+    <!-- Feature Suggestions Tab -->
+    <div id="suggestions-tab" class="tab-content">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterSuggestions('pending')">Pending Review</button>
+        <button class="filter-tab" onclick="filterSuggestions('reviewed')">Reviewed</button>
+        <button class="filter-tab" onclick="filterSuggestions('all')">All</button>
+      </div>
+      <div id="suggestionsList" style="margin-top:1rem;">
+        <p style="text-align:center; padding:2rem; color:#999;">Loading suggestions...</p>
       </div>
     </div>
 
@@ -1345,6 +1377,10 @@
         loadCertifications();
       } else if (tabName === 'pending-workers') {
         loadPendingWorkers();
+      } else if (tabName === 'support') {
+        loadSupportMessages();
+      } else if (tabName === 'suggestions') {
+        loadSuggestions();
       }
     }
 
@@ -1560,6 +1596,207 @@
       const div = document.createElement('div');
       div.textContent = str;
       return div.innerHTML;
+    }
+
+    // Worker Support Messages
+    let currentSupportFilter = 'pending';
+
+    async function loadSupportMessages() {
+      try {
+        const status = currentSupportFilter === 'all' ? '' : currentSupportFilter;
+        const url = status ? `/admin/support-messages?status=${status}` : '/admin/support-messages';
+
+        const response = await fetch(url, { credentials: 'include' });
+        const data = await response.json();
+
+        if (data.success) {
+          const container = document.getElementById('supportMessages');
+
+          if (data.messages.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:2rem; color:#999;">No support messages found</p>';
+            return;
+          }
+
+          container.innerHTML = data.messages.map(msg => `
+            <div class="card" style="margin-bottom:1rem;">
+              <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:1rem;">
+                <div>
+                  <h4 style="margin:0 0 0.5rem 0; color:#2d5016;">${escapeHTML(msg.subject)}</h4>
+                  <p style="margin:0; color:#666; font-size:0.9rem;">
+                    From: <strong>${escapeHTML(msg.worker_name)}</strong> (${escapeHTML(msg.worker_email)})
+                  </p>
+                  <p style="margin:0.25rem 0 0 0; color:#666; font-size:0.85rem;">
+                    ${new Date(msg.created_at).toLocaleString()}
+                  </p>
+                </div>
+                <span class="status-badge status-${msg.status}">${msg.status}</span>
+              </div>
+              <div style="background:#f8f9fa; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+                <p style="margin:0; white-space:pre-wrap;">${escapeHTML(msg.message)}</p>
+              </div>
+              ${msg.admin_response ? `
+                <div style="background:#d4edda; padding:1rem; border-radius:8px; border-left:4px solid #28a745; margin-bottom:1rem;">
+                  <p style="margin:0 0 0.5rem 0; font-weight:600; color:#155724;">Your Response:</p>
+                  <p style="margin:0; white-space:pre-wrap;">${escapeHTML(msg.admin_response)}</p>
+                  <small style="color:#666;">${msg.responded_at ? new Date(msg.responded_at).toLocaleString() : ''}</small>
+                </div>
+              ` : ''}
+              <div style="display:flex; gap:0.5rem;">
+                <a href="mailto:${msg.worker_email}?subject=Re: ${encodeURIComponent(msg.subject)}" class="btn btn-primary" style="text-decoration:none;">
+                  Reply via Email
+                </a>
+                ${!msg.admin_response ? `
+                  <button class="btn btn-secondary" onclick="markSupportResolved(${msg.id})">
+                    Mark as Resolved
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `).join('');
+
+          // Update badge
+          const pendingCount = data.messages.filter(m => m.status === 'pending').length;
+          updateBadge('supportBadge', pendingCount);
+        }
+      } catch (error) {
+        console.error('Load support messages error:', error);
+        document.getElementById('supportMessages').innerHTML = '<p style="text-align:center; padding:2rem; color:#dc3545;">Failed to load support messages</p>';
+      }
+    }
+
+    function filterSupport(status) {
+      currentSupportFilter = status;
+      document.querySelectorAll('#support-tab .filter-tab').forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+      loadSupportMessages();
+    }
+
+    async function markSupportResolved(messageId) {
+      if (!confirm('Mark this support message as resolved?')) return;
+
+      try {
+        const response = await fetch(`/admin/support-messages/${messageId}/resolve`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showMessage('Support message marked as resolved', 'success');
+          loadSupportMessages();
+        } else {
+          showMessage(data.error || 'Failed to update message', 'error');
+        }
+      } catch (error) {
+        console.error('Mark resolved error:', error);
+        showMessage('Error updating message', 'error');
+      }
+    }
+
+    // Feature Suggestions
+    let currentSuggestionsFilter = 'pending';
+
+    async function loadSuggestions() {
+      try {
+        const status = currentSuggestionsFilter === 'all' ? '' : currentSuggestionsFilter;
+        const url = status ? `/admin/feature-suggestions?status=${status}` : '/admin/feature-suggestions';
+
+        const response = await fetch(url, { credentials: 'include' });
+        const data = await response.json();
+
+        if (data.success) {
+          const container = document.getElementById('suggestionsList');
+
+          if (data.suggestions.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:2rem; color:#999;">No suggestions found</p>';
+            return;
+          }
+
+          container.innerHTML = data.suggestions.map(sug => `
+            <div class="card" style="margin-bottom:1rem;">
+              <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:1rem;">
+                <div>
+                  <h4 style="margin:0 0 0.5rem 0; color:#17a2b8;">${escapeHTML(sug.category || 'General')}</h4>
+                  <p style="margin:0; color:#666; font-size:0.9rem;">
+                    From: <strong>${escapeHTML(sug.worker_name)}</strong> (${escapeHTML(sug.worker_email)})
+                  </p>
+                  <p style="margin:0.25rem 0 0 0; color:#666; font-size:0.85rem;">
+                    ${new Date(sug.created_at).toLocaleString()}
+                  </p>
+                </div>
+                <span class="status-badge status-${sug.status}">${sug.status}</span>
+              </div>
+              <div style="background:#d1ecf1; padding:1rem; border-radius:8px; border-left:4px solid #17a2b8; margin-bottom:1rem;">
+                <p style="margin:0; white-space:pre-wrap;">${escapeHTML(sug.suggestion)}</p>
+              </div>
+              ${sug.admin_notes ? `
+                <div style="background:#fff3cd; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+                  <p style="margin:0 0 0.5rem 0; font-weight:600;">Admin Notes:</p>
+                  <p style="margin:0; white-space:pre-wrap;">${escapeHTML(sug.admin_notes)}</p>
+                </div>
+              ` : ''}
+              <div style="display:flex; gap:0.5rem;">
+                ${sug.status === 'pending' ? `
+                  <button class="btn btn-primary" onclick="markSuggestionReviewed(${sug.id})">
+                    Mark as Reviewed
+                  </button>
+                ` : ''}
+                <a href="mailto:${sug.worker_email}?subject=Re: Feature Suggestion - ${encodeURIComponent(sug.category)}" class="btn btn-secondary" style="text-decoration:none;">
+                  Email Worker
+                </a>
+              </div>
+            </div>
+          `).join('');
+
+          // Update badge
+          const pendingCount = data.suggestions.filter(s => s.status === 'pending').length;
+          updateBadge('suggestionsBadge', pendingCount);
+        }
+      } catch (error) {
+        console.error('Load suggestions error:', error);
+        document.getElementById('suggestionsList').innerHTML = '<p style="text-align:center; padding:2rem; color:#dc3545;">Failed to load suggestions</p>';
+      }
+    }
+
+    function filterSuggestions(status) {
+      currentSuggestionsFilter = status;
+      document.querySelectorAll('#suggestions-tab .filter-tab').forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+      loadSuggestions();
+    }
+
+    async function markSuggestionReviewed(suggestionId) {
+      if (!confirm('Mark this suggestion as reviewed?')) return;
+
+      try {
+        const response = await fetch(`/admin/feature-suggestions/${suggestionId}/review`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showMessage('Suggestion marked as reviewed', 'success');
+          loadSuggestions();
+        } else {
+          showMessage(data.error || 'Failed to update suggestion', 'error');
+        }
+      } catch (error) {
+        console.error('Mark reviewed error:', error);
+        showMessage('Error updating suggestion', 'error');
+      }
+    }
+
+    function updateBadge(badgeId, count) {
+      const badge = document.getElementById(badgeId);
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
     }
   </script>
 
