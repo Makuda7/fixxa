@@ -15,7 +15,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.BASE_URL || 'http://localhost:3000',
+    origin: process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'http://localhost:3000'),
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -52,7 +52,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.BASE_URL || 'http://localhost:3000',
+  origin: process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'http://localhost:3000'),
   credentials: true
 }));
 
@@ -242,14 +242,15 @@ async function startServer() {
     
     // Start server
     server.listen(PORT, () => {
+      const serverUrl = process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`);
       console.log('===========================================');
       console.log(`Fixxa Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Database: ${process.env.DB_NAME}`);
-      console.log(`URL: ${process.env.BASE_URL || `http://localhost:${PORT}`}`);
+      console.log(`URL: ${serverUrl}`);
       console.log('===========================================');
-      
-      logger.info('Server started successfully', { port: PORT });
+
+      logger.info('Server started successfully', { port: PORT, url: serverUrl });
     });
   } catch (error) {
     console.error('Failed to start server:', error);
