@@ -1393,7 +1393,7 @@
     // Load all data
     async function loadDashboardData() {
       setLoading(true);
-      
+
       try {
         await Promise.all([
           loadStats(),
@@ -1402,9 +1402,11 @@
           loadClients(),
           loadCertifications(),
           loadPendingWorkers(),
+          loadSupportMessages(),
+          loadSuggestions(),
           loadSettings()
         ]);
-        
+
         console.log('Dashboard loaded successfully');
       } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -1607,6 +1609,11 @@
         const url = status ? `/admin/support-messages?status=${status}` : '/admin/support-messages';
 
         const response = await fetch(url, { credentials: 'include' });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const data = await response.json();
 
         if (data.success) {
@@ -1703,6 +1710,11 @@
         const url = status ? `/admin/feature-suggestions?status=${status}` : '/admin/feature-suggestions';
 
         const response = await fetch(url, { credentials: 'include' });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const data = await response.json();
 
         if (data.success) {
