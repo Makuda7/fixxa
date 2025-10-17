@@ -264,25 +264,53 @@ body {
 
 /* Hero Section */
 .hero {
+  position: relative;
   text-align: center;
   padding: 3rem 1rem;
   background: url('images/Home-Repairsbackground.jpg') center/cover no-repeat;
-  color: forestgreen;
+  color: white;
 }
+
+/* Dark overlay for better contrast and professional look */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* 50% dark overlay */
+  z-index: 1;
+}
+
+/* Ensure content appears above overlay */
+.hero > * {
+  position: relative;
+  z-index: 2;
+}
+
 .hero h1 {
   font-size: 2.5rem;
   margin-bottom: 2rem;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Better readability */
 }
 .search-form {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.95); /* Semi-transparent white background */
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); /* Elevated shadow for depth */
 }
 .search-form select, .search-form button {
   padding: 0.8rem;
   font-size: 1rem;
-  border: none;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
 }
 .search-form select {
@@ -293,6 +321,7 @@ body {
   background: forestgreen;
   color: white;
   cursor: pointer;
+  font-weight: 600;
 }
 .search-form button:hover {
   background: #228b22;
