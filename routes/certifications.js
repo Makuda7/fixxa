@@ -1,34 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs').promises;
+const { cloudinary, certificationStorage } = require('../config/cloudinary');
 
-// Configure multer for certification uploads
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = 'public/uploads/certifications';
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error);
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'cert-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for certification uploads with Cloudinary
 const upload = multer({
-  storage: storage,
+  storage: certificationStorage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (mimetype && extname) {
+    const isImage = file.mimetype.startsWith('image/');
+    const isPDF = file.mimetype === 'application/pdf';
+    const isDoc = file.mimetype === 'application/msword' || file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+    if (isImage || isPDF || isDoc) {
       return cb(null, true);
     } else {
       cb(new Error('Only images, PDFs, and Word documents are allowed'));
@@ -48,17 +33,20 @@ module.exports = (pool, logger) => {
       }
 
       const workerId = req.session.user.id;
-      const fileUrl = `/uploads/certifications/${req.file.filename}`;
+      // Cloudinary URL
+      const fileUrl = req.file.path;
+      const cloudinaryId = req.file.filename;
       const fileName = req.file.originalname;
+      const fileType = req.file.mimetype.startsWith('image/') ? 'image' : 'document';
 
       const result = await pool.query(
-        'INSERT INTO certifications (worker_id, document_url, document_name, status) VALUES ($1, $2, $3, $4) RETURNING *',
-        [workerId, fileUrl, fileName, 'pending']
+        'INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [workerId, fileUrl, cloudinaryId, fileName, fileType, 'pending']
       );
 
       const certificationId = result.rows[0].id;
 
-      logger.info('Certification uploaded', { workerId, certificationId });
+      logger.info('Certification uploaded to Cloudinary', { workerId, certificationId, cloudinaryId });
 
       // Get worker details for the notification email
       const workerResult = await pool.query(
@@ -254,7 +242,7 @@ module.exports = (pool, logger) => {
       const workerId = req.session.user.id;
 
       const result = await pool.query(
-        'DELETE FROM certifications WHERE id = $1 AND worker_id = $2 RETURNING document_url',
+        'DELETE FROM certifications WHERE id = $1 AND worker_id = $2 RETURNING document_url, cloudinary_id, file_type',
         [certificationId, workerId]
       );
 
@@ -262,9 +250,21 @@ module.exports = (pool, logger) => {
         return res.status(404).json({ success: false, error: 'Certification not found' });
       }
 
-      // Optionally delete file from disk
-      // const filePath = path.join(__dirname, '..', 'public', result.rows[0].document_url);
-      // await fs.unlink(filePath).catch(err => console.error('File deletion error:', err));
+      // Delete from Cloudinary
+      const cloudinaryId = result.rows[0].cloudinary_id;
+      const fileType = result.rows[0].file_type;
+
+      if (cloudinaryId) {
+        try {
+          // Use appropriate resource_type for deletion
+          const resourceType = fileType === 'image' ? 'image' : 'raw';
+          await cloudinary.uploader.destroy(cloudinaryId, { resource_type: resourceType });
+          logger.info('Certification deleted from Cloudinary', { workerId, certificationId, cloudinaryId });
+        } catch (cloudinaryError) {
+          logger.error('Failed to delete certification from Cloudinary', { error: cloudinaryError.message, cloudinaryId });
+          // Continue even if Cloudinary deletion fails
+        }
+      }
 
       res.json({ success: true, message: 'Certification deleted successfully' });
     } catch (error) {

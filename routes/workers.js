@@ -1,35 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs').promises;
 const { uploadLimiter } = require('../middleware/rateLimiter');
+const { cloudinary, portfolioStorage, profilePicStorage } = require('../config/cloudinary');
 
-// Configure multer for portfolio photo uploads
-const portfolioStorage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = 'public/uploads/portfolio';
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error);
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'portfolio-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for portfolio photo uploads with Cloudinary
 const portfolioUpload = multer({
   storage: portfolioStorage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    if (mimetype && extname) {
+    if (mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and WEBP images are allowed'));
+    }
+  }
+});
+
+// Configure multer for profile picture uploads with Cloudinary
+const profilePicUpload = multer({
+  storage: profilePicStorage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for profile pics
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype) {
       return cb(null, true);
     } else {
       cb(new Error('Only JPEG, PNG, and WEBP images are allowed'));
@@ -394,16 +391,18 @@ module.exports = (pool, logger, helpers) => {
       }
 
       const workerId = req.session.user.id;
-      const photoUrl = `/uploads/portfolio/${req.file.filename}`;
+      // Cloudinary URL is available in req.file.path
+      const photoUrl = req.file.path;
+      const cloudinaryId = req.file.filename; // Store Cloudinary public_id for deletion
       const description = req.body.description || '';
 
       const result = await pool.query(
-        'INSERT INTO portfolio_photos (worker_id, photo_url, description) VALUES ($1, $2, $3) RETURNING *',
-        [workerId, photoUrl, description]
+        'INSERT INTO portfolio_photos (worker_id, photo_url, cloudinary_id, description) VALUES ($1, $2, $3, $4) RETURNING *',
+        [workerId, photoUrl, cloudinaryId, description]
       );
 
-      logger.info('Portfolio photo uploaded', { workerId, photoId: result.rows[0].id });
-      
+      logger.info('Portfolio photo uploaded to Cloudinary', { workerId, photoId: result.rows[0].id, cloudinaryId });
+
       res.json({
         success: true,
         message: 'Portfolio photo uploaded successfully',
@@ -457,12 +456,24 @@ module.exports = (pool, logger, helpers) => {
       const workerId = req.session.user.id;
 
       const result = await pool.query(
-        'DELETE FROM portfolio_photos WHERE id = $1 AND worker_id = $2 RETURNING photo_url',
+        'DELETE FROM portfolio_photos WHERE id = $1 AND worker_id = $2 RETURNING photo_url, cloudinary_id',
         [photoId, workerId]
       );
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Portfolio photo not found' });
+      }
+
+      // Delete from Cloudinary if cloudinary_id exists
+      const cloudinaryId = result.rows[0].cloudinary_id;
+      if (cloudinaryId) {
+        try {
+          await cloudinary.uploader.destroy(cloudinaryId);
+          logger.info('Portfolio photo deleted from Cloudinary', { workerId, photoId, cloudinaryId });
+        } catch (cloudinaryError) {
+          logger.error('Failed to delete from Cloudinary', { error: cloudinaryError.message, cloudinaryId });
+          // Continue even if Cloudinary deletion fails
+        }
       }
 
       res.json({ success: true, message: 'Portfolio photo deleted successfully' });
