@@ -56,10 +56,24 @@ module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
       const cloudinaryId = req.file.filename;
 
       const table = userType === 'professional' ? 'workers' : 'users';
-      await pool.query(
-        `UPDATE ${table} SET profile_pic = $1, cloudinary_id = $2 WHERE id = $3`,
-        [fileUrl, cloudinaryId, userId]
-      );
+
+      // Try to update with cloudinary_id, fall back to just profile_pic if column doesn't exist
+      try {
+        await pool.query(
+          `UPDATE ${table} SET profile_pic = $1, cloudinary_id = $2 WHERE id = $3`,
+          [fileUrl, cloudinaryId, userId]
+        );
+      } catch (dbError) {
+        // If cloudinary_id column doesn't exist, just update profile_pic
+        if (dbError.code === '42703') { // Column does not exist
+          await pool.query(
+            `UPDATE ${table} SET profile_pic = $1 WHERE id = $2`,
+            [fileUrl, userId]
+          );
+        } else {
+          throw dbError;
+        }
+      }
 
       // Update session with new profile picture
       req.session.user.profilePic = fileUrl;
