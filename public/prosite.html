@@ -1155,19 +1155,47 @@ async function loadWorkerProfile() {
       const hasBio = data.worker.bio && data.worker.bio.trim();
       const hasExperience = data.worker.experience && data.worker.experience.trim();
       const hasArea = data.worker.area && data.worker.area.trim();
+      const verificationStatus = data.worker.verification_status || 'pending';
+      const hasCertificates = data.worker.has_certificates || false;
       const isComplete = hasBio && hasExperience && hasArea;
 
-      if (isComplete) {
-        document.getElementById('profileStatus').textContent = 'Profile is complete ✓';
-        document.getElementById('profileStatus').style.color = '#28a745';
-      } else {
-        document.getElementById('profileStatus').textContent = 'Please complete your profile to appear in searches';
-        document.getElementById('profileStatus').style.color = '#dc3545';
+      // Update profile status based on verification
+      if (verificationStatus === 'pending') {
+        const allRequired = hasBio && hasExperience && hasArea && hasCertificates;
+        if (allRequired) {
+          document.getElementById('profileStatus').textContent = '⏳ Profile submitted - awaiting admin approval';
+          document.getElementById('profileStatus').style.color = '#ffc107';
+        } else {
+          document.getElementById('profileStatus').textContent = '⚠️ Complete profile to submit for verification';
+          document.getElementById('profileStatus').style.color = '#dc3545';
+        }
 
-        // Show completion modal if profile is incomplete and not dismissed
+        // ALWAYS show modal for pending accounts (unless they just dismissed it)
         const modalDismissed = sessionStorage.getItem('profileModalDismissed');
         if (!modalDismissed) {
-          showProfileCompletionModal(hasBio, hasExperience, hasArea);
+          showProfileCompletionModal(verificationStatus, hasBio, hasExperience, hasArea, hasCertificates);
+        }
+      } else if (verificationStatus === 'approved' || verificationStatus === 'verified') {
+        if (isComplete) {
+          document.getElementById('profileStatus').textContent = '✅ Profile verified and complete';
+          document.getElementById('profileStatus').style.color = '#28a745';
+        } else {
+          document.getElementById('profileStatus').textContent = '✅ Verified - complete profile for better visibility';
+          document.getElementById('profileStatus').style.color = '#28a745';
+        }
+      } else {
+        if (isComplete) {
+          document.getElementById('profileStatus').textContent = 'Profile is complete ✓';
+          document.getElementById('profileStatus').style.color = '#28a745';
+        } else {
+          document.getElementById('profileStatus').textContent = 'Please complete your profile to appear in searches';
+          document.getElementById('profileStatus').style.color = '#dc3545';
+
+          // Show completion modal if profile is incomplete and not dismissed
+          const modalDismissed = sessionStorage.getItem('profileModalDismissed');
+          if (!modalDismissed) {
+            showProfileCompletionModal(verificationStatus, hasBio, hasExperience, hasArea, hasCertificates);
+          }
         }
       }
 
@@ -1178,23 +1206,79 @@ async function loadWorkerProfile() {
   }
 }
 
-function showProfileCompletionModal(hasBio, hasExperience, hasArea) {
+function showProfileCompletionModal(verificationStatus, hasBio, hasExperience, hasArea, hasCertificates) {
   const modal = document.getElementById('profileCompletionModal');
   const checklist = document.getElementById('profileChecklist');
+  const modalIcon = document.getElementById('modalIcon');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalDescription = document.getElementById('modalDescription');
+  const modalNote = document.getElementById('modalNote');
 
-  // Build checklist
-  const items = [
-    { label: 'Professional Bio', complete: hasBio },
-    { label: 'Work Experience', complete: hasExperience },
-    { label: 'Service Area', complete: hasArea }
-  ];
+  // Determine modal content based on verification status
+  if (verificationStatus === 'pending') {
+    modalIcon.textContent = '⏳';
+    modalTitle.textContent = 'Complete Your Profile for Verification';
+    modalDescription.textContent = 'Welcome to Fixxa! Your account is pending verification. Complete the following steps to get approved and start receiving bookings:';
 
-  checklist.innerHTML = items.map(item => `
-    <div class="checklist-item ${item.complete ? '' : 'incomplete'}">
-      <span class="checklist-icon">${item.complete ? '✅' : '❌'}</span>
-      <span>${item.label}</span>
-    </div>
-  `).join('');
+    // Build comprehensive checklist for pending verification
+    const items = [
+      { label: 'Professional Bio (describe your services)', complete: hasBio },
+      { label: 'Years of Experience', complete: hasExperience },
+      { label: 'Service Area (cities/suburbs you cover)', complete: hasArea },
+      { label: 'Upload Certifications or ID Document', complete: hasCertificates },
+      { label: 'Add Portfolio Photos (optional but recommended)', complete: false, optional: true }
+    ];
+
+    checklist.innerHTML = items.map(item => `
+      <div class="checklist-item ${item.complete ? '' : 'incomplete'}">
+        <span class="checklist-icon">${item.complete ? '✅' : (item.optional ? '⚪' : '❌')}</span>
+        <span>${item.label} ${item.optional ? '(Optional)' : ''}</span>
+      </div>
+    `).join('');
+
+    modalNote.innerHTML = '<strong>⏱️ Verification Time:</strong> Once you submit all required documents, your profile will be reviewed within 1-3 business days. You\'ll receive an email notification when approved.';
+
+  } else if (verificationStatus === 'approved' || verificationStatus === 'verified') {
+    modalIcon.textContent = '✅';
+    modalTitle.textContent = 'Profile Verification Complete!';
+    modalDescription.textContent = 'Congratulations! Your professional profile has been verified. Complete these optional items to improve your visibility:';
+
+    const items = [
+      { label: 'Professional Bio', complete: hasBio },
+      { label: 'Work Experience', complete: hasExperience },
+      { label: 'Service Area', complete: hasArea }
+    ];
+
+    checklist.innerHTML = items.map(item => `
+      <div class="checklist-item ${item.complete ? '' : 'incomplete'}">
+        <span class="checklist-icon">${item.complete ? '✅' : '⚪'}</span>
+        <span>${item.label}</span>
+      </div>
+    `).join('');
+
+    modalNote.innerHTML = '<strong>💡 Tip:</strong> Profiles with complete information receive 3x more booking requests!';
+
+  } else {
+    // Default case - incomplete profile
+    modalIcon.textContent = '⚠️';
+    modalTitle.textContent = 'Complete Your Profile';
+    modalDescription.textContent = 'Your professional profile is incomplete. To appear in client searches and receive more bookings, please complete the following:';
+
+    const items = [
+      { label: 'Professional Bio', complete: hasBio },
+      { label: 'Work Experience', complete: hasExperience },
+      { label: 'Service Area', complete: hasArea }
+    ];
+
+    checklist.innerHTML = items.map(item => `
+      <div class="checklist-item ${item.complete ? '' : 'incomplete'}">
+        <span class="checklist-icon">${item.complete ? '✅' : '❌'}</span>
+        <span>${item.label}</span>
+      </div>
+    `).join('');
+
+    modalNote.innerHTML = '<strong>Note:</strong> A complete profile helps clients find and trust you more easily.';
+  }
 
   modal.style.display = 'flex';
 }
@@ -2130,17 +2214,17 @@ async function loadRecentSubmissions() {
 <div id="profileCompletionModal">
   <div class="modal-content">
     <h2>
-      <span>⚠️</span>
-      Complete Your Profile
+      <span id="modalIcon">📋</span>
+      <span id="modalTitle">Complete Your Professional Profile</span>
     </h2>
-    <p>Your professional profile is incomplete. To start receiving bookings and appear in client searches, please complete the following:</p>
+    <p id="modalDescription">Welcome to Fixxa! To start receiving bookings and appear in client searches, please complete your professional profile:</p>
 
     <div class="checklist" id="profileChecklist">
       <!-- Checklist items will be dynamically inserted here -->
     </div>
 
-    <p style="font-size:0.9rem; color:#666;">
-      <strong>Note:</strong> Once your profile is complete, it will be reviewed by our team for approval.
+    <p id="modalNote" style="font-size:0.9rem; color:#666; margin-top:1rem;">
+      <strong>⏱️ Verification Time:</strong> Once you submit all required documents, your profile will be reviewed within 1-3 business days. You'll receive an email notification when approved.
     </p>
 
     <div class="modal-actions">

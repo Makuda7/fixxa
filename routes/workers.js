@@ -268,17 +268,28 @@ module.exports = (pool, logger, helpers) => {
     try {
       const workerId = req.session.user.id;
       const result = await pool.query(
-        'SELECT id, name, email, bio, experience, area, speciality FROM workers WHERE id = $1',
+        'SELECT id, name, email, bio, experience, area, speciality, verification_status, is_verified FROM workers WHERE id = $1',
         [workerId]
       );
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
-      
-      res.json({ 
-        success: true, 
-        worker: result.rows[0]
+
+      // Check if worker has any certificates uploaded
+      const certResult = await pool.query(
+        'SELECT COUNT(*) as cert_count FROM certifications WHERE worker_id = $1',
+        [workerId]
+      );
+
+      const hasCertificates = certResult.rows[0].cert_count > 0;
+
+      res.json({
+        success: true,
+        worker: {
+          ...result.rows[0],
+          has_certificates: hasCertificates
+        }
       });
     } catch (error) {
       logger.error('Get worker profile error', { error: error.message });
