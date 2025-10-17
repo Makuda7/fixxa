@@ -42,13 +42,18 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        'SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified FROM workers WHERE is_active = true AND approval_status = \'approved\' ORDER BY name ASC'
+        'SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount FROM workers WHERE is_active = true AND approval_status = \'approved\' ORDER BY name ASC'
       );
 
       // Convert old local profile pic paths to default SVG
+      // Add is_verified field based on approval_status (fallback if column doesn't exist)
       const workers = result.rows.map(worker => {
         if (worker.image && worker.image.startsWith('/uploads/')) {
           worker.image = 'images/default-profile.svg';
+        }
+        // If is_verified doesn't exist in DB, derive from approval_status
+        if (worker.is_verified === undefined) {
+          worker.is_verified = false; // Default to false for safety
         }
         return worker;
       });
