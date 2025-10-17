@@ -24,9 +24,9 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   // Register
   router.post('/register', registrationLimiter, registerValidation, async (req, res) => {
 
-    const { type, name, email, password, speciality } = req.body;
+    const { type, name, email, phone, city, suburb, password, speciality } = req.body;
 
-    
+
 
     try {
 
@@ -48,15 +48,15 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, password, speciality, is_active, verification_status)
-           VALUES ($1, $2, $3, $4, false, 'pending') RETURNING id, name, email, speciality`,
-          [name, email, hashedPassword, speciality]
+          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, false, 'pending') RETURNING id, name, email, phone, city, speciality`,
+          [name, email, phone, city, suburb || null, hashedPassword, speciality]
         );
       } else {
         result = await pool.query(
-          `INSERT INTO users (name, email, password)
-           VALUES ($1, $2, $3) RETURNING id, name, email`,
-          [name, email, hashedPassword]
+          `INSERT INTO users (name, email, phone, city, suburb, password)
+           VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, phone, city`,
+          [name, email, phone, city, suburb || null, hashedPassword]
         );
       }
 
