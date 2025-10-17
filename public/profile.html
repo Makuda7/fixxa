@@ -266,6 +266,57 @@
     white-space: nowrap;
   }
 
+  /* --- Certifications Section (for logged-in clients only) --- */
+  .certifications-section {
+    padding: 1rem;
+    background: #fff8e1;
+    border-left: 4px solid #ffa726;
+    border-radius: 8px;
+    margin: 1rem 0;
+    display: none;
+  }
+  .certifications-section.show {
+    display: block;
+  }
+  .certifications-section strong {
+    color: #e65100;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+  }
+  .certification-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .certification-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ffe0b2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .certification-item:last-child {
+    border-bottom: none;
+  }
+  .certification-icon {
+    font-size: 1.2rem;
+  }
+  .certification-name {
+    font-weight: 600;
+    color: #333;
+  }
+  .certification-type {
+    color: #666;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+  .no-certifications {
+    color: #666;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+
   /* --- Work Gallery Section (Bottom Row like AutoTrader) --- */
   .gallery-bottom-row {
     background:white;
@@ -501,12 +552,15 @@
   .loading { color:#666; font-style:italic; }
   .loading-spinner { display:inline-block; margin-left:0.5rem; }
 
+  /* Tablet and smaller */
   @media(max-width:900px){
     .profile-main {
       grid-template-columns:1fr;
+      max-height:none;
     }
     .main-profile-image {
       height:300px;
+      max-height:300px;
     }
     .action-buttons {
       flex-direction:column;
@@ -518,34 +572,102 @@
     #booking-form > div[style*="grid"] {
       grid-template-columns: 1fr !important;
     }
+    .worker-card {
+      margin:1rem;
+    }
   }
 
-  @media(max-width:600px){
+  /* Half-screen and narrow viewports */
+  @media(max-width:768px){
+    .header {
+      flex-wrap:wrap;
+      padding:1rem;
+    }
+    .nav-links {
+      flex-wrap:wrap;
+      gap:0.5rem;
+    }
     .profile-details {
       padding:1.5rem;
     }
-    .rating-display {
-      font-size:2rem;
+    .price-section {
+      flex-direction:column;
+      align-items:flex-start;
+      gap:0.5rem;
     }
     .worker-name-section h1 {
-      font-size:1.5rem;
-    }
-    .worker-speciality {
-      font-size:1.1rem;
+      font-size:1.6rem;
     }
     .quick-specs {
-      gap:0.75rem;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:0.5rem;
+    }
+    .spec-badge {
+      font-size:0.9rem;
+    }
+    .gallery-bottom-row {
+      grid-template-columns:repeat(2,1fr) !important;
+      gap:0.5rem;
+    }
+  }
+
+  /* Mobile phones */
+  @media(max-width:600px){
+    .header {
+      padding:0.75rem;
+    }
+    .header .logo img {
+      max-width:90px;
+    }
+    .nav-links {
+      font-size:0.9rem;
+    }
+    .worker-card {
+      margin:0.5rem;
+      border-radius:8px;
+    }
+    .profile-details {
+      padding:1rem;
+    }
+    .rating-display {
+      font-size:1.5rem;
+    }
+    .rating-stars {
+      font-size:1.2rem;
+    }
+    .worker-name-section h1 {
+      font-size:1.3rem;
+    }
+    .worker-speciality {
+      font-size:1rem;
+    }
+    .quick-specs {
+      gap:0.5rem;
     }
     .spec-badge {
       font-size:0.85rem;
-      padding:6px 12px;
+      padding:6px 10px;
+    }
+    .profile-bio {
+      font-size:0.95rem;
     }
     .section-outside-card {
       padding:1rem;
     }
+    .section-outside-card h2 {
+      font-size:1.3rem;
+    }
     .review-categories {
       flex-direction:column;
       gap:0.25rem;
+    }
+    .gallery-bottom-row {
+      grid-template-columns:1fr !important;
+    }
+    .action-buttons button {
+      font-size:0.95rem;
+      padding:0.75rem 1rem;
     }
   }
 </style>
@@ -1147,6 +1269,14 @@ document.addEventListener('DOMContentLoaded', () => {
               ${worker.bio}
             </div>
 
+            <!-- Certifications Section (visible only to logged-in clients) -->
+            <div class="certifications-section" id="certifications-section">
+              <strong>🎓 Professional Certifications</strong>
+              <div id="certifications-content">
+                <p class="no-certifications">Loading certifications...</p>
+              </div>
+            </div>
+
             <!-- Rate Section -->
             <div class="rate-section" id="rate-section">
               <div class="rate-header">
@@ -1238,6 +1368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadWorkGallery(worker.id);
     await loadWorkerReviews(worker.id);
     displayRate(worker);
+    await loadCertifications(worker.id);
 
     document.getElementById('refresh-reviews').addEventListener('click', () => {
       loadWorkerReviews(worker.id, true);
@@ -1277,6 +1408,60 @@ document.addEventListener('DOMContentLoaded', () => {
           Rate not set by professional
         </div>
       `;
+    }
+  }
+
+  async function loadCertifications(workerId) {
+    const certificationsSection = document.getElementById('certifications-section');
+    const certificationsContent = document.getElementById('certifications-content');
+
+    if (!certificationsSection || !certificationsContent) return;
+
+    // Only show certifications to authenticated clients
+    if (!authenticated || !currentUser || currentUser.type === 'professional') {
+      certificationsSection.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/workers/${workerId}/certifications`, { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.success && Array.isArray(data.certifications) && data.certifications.length > 0) {
+        // Show section and populate certifications
+        certificationsSection.classList.add('show');
+
+        const certificationsList = data.certifications.map(cert => {
+          const certType = cert.certification_type || 'document';
+          const certIcon = certType === 'id_document' ? '🪪' :
+                          certType === 'license' ? '📜' :
+                          certType === 'qualification' ? '🎓' : '📄';
+
+          const certName = cert.certification_name || 'Certified Document';
+          const certTypeLabel = certType === 'id_document' ? 'ID Document' :
+                               certType === 'license' ? 'Professional License' :
+                               certType === 'qualification' ? 'Qualification' : 'Document';
+
+          return `
+            <li class="certification-item">
+              <span class="certification-icon">${certIcon}</span>
+              <div>
+                <div class="certification-name">${certName}</div>
+                <div class="certification-type">${certTypeLabel}</div>
+              </div>
+            </li>
+          `;
+        }).join('');
+
+        certificationsContent.innerHTML = `<ul class="certification-list">${certificationsList}</ul>`;
+      } else {
+        // Worker has no certifications uploaded
+        certificationsContent.innerHTML = `<p class="no-certifications">This professional has not uploaded any certifications yet.</p>`;
+        certificationsSection.classList.add('show');
+      }
+    } catch (err) {
+      console.error('Failed to load certifications:', err);
+      certificationsSection.style.display = 'none';
     }
   }
 

@@ -50,16 +50,23 @@ module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
 
       const userId = req.session.user.id;
       const userType = req.session.user.type;
-      const fileUrl = `/uploads/profile-pics/${req.file.filename}`;
-      
+
+      // Cloudinary URL is in req.file.path
+      const fileUrl = req.file.path;
+      const cloudinaryId = req.file.filename;
+
       const table = userType === 'professional' ? 'workers' : 'users';
       await pool.query(
-        `UPDATE ${table} SET profile_pic = $1 WHERE id = $2`,
-        [fileUrl, userId]
+        `UPDATE ${table} SET profile_pic = $1, cloudinary_id = $2 WHERE id = $3`,
+        [fileUrl, cloudinaryId, userId]
       );
 
-      res.json({ 
-        success: true, 
+      // Update session with new profile picture
+      req.session.user.profilePic = fileUrl;
+      req.session.user.image = fileUrl;
+
+      res.json({
+        success: true,
         url: fileUrl,
         message: 'Profile picture updated successfully'
       });

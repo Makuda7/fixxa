@@ -485,6 +485,13 @@ document.getElementById('profilePicInput').addEventListener('change', async (e) 
     const data = await res.json();
     if (data.success) {
       showNotification('Profile picture updated successfully');
+
+      // Update profile picture across entire site (if element exists on other pages)
+      const userBtnImg = document.querySelector('.user-menu img');
+      if (userBtnImg) userBtnImg.src = data.url;
+
+      const dashboardImg = document.querySelector('.dashboard-header img');
+      if (dashboardImg) dashboardImg.src = data.url;
     } else {
       showNotification(data.error || 'Failed to update profile picture', 'error');
     }

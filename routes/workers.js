@@ -664,5 +664,40 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get certifications for a specific worker (clients can view)
+  router.get('/:workerId/certifications', requireAuth, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+
+      // Only allow clients to view certifications (not other workers)
+      if (userType !== 'client') {
+        return res.status(403).json({
+          success: false,
+          error: 'Only clients can view worker certifications'
+        });
+      }
+
+      // Fetch certifications for this worker
+      const result = await pool.query(
+        `SELECT id, certification_name, certification_type, uploaded_at
+         FROM certifications
+         WHERE worker_id = $1
+         ORDER BY uploaded_at DESC`,
+        [workerId]
+      );
+
+      res.json({
+        success: true,
+        certifications: result.rows
+      });
+    } catch (error) {
+      logger.error('Get worker certifications error', { error: error.message });
+      console.error('Get worker certifications error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch certifications' });
+    }
+  });
+
   return router;
 };
