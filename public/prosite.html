@@ -1930,38 +1930,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Save Without Documents button
-  document.getElementById('saveDraftBtn').addEventListener('click', async () => {
-    const bio = document.getElementById('bio').value.trim();
-    const experience = document.getElementById('experience').value.trim();
-    const area = document.getElementById('area').value;
-    
-    if (!bio || !experience || !area) {
-      showProfileMessage('Please fill in all required fields (Bio, Experience, and Province)', 'error');
-      return;
-    }
-    
-    try {
-      const res = await fetch('/worker/profile', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bio, experience, area })
-      });
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        showProfileMessage('Profile saved successfully!', 'success');
-        await loadWorkerProfile();
-      } else {
-        showProfileMessage(data.error || 'Failed to save profile', 'error');
-      }
-    } catch (error) {
-      console.error('Save draft error:', error);
-      showProfileMessage('Error saving profile', 'error');
-    }
-  });
+  // Save Draft button removed - now using single "Save All Changes" button in profile form
 
   // Modal event listeners
   document.getElementById('closeBookingBtn').addEventListener('click', closeBookingModal);
