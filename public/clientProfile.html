@@ -393,7 +393,7 @@
 <main class="profile-container" id="profileMain">
 
   <div class="profile-header">
-    <img id="profilePic" src="images/default-profile.png" alt="Profile Picture" />
+    <img id="profilePic" src="images/default-profile.svg" alt="Profile Picture" />
     <h2 id="userName">Welcome, User!</h2>
   </div>
 
@@ -678,7 +678,7 @@ async function loadProfile() {
   document.getElementById('userMenu').style.display = 'inline-block';
   document.getElementById('userBtn').textContent = user.name + ' ▼';
   document.getElementById('userName').textContent = 'Welcome, ' + user.name + '!';
-  document.getElementById('profilePic').src = user.profilePic || 'images/default-profile.png';
+  document.getElementById('profilePic').src = user.profilePic || 'images/default-profile.svg';
   document.getElementById('userEmail').textContent = user.email;
   document.getElementById('userJoined').textContent = new Date(user.registeredAt).toLocaleDateString();
   document.getElementById('userPhone').textContent = user.phone || 'Not provided';

@@ -158,7 +158,7 @@
     <h2>Profile Information</h2>
     
     <div class="profile-pic-upload">
-      <img id="profilePicPreview" src="images/default-profile.png" alt="Profile Picture" class="profile-pic-preview" />
+      <img id="profilePicPreview" src="images/default-profile.svg" alt="Profile Picture" class="profile-pic-preview" />
       <div>
         <div class="upload-btn-wrapper">
           <button class="upload-btn">Choose New Photo</button>
@@ -431,7 +431,7 @@ async function loadUserData() {
   document.getElementById('city').value = user.city || '';
   document.getElementById('postalCode').value = user.postalCode || '';
   document.getElementById('currentEmail').value = user.email || '';
-  document.getElementById('profilePicPreview').src = user.profilePic || 'images/default-profile.png';
+  document.getElementById('profilePicPreview').src = user.profilePic || 'images/default-profile.svg';
 
   // Load preferences if they exist
   if (user.preferences) {

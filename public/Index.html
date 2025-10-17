@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
         proCard.innerHTML = `
           <div class="pro-card">
             ${worker.distance ? `<div class="distance-badge">${worker.distance} km away</div>` : ''}
-            <img src="${worker.image || 'images/default-profile.png'}" alt="${worker.name}">
+            <img src="${worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
             <h3>${worker.name} ${verifiedBadge}</h3>
             <p>${worker.speciality} • ${worker.experience || 'N/A'} years experience</p>
             <span>${stars}</span>

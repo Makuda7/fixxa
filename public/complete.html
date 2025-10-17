@@ -245,7 +245,7 @@
     </a>
   </div>
   <div class="dashboard-header">
-    <img id="profilePic" src="images/default-profile.png" alt="Profile Picture">
+    <img id="profilePic" src="images/default-profile.svg" alt="Profile Picture">
     <div>
       <h2 id="userName">Welcome, User!</h2>
       <p id="userEmail" style="color: #666; margin: 0.5rem 0 0;"></p>
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if(!currentUser) return;
   
   document.getElementById('dashboardMain').style.display='block';
-  document.getElementById('profilePic').src = currentUser.profilePic || 'images/default-profile.png';
+  document.getElementById('profilePic').src = currentUser.profilePic || 'images/default-profile.svg';
   document.getElementById('userName').textContent = 'Welcome, '+currentUser.name+'!';
   document.getElementById('userEmail').textContent = currentUser.email;
 

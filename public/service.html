@@ -506,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.innerHTML = `
         ${!worker.is_available ? 
           `<div class="unavailable-badge">Currently Unavailable</div>` : ''}
-        <img src="${worker.profile_pic || worker.image || 'images/default-profile.png'}" alt="${worker.name}">
+        <img src="${worker.profile_pic || worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
         <h3>${worker.name} ${verifiedBadge}</h3>
         <p class="speciality">${worker.speciality || 'General Services'}</p>
         <p class="rating">${stars} ${rating.toFixed(1)} (${worker.review_count || 0} reviews)</p>
