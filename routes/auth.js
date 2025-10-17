@@ -423,18 +423,24 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
         );
         
         if (result.rows.length > 0) {
+          // Convert old local profile pic paths to default SVG
+          let profilePic = result.rows[0].profile_pic;
+          if (profilePic && profilePic.startsWith('/uploads/')) {
+            profilePic = 'images/default-profile.svg';
+          }
+
           const userData = {
             ...result.rows[0],
             type: req.session.user.type,
             preferences: {
-              ...(typeof result.rows[0].notification_preferences === 'object' 
-                  ? result.rows[0].notification_preferences 
+              ...(typeof result.rows[0].notification_preferences === 'object'
+                  ? result.rows[0].notification_preferences
                   : JSON.parse(result.rows[0].notification_preferences || '{}')),
               ...(typeof result.rows[0].privacy_preferences === 'object'
                   ? result.rows[0].privacy_preferences
                   : JSON.parse(result.rows[0].privacy_preferences || '{}'))
             },
-            profilePic: result.rows[0].profile_pic
+            profilePic: profilePic
           };
           res.json({ authenticated: true, user: userData });
         } else {
