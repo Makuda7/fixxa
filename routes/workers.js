@@ -362,12 +362,35 @@ module.exports = (pool, logger, helpers) => {
   router.get('/profile', requireAuth, workerOnly, async (req, res) => {
     try {
       const workerId = req.session.user.id;
-      const result = await pool.query(
-        `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
-                bio, experience, area, service_radius, verification_status, is_verified
-         FROM workers WHERE id = $1`,
-        [workerId]
-      );
+
+      // Try with new columns first, fall back to old schema if they don't exist
+      let result;
+      try {
+        result = await pool.query(
+          `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
+                  bio, experience, area, service_radius, verification_status, is_verified
+           FROM workers WHERE id = $1`,
+          [workerId]
+        );
+      } catch (dbError) {
+        // If columns don't exist (error 42703), query without them
+        if (dbError.code === '42703') {
+          result = await pool.query(
+            `SELECT id, name, email, phone, address, city, postal_code, speciality,
+                    bio, experience, area, service_radius
+             FROM workers WHERE id = $1`,
+            [workerId]
+          );
+          // Add default values for missing columns
+          if (result.rows.length > 0) {
+            result.rows[0].verification_status = 'pending';
+            result.rows[0].is_verified = false;
+            result.rows[0].suburb = null;
+          }
+        } else {
+          throw dbError;
+        }
+      }
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Worker not found' });
