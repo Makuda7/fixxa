@@ -584,17 +584,23 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
     </span>
   </h3>
   <p style="color:#666; margin-bottom:1rem;">
-    Upload your professional certifications, licenses, or qualifications for admin review. 
+    Upload your <strong>certified copy of ID document</strong>, professional certifications, licenses, or qualifications for admin review.
     Once approved, you'll receive a verified badge on your profile!
   </p>
+
+  <div style="background:#fff3cd; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid #ffc107;">
+    <p style="margin:0; font-size:0.9rem; color:#856404;">
+      <strong>⚠️ Important:</strong> Please upload a <strong>certified copy</strong> of your ID document (stamped by a commissioner of oaths, police station, or notary). Regular photocopies will not be accepted.
+    </p>
+  </div>
 
   <!-- Upload Area -->
   <div class="upload-area" id="uploadArea">
     <input type="file" id="certificationFile" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
     <div>
       <p style="font-size:2rem; margin:0;">📄</p>
-      <p style="margin:0.5rem 0; font-weight:600;">Click to upload certification</p>
-      <p style="margin:0; font-size:0.85rem; color:#666;">Supported: JPG, PNG, PDF, DOC (Max 10MB)</p>
+      <p style="margin:0.5rem 0; font-weight:600;">Click to upload documents</p>
+      <p style="margin:0; font-size:0.85rem; color:#666;">Certified ID, Certifications, Licenses (JPG, PNG, PDF, DOC - Max 10MB)</p>
     </div>
   </div>
 
@@ -1225,7 +1231,7 @@ function showProfileCompletionModal(verificationStatus, hasBio, hasExperience, h
       { label: 'Professional Bio (describe your services)', complete: hasBio },
       { label: 'Years of Experience', complete: hasExperience },
       { label: 'Service Area (cities/suburbs you cover)', complete: hasArea },
-      { label: 'Upload Certifications or ID Document', complete: hasCertificates },
+      { label: 'Upload Certified Copy of ID Document', complete: hasCertificates },
       { label: 'Add Portfolio Photos (optional but recommended)', complete: false, optional: true }
     ];
 
