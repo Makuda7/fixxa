@@ -229,30 +229,114 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
-  // Update worker profile
+  // Update worker profile (also handles /worker/profile POST from frontend)
   router.post('/update-profile', requireAuth, workerOnly, async (req, res) => {
     try {
       const workerId = req.session.user.id;
-      const { bio, experience, area } = req.body;
-      
-      if (!bio || !experience || !area) {
-        return res.status(400).json({ success: false, error: 'All fields are required' });
+      const {
+        name,
+        phone,
+        speciality,
+        city,
+        suburb,
+        address,
+        area,
+        postal_code,
+        service_radius,
+        bio,
+        experience
+      } = req.body;
+
+      // Validate required fields
+      if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
+        return res.status(400).json({ success: false, error: 'All required fields must be filled' });
       }
-      
+
+      // Validate phone number format
+      if (!/^[0-9]{10}$/.test(phone)) {
+        return res.status(400).json({ success: false, error: 'Phone number must be 10 digits' });
+      }
+
+      // Validate service radius
+      if (service_radius < 5 || service_radius > 200) {
+        return res.status(400).json({ success: false, error: 'Service radius must be between 5 and 200 km' });
+      }
+
       const result = await pool.query(
-        `UPDATE workers 
-         SET bio = $1, experience = $2, area = $3 
-         WHERE id = $4 
-         RETURNING id, bio, experience, area`,
-        [bio, experience, area, workerId]
+        `UPDATE workers
+         SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
+             address = $6, area = $7, postal_code = $8, service_radius = $9,
+             bio = $10, experience = $11
+         WHERE id = $12
+         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience`,
+        [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId]
       );
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        worker: result.rows[0]
+      });
+    } catch (error) {
+      logger.error('Update worker profile error', { error: error.message });
+      console.error('Update worker profile error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update profile' });
+    }
+  });
+
+  // Alias for frontend compatibility - POST /profile
+  router.post('/profile', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const {
+        name,
+        phone,
+        speciality,
+        city,
+        suburb,
+        address,
+        area,
+        postal_code,
+        service_radius,
+        bio,
+        experience
+      } = req.body;
+
+      // Validate required fields
+      if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
+        return res.status(400).json({ success: false, error: 'All required fields must be filled' });
+      }
+
+      // Validate phone number format
+      if (!/^[0-9]{10}$/.test(phone)) {
+        return res.status(400).json({ success: false, error: 'Phone number must be 10 digits' });
+      }
+
+      // Validate service radius
+      if (service_radius < 5 || service_radius > 200) {
+        return res.status(400).json({ success: false, error: 'Service radius must be between 5 and 200 km' });
+      }
+
+      const result = await pool.query(
+        `UPDATE workers
+         SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
+             address = $6, area = $7, postal_code = $8, service_radius = $9,
+             bio = $10, experience = $11
+         WHERE id = $12
+         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience`,
+        [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      res.json({
+        success: true,
         message: 'Profile updated successfully',
         worker: result.rows[0]
       });
@@ -268,7 +352,9 @@ module.exports = (pool, logger, helpers) => {
     try {
       const workerId = req.session.user.id;
       const result = await pool.query(
-        'SELECT id, name, email, bio, experience, area, speciality, verification_status, is_verified FROM workers WHERE id = $1',
+        `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
+                bio, experience, area, service_radius, verification_status, is_verified
+         FROM workers WHERE id = $1`,
         [workerId]
       );
 

@@ -457,34 +457,94 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 <div class="availability-section">
   <h3>Professional Profile</h3>
   <p id="profileStatus" style="color:#666; font-size:0.9rem;"></p>
-  
+
   <form id="workerProfileForm">
-    <div>
-      <label for="bio">Bio *</label>
-      <textarea id="bio" name="bio" rows="4" placeholder="Tell clients about yourself..." required></textarea>
+    <!-- Personal Information -->
+    <h4 style="color:forestgreen; margin:1.5rem 0 1rem 0; border-bottom:2px solid #eee; padding-bottom:0.5rem;">👤 Personal Information</h4>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div>
+        <label for="workerName">Full Name *</label>
+        <input type="text" id="workerName" name="name" placeholder="John Doe" required>
+      </div>
+      <div>
+        <label for="workerPhone">Phone Number *</label>
+        <input type="tel" id="workerPhone" name="phone" placeholder="0821234567" pattern="[0-9]{10}" required>
+        <small style="color:#666; font-size:0.85rem;">10-digit number for client contact</small>
+      </div>
     </div>
+
     <div>
-      <label for="experience">Experience *</label>
-      <textarea id="experience" name="experience" rows="3" placeholder="Describe your work experience" required></textarea>
+      <label for="speciality">Profession / Speciality *</label>
+      <input type="text" id="speciality" name="speciality" placeholder="e.g., Plumber, Electrician, Carpenter" required>
+      <small style="color:#666; font-size:0.85rem;">What type of work do you specialize in?</small>
     </div>
+
+    <!-- Location Information -->
+    <h4 style="color:forestgreen; margin:1.5rem 0 1rem 0; border-bottom:2px solid #eee; padding-bottom:0.5rem;">📍 Location & Service Area</h4>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div>
+        <label for="workerCity">City / Town *</label>
+        <input type="text" id="workerCity" name="city" placeholder="e.g., Johannesburg, Cape Town" required>
+      </div>
+      <div>
+        <label for="workerSuburb">Suburb / Area</label>
+        <input type="text" id="workerSuburb" name="suburb" placeholder="e.g., Sandton, Rondebosch">
+      </div>
+    </div>
+
     <div>
-      <label for="area">Province *</label>
-      <select id="area" name="area" required>
-        <option value="">Select Province</option>
-        <option value="Eastern Cape">Eastern Cape</option>
-        <option value="Free State">Free State</option>
-        <option value="Gauteng">Gauteng</option>
-        <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-        <option value="Limpopo">Limpopo</option>
-        <option value="Mpumalanga">Mpumalanga</option>
-        <option value="Northern Cape">Northern Cape</option>
-        <option value="North West">North West</option>
-        <option value="Western Cape">Western Cape</option>
-      </select>
+      <label for="workerAddress">Street Address</label>
+      <input type="text" id="workerAddress" name="address" placeholder="123 Main Street">
+      <small style="color:#666; font-size:0.85rem;">Optional - for more accurate location on map</small>
     </div>
-    <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-      <button type="submit" style="background:forestgreen; color:white; border:none; padding:0.7rem 1rem; border-radius:6px; cursor:pointer;">Update Profile</button>
-      <button type="button" id="saveDraftBtn" style="background:#666; color:white; border:none; padding:0.7rem 1rem; border-radius:6px; cursor:pointer;">Save Profile</button>
+
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:1rem;">
+      <div>
+        <label for="area">Province *</label>
+        <select id="area" name="area" required>
+          <option value="">Select Province</option>
+          <option value="Eastern Cape">Eastern Cape</option>
+          <option value="Free State">Free State</option>
+          <option value="Gauteng">Gauteng</option>
+          <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+          <option value="Limpopo">Limpopo</option>
+          <option value="Mpumalanga">Mpumalanga</option>
+          <option value="Northern Cape">Northern Cape</option>
+          <option value="North West">North West</option>
+          <option value="Western Cape">Western Cape</option>
+        </select>
+      </div>
+      <div>
+        <label for="postalCode">Postal Code</label>
+        <input type="text" id="postalCode" name="postal_code" placeholder="2000" pattern="[0-9]{4}">
+      </div>
+    </div>
+
+    <div>
+      <label for="serviceRadius">Service Radius (km) *</label>
+      <input type="number" id="serviceRadius" name="service_radius" min="5" max="200" value="25" required>
+      <small style="color:#666; font-size:0.85rem;">How far are you willing to travel for jobs? (5-200 km)</small>
+    </div>
+
+    <!-- Professional Information -->
+    <h4 style="color:forestgreen; margin:1.5rem 0 1rem 0; border-bottom:2px solid #eee; padding-bottom:0.5rem;">💼 Professional Details</h4>
+
+    <div>
+      <label for="bio">Professional Bio *</label>
+      <textarea id="bio" name="bio" rows="4" placeholder="Tell clients about yourself, your skills, and what makes you great at your job..." required></textarea>
+      <small style="color:#666; font-size:0.85rem;">This appears on your profile - make it compelling!</small>
+    </div>
+
+    <div>
+      <label for="experience">Work Experience *</label>
+      <textarea id="experience" name="experience" rows="3" placeholder="How many years? Previous companies? Notable projects?" required></textarea>
+      <small style="color:#666; font-size:0.85rem;">Share your professional background and expertise</small>
+    </div>
+
+    <div style="margin-top:1.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <button type="submit" style="background:forestgreen; color:white; border:none; padding:0.8rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600;">💾 Save All Changes</button>
     </div>
     <div id="profileUpdateMessage" style="margin-top:1rem; padding:0.7rem; border-radius:6px; display:none;"></div>
   </form>
@@ -1153,9 +1213,23 @@ async function loadWorkerProfile() {
     const res = await fetch('/workers/profile', { credentials: 'include' });
     const data = await res.json();
     if (data.success && data.worker) {
+      // Personal Information
+      document.getElementById('workerName').value = data.worker.name || '';
+      document.getElementById('workerPhone').value = data.worker.phone || '';
+      document.getElementById('speciality').value = data.worker.speciality || '';
+
+      // Location Information
+      document.getElementById('workerCity').value = data.worker.city || '';
+      document.getElementById('workerSuburb').value = data.worker.suburb || '';
+      document.getElementById('workerAddress').value = data.worker.address || '';
+      document.getElementById('area').value = data.worker.area || '';
+      document.getElementById('postalCode').value = data.worker.postal_code || '';
+      document.getElementById('serviceRadius').value = data.worker.service_radius || 25;
+
+      // Professional Information
       document.getElementById('bio').value = data.worker.bio || '';
       document.getElementById('experience').value = data.worker.experience || '';
-      document.getElementById('area').value = data.worker.area || '';
+
       isVerified = data.worker.is_verified || false;
 
       const hasBio = data.worker.bio && data.worker.bio.trim();
@@ -1745,24 +1819,62 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Profile form submission
   document.getElementById('workerProfileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
+    // Personal Information
+    const name = document.getElementById('workerName').value.trim();
+    const phone = document.getElementById('workerPhone').value.trim();
+    const speciality = document.getElementById('speciality').value.trim();
+
+    // Location Information
+    const city = document.getElementById('workerCity').value.trim();
+    const suburb = document.getElementById('workerSuburb').value.trim();
+    const address = document.getElementById('workerAddress').value.trim();
+    const area = document.getElementById('area').value;
+    const postal_code = document.getElementById('postalCode').value.trim();
+    const service_radius = parseInt(document.getElementById('serviceRadius').value);
+
+    // Professional Information
     const bio = document.getElementById('bio').value.trim();
     const experience = document.getElementById('experience').value.trim();
-    const area = document.getElementById('area').value;
-    
-    if (!bio || !experience || !area) {
-      showProfileMessage('Please fill in all required fields', 'error');
+
+    // Validate required fields
+    if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
+      showProfileMessage('Please fill in all required fields (marked with *)', 'error');
       return;
     }
-    
+
+    // Validate phone number format
+    if (!/^[0-9]{10}$/.test(phone)) {
+      showProfileMessage('Phone number must be 10 digits', 'error');
+      return;
+    }
+
+    // Validate service radius
+    if (service_radius < 5 || service_radius > 200) {
+      showProfileMessage('Service radius must be between 5 and 200 km', 'error');
+      return;
+    }
+
     try {
       const res = await fetch('/worker/profile', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bio, experience, area })
+        body: JSON.stringify({
+          name,
+          phone,
+          speciality,
+          city,
+          suburb,
+          address,
+          area,
+          postal_code,
+          service_radius,
+          bio,
+          experience
+        })
       });
-      
+
       const data = await res.json();
       
       if (data.success) {
