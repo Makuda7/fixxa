@@ -117,19 +117,22 @@ module.exports = (pool, logger, upload) => {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
 
-      const fileUrl = `/uploads/reviews/${req.file.filename}`;
-      res.json({ 
-        success: true, 
+      // Cloudinary URL is in req.file.path
+      const fileUrl = req.file.path;
+      const cloudinaryId = req.file.filename;
+
+      res.json({
+        success: true,
         url: fileUrl,
-        filename: req.file.filename,
+        filename: cloudinaryId,
         originalName: req.file.originalname,
         size: req.file.size
       });
 
     } catch (error) {
-      logger.error('Photo upload error', { error: error.message });
+      logger.error('Photo upload error', { error: error.message, stack: error.stack });
       console.error('Photo upload error:', error);
-      res.status(500).json({ success: false, error: 'Upload failed' });
+      res.status(500).json({ success: false, error: 'Upload failed: ' + error.message });
     }
   });
 
@@ -162,8 +165,8 @@ module.exports = (pool, logger, upload) => {
         console.error('Error parsing existing photos:', e);
       }
 
-      // Add new photo
-      const fileUrl = `/uploads/reviews/${req.file.filename}`;
+      // Add new photo (Cloudinary URL)
+      const fileUrl = req.file.path;
       existingPhotos.push(fileUrl);
 
       // Update review with new photos array

@@ -94,21 +94,25 @@ app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
 // File upload configurations
-const profilePicStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/profile-pics/'),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+// Use Cloudinary storage (imported from config/cloudinary.js)
+const { cloudinary, profilePicStorage: cloudinaryProfilePicStorage, } = require('./config/cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Review photo storage (Cloudinary)
+const reviewPhotoStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'fixxa/review-photos',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto' }],
+    public_id: (req, file) => {
+      const userId = req.session?.user?.id || 'unknown';
+      return `review-${userId}-${Date.now()}`;
+    }
   }
 });
 
-const reviewPhotoStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/reviews/'),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'review-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const profilePicStorage = cloudinaryProfilePicStorage;
 
 const profilePicUpload = multer({
   storage: profilePicStorage,
