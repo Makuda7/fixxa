@@ -717,8 +717,10 @@ module.exports = (pool, logger, helpers) => {
       }
 
       // Fetch certifications for this worker
+      // Map old column names to match what exists in production
       const result = await pool.query(
-        `SELECT id, certification_name, certification_type, uploaded_at
+        `SELECT id, document_name as certification_name,
+                'document' as certification_type, uploaded_at
          FROM certifications
          WHERE worker_id = $1
          ORDER BY uploaded_at DESC`,
