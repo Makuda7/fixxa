@@ -363,34 +363,12 @@ module.exports = (pool, logger, helpers) => {
     try {
       const workerId = req.session.user.id;
 
-      // Try with new columns first, fall back to old schema if they don't exist
-      let result;
-      try {
-        result = await pool.query(
-          `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
-                  bio, experience, area, service_radius, verification_status, is_verified
-           FROM workers WHERE id = $1`,
-          [workerId]
-        );
-      } catch (dbError) {
-        // If columns don't exist (error 42703), query without them
-        if (dbError.code === '42703') {
-          result = await pool.query(
-            `SELECT id, name, email, phone, address, city, postal_code, speciality,
-                    bio, experience, area, service_radius
-             FROM workers WHERE id = $1`,
-            [workerId]
-          );
-          // Add default values for missing columns
-          if (result.rows.length > 0) {
-            result.rows[0].verification_status = 'pending';
-            result.rows[0].is_verified = false;
-            result.rows[0].suburb = null;
-          }
-        } else {
-          throw dbError;
-        }
-      }
+      const result = await pool.query(
+        `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
+                bio, experience, area, service_radius, verification_status, is_verified
+         FROM workers WHERE id = $1`,
+        [workerId]
+      );
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Worker not found' });
@@ -433,24 +411,10 @@ module.exports = (pool, logger, helpers) => {
       const cloudinaryId = req.file.filename; // Store Cloudinary public_id for deletion
       const description = req.body.description || '';
 
-      let result;
-      try {
-        // Try with cloudinary_id column
-        result = await pool.query(
-          'INSERT INTO portfolio_photos (worker_id, photo_url, cloudinary_id, description) VALUES ($1, $2, $3, $4) RETURNING *',
-          [workerId, photoUrl, cloudinaryId, description]
-        );
-      } catch (dbError) {
-        if (dbError.code === '42703') { // Column doesn't exist
-          // Fallback: Insert without cloudinary_id
-          result = await pool.query(
-            'INSERT INTO portfolio_photos (worker_id, photo_url, description) VALUES ($1, $2, $3) RETURNING *',
-            [workerId, photoUrl, description]
-          );
-        } else {
-          throw dbError;
-        }
-      }
+      const result = await pool.query(
+        'INSERT INTO portfolio_photos (worker_id, photo_url, cloudinary_id, description) VALUES ($1, $2, $3, $4) RETURNING *',
+        [workerId, photoUrl, cloudinaryId, description]
+      );
 
       logger.info('Portfolio photo uploaded to Cloudinary', { workerId, photoId: result.rows[0].id, cloudinaryId });
 

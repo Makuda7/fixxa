@@ -147,44 +147,22 @@ module.exports = (pool, logger, upload) => {
       }
 
       // Verify review belongs to this client and get existing photos
-      let reviewCheck;
+      const reviewCheck = await pool.query(
+        'SELECT photos FROM reviews WHERE id = $1 AND client_id = $2',
+        [reviewId, clientId]
+      );
+
+      if (reviewCheck.rows.length === 0) {
+        return res.status(403).json({ success: false, error: 'Review not found or unauthorized' });
+      }
+
+      // Parse existing photos
       let existingPhotos = [];
-
       try {
-        // Try to select with photos column
-        reviewCheck = await pool.query(
-          'SELECT photos FROM reviews WHERE id = $1 AND client_id = $2',
-          [reviewId, clientId]
-        );
-
-        if (reviewCheck.rows.length === 0) {
-          return res.status(403).json({ success: false, error: 'Review not found or unauthorized' });
-        }
-
-        // Parse existing photos
-        try {
-          const photosData = reviewCheck.rows[0].photos;
-          existingPhotos = typeof photosData === 'string' ? JSON.parse(photosData) : (photosData || []);
-        } catch (e) {
-          console.error('Error parsing existing photos:', e);
-        }
-      } catch (dbError) {
-        if (dbError.code === '42703') { // photos column doesn't exist
-          // Fall back to checking without photos column
-          reviewCheck = await pool.query(
-            'SELECT id FROM reviews WHERE id = $1 AND client_id = $2',
-            [reviewId, clientId]
-          );
-
-          if (reviewCheck.rows.length === 0) {
-            return res.status(403).json({ success: false, error: 'Review not found or unauthorized' });
-          }
-
-          // No existing photos since column doesn't exist
-          existingPhotos = [];
-        } else {
-          throw dbError;
-        }
+        const photosData = reviewCheck.rows[0].photos;
+        existingPhotos = typeof photosData === 'string' ? JSON.parse(photosData) : (photosData || []);
+      } catch (e) {
+        console.error('Error parsing existing photos:', e);
       }
 
       // Add new photo (Cloudinary URL)
@@ -192,22 +170,10 @@ module.exports = (pool, logger, upload) => {
       existingPhotos.push(fileUrl);
 
       // Update review with new photos array
-      // Try with updated_at, fall back without if column doesn't exist
-      try {
-        await pool.query(
-          'UPDATE reviews SET photos = $1, updated_at = NOW() WHERE id = $2',
-          [JSON.stringify(existingPhotos), reviewId]
-        );
-      } catch (dbError) {
-        if (dbError.code === '42703') { // Column doesn't exist
-          await pool.query(
-            'UPDATE reviews SET photos = $1 WHERE id = $2',
-            [JSON.stringify(existingPhotos), reviewId]
-          );
-        } else {
-          throw dbError;
-        }
-      }
+      await pool.query(
+        'UPDATE reviews SET photos = $1, updated_at = NOW() WHERE id = $2',
+        [JSON.stringify(existingPhotos), reviewId]
+      );
 
       res.json({ 
         success: true, 

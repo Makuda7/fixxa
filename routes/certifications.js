@@ -134,7 +134,6 @@ module.exports = (pool, logger) => {
     try {
       const { status } = req.query;
 
-      // Try with is_verified column first, fallback without it
       let query = `
         SELECT
           c.*,
@@ -154,39 +153,7 @@ module.exports = (pool, logger) => {
 
       query += ' ORDER BY c.uploaded_at DESC';
 
-      let result;
-      try {
-        result = await pool.query(query, params);
-      } catch (dbError) {
-        if (dbError.code === '42703') { // Column doesn't exist
-          // Fallback query without is_verified
-          let fallbackQuery = `
-            SELECT
-              c.*,
-              w.name AS worker_name,
-              w.email AS worker_email,
-              w.speciality
-            FROM certifications c
-            JOIN workers w ON c.worker_id = w.id
-          `;
-
-          if (status) {
-            fallbackQuery += ' WHERE c.status = $1';
-          }
-
-          fallbackQuery += ' ORDER BY c.uploaded_at DESC';
-
-          result = await pool.query(fallbackQuery, params);
-
-          // Add default is_verified value
-          result.rows = result.rows.map(row => ({
-            ...row,
-            is_verified: false
-          }));
-        } else {
-          throw dbError;
-        }
-      }
+      const result = await pool.query(query, params);
 
       res.json({ success: true, certifications: result.rows });
     } catch (error) {
@@ -202,24 +169,10 @@ module.exports = (pool, logger) => {
       const adminEmail = req.session.user.email;
 
       // Update certification status
-      let certResult;
-      try {
-        // Try with reviewed_at and reviewed_by_email columns
-        certResult = await pool.query(
-          'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id',
-          ['approved', adminEmail, certificationId]
-        );
-      } catch (dbError) {
-        if (dbError.code === '42703') { // Column doesn't exist
-          // Fallback: Update without reviewed_at and reviewed_by_email
-          certResult = await pool.query(
-            'UPDATE certifications SET status = $1 WHERE id = $2 RETURNING worker_id',
-            ['approved', certificationId]
-          );
-        } else {
-          throw dbError;
-        }
-      }
+      const certResult = await pool.query(
+        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id',
+        ['approved', adminEmail, certificationId]
+      );
 
       if (certResult.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Certification not found' });
@@ -235,20 +188,10 @@ module.exports = (pool, logger) => {
 
       // If this is their first approved certification, mark worker as verified
       if (parseInt(approvedCount.rows[0].count) >= 1) {
-        try {
-          // Try to update with is_verified and verification_date columns
-          await pool.query(
-            'UPDATE workers SET is_verified = true, verification_date = NOW() WHERE id = $1',
-            [workerId]
-          );
-        } catch (dbError) {
-          if (dbError.code === '42703') {
-            // Columns don't exist, that's okay - worker verification not available yet
-            logger.info('Worker verification columns not available', { workerId });
-          } else {
-            throw dbError;
-          }
-        }
+        await pool.query(
+          'UPDATE workers SET is_verified = true, verification_date = NOW() WHERE id = $1',
+          [workerId]
+        );
       }
 
       logger.info('Certification approved', { certificationId, workerId, adminEmail });
@@ -271,24 +214,10 @@ module.exports = (pool, logger) => {
       const adminEmail = req.session.user.email;
       const { reason } = req.body;
 
-      let result;
-      try {
-        // Try with reviewed_at and reviewed_by_email columns
-        result = await pool.query(
-          'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING *',
-          ['rejected', adminEmail, certificationId]
-        );
-      } catch (dbError) {
-        if (dbError.code === '42703') { // Column doesn't exist
-          // Fallback: Update without reviewed_at and reviewed_by_email
-          result = await pool.query(
-            'UPDATE certifications SET status = $1 WHERE id = $2 RETURNING *',
-            ['rejected', certificationId]
-          );
-        } else {
-          throw dbError;
-        }
-      }
+      const result = await pool.query(
+        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING *',
+        ['rejected', adminEmail, certificationId]
+      );
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Certification not found' });
