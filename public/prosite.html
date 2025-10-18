@@ -1299,6 +1299,55 @@ async function loadWorkerProfile() {
   }
 }
 
+// Update only the approval status display without reloading form data
+async function updateProfileStatusOnly() {
+  try {
+    const res = await fetch('/workers/profile', { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.success && data.worker) {
+      const approvalStatus = data.worker.approval_status || 'incomplete';
+      const hasBio = data.worker.bio && data.worker.bio.trim();
+      const hasExperience = data.worker.experience && data.worker.experience.trim();
+      const hasArea = data.worker.area && data.worker.area.trim();
+      const hasCertificates = data.worker.has_certificates || false;
+      const isComplete = hasBio && hasExperience && hasArea;
+
+      // Update only the status text, not the form fields
+      if (approvalStatus === 'pending') {
+        const allRequired = hasBio && hasExperience && hasArea && hasCertificates;
+        if (allRequired) {
+          document.getElementById('profileStatus').textContent = '⏳ Profile submitted - awaiting admin approval';
+          document.getElementById('profileStatus').style.color = '#ffc107';
+        } else {
+          document.getElementById('profileStatus').textContent = '⚠️ Complete profile to submit for verification';
+          document.getElementById('profileStatus').style.color = '#dc3545';
+        }
+      } else if (approvalStatus === 'approved') {
+        if (isComplete) {
+          document.getElementById('profileStatus').textContent = '✅ Profile verified and complete';
+          document.getElementById('profileStatus').style.color = '#28a745';
+        } else {
+          document.getElementById('profileStatus').textContent = '✅ Verified - complete profile for better visibility';
+          document.getElementById('profileStatus').style.color = '#28a745';
+        }
+      } else {
+        if (isComplete) {
+          document.getElementById('profileStatus').textContent = 'Profile is complete ✓';
+          document.getElementById('profileStatus').style.color = '#28a745';
+        } else {
+          document.getElementById('profileStatus').textContent = 'Please complete your profile to appear in searches';
+          document.getElementById('profileStatus').style.color = '#dc3545';
+        }
+      }
+
+      updateVerificationBadge();
+    }
+  } catch (error) {
+    console.error('Update status error:', error);
+  }
+}
+
 function showProfileCompletionModal(approvalStatus, hasBio, hasExperience, hasArea, hasCertificates) {
   const modal = document.getElementById('profileCompletionModal');
   const checklist = document.getElementById('profileChecklist');
@@ -1927,9 +1976,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.success) {
         showProfileMessage('Profile updated successfully! Your changes are now visible to clients.', 'success');
 
-        // Reload full profile to update all fields including approval_status
-        // The form values stay visible during the reload since they're already in the inputs
-        await loadWorkerProfile();
+        // Don't reload the entire profile - the form already has the user's input
+        // Just ensure the form values match what was saved (in case server modified them)
+        if (data.worker) {
+          // Only update if server returned different values (for safety)
+          document.getElementById('workerName').value = data.worker.name || name;
+          document.getElementById('workerPhone').value = data.worker.phone || phone;
+          document.getElementById('speciality').value = data.worker.speciality || speciality;
+          document.getElementById('workerCity').value = data.worker.city || city;
+          document.getElementById('workerSuburb').value = data.worker.suburb || suburb;
+          document.getElementById('workerAddress').value = data.worker.address || address;
+          document.getElementById('area').value = data.worker.area || area;
+          document.getElementById('postalCode').value = data.worker.postal_code || postal_code;
+          document.getElementById('serviceRadius').value = data.worker.service_radius || service_radius;
+          document.getElementById('bio').value = data.worker.bio || bio;
+          document.getElementById('experience').value = data.worker.experience || experience;
+        }
+
+        // Update approval status display without reloading entire form
+        // This prevents the form from clearing
+        updateProfileStatusOnly();
       } else {
         showProfileMessage(data.error || 'Failed to update profile', 'error');
       }
