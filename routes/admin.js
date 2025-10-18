@@ -691,5 +691,53 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Run database schema sync (ADMIN ONLY - USE WITH CAUTION)
+  router.post('/sync-database-schema', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+
+      logger.info('Database schema sync requested', { adminEmail: req.session.user.email });
+
+      // Read the SQL file
+      const sqlFilePath = path.join(__dirname, '..', 'sync_database_schema.sql');
+
+      if (!fs.existsSync(sqlFilePath)) {
+        return res.status(404).json({
+          success: false,
+          error: 'Schema sync file not found'
+        });
+      }
+
+      const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+
+      // Execute the SQL
+      await pool.query(sqlContent);
+
+      logger.info('Database schema sync completed successfully', {
+        adminEmail: req.session.user.email
+      });
+
+      res.json({
+        success: true,
+        message: 'Database schema synchronized successfully',
+        details: 'All missing columns and constraints have been added'
+      });
+
+    } catch (error) {
+      logger.error('Database schema sync failed', {
+        error: error.message,
+        stack: error.stack,
+        adminEmail: req.session.user.email
+      });
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to sync database schema',
+        details: error.message
+      });
+    }
+  });
+
   return router;
 };

@@ -906,6 +906,21 @@
           </label>
         </div>
       </div>
+
+      <div class="settings-section" style="margin-top: 2rem;">
+        <h3>Database Management</h3>
+        <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 1rem;">
+          <div class="setting-label">
+            <strong>⚙️ Synchronize Database Schema</strong>
+            <span style="color: #dc3545; font-weight: 600;">⚠️ CAUTION: This will add missing columns to the production database</span>
+            <span style="display: block; margin-top: 0.5rem;">This fixes all the "column does not exist" errors by adding missing database columns. Safe to run multiple times.</span>
+          </div>
+          <button class="btn btn-primary" onclick="syncDatabaseSchema()" id="syncSchemaBtn">
+            🔄 Run Schema Sync
+          </button>
+          <div id="schemaSyncResult" style="margin-top: 1rem; display: none;"></div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1445,7 +1460,7 @@
     // Actions
     async function toggleVacationMode() {
       const vacationMode = document.getElementById('vacationModeToggle').checked;
-      
+
       try {
         const response = await fetch('/admin/settings', {
           method: 'POST',
@@ -1453,9 +1468,9 @@
           credentials: 'include',
           body: JSON.stringify({ vacationMode })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
           showMessage(data.message, 'success');
         } else {
@@ -1466,6 +1481,64 @@
         console.error('Error toggling vacation mode:', error);
         showMessage('Error updating settings', 'error');
         document.getElementById('vacationModeToggle').checked = !vacationMode;
+      }
+    }
+
+    async function syncDatabaseSchema() {
+      const btn = document.getElementById('syncSchemaBtn');
+      const resultDiv = document.getElementById('schemaSyncResult');
+
+      if (!confirm('⚠️ WARNING: This will modify the production database schema.\n\nThis will add missing columns and is safe to run, but it should only be done once.\n\nProceed?')) {
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = '⏳ Running schema sync...';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color: #666;">⏳ Synchronizing database schema... This may take a few moments.</p>';
+
+        const response = await fetch('/admin/sync-database-schema', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          resultDiv.innerHTML = `
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 1rem; border-radius: 6px;">
+              <strong>✅ Success!</strong><br>
+              ${data.message}<br>
+              <small>${data.details}</small>
+            </div>
+          `;
+          showMessage('Database schema synchronized successfully!', 'success');
+          btn.textContent = '✅ Schema Synced';
+        } else {
+          resultDiv.innerHTML = `
+            <div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 1rem; border-radius: 6px;">
+              <strong>❌ Error</strong><br>
+              ${data.error}<br>
+              <small>${data.details || ''}</small>
+            </div>
+          `;
+          showMessage('Failed to sync database schema', 'error');
+          btn.disabled = false;
+          btn.textContent = '🔄 Run Schema Sync';
+        }
+      } catch (error) {
+        console.error('Schema sync error:', error);
+        resultDiv.innerHTML = `
+          <div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 1rem; border-radius: 6px;">
+            <strong>❌ Network Error</strong><br>
+            ${error.message}
+          </div>
+        `;
+        showMessage('Error running schema sync', 'error');
+        btn.disabled = false;
+        btn.textContent = '🔄 Run Schema Sync';
       }
     }
 
