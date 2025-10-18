@@ -1070,11 +1070,11 @@
       }
 
       grid.innerHTML = '';
-      appState.certifications.forEach(cert => {
+      appState.certifications.forEach((cert, index) => {
         const statusClass = cert.status.toLowerCase();
         const uploadDate = new Date(cert.uploaded_at).toLocaleDateString();
         const reviewedDate = cert.reviewed_at ? new Date(cert.reviewed_at).toLocaleDateString() : 'Not reviewed';
-        
+
         grid.innerHTML += `
           <div class="cert-card ${statusClass}">
             <div class="cert-header">
@@ -1085,7 +1085,7 @@
               </div>
               <span class="status-badge status-${statusClass}">${cert.status.charAt(0).toUpperCase() + cert.status.slice(1)}</span>
             </div>
-            
+
             <div class="cert-details">
               <p><strong>Document:</strong> ${cert.document_name || 'Certification'}</p>
               <p><strong>Uploaded:</strong> ${uploadDate}</p>
@@ -1094,7 +1094,7 @@
             </div>
 
             <div class="cert-actions">
-              <button class="btn btn-secondary btn-small" onclick="viewCertification(${cert.id}, '${cert.document_url}', '${cert.worker_name}', '${cert.document_name}')">
+              <button class="btn btn-secondary btn-small" onclick="viewCertificationByIndex(${index})">
                 View Document
               </button>
               ${cert.status === 'pending' ? `
@@ -1116,28 +1116,76 @@
       loadCertifications();
     }
 
-    function viewCertification(id, url, workerName, docName) {
+    function viewCertificationByIndex(index) {
+      const cert = appState.certifications[index];
+      if (!cert) {
+        showMessage('Certification not found', 'error');
+        return;
+      }
+      viewCertification(cert.id, cert.document_url, cert.worker_name, cert.document_name, cert.file_type);
+    }
+
+    function viewCertification(id, url, workerName, docName, fileType) {
       const modal = document.getElementById('certModal');
       const preview = document.getElementById('certPreview');
       const details = document.getElementById('certDetails');
-      
-      if (url.toLowerCase().endsWith('.pdf')) {
+
+      // Check if it's a PDF or document type
+      const isPDF = fileType === 'document' || url.toLowerCase().includes('.pdf') || url.toLowerCase().endsWith('.pdf');
+
+      if (isPDF) {
         preview.style.display = 'none';
+
+        // For Cloudinary PDFs, we need to use a viewer or download link
+        // Cloudinary URLs need to be opened directly
+        const pdfUrl = url;
+
         details.innerHTML = `
           <p><strong>Worker:</strong> ${workerName}</p>
           <p><strong>Document:</strong> ${docName}</p>
-          <p style="margin-top: 1rem;"><a href="${url}" target="_blank" class="btn btn-primary">Open PDF Document</a></p>
+          <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <a href="${pdfUrl}" target="_blank" class="btn btn-primary" style="text-align: center;">
+              📄 Open PDF in New Tab
+            </a>
+            <button onclick="downloadDocument('${pdfUrl}', '${docName}')" class="btn btn-secondary" style="text-align: center;">
+              ⬇️ Download Document
+            </button>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; font-size: 0.9rem; color: #666;">
+              <strong>Note:</strong> If the PDF doesn't open, try the download button or check if your browser is blocking pop-ups.
+            </div>
+          </div>
         `;
       } else {
+        // It's an image
         preview.style.display = 'block';
         preview.src = url;
+        preview.onerror = function() {
+          preview.style.display = 'none';
+          details.innerHTML = `
+            <p><strong>Worker:</strong> ${workerName}</p>
+            <p><strong>Document:</strong> ${docName}</p>
+            <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 8px; color: #856404;">
+              ⚠️ Unable to load image. <a href="${url}" target="_blank" style="color: #856404; text-decoration: underline;">Click here to try opening it directly</a>
+            </div>
+          `;
+        };
         details.innerHTML = `
           <p><strong>Worker:</strong> ${workerName}</p>
           <p><strong>Document:</strong> ${docName}</p>
         `;
       }
-      
+
       modal.classList.add('show');
+    }
+
+    function downloadDocument(url, filename) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || 'certification.pdf';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function closeCertModal() {
