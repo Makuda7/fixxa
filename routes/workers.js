@@ -433,10 +433,24 @@ module.exports = (pool, logger, helpers) => {
       const cloudinaryId = req.file.filename; // Store Cloudinary public_id for deletion
       const description = req.body.description || '';
 
-      const result = await pool.query(
-        'INSERT INTO portfolio_photos (worker_id, photo_url, cloudinary_id, description) VALUES ($1, $2, $3, $4) RETURNING *',
-        [workerId, photoUrl, cloudinaryId, description]
-      );
+      let result;
+      try {
+        // Try with cloudinary_id column
+        result = await pool.query(
+          'INSERT INTO portfolio_photos (worker_id, photo_url, cloudinary_id, description) VALUES ($1, $2, $3, $4) RETURNING *',
+          [workerId, photoUrl, cloudinaryId, description]
+        );
+      } catch (dbError) {
+        if (dbError.code === '42703') { // Column doesn't exist
+          // Fallback: Insert without cloudinary_id
+          result = await pool.query(
+            'INSERT INTO portfolio_photos (worker_id, photo_url, description) VALUES ($1, $2, $3) RETURNING *',
+            [workerId, photoUrl, description]
+          );
+        } else {
+          throw dbError;
+        }
+      }
 
       logger.info('Portfolio photo uploaded to Cloudinary', { workerId, photoId: result.rows[0].id, cloudinaryId });
 
@@ -446,7 +460,7 @@ module.exports = (pool, logger, helpers) => {
         photo: result.rows[0]
       });
     } catch (error) {
-      logger.error('Portfolio photo upload error', { error: error.message });
+      logger.error('Portfolio photo upload error', { error: error.message, stack: error.stack });
       console.error('Portfolio photo upload error:', error);
       res.status(500).json({ success: false, error: 'Failed to upload portfolio photo' });
     }
