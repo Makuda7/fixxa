@@ -146,23 +146,45 @@ module.exports = (pool, logger, upload) => {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
 
-      // Verify review belongs to this client
-      const reviewCheck = await pool.query(
-        'SELECT photos FROM reviews WHERE id = $1 AND client_id = $2',
-        [reviewId, clientId]
-      );
-
-      if (reviewCheck.rows.length === 0) {
-        return res.status(403).json({ success: false, error: 'Review not found or unauthorized' });
-      }
-
-      // Parse existing photos
+      // Verify review belongs to this client and get existing photos
+      let reviewCheck;
       let existingPhotos = [];
+
       try {
-        const photosData = reviewCheck.rows[0].photos;
-        existingPhotos = typeof photosData === 'string' ? JSON.parse(photosData) : (photosData || []);
-      } catch (e) {
-        console.error('Error parsing existing photos:', e);
+        // Try to select with photos column
+        reviewCheck = await pool.query(
+          'SELECT photos FROM reviews WHERE id = $1 AND client_id = $2',
+          [reviewId, clientId]
+        );
+
+        if (reviewCheck.rows.length === 0) {
+          return res.status(403).json({ success: false, error: 'Review not found or unauthorized' });
+        }
+
+        // Parse existing photos
+        try {
+          const photosData = reviewCheck.rows[0].photos;
+          existingPhotos = typeof photosData === 'string' ? JSON.parse(photosData) : (photosData || []);
+        } catch (e) {
+          console.error('Error parsing existing photos:', e);
+        }
+      } catch (dbError) {
+        if (dbError.code === '42703') { // photos column doesn't exist
+          // Fall back to checking without photos column
+          reviewCheck = await pool.query(
+            'SELECT id FROM reviews WHERE id = $1 AND client_id = $2',
+            [reviewId, clientId]
+          );
+
+          if (reviewCheck.rows.length === 0) {
+            return res.status(403).json({ success: false, error: 'Review not found or unauthorized' });
+          }
+
+          // No existing photos since column doesn't exist
+          existingPhotos = [];
+        } else {
+          throw dbError;
+        }
       }
 
       // Add new photo (Cloudinary URL)
