@@ -14,11 +14,17 @@ ALTER TABLE workers ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP;
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS cloudinary_id VARCHAR(255);
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS suburb VARCHAR(100);
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) DEFAULT 'pending';
+ALTER TABLE workers ADD COLUMN IF NOT EXISTS approval_date TIMESTAMP;
+ALTER TABLE workers ADD COLUMN IF NOT EXISTS approved_by VARCHAR(255);
+ALTER TABLE workers ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS rate_type VARCHAR(20);
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS rate_amount DECIMAL(10,2);
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS completed_jobs INTEGER DEFAULT 0;
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE workers ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Set approval_status for existing workers who are active
+UPDATE workers SET approval_status = 'approved' WHERE is_active = true AND (approval_status IS NULL OR approval_status = 'pending');
 
 -- Add constraints if they don't exist
 DO $$

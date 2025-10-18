@@ -1919,9 +1919,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         showProfileMessage('Profile updated successfully! Your changes are now visible to clients.', 'success');
+
+        // Update form with saved data (including any server-side modifications)
+        if (data.worker) {
+          document.getElementById('workerName').value = data.worker.name || '';
+          document.getElementById('workerPhone').value = data.worker.phone || '';
+          document.getElementById('speciality').value = data.worker.speciality || '';
+          document.getElementById('workerCity').value = data.worker.city || '';
+          document.getElementById('workerSuburb').value = data.worker.suburb || '';
+          document.getElementById('workerAddress').value = data.worker.address || '';
+          document.getElementById('area').value = data.worker.area || '';
+          document.getElementById('postalCode').value = data.worker.postal_code || '';
+          document.getElementById('serviceRadius').value = data.worker.service_radius || 25;
+          document.getElementById('bio').value = data.worker.bio || '';
+          document.getElementById('experience').value = data.worker.experience || '';
+        }
+
+        // Reload full profile to update verification status
         await loadWorkerProfile();
       } else {
         showProfileMessage(data.error || 'Failed to update profile', 'error');

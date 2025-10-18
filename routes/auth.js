@@ -48,8 +48,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, false, 'pending') RETURNING id, name, email, phone, city, speciality`,
+          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status, approval_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, false, 'pending', 'pending') RETURNING id, name, email, phone, city, speciality`,
           [name, email, phone, city, suburb || null, hashedPassword, speciality]
         );
       } else {
