@@ -609,6 +609,74 @@
       margin: 1rem 0;
     }
 
+    /* Worker Detail Modal */
+    .worker-detail-section {
+      margin-bottom: 1.5rem;
+    }
+    .worker-detail-section h4 {
+      color: #2d5016;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 0.5rem;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .detail-item {
+      background: #f8f9fa;
+      padding: 0.75rem;
+      border-radius: 6px;
+    }
+    .detail-label {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 0.25rem;
+    }
+    .detail-value {
+      font-weight: 600;
+      color: #333;
+    }
+    .change-history-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .change-item {
+      background: #f8f9fa;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      border-left: 3px solid #4a7c59;
+    }
+    .change-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+    .change-field {
+      font-weight: 600;
+      color: #2d5016;
+    }
+    .change-date {
+      font-size: 0.75rem;
+      color: #999;
+    }
+    .change-values {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .worker-card {
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .worker-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
     @media (max-width: 968px) {
       .dashboard-header {
         flex-direction: column;
@@ -870,6 +938,19 @@
           <button class="btn btn-secondary" onclick="closeRejectionModal()">Cancel</button>
           <button class="btn btn-danger" onclick="confirmRejectWorker()">Reject Application</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Worker Detail Modal -->
+  <div id="workerDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 id="workerDetailName">Worker Details</h3>
+        <button class="modal-close" onclick="closeWorkerDetailModal()">×</button>
+      </div>
+      <div id="workerDetailBody" style="padding: 0;">
+        <!-- Content will be populated by JavaScript -->
       </div>
     </div>
   </div>
@@ -1252,9 +1333,9 @@
         const statusText = pro.is_active ? 'Active' : 'Inactive';
         const cardClass = pro.is_active ? '' : 'unavailable';
         const verifiedBadge = pro.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
-        
+
         grid.innerHTML += `
-          <div class="worker-card ${cardClass}">
+          <div class="worker-card ${cardClass}" onclick="showWorkerDetail(${pro.id})" style="position: relative;">
             <div class="worker-header">
               <div class="worker-info">
                 <h4>${pro.name} ${verifiedBadge}</h4>
@@ -1273,12 +1354,12 @@
                 <div class="worker-stat-label">Completed</div>
               </div>
               <div class="worker-stat">
-                <div class="worker-stat-number">${pro.rating ? pro.rating + '⭐' : 'N/A'}</div>
+                <div class="worker-stat-number">${pro.rating ? parseFloat(pro.rating).toFixed(1) + '⭐' : 'N/A'}</div>
                 <div class="worker-stat-label">Rating</div>
               </div>
             </div>
-            <button class="btn ${pro.is_active ? 'btn-danger' : 'btn-success'} btn-small" 
-                    onclick="toggleProfessionalStatus(${pro.id}, ${!pro.is_active})" style="width: 100%;">
+            <button class="btn ${pro.is_active ? 'btn-danger' : 'btn-success'} btn-small"
+                    onclick="event.stopPropagation(); toggleProfessionalStatus(${pro.id}, ${!pro.is_active})" style="width: 100%;">
               ${pro.is_active ? 'Deactivate' : 'Activate'} Professional
             </button>
           </div>
@@ -1578,6 +1659,158 @@
     }
 
     // ========== END PENDING WORKERS FUNCTIONS ==========
+
+    // ========== WORKER DETAIL MODAL FUNCTIONS ==========
+
+    async function showWorkerDetail(workerId) {
+      try {
+        setLoading(true);
+
+        // Find worker in current professionals list
+        const worker = appState.professionals.find(p => p.id === workerId);
+        if (!worker) {
+          showMessage('Worker not found', 'error');
+          return;
+        }
+
+        // Fetch detailed worker info and change history
+        const response = await fetch(`/admin/worker-detail/${workerId}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+          showMessage(data.error || 'Failed to load worker details', 'error');
+          return;
+        }
+
+        const details = data.details;
+        const changeHistory = data.changeHistory || [];
+
+        // Update modal title
+        document.getElementById('workerDetailName').textContent = worker.name;
+
+        // Build modal content
+        const modalBody = document.getElementById('workerDetailBody');
+        modalBody.innerHTML = `
+          <div style="padding: 1.5rem;">
+            <!-- Basic Information -->
+            <div class="worker-detail-section">
+              <h4>Basic Information</h4>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <div class="detail-label">Worker ID</div>
+                  <div class="detail-value">${worker.id}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Email</div>
+                  <div class="detail-value">${worker.email}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Phone</div>
+                  <div class="detail-value">${details.phone || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Speciality</div>
+                  <div class="detail-value">${worker.speciality}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Service Area</div>
+                  <div class="detail-value">${worker.area || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Status</div>
+                  <div class="detail-value">${worker.is_active ? '✅ Active' : '❌ Inactive'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Joined Date</div>
+                  <div class="detail-value">${formatDate(details.created_at)}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Verified</div>
+                  <div class="detail-value">${worker.is_verified ? '✅ Yes' : '❌ No'}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="worker-detail-section">
+              <h4>Performance Statistics</h4>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <div class="detail-label">Total Bookings</div>
+                  <div class="detail-value" style="font-size: 1.5rem; color: #2d5016;">${worker.total_bookings || 0}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Completed Jobs</div>
+                  <div class="detail-value" style="font-size: 1.5rem; color: #4a7c59;">${worker.completed_bookings || 0}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Average Rating</div>
+                  <div class="detail-value" style="font-size: 1.5rem; color: #f39c12;">${worker.rating ? parseFloat(worker.rating).toFixed(2) + ' ⭐' : 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Completion Rate</div>
+                  <div class="detail-value" style="font-size: 1.5rem;">${worker.total_bookings > 0 ? Math.round((worker.completed_bookings / worker.total_bookings) * 100) + '%' : 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Change History -->
+            <div class="worker-detail-section">
+              <h4>Change History</h4>
+              <div class="change-history-list">
+                ${changeHistory.length > 0 ? changeHistory.map(change => `
+                  <div class="change-item">
+                    <div class="change-item-header">
+                      <span class="change-field">${change.field_changed}</span>
+                      <span class="change-date">${formatDate(change.changed_at)}</span>
+                    </div>
+                    <div class="change-values">
+                      <strong>From:</strong> ${change.old_value || 'N/A'}<br>
+                      <strong>To:</strong> ${change.new_value || 'N/A'}
+                    </div>
+                  </div>
+                `).join('') : '<p style="text-align: center; color: #999; padding: 2rem;">No change history available</p>'}
+              </div>
+            </div>
+
+            <!-- Address Information -->
+            <div class="worker-detail-section">
+              <h4>Address Information</h4>
+              <div class="detail-grid">
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                  <div class="detail-label">Street Address</div>
+                  <div class="detail-value">${details.address || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">City</div>
+                  <div class="detail-value">${details.city || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Postal Code</div>
+                  <div class="detail-value">${details.postal_code || 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Show modal
+        document.getElementById('workerDetailModal').classList.add('show');
+      } catch (error) {
+        console.error('Error showing worker detail:', error);
+        showMessage('Failed to load worker details', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function closeWorkerDetailModal() {
+      document.getElementById('workerDetailModal').classList.remove('show');
+    }
+
+    // ========== END WORKER DETAIL MODAL FUNCTIONS ==========
 
     // Run on page load
     document.addEventListener('DOMContentLoaded', init);

@@ -210,23 +210,24 @@ module.exports = (pool, logger, helpers) => {
   router.get('/professionals', requireAuth, adminOnly, async (req, res) => {
     try {
       const result = await pool.query(`
-        SELECT 
+        SELECT
           w.id,
           w.name,
           w.email,
           w.speciality,
           w.area,
-          w.rating,
           w.is_active,
           w.created_at,
           COUNT(DISTINCT b.id) as total_bookings,
-          COUNT(DISTINCT CASE WHEN b.status = 'Completed' THEN b.id END) as completed_bookings
+          COUNT(DISTINCT CASE WHEN b.status = 'Completed' THEN b.id END) as completed_bookings,
+          COALESCE(AVG(r.overall_rating), 0) as rating
         FROM workers w
         LEFT JOIN bookings b ON w.id = b.worker_id
+        LEFT JOIN reviews r ON w.id = r.worker_id
         GROUP BY w.id
         ORDER BY w.created_at DESC
       `);
-      
+
       res.json({
         success: true,
         professionals: result.rows
@@ -644,6 +645,49 @@ module.exports = (pool, logger, helpers) => {
     } catch (error) {
       logger.error('Error rejecting worker', { error: error.message });
       res.status(500).json({ success: false, error: 'Failed to reject worker' });
+    }
+  });
+
+  // Get worker detail with change history
+  router.get('/worker-detail/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const workerId = req.params.id;
+
+      // Get worker details
+      const workerResult = await pool.query(
+        `SELECT * FROM workers WHERE id = $1`,
+        [workerId]
+      );
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      // Try to get change history if table exists
+      let changeHistory = [];
+      try {
+        const historyResult = await pool.query(
+          `SELECT field_changed, old_value, new_value, changed_at, changed_by
+           FROM worker_change_history
+           WHERE worker_id = $1
+           ORDER BY changed_at DESC
+           LIMIT 50`,
+          [workerId]
+        );
+        changeHistory = historyResult.rows;
+      } catch (historyError) {
+        // Table might not exist, that's okay - just return empty history
+        logger.info('Change history table not found', { error: historyError.code });
+      }
+
+      res.json({
+        success: true,
+        details: workerResult.rows[0],
+        changeHistory: changeHistory
+      });
+    } catch (error) {
+      logger.error('Error fetching worker detail', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch worker details' });
     }
   });
 
