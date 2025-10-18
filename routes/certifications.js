@@ -133,9 +133,10 @@ module.exports = (pool, logger) => {
   router.get('/admin/all', requireAuth, adminOnly, async (req, res) => {
     try {
       const { status } = req.query;
-      
+
+      // Try with is_verified column first, fallback without it
       let query = `
-        SELECT 
+        SELECT
           c.*,
           w.name AS worker_name,
           w.email AS worker_email,
@@ -144,20 +145,52 @@ module.exports = (pool, logger) => {
         FROM certifications c
         JOIN workers w ON c.worker_id = w.id
       `;
-      
+
       const params = [];
       if (status) {
         query += ' WHERE c.status = $1';
         params.push(status);
       }
-      
+
       query += ' ORDER BY c.uploaded_at DESC';
 
-      const result = await pool.query(query, params);
+      let result;
+      try {
+        result = await pool.query(query, params);
+      } catch (dbError) {
+        if (dbError.code === '42703') { // Column doesn't exist
+          // Fallback query without is_verified
+          let fallbackQuery = `
+            SELECT
+              c.*,
+              w.name AS worker_name,
+              w.email AS worker_email,
+              w.speciality
+            FROM certifications c
+            JOIN workers w ON c.worker_id = w.id
+          `;
+
+          if (status) {
+            fallbackQuery += ' WHERE c.status = $1';
+          }
+
+          fallbackQuery += ' ORDER BY c.uploaded_at DESC';
+
+          result = await pool.query(fallbackQuery, params);
+
+          // Add default is_verified value
+          result.rows = result.rows.map(row => ({
+            ...row,
+            is_verified: false
+          }));
+        } else {
+          throw dbError;
+        }
+      }
 
       res.json({ success: true, certifications: result.rows });
     } catch (error) {
-      logger.error('Get all certifications error', { error: error.message });
+      logger.error('Get all certifications error', { error: error.message, stack: error.stack });
       res.status(500).json({ success: false, error: 'Failed to fetch certifications' });
     }
   });
