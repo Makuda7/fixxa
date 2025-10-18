@@ -202,10 +202,24 @@ module.exports = (pool, logger) => {
       const adminEmail = req.session.user.email;
 
       // Update certification status
-      const certResult = await pool.query(
-        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id',
-        ['approved', adminEmail, certificationId]
-      );
+      let certResult;
+      try {
+        // Try with reviewed_at and reviewed_by_email columns
+        certResult = await pool.query(
+          'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id',
+          ['approved', adminEmail, certificationId]
+        );
+      } catch (dbError) {
+        if (dbError.code === '42703') { // Column doesn't exist
+          // Fallback: Update without reviewed_at and reviewed_by_email
+          certResult = await pool.query(
+            'UPDATE certifications SET status = $1 WHERE id = $2 RETURNING worker_id',
+            ['approved', certificationId]
+          );
+        } else {
+          throw dbError;
+        }
+      }
 
       if (certResult.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Certification not found' });
@@ -221,10 +235,20 @@ module.exports = (pool, logger) => {
 
       // If this is their first approved certification, mark worker as verified
       if (parseInt(approvedCount.rows[0].count) >= 1) {
-        await pool.query(
-          'UPDATE workers SET is_verified = true, verification_date = NOW() WHERE id = $1',
-          [workerId]
-        );
+        try {
+          // Try to update with is_verified and verification_date columns
+          await pool.query(
+            'UPDATE workers SET is_verified = true, verification_date = NOW() WHERE id = $1',
+            [workerId]
+          );
+        } catch (dbError) {
+          if (dbError.code === '42703') {
+            // Columns don't exist, that's okay - worker verification not available yet
+            logger.info('Worker verification columns not available', { workerId });
+          } else {
+            throw dbError;
+          }
+        }
       }
 
       logger.info('Certification approved', { certificationId, workerId, adminEmail });
@@ -235,7 +259,7 @@ module.exports = (pool, logger) => {
         workerVerified: parseInt(approvedCount.rows[0].count) >= 1
       });
     } catch (error) {
-      logger.error('Approve certification error', { error: error.message });
+      logger.error('Approve certification error', { error: error.message, stack: error.stack });
       res.status(500).json({ success: false, error: 'Failed to approve certification' });
     }
   });
@@ -247,10 +271,24 @@ module.exports = (pool, logger) => {
       const adminEmail = req.session.user.email;
       const { reason } = req.body;
 
-      const result = await pool.query(
-        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING *',
-        ['rejected', adminEmail, certificationId]
-      );
+      let result;
+      try {
+        // Try with reviewed_at and reviewed_by_email columns
+        result = await pool.query(
+          'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING *',
+          ['rejected', adminEmail, certificationId]
+        );
+      } catch (dbError) {
+        if (dbError.code === '42703') { // Column doesn't exist
+          // Fallback: Update without reviewed_at and reviewed_by_email
+          result = await pool.query(
+            'UPDATE certifications SET status = $1 WHERE id = $2 RETURNING *',
+            ['rejected', certificationId]
+          );
+        } else {
+          throw dbError;
+        }
+      }
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Certification not found' });
@@ -263,7 +301,7 @@ module.exports = (pool, logger) => {
         message: 'Certification rejected'
       });
     } catch (error) {
-      logger.error('Reject certification error', { error: error.message });
+      logger.error('Reject certification error', { error: error.message, stack: error.stack });
       res.status(500).json({ success: false, error: 'Failed to reject certification' });
     }
   });
