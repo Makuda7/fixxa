@@ -22,8 +22,24 @@
   .user-dropdown a { display:block; padding:8px; text-decoration:none; color:#333; }
   .user-dropdown a:hover { background:#f0f0f0; }
 
-  .settings-container { max-width:800px; margin:3rem auto; padding:0 1rem; display:none; }
-  
+  /* Sidebar Navigation */
+  .settings-sidebar { position:fixed; top:70px; left:0; width:240px; height:calc(100vh - 70px); background:white; border-right:1px solid #ddd; padding:1.5rem 0; display:flex; flex-direction:column; gap:0.5rem; overflow-y:auto; z-index:50; transition:transform 0.3s ease; }
+  .settings-sidebar a { padding:0.8rem 1.5rem; color:#333; font-weight:500; display:flex; align-items:center; gap:0.75rem; cursor:pointer; border-left:3px solid transparent; transition:all 0.2s; text-decoration:none; }
+  .settings-sidebar a:hover { background:#f8f9fa; border-left-color:#ccc; }
+  .settings-sidebar a.active { background:forestgreen; color:white; border-left-color:forestgreen; }
+
+  .settings-container { max-width:900px; margin-left:260px; padding:2rem 1rem; display:none; }
+
+  /* Mobile sidebar toggle */
+  #sidebarToggle { display:none; background:forestgreen; border:none; color:white; font-size:1.2rem; padding:0.5rem 1rem; border-radius:6px; margin:1rem; }
+
+  @media(max-width:768px){
+    .settings-sidebar { transform:translateX(-100%); }
+    .settings-sidebar.show { transform:translateX(0); }
+    .settings-container { margin-left:0; padding:1rem; }
+    #sidebarToggle { display:block; }
+  }
+
   .page-header { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:2rem; margin-bottom:2rem; }
   .page-header h1 { margin:0; color:forestgreen; font-size:2rem; }
   .page-header p { margin:0.5rem 0 0; color:#666; }
@@ -31,7 +47,8 @@
   .breadcrumb a { color:forestgreen; text-decoration:none; }
   .breadcrumb a:hover { text-decoration:underline; }
 
-  .settings-section { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:2rem; margin-bottom:1.5rem; }
+  .settings-section { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); padding:2rem; margin-bottom:1.5rem; display:none; }
+  .settings-section.active { display:block; }
   .settings-section h2 { margin:0 0 1.5rem; color:forestgreen; font-size:1.5rem; border-bottom:2px solid #f0f0f0; padding-bottom:0.5rem; }
   
   .form-group { margin-bottom:1.5rem; }
@@ -142,8 +159,30 @@
   </nav>
 </header>
 
+<!-- Mobile sidebar toggle -->
+<button id="sidebarToggle">☰ Menu</button>
+
+<!-- Settings Sidebar -->
+<nav class="settings-sidebar" id="settingsSidebar">
+  <a data-section="profileSection" class="active">
+    <span>👤</span> Profile
+  </a>
+  <a data-section="securitySection">
+    <span>🔒</span> Security
+  </a>
+  <a data-section="locationSection">
+    <span>📍</span> Location
+  </a>
+  <a data-section="notificationsSection">
+    <span>🔔</span> Notifications
+  </a>
+  <a data-section="privacySection">
+    <span>🛡️</span> Privacy
+  </a>
+</nav>
+
 <main class="settings-container" id="settingsMain">
-  
+
   <div class="breadcrumb">
     <a href="clientProfile.html">← Back to Profile</a>
   </div>
@@ -154,7 +193,7 @@
   </div>
 
   <!-- Profile Information Section -->
-  <section class="settings-section">
+  <section class="settings-section active" id="profileSection">
     <h2>Profile Information</h2>
     
     <div class="profile-pic-upload">
@@ -201,7 +240,7 @@
   </section>
 
   <!-- Account Security Section -->
-  <section class="settings-section">
+  <section class="settings-section" id="securitySection">
     <h2>Account Security</h2>
     
     <div class="form-group">
@@ -238,7 +277,7 @@
   </section>
 
   <!-- Location & Privacy Section -->
-  <section class="settings-section">
+  <section class="settings-section" id="locationSection">
     <h2>Location & Privacy</h2>
 
     <div class="form-group">
@@ -255,7 +294,7 @@
   </section>
 
   <!-- Notification Preferences Section -->
-  <section class="settings-section">
+  <section class="settings-section" id="notificationsSection">
     <h2>Notification Preferences</h2>
     
     <form id="notificationForm">
@@ -302,7 +341,7 @@
   </section>
 
   <!-- Privacy & Preferences Section -->
-  <section class="settings-section">
+  <section class="settings-section" id="privacySection">
     <h2>Privacy & Preferences</h2>
     
     <form id="privacyForm">
@@ -846,11 +885,57 @@ locationToggle.addEventListener('change', async (e) => {
   }
 });
 
+// Sidebar navigation
+function initSidebarNavigation() {
+  const sidebarLinks = document.querySelectorAll('.settings-sidebar a');
+  const sections = document.querySelectorAll('.settings-section');
+  const sidebar = document.getElementById('settingsSidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+
+  // Handle sidebar link clicks
+  sidebarLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetSection = link.getAttribute('data-section');
+
+      // Remove active class from all links and sections
+      sidebarLinks.forEach(l => l.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+
+      // Add active class to clicked link and target section
+      link.classList.add('active');
+      document.getElementById(targetSection).classList.add('active');
+
+      // Close sidebar on mobile after selection
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('show');
+      }
+    });
+  });
+
+  // Mobile sidebar toggle
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('show');
+    });
+  }
+
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 &&
+        !sidebar.contains(e.target) &&
+        !sidebarToggle.contains(e.target)) {
+      sidebar.classList.remove('show');
+    }
+  });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadUserData();
   loadUnreadMessageCount();
   initLocationToggle();
+  initSidebarNavigation();
 
   // Refresh unread count every 30 seconds
   setInterval(loadUnreadMessageCount, 30000);
