@@ -365,7 +365,7 @@ module.exports = (pool, logger, helpers) => {
 
       const result = await pool.query(
         `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
-                bio, experience, area, service_radius, verification_status, is_verified
+                bio, experience, area, service_radius, approval_status, is_verified
          FROM workers WHERE id = $1`,
         [workerId]
       );

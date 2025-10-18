@@ -1244,38 +1244,42 @@ async function loadWorkerProfile() {
       const hasBio = data.worker.bio && data.worker.bio.trim();
       const hasExperience = data.worker.experience && data.worker.experience.trim();
       const hasArea = data.worker.area && data.worker.area.trim();
-      const verificationStatus = data.worker.verification_status || 'pending';
+      const approvalStatus = data.worker.approval_status || 'incomplete';
       const hasCertificates = data.worker.has_certificates || false;
       const isComplete = hasBio && hasExperience && hasArea;
 
-      // Update profile status based on verification
-      if (verificationStatus === 'pending') {
+      // Update profile status based on approval status
+      if (approvalStatus === 'pending') {
         const allRequired = hasBio && hasExperience && hasArea && hasCertificates;
         if (allRequired) {
           document.getElementById('profileStatus').textContent = '⏳ Profile submitted - awaiting admin approval';
           document.getElementById('profileStatus').style.color = '#ffc107';
+          // Don't show modal if all required info is filled and status is pending
         } else {
           document.getElementById('profileStatus').textContent = '⚠️ Complete profile to submit for verification';
           document.getElementById('profileStatus').style.color = '#dc3545';
-        }
 
-        // ALWAYS show modal for pending accounts (unless they just dismissed it)
-        const modalDismissed = sessionStorage.getItem('profileModalDismissed');
-        if (!modalDismissed) {
-          showProfileCompletionModal(verificationStatus, hasBio, hasExperience, hasArea, hasCertificates);
+          // Only show modal for pending accounts if important info is MISSING
+          const modalDismissed = sessionStorage.getItem('profileModalDismissed');
+          if (!modalDismissed) {
+            showProfileCompletionModal(approvalStatus, hasBio, hasExperience, hasArea, hasCertificates);
+          }
         }
-      } else if (verificationStatus === 'approved' || verificationStatus === 'verified') {
+      } else if (approvalStatus === 'approved') {
         if (isComplete) {
           document.getElementById('profileStatus').textContent = '✅ Profile verified and complete';
           document.getElementById('profileStatus').style.color = '#28a745';
+          // Don't show modal if approved and complete
         } else {
           document.getElementById('profileStatus').textContent = '✅ Verified - complete profile for better visibility';
           document.getElementById('profileStatus').style.color = '#28a745';
+          // Don't show modal if approved - profile is optional at this point
         }
       } else {
         if (isComplete) {
           document.getElementById('profileStatus').textContent = 'Profile is complete ✓';
           document.getElementById('profileStatus').style.color = '#28a745';
+          // Don't show modal if complete
         } else {
           document.getElementById('profileStatus').textContent = 'Please complete your profile to appear in searches';
           document.getElementById('profileStatus').style.color = '#dc3545';
@@ -1283,7 +1287,7 @@ async function loadWorkerProfile() {
           // Show completion modal if profile is incomplete and not dismissed
           const modalDismissed = sessionStorage.getItem('profileModalDismissed');
           if (!modalDismissed) {
-            showProfileCompletionModal(verificationStatus, hasBio, hasExperience, hasArea, hasCertificates);
+            showProfileCompletionModal(approvalStatus, hasBio, hasExperience, hasArea, hasCertificates);
           }
         }
       }
@@ -1295,7 +1299,7 @@ async function loadWorkerProfile() {
   }
 }
 
-function showProfileCompletionModal(verificationStatus, hasBio, hasExperience, hasArea, hasCertificates) {
+function showProfileCompletionModal(approvalStatus, hasBio, hasExperience, hasArea, hasCertificates) {
   const modal = document.getElementById('profileCompletionModal');
   const checklist = document.getElementById('profileChecklist');
   const modalIcon = document.getElementById('modalIcon');
@@ -1303,8 +1307,8 @@ function showProfileCompletionModal(verificationStatus, hasBio, hasExperience, h
   const modalDescription = document.getElementById('modalDescription');
   const modalNote = document.getElementById('modalNote');
 
-  // Determine modal content based on verification status
-  if (verificationStatus === 'pending') {
+  // Determine modal content based on approval status
+  if (approvalStatus === 'pending') {
     modalIcon.textContent = '⏳';
     modalTitle.textContent = 'Complete Your Profile for Verification';
     modalDescription.textContent = 'Welcome to Fixxa! Your account is pending verification. Complete the following steps to get approved and start receiving bookings:';
@@ -1327,7 +1331,7 @@ function showProfileCompletionModal(verificationStatus, hasBio, hasExperience, h
 
     modalNote.innerHTML = '<strong>⏱️ Verification Time:</strong> Once you submit all required documents, your profile will be reviewed within 1-3 business days. You\'ll receive an email notification when approved.';
 
-  } else if (verificationStatus === 'approved' || verificationStatus === 'verified') {
+  } else if (approvalStatus === 'approved') {
     modalIcon.textContent = '✅';
     modalTitle.textContent = 'Profile Verification Complete!';
     modalDescription.textContent = 'Congratulations! Your professional profile has been verified. Complete these optional items to improve your visibility:';
@@ -1923,22 +1927,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.success) {
         showProfileMessage('Profile updated successfully! Your changes are now visible to clients.', 'success');
 
-        // Update form with saved data (including any server-side modifications)
-        if (data.worker) {
-          document.getElementById('workerName').value = data.worker.name || '';
-          document.getElementById('workerPhone').value = data.worker.phone || '';
-          document.getElementById('speciality').value = data.worker.speciality || '';
-          document.getElementById('workerCity').value = data.worker.city || '';
-          document.getElementById('workerSuburb').value = data.worker.suburb || '';
-          document.getElementById('workerAddress').value = data.worker.address || '';
-          document.getElementById('area').value = data.worker.area || '';
-          document.getElementById('postalCode').value = data.worker.postal_code || '';
-          document.getElementById('serviceRadius').value = data.worker.service_radius || 25;
-          document.getElementById('bio').value = data.worker.bio || '';
-          document.getElementById('experience').value = data.worker.experience || '';
-        }
-
-        // Reload full profile to update verification status
+        // Reload full profile to update all fields including approval_status
+        // The form values stay visible during the reload since they're already in the inputs
         await loadWorkerProfile();
       } else {
         showProfileMessage(data.error || 'Failed to update profile', 'error');
