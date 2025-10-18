@@ -342,6 +342,26 @@
     transform: translateY(-2px);
   }
 
+  /* --- Forms Container (Outside Card) --- */
+  .forms-container {
+    max-width: 1100px;
+    margin: 0 auto 2rem;
+    padding: 0 1rem;
+  }
+
+  .form-container {
+    display: none;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  .form-container.active {
+    display: block;
+  }
+
   /* --- Work Gallery Section (Bottom Row like AutoTrader) --- */
   .gallery-bottom-row {
     background:white;
@@ -1321,8 +1341,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <form id="contact-form" class="form-container">
+        <div class="gallery-bottom-row" id="gallery-bottom-row">
+          <div class="loading-gallery">Loading gallery...</div>
+        </div>
+      </article>
+
+      <!-- Action Buttons - Moved outside card for better visibility -->
+      <div class="action-buttons-container">
+        <button id="contact-btn" class="btn-primary">📧 Contact ${worker.name.split(' ')[0]}</button>
+        <button id="book-btn" class="btn-secondary">📅 Book Now</button>
+      </div>
+
+      <!-- Contact and Booking Forms - Outside card for proper functionality -->
+      <div class="forms-container">
+        <form id="contact-form" class="form-container">
               <h4 style="margin: 0 0 1.5rem 0; color: forestgreen; font-size: 1.2rem;">📧 Send a Message</h4>
               <div>
                 <label for="visitor-name" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Your Name</label>
@@ -1371,18 +1406,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <p id="thank-you-msg" style="display:none;color:green;margin-top:1rem;">✓ Message sent successfully!</p>
             <p id="booking-msg" style="display:none;color:green;margin-top:1rem;">✓ Booking submitted!</p>
           </div>
-        </div>
-
-        <div class="gallery-bottom-row" id="gallery-bottom-row">
-          <div class="loading-gallery">Loading gallery...</div>
-        </div>
-      </article>
-
-      <!-- Action Buttons - Moved outside card for better visibility -->
-      <div class="action-buttons-container">
-        <button id="contact-btn" class="btn-primary">📧 Contact ${worker.name.split(' ')[0]}</button>
-        <button id="book-btn" class="btn-secondary">📅 Book Now</button>
-      </div>
 
       <div class="profile-sections">
         <section class="section-outside-card">
@@ -1512,7 +1535,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     contactBtn.addEventListener('click', () => {
       if (!authenticated) { window.location.href = 'login.html'; return; }
-      contactForm.classList.toggle('show');
+      contactForm.classList.toggle('active');
+      bookingForm.classList.remove('active');
+      // Scroll to form
+      contactForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
 
     contactForm.addEventListener('submit', async e => {
@@ -1545,7 +1571,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bookBtn.addEventListener('click', () => {
       if (!authenticated) { window.location.href = 'login.html'; return; }
-      bookingForm.classList.toggle('show');
+      bookingForm.classList.toggle('active');
+      contactForm.classList.remove('active');
+      // Scroll to form
+      bookingForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
 
     bookingForm.addEventListener('submit', async e => {
