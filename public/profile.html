@@ -349,18 +349,7 @@
     padding: 0 1rem;
   }
 
-  .form-container {
-    display: none;
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    margin-bottom: 1.5rem;
-  }
-
-  .form-container.active {
-    display: block;
-  }
+  /* Form container styles moved to animation section below (line ~488) */
 
   /* --- Work Gallery Section (Bottom Row like AutoTrader) --- */
   .gallery-bottom-row {
@@ -1535,10 +1524,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     contactBtn.addEventListener('click', () => {
       if (!authenticated) { window.location.href = 'login.html'; return; }
-      contactForm.classList.toggle('active');
-      bookingForm.classList.remove('active');
+      contactForm.classList.toggle('show');
+      bookingForm.classList.remove('show');
       // Scroll to form
-      contactForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => {
+        contactForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     });
 
     contactForm.addEventListener('submit', async e => {
@@ -1571,10 +1562,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bookBtn.addEventListener('click', () => {
       if (!authenticated) { window.location.href = 'login.html'; return; }
-      bookingForm.classList.toggle('active');
-      contactForm.classList.remove('active');
+      bookingForm.classList.toggle('show');
+      contactForm.classList.remove('show');
       // Scroll to form
-      bookingForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => {
+        bookingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     });
 
     bookingForm.addEventListener('submit', async e => {
