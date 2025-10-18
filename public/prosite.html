@@ -76,11 +76,20 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 .reject-btn { background:#dc3545; color:white; }
 .reject-btn:hover { background:#c82333; }
 /* Messages Cards */
-.messages-card { background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem; margin-bottom:1rem; cursor:pointer; transition:0.2s; }
+.messages-card { background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem; margin-bottom:1rem; cursor:pointer; transition:0.2s; position:relative; }
 .messages-card:hover { background:#e6f4ea; }
-.messages-card h4 { margin:0; color:forestgreen; }
-.messages-card p { margin:0.3rem 0 0 0; font-size:0.95rem; color:#555; }
+.messages-card h4 { margin:0; color:forestgreen; display:flex; align-items:center; gap:0.5rem; }
+.messages-card p { margin:0.3rem 0 0 0; font-size:0.95rem; color:#555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .messages-card small { color:#999; }
+.messages-card.unread { background:#f0f8ff; border-left:4px solid #dc3545; }
+.messages-card.unread h4 { font-weight:700; }
+.unread-indicator { width:10px; height:10px; background:#dc3545; border-radius:50%; display:inline-block; flex-shrink:0; animation:pulse 2s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity:1; }
+  50% { opacity:0.5; }
+}
+.message-preview { font-weight:normal; color:#666; }
+.messages-card.unread .message-preview { font-weight:600; color:#333; }
 /* Chat Modal */
 #chatModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
 #chatModal .chat-content { background:white; border-radius:12px; max-width:500px; width:90%; max-height:80%; display:flex; flex-direction:column; overflow:hidden; }
@@ -1583,7 +1592,7 @@ async function loadMessages(){
     const res = await fetch('/messages/worker',{ credentials:'include' });
     const data = await res.json();
     if(!data.success || !Array.isArray(data.messages)) return;
-    
+
     const grouped = {};
     data.messages.forEach(m=>{
       if(!m.client_id) return;
@@ -1591,19 +1600,53 @@ async function loadMessages(){
       grouped[m.client_id].push(m);
     });
 
-    document.getElementById('messagesList').innerHTML = Object.keys(grouped).map(clientId=>{
+    // Sort conversations by most recent message
+    const conversations = Object.keys(grouped).map(clientId => {
       const msgs = grouped[clientId];
-      const lastMsg = msgs[msgs.length-1] || {};
-      const time = lastMsg.datetime ? new Date(lastMsg.datetime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div class="messages-card" data-client="${clientId}">
-        <h4>${escapeHTML(lastMsg.client_name||'Client')}</h4>
-        <p>${escapeHTML(lastMsg.content||'')}</p>
+      // Sort messages by date (newest last)
+      msgs.sort((a, b) => new Date(a.created_at || a.datetime) - new Date(b.created_at || a.datetime));
+      const lastMsg = msgs[msgs.length - 1] || {};
+      return { clientId, msgs, lastMsg };
+    });
+
+    // Sort conversations by most recent message (newest first)
+    conversations.sort((a, b) => {
+      const dateA = new Date(a.lastMsg.created_at || a.lastMsg.datetime);
+      const dateB = new Date(b.lastMsg.created_at || b.lastMsg.datetime);
+      return dateB - dateA;
+    });
+
+    document.getElementById('messagesList').innerHTML = conversations.map(({clientId, msgs, lastMsg}) => {
+      const time = lastMsg.datetime || lastMsg.created_at
+        ? new Date(lastMsg.datetime || lastMsg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+        : '';
+
+      // Check if there are any unread messages from this client
+      const hasUnread = msgs.some(m => m.is_read === false && m.sender_type === 'client');
+      const unreadClass = hasUnread ? 'unread' : '';
+      const unreadDot = hasUnread ? '<span class="unread-indicator"></span>' : '';
+
+      // Get message preview (truncate if too long)
+      const preview = lastMsg.content || '';
+      const truncatedPreview = preview.length > 60 ? preview.substring(0, 60) + '...' : preview;
+
+      // Show who sent the last message
+      const senderLabel = lastMsg.sender_type === 'client' ? '' : 'You: ';
+
+      return `<div class="messages-card ${unreadClass}" data-client="${clientId}">
+        <h4>
+          ${unreadDot}
+          ${escapeHTML(lastMsg.client_name||'Client')}
+        </h4>
+        <p class="message-preview">
+          <strong>${senderLabel}</strong>${escapeHTML(truncatedPreview)}
+        </p>
         <small>${escapeHTML(time)}</small>
       </div>`;
     }).join('');
 
     document.querySelectorAll('.messages-card').forEach(card=>{
-      card.addEventListener('click', ()=> openChat(card.dataset.client, card.querySelector('h4').textContent));
+      card.addEventListener('click', ()=> openChat(card.dataset.client, card.querySelector('h4').textContent.trim()));
     });
   } catch(e){
     console.error('Load messages error', e);
