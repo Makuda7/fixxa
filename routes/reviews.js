@@ -170,10 +170,22 @@ module.exports = (pool, logger, upload) => {
       existingPhotos.push(fileUrl);
 
       // Update review with new photos array
-      await pool.query(
-        'UPDATE reviews SET photos = $1, updated_at = NOW() WHERE id = $2',
-        [JSON.stringify(existingPhotos), reviewId]
-      );
+      // Try with updated_at, fall back without if column doesn't exist
+      try {
+        await pool.query(
+          'UPDATE reviews SET photos = $1, updated_at = NOW() WHERE id = $2',
+          [JSON.stringify(existingPhotos), reviewId]
+        );
+      } catch (dbError) {
+        if (dbError.code === '42703') { // Column doesn't exist
+          await pool.query(
+            'UPDATE reviews SET photos = $1 WHERE id = $2',
+            [JSON.stringify(existingPhotos), reviewId]
+          );
+        } else {
+          throw dbError;
+        }
+      }
 
       res.json({ 
         success: true, 
