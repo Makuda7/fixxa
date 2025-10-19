@@ -132,14 +132,28 @@ module.exports = (pool, logger, helpers) => {
         'SELECT availability_schedule, is_available FROM workers WHERE id = $1',
         [workerId]
       );
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
-      
-      res.json({ 
-        success: true, 
-        availability_schedule: result.rows[0].availability_schedule || 'both',
+
+      // Parse availability_schedule - handle both JSON and string formats
+      let schedule = 'both';
+      const rawSchedule = result.rows[0].availability_schedule;
+
+      if (rawSchedule) {
+        if (typeof rawSchedule === 'object' && rawSchedule.type) {
+          // JSON format: {"type": "weekdays"}
+          schedule = rawSchedule.type;
+        } else if (typeof rawSchedule === 'string') {
+          // String format: "weekdays"
+          schedule = rawSchedule;
+        }
+      }
+
+      res.json({
+        success: true,
+        availability_schedule: schedule,
         is_available: result.rows[0].is_available !== false
       });
     } catch (error) {
@@ -182,13 +196,25 @@ module.exports = (pool, logger, helpers) => {
       
       values.push(workerId);
       const query = `UPDATE workers SET ${updates.join(', ')} WHERE id = $${idx} RETURNING availability_schedule, is_available`;
-      
+
       const result = await pool.query(query, values);
-      
-      res.json({ 
-        success: true, 
+
+      // Parse the returned schedule value (handle both JSON and string formats)
+      let returnedSchedule = 'both';
+      const rawSchedule = result.rows[0].availability_schedule;
+
+      if (rawSchedule) {
+        if (typeof rawSchedule === 'object' && rawSchedule.type) {
+          returnedSchedule = rawSchedule.type;
+        } else if (typeof rawSchedule === 'string') {
+          returnedSchedule = rawSchedule;
+        }
+      }
+
+      res.json({
+        success: true,
         message: 'Availability updated successfully',
-        availability_schedule: result.rows[0].availability_schedule,
+        availability_schedule: returnedSchedule,
         is_available: result.rows[0].is_available
       });
     } catch (error) {
