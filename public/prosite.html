@@ -1161,15 +1161,19 @@ async function loadAvailability() {
   try {
     const res = await fetch('/workers/availability', { credentials: 'include' });
     const data = await res.json();
+    console.log('Availability data received:', data); // Debug log
     if (data.success) {
       currentAvailability = {
         schedule: data.availability_schedule || 'both',
         is_available: data.is_available !== false
       };
-      
-      // Update UI
-      document.getElementById('scheduleSelect').value = currentAvailability.schedule;
-      
+
+      // Update UI - preserve the schedule dropdown value
+      const scheduleSelect = document.getElementById('scheduleSelect');
+      if (scheduleSelect && data.availability_schedule) {
+        scheduleSelect.value = data.availability_schedule;
+      }
+
       if (currentAvailability.is_available) {
         document.getElementById('availableBtn').classList.add('active');
         document.getElementById('unavailableBtn').classList.remove('active');
@@ -1221,6 +1225,7 @@ async function loadWorkerProfile() {
   try {
     const res = await fetch('/workers/profile', { credentials: 'include' });
     const data = await res.json();
+    console.log('Profile data received:', data); // Debug log
     if (data.success && data.worker) {
       // Personal Information
       document.getElementById('workerName').value = data.worker.name || '';
@@ -1238,6 +1243,14 @@ async function loadWorkerProfile() {
       // Professional Information
       document.getElementById('bio').value = data.worker.bio || '';
       document.getElementById('experience').value = data.worker.experience || '';
+
+      console.log('Profile form populated with:', {
+        name: data.worker.name,
+        speciality: data.worker.speciality,
+        bio: data.worker.bio,
+        experience: data.worker.experience,
+        area: data.worker.area
+      }); // Debug log
 
       isVerified = data.worker.is_verified || false;
 
@@ -1933,6 +1946,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bio = document.getElementById('bio').value.trim();
     const experience = document.getElementById('experience').value.trim();
 
+    console.log('Submitting profile with data:', { name, speciality, area, bio, experience }); // Debug log
+
     // Validate required fields
     if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
       showProfileMessage('Please fill in all required fields (marked with *)', 'error');
@@ -1972,6 +1987,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const data = await res.json();
+      console.log('Profile save response:', data); // Debug log
 
       if (data.success) {
         showProfileMessage('Profile updated successfully! Your changes are now visible to clients.', 'success');
