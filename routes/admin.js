@@ -561,29 +561,45 @@ module.exports = (pool, logger, helpers) => {
 
       const worker = workerResult.rows[0];
 
-      // Update worker status
+      // Check if worker has any approved certifications
+      const certResult = await pool.query(
+        'SELECT COUNT(*) FROM certifications WHERE worker_id = $1 AND status = $2',
+        [id, 'approved']
+      );
+
+      const hasApprovedCerts = parseInt(certResult.rows[0].count) > 0;
+
+      // Update worker status - set is_verified if they have approved certifications
       await pool.query(
         `UPDATE workers
          SET approval_status = 'approved',
              is_active = true,
+             is_verified = $1,
              approval_date = NOW(),
-             approved_by = $1
-         WHERE id = $2`,
-        [adminEmail, id]
+             approved_by = $2,
+             verification_date = CASE WHEN $1 = true THEN NOW() ELSE verification_date END
+         WHERE id = $3`,
+        [hasApprovedCerts, adminEmail, id]
       );
 
       logger.info('Worker approved by admin', {
         workerId: id,
         workerEmail: worker.email,
-        adminEmail
+        adminEmail,
+        isVerified: hasApprovedCerts
       });
 
       // TODO: Send approval email to worker
       // await sendEmail(worker.email, 'Welcome to Fixxa!', approvalEmailHtml);
 
+      const verificationMessage = hasApprovedCerts
+        ? ' and verified with approved certifications'
+        : ' (not yet verified - awaiting certification approval)';
+
       res.json({
         success: true,
-        message: `${worker.name} has been approved and is now active on the platform`
+        message: `${worker.name} has been approved and is now active on the platform${verificationMessage}`,
+        isVerified: hasApprovedCerts
       });
     } catch (error) {
       logger.error('Error approving worker', { error: error.message });
