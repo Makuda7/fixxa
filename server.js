@@ -301,6 +301,22 @@ async function runNotificationsMigration() {
   }
 }
 
+// Auto-run migration for phone numbers
+async function runPhoneNumbersMigration() {
+  try {
+    console.log('🔄 Running phone numbers migration...');
+
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS phone VARCHAR(20)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_workers_phone ON workers(phone) WHERE phone IS NOT NULL`);
+
+    console.log('✅ Phone numbers migration completed');
+  } catch (error) {
+    console.log('⚠️  Phone numbers migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for message images
 async function runMessageImagesMigration() {
   try {
@@ -342,6 +358,7 @@ async function startServer() {
     // Run migrations
     console.log('📦 Running migrations...');
     await runNotificationsMigration();
+    await runPhoneNumbersMigration();
     await runMessageImagesMigration();
     console.log('✅ All migrations complete');
 
