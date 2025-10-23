@@ -827,14 +827,7 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 <button id="closeChat" style="background:none; color:white; border:none; font-size:1.2rem; cursor:pointer;">✕</button>
 </div>
 <div class="chat-messages" id="chatMessages"></div>
-<div class="image-preview-container" id="imagePreview">
-<img id="previewImg" src="" alt="Preview">
-<span id="previewName" style="flex:1; font-size:0.9rem; color:#555;"></span>
-<button id="removeImage">Remove</button>
-</div>
 <div class="chat-input">
-<input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
-<button id="attachBtn" style="padding:0.7rem 1rem; border:none; background:#f0f0f0; cursor:pointer; font-size:1.3rem;">📎</button>
 <input type="text" id="chatInput" placeholder="Type a message...">
 <button id="chatSend">Send</button>
 </div>
@@ -2164,112 +2157,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Image upload variables and handlers
-  let selectedImage = null;
-  let uploadedImageUrl = null;
-  let uploadedCloudinaryId = null;
-
-  const imageInput = document.getElementById('imageInput');
-  const attachBtn = document.getElementById('attachBtn');
-  const imagePreview = document.getElementById('imagePreview');
-  const previewImg = document.getElementById('previewImg');
-  const previewName = document.getElementById('previewName');
-  const removeImageBtn = document.getElementById('removeImage');
-
-  // Attach button click - open file picker
-  attachBtn.addEventListener('click', () => {
-    imageInput.click();
-  });
-
-  // Handle image selection
-  imageInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be less than 5MB');
-      return;
-    }
-
-    selectedImage = file;
-    previewImg.src = URL.createObjectURL(file);
-    previewName.textContent = file.name;
-    imagePreview.style.display = 'flex';
-
-    // Upload image immediately
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const res = await fetch('/messages/upload-image', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        uploadedImageUrl = data.imageUrl;
-        uploadedCloudinaryId = data.cloudinaryId;
-      } else {
-        alert(data.error || 'Failed to upload image');
-        clearImagePreview();
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error uploading image');
-      clearImagePreview();
-    }
-  });
-
-  // Remove image preview
-  removeImageBtn.addEventListener('click', () => {
-    clearImagePreview();
-  });
-
-  function clearImagePreview() {
-    imageInput.value = '';
-    selectedImage = null;
-    uploadedImageUrl = null;
-    uploadedCloudinaryId = null;
-    imagePreview.style.display = 'none';
-    previewImg.src = '';
-    previewName.textContent = '';
-  }
-
-  // Chat event listeners
+  // Chat event listeners (workers can only send text, not images - security measure)
   document.getElementById('closeChat').addEventListener('click', ()=> {
     document.getElementById('chatModal').style.display = 'none';
-    clearImagePreview();
   });
 
   document.getElementById('chatSend').addEventListener('click', async ()=>{
     const message = document.getElementById('chatInput').value.trim();
-    if((!message && !uploadedImageUrl) || !currentClientId) return;
+    if(!message || !currentClientId) return;
     try{
       const res = await fetch('/messages/worker/reply',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         credentials:'include',
-        body:JSON.stringify({
-          clientId: currentClientId,
-          message: message,
-          imageUrl: uploadedImageUrl,
-          cloudinaryId: uploadedCloudinaryId
-        })
+        body:JSON.stringify({ clientId: currentClientId, message: message })
       });
       const data = await res.json();
       if(data.success){
         appendChatMessage({
           sender_type:'professional',
           content:message,
-          image_url: uploadedImageUrl,
           datetime:new Date()
         });
         document.getElementById('chatInput').value = '';
-        clearImagePreview();
-        socket.emit('sendMessage',{ to: currentClientId, content: message, image_url: uploadedImageUrl });
+        socket.emit('sendMessage',{ to: currentClientId, content: message });
       } else alert('Failed to send message.');
     } catch(e){ console.error('Send message error', e); }
   });
