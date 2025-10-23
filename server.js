@@ -188,6 +188,7 @@ const searchRoutes = require('./routes/search')(pool, logger);
 const certificationsRoutes = require('./routes/certifications')(pool, logger);
 const contactFeedbackRoutes = require('./routes/contact-feedback')(pool, logger, sendEmail, emailTemplates);
 const supportRoutes = require('./routes/support')(pool, logger, sendEmail);
+const notificationsRoutes = require('./routes/notifications')(pool, logger);
 
 // Mount routes
 app.use('/', authRoutes);
@@ -203,6 +204,7 @@ app.use('/', searchRoutes);
 app.use('/certifications', certificationsRoutes);
 app.use('/', contactFeedbackRoutes);
 app.use('/', supportRoutes);
+app.use('/notifications', notificationsRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -249,6 +251,56 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
+// Auto-run migration for notifications
+async function runNotificationsMigration() {
+  try {
+    console.log('🔄 Running notifications migration...');
+
+    // Create notifications table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
+        booking_id INTEGER REFERENCES bookings(id) ON DELETE CASCADE,
+        type VARCHAR(50) NOT NULL CHECK (type IN ('booking_reminder', 'booking_confirmed', 'booking_cancelled', 'booking_rescheduled', 'message_received', 'payment_received', 'review_reminder', 'system')),
+        title VARCHAR(200) NOT NULL,
+        message TEXT NOT NULL,
+        link VARCHAR(500),
+        is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        read_at TIMESTAMP
+      )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_worker ON notifications(worker_id, is_read)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_booking ON notifications(booking_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)`);
+
+    // Create reminder_logs table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reminder_logs (
+        id SERIAL PRIMARY KEY,
+        booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+        reminder_type VARCHAR(50) NOT NULL CHECK (reminder_type IN ('24_hour', '2_hour', '1_day_before', 'day_of')),
+        sent_to VARCHAR(20) NOT NULL CHECK (sent_to IN ('client', 'worker', 'both')),
+        email_sent BOOLEAN DEFAULT false,
+        notification_sent BOOLEAN DEFAULT false,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(booking_id, reminder_type, sent_to)
+      )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_reminder_logs_booking ON reminder_logs(booking_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_reminder_logs_sent_at ON reminder_logs(sent_at)`);
+
+    console.log('✅ Notifications migration completed');
+  } catch (error) {
+    console.log('⚠️  Notifications migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for message images
 async function runMessageImagesMigration() {
   try {
@@ -274,6 +326,10 @@ async function runMessageImagesMigration() {
   }
 }
 
+// Initialize reminder scheduler
+const ReminderScheduler = require('./services/reminderScheduler');
+let reminderScheduler = null;
+
 // Start server
 async function startServer() {
   try {
@@ -281,7 +337,12 @@ async function startServer() {
     await testConnection(logger);
 
     // Run migrations
+    await runNotificationsMigration();
     await runMessageImagesMigration();
+
+    // Start reminder scheduler
+    reminderScheduler = new ReminderScheduler(pool, logger);
+    reminderScheduler.start();
 
     // Start server
     server.listen(PORT, () => {
@@ -305,6 +366,7 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server');
+  if (reminderScheduler) reminderScheduler.stop();
   server.close(() => {
     console.log('HTTP server closed');
     pool.end(() => {
@@ -316,6 +378,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('\nSIGINT signal received: closing HTTP server');
+  if (reminderScheduler) reminderScheduler.stop();
   server.close(() => {
     console.log('HTTP server closed');
     pool.end(() => {
