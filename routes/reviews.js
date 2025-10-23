@@ -311,9 +311,36 @@ module.exports = (pool, logger, upload) => {
           UPDATE bookings SET has_review = true WHERE id = $1
         `, [booking_id]);
 
+        // Recalculate worker's average rating from all reviews
+        const workerId = bookingCheck.rows[0].worker_id;
+        const ratingResult = await client.query(`
+          SELECT AVG(overall_rating) as avg_rating, COUNT(*) as review_count
+          FROM reviews
+          WHERE worker_id = $1
+        `, [workerId]);
+
+        const avgRating = parseFloat(ratingResult.rows[0].avg_rating) || 0;
+        const reviewCount = parseInt(ratingResult.rows[0].review_count) || 0;
+
+        // Round to nearest 0.5 for star display (e.g., 4.3 -> 4.5, 4.2 -> 4.0)
+        const roundedRating = Math.round(avgRating * 2) / 2;
+
+        // Update worker's rating in workers table
+        await client.query(`
+          UPDATE workers
+          SET rating = $1
+          WHERE id = $2
+        `, [roundedRating, workerId]);
+
         await client.query('COMMIT');
 
-        logger.info('Review submitted successfully', { reviewId: result.rows[0].id, bookingId: booking_id });
+        logger.info('Review submitted successfully', {
+          reviewId: result.rows[0].id,
+          bookingId: booking_id,
+          workerId: workerId,
+          newRating: roundedRating,
+          reviewCount: reviewCount
+        });
         res.json({ success: true, review: result.rows[0] });
       } catch (err) {
         await client.query('ROLLBACK');
@@ -403,6 +430,28 @@ module.exports = (pool, logger, upload) => {
       `;
 
       const result = await pool.query(query, values);
+
+      // Recalculate worker's average rating if overall_rating was updated
+      if (overall_rating !== undefined) {
+        const workerId = reviewCheck.rows[0].worker_id;
+        const ratingResult = await pool.query(`
+          SELECT AVG(overall_rating) as avg_rating, COUNT(*) as review_count
+          FROM reviews
+          WHERE worker_id = $1
+        `, [workerId]);
+
+        const avgRating = parseFloat(ratingResult.rows[0].avg_rating) || 0;
+        const roundedRating = Math.round(avgRating * 2) / 2;
+
+        await pool.query(`
+          UPDATE workers SET rating = $1 WHERE id = $2
+        `, [roundedRating, workerId]);
+
+        logger.info('Worker rating recalculated after review update', {
+          workerId,
+          newRating: roundedRating
+        });
+      }
 
       logger.info('Review updated successfully', { reviewId });
       res.json({ success: true, review: result.rows[0] });
