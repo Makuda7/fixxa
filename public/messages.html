@@ -55,10 +55,16 @@
 .chat-message-body { font-size: 0.95rem; color: #333; }
 .chat-message-time { font-size: 0.7rem; color: #999; text-align: right; margin-top: 0.2rem; }
 
+#chatModal .image-preview-container { padding: 0.5rem 1rem; background: #f9f9f9; border-top: 1px solid #ddd; display: none; align-items: center; gap: 0.5rem; }
+#chatModal .image-preview-container img { max-height: 80px; max-width: 120px; border-radius: 6px; border: 1px solid #ccc; }
+#chatModal .image-preview-container button { background: #ff5555; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+#chatModal .image-preview-container button:hover { background: #ff3333; }
 #chatModal .chat-input { display:flex; border-top:1px solid #ccc; background: white; }
-#chatModal .chat-input input { flex:1; padding:0.7rem 1rem; border:none; outline:none; font-size: 1rem; }
+#chatModal .chat-input input[type="text"] { flex:1; padding:0.7rem 1rem; border:none; outline:none; font-size: 1rem; }
 #chatModal .chat-input button { padding:0.7rem 1.2rem; border:none; background:forestgreen; color:white; cursor:pointer; font-weight: 600; transition: background 0.2s; }
 #chatModal .chat-input button:hover { background: #228b22; }
+.chat-message img { max-width: 100%; border-radius: 8px; margin-top: 0.5rem; cursor: pointer; }
+.chat-message img:hover { opacity: 0.9; }
 
 @media (max-width: 768px) { 
   .controls { flex-direction: column; align-items: stretch; }
@@ -120,7 +126,14 @@
       <button id="closeChat" style="background:none; color:white; border:none; font-size:1.2rem; cursor:pointer;">✕</button>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
+    <div class="image-preview-container" id="imagePreview">
+      <img id="previewImg" src="" alt="Preview">
+      <span id="previewName" style="flex:1; font-size:0.9rem; color:#555;"></span>
+      <button id="removeImage">Remove</button>
+    </div>
     <div class="chat-input">
+      <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
+      <button id="attachBtn" style="padding:0.7rem 1rem; border:none; background:#f0f0f0; cursor:pointer; font-size:1.3rem;">📎</button>
       <input type="text" id="chatInput" placeholder="Type a message...">
       <button id="chatSend">Send</button>
     </div>
@@ -313,10 +326,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const timeAgo = getTimeAgo(latestMsg.created_at);
       const senderLabel = latestMsg.sender_type === 'client' ? 'You: ' : `${latestMsg.professional_name}: `;
 
+      const messagePreview = latestMsg.image_url
+        ? '<span style="color:#888;">📷 Photo</span>'
+        : (latestMsg.content || '<em>No message</em>');
+
       return `
         <div class="messages-card" data-professional="${professionalId}">
           <h3>${latestMsg.professional_name || 'Unknown'} - ${latestMsg.professional_service || ''}</h3>
-          <p style="color: #555;"><strong>${senderLabel}</strong>${latestMsg.content}</p>
+          <p style="color: #555;"><strong>${senderLabel}</strong>${messagePreview}</p>
           <small>${msgCount} message(s) | ${timeAgo}</small>
           <button data-id="${latestMsg.id}" class="delete-btn">Delete</button>
         </div>
@@ -398,48 +415,137 @@ document.addEventListener('DOMContentLoaded', () => {
   function addChatMessage(msg) {
     const isClient = msg.sender_type === 'client';
     const senderName = isClient ? 'You' : (msg.professional_name || 'Professional');
-    const time = new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const time = new Date(msg.created_at || msg.datetime).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 
     const msgEl = document.createElement('div');
     msgEl.className = `chat-message ${isClient ? 'sent' : 'received'}`;
+
+    let messageBody = '';
+    if (msg.image_url) {
+      messageBody += `<img src="${msg.image_url}" alt="Shared image" onclick="window.open('${msg.image_url}', '_blank')">`;
+    }
+    if (msg.content) {
+      messageBody += `<div class="chat-message-body">${msg.content}</div>`;
+    }
+
     msgEl.innerHTML = `
       <div class="chat-message-header">
         <strong>${senderName}</strong>
       </div>
-      <div class="chat-message-body">${msg.content}</div>
+      ${messageBody}
       <div class="chat-message-time">${time}</div>
     `;
     chatMessages.appendChild(msgEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
+  let selectedImage = null;
+  let uploadedImageUrl = null;
+  let uploadedCloudinaryId = null;
+
+  const imageInput = document.getElementById('imageInput');
+  const attachBtn = document.getElementById('attachBtn');
+  const imagePreview = document.getElementById('imagePreview');
+  const previewImg = document.getElementById('previewImg');
+  const previewName = document.getElementById('previewName');
+  const removeImage = document.getElementById('removeImage');
+
+  // Attach button click - open file picker
+  attachBtn.addEventListener('click', () => {
+    imageInput.click();
+  });
+
+  // Handle image selection
+  imageInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB');
+      return;
+    }
+
+    selectedImage = file;
+    previewImg.src = URL.createObjectURL(file);
+    previewName.textContent = file.name;
+    imagePreview.style.display = 'flex';
+
+    // Upload image immediately
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch('/messages/upload-image', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        uploadedImageUrl = data.imageUrl;
+        uploadedCloudinaryId = data.cloudinaryId;
+      } else {
+        alert(data.error || 'Failed to upload image');
+        clearImagePreview();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading image');
+      clearImagePreview();
+    }
+  });
+
+  // Remove image preview
+  removeImage.addEventListener('click', () => {
+    clearImagePreview();
+  });
+
+  function clearImagePreview() {
+    imageInput.value = '';
+    selectedImage = null;
+    uploadedImageUrl = null;
+    uploadedCloudinaryId = null;
+    imagePreview.style.display = 'none';
+    previewImg.src = '';
+    previewName.textContent = '';
+  }
+
   async function sendChatMessage() {
     const content = chatInput.value.trim();
-    if (!content || !currentProfessionalId) return;
+    if ((!content && !uploadedImageUrl) || !currentProfessionalId) return;
 
     try {
       const res = await fetch('/messages/contact', {
         method: 'POST',
         credentials: 'include',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ workerId: currentProfessionalId, message: content })
+        body: JSON.stringify({
+          workerId: currentProfessionalId,
+          message: content,
+          imageUrl: uploadedImageUrl,
+          cloudinaryId: uploadedCloudinaryId
+        })
       });
       const data = await res.json();
       if (data.success) {
         // Add message to chat immediately
-        addChatMessage({ 
-          content, 
-          created_at: new Date(), 
-          sender_type: 'client', 
-          client_id: userId, 
-          professional_id: currentProfessionalId 
+        addChatMessage({
+          content,
+          image_url: uploadedImageUrl,
+          created_at: new Date(),
+          sender_type: 'client',
+          client_id: userId,
+          professional_id: currentProfessionalId
         });
         chatInput.value = '';
+        clearImagePreview();
         // Server will broadcast via socket - no need to emit here
       } else {
         alert(data.error || 'Failed to send message');
       }
-    } catch (err) { 
+    } catch (err) {
       console.error(err);
       alert('Error sending message');
     }

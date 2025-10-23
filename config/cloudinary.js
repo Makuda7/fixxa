@@ -54,9 +54,25 @@ const certificationStorage = new CloudinaryStorage({
   }
 });
 
+// Storage for message images (client-worker communication)
+const messageImageStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'fixxa/message-images',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }],
+    public_id: (req, file) => {
+      const userId = req.session?.user?.id || 'unknown';
+      const userType = req.session?.user?.type || 'user';
+      return `msg-${userType}-${userId}-${Date.now()}`;
+    }
+  }
+});
+
 module.exports = {
   cloudinary,
   profilePicStorage,
   portfolioStorage,
-  certificationStorage
+  certificationStorage,
+  messageImageStorage
 };

@@ -1,39 +1,90 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const { sendMessageValidation } = require('../middleware/validation');
-const { messageLimiter } = require('../middleware/rateLimiter');
+const { messageLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const { cloudinary, messageImageStorage } = require('../config/cloudinary');
+
+// Configure multer for message image uploads
+const messageImageUpload = multer({
+  storage: messageImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and WEBP images are allowed'));
+    }
+  }
+});
 
 module.exports = (pool, logger, io, helpers) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
   const { containsContactInfo } = helpers;
 
-  // Send message (client to worker)
-  router.post('/contact', requireAuth, messageLimiter, sendMessageValidation, async (req, res) => {
-    const { workerId, message } = req.body;
-    if (!workerId || !message) return res.status(400).json({ success: false, error: 'Missing fields' });
+  // Upload message image (for both clients and workers)
+  router.post('/upload-image', requireAuth, uploadLimiter, messageImageUpload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No image uploaded' });
+      }
 
-    const filterResult = containsContactInfo(message);
-    if (filterResult.blocked) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Messages cannot contain contact information. Please keep all communication on the platform.',
-        blockedReason: filterResult.reason
+      const imageUrl = req.file.path;
+      const cloudinaryId = req.file.filename;
+
+      logger.info('Message image uploaded', {
+        userId: req.session.user.id,
+        userType: req.session.user.type,
+        cloudinaryId
       });
+
+      res.json({
+        success: true,
+        imageUrl,
+        cloudinaryId
+      });
+    } catch (error) {
+      logger.error('Message image upload error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to upload image' });
+    }
+  });
+
+  // Send message (client to worker) - updated to support images
+  router.post('/contact', requireAuth, messageLimiter, async (req, res) => {
+    const { workerId, message, imageUrl, cloudinaryId } = req.body;
+
+    // Either message or image must be provided
+    if (!workerId || (!message && !imageUrl)) {
+      return res.status(400).json({ success: false, error: 'Message or image required' });
+    }
+
+    // Only check for contact info if there's a text message
+    if (message) {
+      const filterResult = containsContactInfo(message);
+      if (filterResult.blocked) {
+        return res.status(400).json({
+          success: false,
+          error: 'Messages cannot contain contact information. Please keep all communication on the platform.',
+          blockedReason: filterResult.reason
+        });
+      }
     }
 
     try {
       const result = await pool.query(
-        'INSERT INTO messages (client_id, professional_id, content, sender_type) VALUES ($1,$2,$3,$4) RETURNING *',
-        [req.session.user.id, workerId, message, 'client']
+        'INSERT INTO messages (client_id, professional_id, content, sender_type, image_url, cloudinary_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+        [req.session.user.id, workerId, message || '', 'client', imageUrl || null, cloudinaryId || null]
       );
-      
+
       if (io) {
-        io.emit('receiveMessage', { 
-          ...result.rows[0], 
-          datetime: result.rows[0].created_at?.toISOString?.() || new Date().toISOString() 
+        io.emit('receiveMessage', {
+          ...result.rows[0],
+          datetime: result.rows[0].created_at?.toISOString?.() || new Date().toISOString()
         });
       }
-      
+
       res.json({ success: true, message: 'Message sent', data: result.rows[0] });
     } catch (err) {
       logger.error('Send message error', { error: err.message });
@@ -42,40 +93,47 @@ module.exports = (pool, logger, io, helpers) => {
     }
   });
 
-  // Reply to message (worker to client)
+  // Reply to message (worker to client) - updated to support images
   router.post('/worker/reply', requireAuth, workerOnly, async (req, res) => {
-    const { clientId, message } = req.body;
-    if (!clientId || !message) return res.status(400).json({ success: false, error: 'Missing fields' });
+    const { clientId, message, imageUrl, cloudinaryId } = req.body;
 
-    const filterResult = containsContactInfo(message);
-    if (filterResult.blocked) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Messages cannot contain contact information. Please keep all communication on the platform.',
-        blockedReason: filterResult.reason
-      });
+    // Either message or image must be provided
+    if (!clientId || (!message && !imageUrl)) {
+      return res.status(400).json({ success: false, error: 'Message or image required' });
+    }
+
+    // Only check for contact info if there's a text message
+    if (message) {
+      const filterResult = containsContactInfo(message);
+      if (filterResult.blocked) {
+        return res.status(400).json({
+          success: false,
+          error: 'Messages cannot contain contact information. Please keep all communication on the platform.',
+          blockedReason: filterResult.reason
+        });
+      }
     }
 
     try {
       const result = await pool.query(
-        'INSERT INTO messages (client_id, professional_id, content, sender_type) VALUES ($1,$2,$3,$4) RETURNING *',
-        [clientId, req.session.user.id, message, 'professional']
+        'INSERT INTO messages (client_id, professional_id, content, sender_type, image_url, cloudinary_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+        [clientId, req.session.user.id, message || '', 'professional', imageUrl || null, cloudinaryId || null]
       );
-      
+
       if (io) {
-        io.emit('receiveMessage', { 
-          ...result.rows[0], 
-          datetime: result.rows[0].created_at?.toISOString?.() || new Date().toISOString() 
+        io.emit('receiveMessage', {
+          ...result.rows[0],
+          datetime: result.rows[0].created_at?.toISOString?.() || new Date().toISOString()
         });
       }
-      
-      res.json({ 
-        success: true, 
-        message: 'Reply sent', 
-        data: { 
-          ...result.rows[0], 
-          datetime: result.rows[0].created_at?.toISOString?.() || new Date().toISOString() 
-        } 
+
+      res.json({
+        success: true,
+        message: 'Reply sent',
+        data: {
+          ...result.rows[0],
+          datetime: result.rows[0].created_at?.toISOString?.() || new Date().toISOString()
+        }
       });
     } catch (err) {
       logger.error('Reply error', { error: err.message });
