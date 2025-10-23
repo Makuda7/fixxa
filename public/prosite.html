@@ -1809,7 +1809,13 @@ async function openChat(clientId, clientName){
     const data = await res.json();
     if(!data.success || !Array.isArray(data.messages)) return;
     data.messages.sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
-    data.messages.forEach(msg=> appendChatMessage({ sender_type: msg.sender_type, senderName: msg.client_name||msg.senderName||'', content: msg.content||'', datetime: msg.datetime }));
+    data.messages.forEach(msg=> appendChatMessage({
+      sender_type: msg.sender_type,
+      senderName: msg.client_name||msg.senderName||'',
+      content: msg.content||'',
+      image_url: msg.image_url,
+      datetime: msg.datetime
+    }));
   } catch(e){ console.error('Open chat error', e); }
 }
 
@@ -2188,7 +2194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Socket events
   socket.on('receiveMessage', msg=>{
     if(msg.from === currentClientId){
-      appendChatMessage({ sender_type:'client', senderName: msg.senderName || '', content: msg.content || '', datetime: msg.datetime });
+      appendChatMessage({ sender_type:'client', senderName: msg.senderName || '', content: msg.content || '', image_url: msg.image_url, datetime: msg.datetime });
     } else loadMessages();
   });
 
