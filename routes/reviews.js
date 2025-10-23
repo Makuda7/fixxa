@@ -466,5 +466,38 @@ module.exports = (pool, logger, upload) => {
     }
   });
 
+  // Get completed bookings without reviews (for review prompt on login)
+  router.get('/pending-reviews', requireAuth, clientOnly, async (req, res) => {
+    try {
+      const clientId = req.session.user.id;
+
+      const result = await pool.query(`
+        SELECT
+          b.id as booking_id,
+          b.booking_date,
+          b.completed_at,
+          w.id as worker_id,
+          w.name as worker_name,
+          w.speciality as worker_service
+        FROM bookings b
+        JOIN workers w ON b.worker_id = w.id
+        LEFT JOIN reviews r ON r.booking_id = b.id
+        WHERE b.user_id = $1
+          AND b.status = 'Completed'
+          AND r.id IS NULL
+        ORDER BY b.completed_at DESC
+        LIMIT 5
+      `, [clientId]);
+
+      res.json({
+        success: true,
+        pendingReviews: result.rows
+      });
+    } catch (err) {
+      logger.error('Failed to fetch pending reviews', { error: err.message });
+      res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+
   return router;
 };

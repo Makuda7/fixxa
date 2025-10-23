@@ -138,6 +138,91 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io) => {
             });
           }
 
+          // Get client details for email
+          const clientDetails = await pool.query(`
+            SELECT u.email, u.name FROM users u WHERE u.id = $1
+          `, [clientId]);
+
+          if (clientDetails.rows.length > 0) {
+            const clientEmail = clientDetails.rows[0].email;
+            const clientName = clientDetails.rows[0].name;
+
+            // Send completion confirmation email with review link
+            const reviewUrl = `${process.env.BASE_URL || 'https://fixxa-app-production.up.railway.app'}/clientProfile.html#reviews`;
+
+            const emailSubject = `✅ Job Completed - Review Your Experience with ${request.worker_name}`;
+            const emailBody = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #228b22, #32cd32); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center;">
+                  <h1 style="margin: 0; font-size: 2rem;">✅ Job Completed!</h1>
+                </div>
+
+                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+                  <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hi ${clientName},</p>
+
+                  <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                    Great news! Your job with <strong>${request.worker_name}</strong> has been marked as complete and approved.
+                  </p>
+
+                  <div style="background: white; border-left: 4px solid #228b22; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                    <h3 style="margin: 0 0 10px 0; color: #228b22;">📋 Job Details</h3>
+                    <p style="margin: 5px 0; color: #555;"><strong>Professional:</strong> ${request.worker_name}</p>
+                    <p style="margin: 5px 0; color: #555;"><strong>Date:</strong> ${new Date(request.booking_date).toLocaleDateString()}</p>
+                    <p style="margin: 5px 0; color: #555;"><strong>Your Rating:</strong> ${'⭐'.repeat(rating)} (${rating}/5)</p>
+                  </div>
+
+                  <div style="background: #e8f5e9; border: 2px solid #4caf50; padding: 20px; margin: 25px 0; border-radius: 8px; text-align: center;">
+                    <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📝 Share Your Experience</h3>
+                    <p style="margin: 0 0 20px 0; color: #555; line-height: 1.6;">
+                      Your feedback helps other clients make informed decisions and helps professionals improve their services.
+                    </p>
+                    <a href="${reviewUrl}"
+                       style="display: inline-block; background: #228b22; color: white; padding: 15px 40px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                      ⭐ Write a Review
+                    </a>
+                  </div>
+
+                  <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 25px 0; border-radius: 4px;">
+                    <p style="margin: 0; color: #856404; font-size: 14px;">
+                      <strong>💡 Why review?</strong><br>
+                      • Help other clients find great professionals<br>
+                      • Support quality work with positive feedback<br>
+                      • Help professionals grow their business<br>
+                      • Build a trusted community on Fixxa
+                    </p>
+                  </div>
+
+                  <p style="font-size: 14px; color: #666; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                    Thank you for using Fixxa! We hope you're satisfied with the service.
+                  </p>
+                </div>
+              </div>
+            `;
+
+            try {
+              await sendEmail(clientEmail, emailSubject, emailBody);
+              logger.info('Completion email sent to client', { clientId, bookingId: request.booking_id });
+            } catch (emailError) {
+              logger.error('Failed to send completion email', { error: emailError.message, clientId });
+            }
+
+            // Create in-app notification for review reminder
+            try {
+              await pool.query(`
+                INSERT INTO notifications (user_id, booking_id, type, title, message, link)
+                VALUES ($1, $2, 'review_reminder', $3, $4, $5)
+              `, [
+                clientId,
+                request.booking_id,
+                'Job Completed - Share Your Experience',
+                `Your job with ${request.worker_name} is complete! Please take a moment to leave a review and help other clients.`,
+                '/clientProfile.html#reviews'
+              ]);
+            } catch (notifError) {
+              logger.error('Failed to create review reminder notification', { error: notifError.message });
+            }
+          }
+
           logger.info('Completion approved', { requestId, bookingId: request.booking_id });
 
           res.json({
