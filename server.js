@@ -240,12 +240,40 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
+// Auto-run migration for message images
+async function runMessageImagesMigration() {
+  try {
+    console.log('🔄 Running message images migration...');
+
+    await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)`);
+    await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS cloudinary_id VARCHAR(255)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_with_images ON messages(image_url) WHERE image_url IS NOT NULL`);
+    await pool.query(`ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_content_check`);
+    await pool.query(`
+      ALTER TABLE messages ADD CONSTRAINT messages_content_or_image_check
+      CHECK (
+        (content IS NOT NULL AND char_length(content) > 0 AND char_length(content) <= 5000)
+        OR
+        (image_url IS NOT NULL)
+      )
+    `);
+
+    console.log('✅ Message images migration completed');
+  } catch (error) {
+    // If migration fails, just log it - don't crash the server
+    console.log('⚠️  Message images migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Start server
 async function startServer() {
   try {
     // Test database connection
     await testConnection(logger);
-    
+
+    // Run migrations
+    await runMessageImagesMigration();
+
     // Start server
     server.listen(PORT, () => {
       const serverUrl = process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`);
