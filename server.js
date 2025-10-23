@@ -333,16 +333,23 @@ let reminderScheduler = null;
 // Start server
 async function startServer() {
   try {
+    console.log('🚀 Starting Fixxa server...');
+
     // Test database connection
     await testConnection(logger);
+    console.log('✅ Database connection verified');
 
     // Run migrations
+    console.log('📦 Running migrations...');
     await runNotificationsMigration();
     await runMessageImagesMigration();
+    console.log('✅ All migrations complete');
 
     // Start reminder scheduler
+    console.log('⏰ Initializing reminder scheduler...');
     reminderScheduler = new ReminderScheduler(pool, logger);
     reminderScheduler.start();
+    console.log('✅ Reminder scheduler started');
 
     // Start server
     server.listen(PORT, () => {
