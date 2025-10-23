@@ -712,6 +712,120 @@
       padding:0.75rem 1rem;
     }
   }
+
+  /* Safety Tips Modal */
+  .safety-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+  }
+  .safety-modal.show {
+    display: flex;
+  }
+  .safety-modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .safety-modal-header {
+    background: linear-gradient(135deg, #228b22, #32cd32);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .safety-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  .safety-modal-body {
+    padding: 1.5rem;
+  }
+  .safety-tip {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #228b22;
+  }
+  .safety-tip-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .safety-tip-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #228b22;
+  }
+  .safety-tip-content p {
+    margin: 0;
+    color: #555;
+    line-height: 1.5;
+  }
+  .safety-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+  }
+  .safety-modal-footer button {
+    flex: 1;
+    padding: 0.875rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-skip {
+    background: #6c757d;
+    color: white;
+  }
+  .btn-skip:hover {
+    background: #5a6268;
+  }
+  .btn-read-full {
+    background: #17a2b8;
+    color: white;
+  }
+  .btn-read-full:hover {
+    background: #138496;
+  }
+  .btn-continue {
+    background: #228b22;
+    color: white;
+  }
+  .btn-continue:hover {
+    background: #1a6b1a;
+  }
+  @media (max-width: 768px) {
+    .safety-modal-footer {
+      flex-direction: column;
+    }
+  }
 </style>
 </head>
 <body>
@@ -769,9 +883,99 @@
   </div>
 </footer>
 
+<!-- Safety Tips Modal -->
+<div id="safetyModal" class="safety-modal">
+  <div class="safety-modal-content">
+    <div class="safety-modal-header">
+      <span style="font-size: 2rem;">🛡️</span>
+      <h2>Safety & Best Practices</h2>
+    </div>
+    <div class="safety-modal-body">
+      <p style="margin-top: 0; margin-bottom: 1.5rem; color: #333; font-size: 1.05rem;">
+        Before booking, please review these important safety tips for a secure experience:
+      </p>
+
+      <div class="safety-tip">
+        <div class="safety-tip-icon">💬</div>
+        <div class="safety-tip-content">
+          <h3>Keep Communication on Platform</h3>
+          <p>Always message through Fixxa. Never share phone numbers, emails, or move conversations off-platform. This protects you and ensures we can help resolve any issues.</p>
+        </div>
+      </div>
+
+      <div class="safety-tip">
+        <div class="safety-tip-icon">💳</div>
+        <div class="safety-tip-content">
+          <h3>Never Pay Outside Platform</h3>
+          <p>Don't transfer money via cash app, wire transfer, or direct payment before the job. All payments should go through Fixxa's secure system for your protection.</p>
+        </div>
+      </div>
+
+      <div class="safety-tip">
+        <div class="safety-tip-icon">🏠</div>
+        <div class="safety-tip-content">
+          <h3>Meet in Safe Locations</h3>
+          <p>For in-person services, ensure someone knows about your appointment. Consider having someone present during the service, especially for home visits.</p>
+        </div>
+      </div>
+
+      <div class="safety-tip">
+        <div class="safety-tip-icon">✅</div>
+        <div class="safety-tip-content">
+          <h3>Check Professional's Profile</h3>
+          <p>Review ratings, reviews, certifications, and verification status before booking. Look for verified professionals with positive feedback.</p>
+        </div>
+      </div>
+
+      <div class="safety-tip">
+        <div class="safety-tip-icon">📸</div>
+        <div class="safety-tip-content">
+          <h3>Use In-App Image Sharing</h3>
+          <p>Share photos of the job through Fixxa messages. This helps professionals provide accurate quotes and creates a record for dispute resolution.</p>
+        </div>
+      </div>
+
+      <div class="safety-tip">
+        <div class="safety-tip-icon">🚩</div>
+        <div class="safety-tip-content">
+          <h3>Report Suspicious Behavior</h3>
+          <p>If a professional asks you to pay outside the platform, share contact info, or behaves inappropriately, report them immediately through the app.</p>
+        </div>
+      </div>
+    </div>
+    <div class="safety-modal-footer">
+      <button class="btn-skip" onclick="skipSafetyTips()">Skip</button>
+      <button class="btn-read-full" onclick="window.open('safety.html', '_blank')">Read Full Guide</button>
+      <button class="btn-continue" onclick="closeSafetyModalAndBook()">I Understand, Continue</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let currentWorker = null;
 let reviewsLastUpdated = null;
+
+// Safety Modal Functions
+function skipSafetyTips() {
+  document.getElementById('safetyModal').classList.remove('show');
+  showBookingForm();
+}
+
+function closeSafetyModalAndBook() {
+  document.getElementById('safetyModal').classList.remove('show');
+  showBookingForm();
+}
+
+function showBookingForm() {
+  const bookingForm = document.getElementById('booking-form');
+  const contactForm = document.getElementById('contact-form');
+  bookingForm.classList.add('show');
+  contactForm.classList.remove('show');
+  // Scroll to form
+  setTimeout(() => {
+    bookingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
 
 // Helper function to parse availability schedule
 function getAvailabilityText(availability_schedule) {
@@ -1562,12 +1766,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bookBtn.addEventListener('click', () => {
       if (!authenticated) { window.location.href = 'login.html'; return; }
-      bookingForm.classList.toggle('show');
-      contactForm.classList.remove('show');
-      // Scroll to form
-      setTimeout(() => {
-        bookingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+      // Show safety modal first
+      document.getElementById('safetyModal').classList.add('show');
     });
 
     bookingForm.addEventListener('submit', async e => {
