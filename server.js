@@ -18,7 +18,11 @@ const io = socketIo(server, {
     origin: process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'http://localhost:3000'),
     methods: ['GET', 'POST'],
     credentials: true
-  }
+  },
+  transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
+  allowEIO3: true, // Allow Engine.IO v3 for compatibility
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Configuration and utilities
@@ -221,9 +225,14 @@ io.on('connection', (socket) => {
     io.emit('receiveMessage', data);
   });
 
+  // Handle errors
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+  });
+
   // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  socket.on('disconnect', (reason) => {
+    console.log('Client disconnected:', socket.id, 'Reason:', reason);
   });
 });
 
