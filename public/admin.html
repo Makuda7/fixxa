@@ -1674,7 +1674,9 @@
         <div class="worker-card">
           <div class="worker-header">
             <div class="worker-info">
-              <h4>${escapeHTML(worker.name)}</h4>
+              <h4 style="color:#228b22; cursor:pointer; text-decoration:underline;" onclick="openWorkerVerificationModal(${worker.id})">
+                ${escapeHTML(worker.name)} 📋
+              </h4>
               <p>${escapeHTML(worker.email)} ${worker.phone ? '• ' + escapeHTML(worker.phone) : ''}</p>
               <p><strong>Speciality:</strong> ${escapeHTML(worker.speciality)}</p>
               ${worker.address ? `<p><strong>Location:</strong> ${escapeHTML(worker.address)}, ${escapeHTML(worker.city || '')}</p>` : ''}
@@ -1685,8 +1687,11 @@
             </div>
           </div>
           ${worker.bio ? `<p style="color:#666; margin-bottom:1rem;">${escapeHTML(worker.bio)}</p>` : ''}
-          ${worker.experience ? `<p style="color:#666; margin-bottom:1rem;"><strong>Experience:</strong> ${escapeHTML(worker.experience)} years</p>` : ''}
+          ${worker.experience ? `<p style="color:#666; margin-bottom:1rem;"><strong>Experience:</strong> ${escapeHTML(worker.experience)}</p>` : ''}
           <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+            <button class="btn btn-primary" onclick="openWorkerVerificationModal(${worker.id})" style="background:#2196F3;">
+              📋 Review Details
+            </button>
             <button class="btn btn-success" onclick="approveWorker(${worker.id})">Approve</button>
             <button class="btn btn-danger" onclick="openRejectWorkerModal(${worker.id})">Reject</button>
           </div>
@@ -1777,6 +1782,253 @@
       } finally {
         setLoading(false);
       }
+    }
+
+    // Worker Verification Modal
+    async function openWorkerVerificationModal(workerId) {
+      try {
+        setLoading(true);
+
+        // Fetch comprehensive worker verification data
+        const res = await fetch(`/admin/worker-verification/${workerId}`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (!data.success) {
+          showMessage(data.error || 'Failed to load worker details', 'error');
+          return;
+        }
+
+        const worker = data.worker;
+
+        // Build verification checklist HTML
+        const modalBody = document.getElementById('workerDetailBody');
+        document.getElementById('workerDetailName').textContent = `Verification Checklist - ${worker.name}`;
+
+        modalBody.innerHTML = `
+          <div style="padding:1.5rem;">
+            <!-- Profile Picture Section -->
+            <div style="background:#e3f2fd; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #2196F3;">
+              <h4 style="margin:0 0 1rem 0; color:#1565C0;">📸 Profile Picture Verification</h4>
+              <div style="display:grid; grid-template-columns:auto 1fr; gap:1.5rem; align-items:start;">
+                <div style="text-align:center;">
+                  ${worker.profile_picture ? `
+                    <img src="${worker.profile_picture}" alt="Profile" style="width:150px; height:150px; object-fit:cover; border-radius:50%; border:3px solid #2196F3;">
+                    <p style="margin-top:0.5rem; font-size:0.85rem; color:#666;">
+                      Uploaded: ${worker.profile_picture_uploaded_at ? new Date(worker.profile_picture_uploaded_at).toLocaleDateString() : 'N/A'}
+                    </p>
+                  ` : `
+                    <div style="width:150px; height:150px; background:#f0f0f0; border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid #ccc;">
+                      <span style="font-size:3rem; color:#999;">👤</span>
+                    </div>
+                    <p style="margin-top:0.5rem; font-size:0.85rem; color:#dc3545;">⚠️ No photo uploaded</p>
+                  `}
+                </div>
+                <div>
+                  <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                    <input type="checkbox" id="check-profile-pic" style="width:20px; height:20px; cursor:pointer;">
+                    <span style="font-weight:600;">Profile picture matches ID/Passport photo</span>
+                  </label>
+                  <p style="margin:0.5rem 0 0 0; font-size:0.85rem; color:#666;">
+                    Verify the person in the profile picture is the same as on their ID document
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Personal Information -->
+            <div style="background:#fff; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border:1px solid #ddd;">
+              <h4 style="margin:0 0 1rem 0; color:#228b22;">👤 Personal Information</h4>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div>
+                  <p style="margin:0.25rem 0;"><strong>Full Name:</strong> ${escapeHTML(worker.name)}</p>
+                  <p style="margin:0.25rem 0;"><strong>Email:</strong> ${escapeHTML(worker.email)}</p>
+                  <p style="margin:0.25rem 0;"><strong>Phone:</strong> ${escapeHTML(worker.phone || 'Not provided')}</p>
+                </div>
+                <div>
+                  <p style="margin:0.25rem 0;"><strong>Speciality:</strong> ${escapeHTML(worker.speciality || 'Not provided')}</p>
+                  <p style="margin:0.25rem 0;"><strong>City:</strong> ${escapeHTML(worker.city || 'Not provided')}</p>
+                  <p style="margin:0.25rem 0;"><strong>Registered:</strong> ${new Date(worker.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ID/Passport Information -->
+            <div style="background:#fffbea; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #ffc107;">
+              <h4 style="margin:0 0 1rem 0; color:#856404;">🪪 ID/Passport Information</h4>
+              <div style="margin-bottom:1rem;">
+                <p style="margin:0.25rem 0;"><strong>ID Type:</strong> ${worker.id_type ? (worker.id_type === 'id_number' ? 'SA ID Number' : 'Passport') : '⚠️ Not provided'}</p>
+                <p style="margin:0.25rem 0;"><strong>ID/Passport Number:</strong> ${worker.id_number ? escapeHTML(worker.id_number) : '⚠️ Not provided'}</p>
+                ${worker.id_submitted_at ? `<p style="margin:0.25rem 0;"><strong>Submitted:</strong> ${new Date(worker.id_submitted_at).toLocaleDateString()}</p>` : ''}
+              </div>
+              <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                <input type="checkbox" id="check-id-info" style="width:20px; height:20px; cursor:pointer;">
+                <span style="font-weight:600;">ID/Passport number verified against uploaded document</span>
+              </label>
+            </div>
+
+            <!-- Emergency Contacts -->
+            <div style="background:#fff; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border:1px solid #ddd;">
+              <h4 style="margin:0 0 1rem 0; color:#dc3545;">🚨 Emergency Contacts</h4>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div style="background:#f8f9fa; padding:1rem; border-radius:6px;">
+                  <p style="margin:0 0 0.5rem 0; font-weight:600;">Emergency Contact 1 ${worker.emergency_name_1 ? '✅' : '⚠️'}</p>
+                  <p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Name:</strong> ${escapeHTML(worker.emergency_name_1 || 'Not provided')}</p>
+                  <p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Relationship:</strong> ${escapeHTML(worker.emergency_relationship_1 || 'N/A')}</p>
+                  <p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Phone:</strong> ${escapeHTML(worker.emergency_phone_1 || 'Not provided')}</p>
+                  ${worker.emergency_email_1 ? `<p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Email:</strong> ${escapeHTML(worker.emergency_email_1)}</p>` : ''}
+                </div>
+                <div style="background:#f8f9fa; padding:1rem; border-radius:6px;">
+                  <p style="margin:0 0 0.5rem 0; font-weight:600;">Emergency Contact 2 (Optional)</p>
+                  <p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Name:</strong> ${escapeHTML(worker.emergency_name_2 || 'Not provided')}</p>
+                  <p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Relationship:</strong> ${escapeHTML(worker.emergency_relationship_2 || 'N/A')}</p>
+                  <p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Phone:</strong> ${escapeHTML(worker.emergency_phone_2 || 'Not provided')}</p>
+                  ${worker.emergency_email_2 ? `<p style="margin:0.25rem 0; font-size:0.9rem;"><strong>Email:</strong> ${escapeHTML(worker.emergency_email_2)}</p>` : ''}
+                </div>
+              </div>
+              <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin-top:1rem;">
+                <input type="checkbox" id="check-emergency" style="width:20px; height:20px; cursor:pointer;">
+                <span style="font-weight:600;">Emergency contact 1 information is complete</span>
+              </label>
+            </div>
+
+            <!-- Professional Details -->
+            <div style="background:#fff; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border:1px solid #ddd;">
+              <h4 style="margin:0 0 1rem 0; color:#228b22;">💼 Professional Details</h4>
+              ${worker.bio ? `
+                <div style="margin-bottom:1rem;">
+                  <p style="margin:0 0 0.5rem 0; font-weight:600;">Bio:</p>
+                  <p style="margin:0; color:#666; font-size:0.9rem;">${escapeHTML(worker.bio)}</p>
+                </div>
+              ` : '<p style="color:#dc3545;">⚠️ No bio provided</p>'}
+              ${worker.experience ? `
+                <div style="margin-bottom:1rem;">
+                  <p style="margin:0 0 0.5rem 0; font-weight:600;">Experience:</p>
+                  <p style="margin:0; color:#666; font-size:0.9rem;">${escapeHTML(worker.experience)}</p>
+                </div>
+              ` : '<p style="color:#dc3545;">⚠️ No experience provided</p>'}
+              ${worker.area ? `<p style="margin:0.25rem 0;"><strong>Service Area:</strong> ${escapeHTML(worker.area)}</p>` : ''}
+              ${worker.service_radius ? `<p style="margin:0.25rem 0;"><strong>Service Radius:</strong> ${worker.service_radius} km</p>` : ''}
+              <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin-top:1rem;">
+                <input type="checkbox" id="check-professional" style="width:20px; height:20px; cursor:pointer;">
+                <span style="font-weight:600;">Bio and experience information is adequate</span>
+              </label>
+            </div>
+
+            <!-- Documents/Certifications -->
+            <div style="background:#e8f5e9; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #28a745;">
+              <h4 style="margin:0 0 1rem 0; color:#155724;">📄 Uploaded Documents</h4>
+              ${data.certifications && data.certifications.length > 0 ? `
+                <div style="margin-bottom:1rem;">
+                  <p style="font-weight:600; margin-bottom:0.5rem;">Total Documents: ${data.certifications.length}</p>
+                  <div style="display:grid; gap:0.75rem;">
+                    ${data.certifications.map(cert => `
+                      <div style="background:#fff; padding:0.75rem; border-radius:6px; border-left:4px solid ${cert.status === 'approved' ? '#28a745' : cert.status === 'pending' ? '#ffc107' : '#dc3545'}; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                          <p style="margin:0; font-weight:600;">${escapeHTML(cert.file_name || 'Document')}</p>
+                          <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:#666;">
+                            Uploaded: ${new Date(cert.uploaded_at).toLocaleDateString()} •
+                            Status: <span style="color:${cert.status === 'approved' ? '#28a745' : cert.status === 'pending' ? '#ffc107' : '#dc3545'}; font-weight:600;">${cert.status.toUpperCase()}</span>
+                          </p>
+                        </div>
+                        <button class="btn btn-secondary" onclick="window.open('${cert.file_url}', '_blank')" style="padding:0.5rem 1rem;">
+                          View
+                        </button>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                  <input type="checkbox" id="check-documents" style="width:20px; height:20px; cursor:pointer;">
+                  <span style="font-weight:600;">Required documents uploaded (Proof of Residence, Certified ID, Proof of Qualifications)</span>
+                </label>
+              ` : `
+                <p style="color:#dc3545; margin:0;">⚠️ No documents uploaded yet</p>
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin-top:1rem; opacity:0.5;">
+                  <input type="checkbox" id="check-documents" style="width:20px; height:20px;" disabled>
+                  <span style="font-weight:600;">Required documents uploaded</span>
+                </label>
+              `}
+            </div>
+
+            <!-- Verification Summary -->
+            <div style="background:#fff3cd; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #ffc107;">
+              <h4 style="margin:0 0 1rem 0; color:#856404;">✅ Verification Summary</h4>
+              <div id="verificationSummary" style="font-size:0.9rem; color:#666;">
+                <p style="margin:0;">Check all items above before approving this worker.</p>
+                <p style="margin:0.5rem 0 0 0; font-weight:600;" id="checklistStatus">0 of 5 verification steps completed</p>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+              <button class="btn btn-secondary" onclick="closeWorkerDetailModal()">Close</button>
+              <button class="btn btn-success" onclick="approveWorkerFromModal(${workerId})" id="modalApproveBtn">
+                ✅ Approve Worker
+              </button>
+              <button class="btn btn-danger" onclick="openRejectWorkerModal(${workerId}); closeWorkerDetailModal();">
+                ❌ Reject Application
+              </button>
+            </div>
+          </div>
+        `;
+
+        // Add event listeners to checkboxes to update summary
+        const checkboxes = ['check-profile-pic', 'check-id-info', 'check-emergency', 'check-professional', 'check-documents'];
+        checkboxes.forEach(id => {
+          const checkbox = document.getElementById(id);
+          if (checkbox) {
+            checkbox.addEventListener('change', updateVerificationSummary);
+          }
+        });
+
+        updateVerificationSummary();
+        document.getElementById('workerDetailModal').classList.add('show');
+      } catch (err) {
+        console.error('Load verification details error:', err);
+        showMessage('Failed to load worker verification details', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function updateVerificationSummary() {
+      const checkboxes = ['check-profile-pic', 'check-id-info', 'check-emergency', 'check-professional', 'check-documents'];
+      let checkedCount = 0;
+
+      checkboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox && checkbox.checked && !checkbox.disabled) {
+          checkedCount++;
+        }
+      });
+
+      const statusEl = document.getElementById('checklistStatus');
+      if (statusEl) {
+        statusEl.textContent = `${checkedCount} of 5 verification steps completed`;
+        statusEl.style.color = checkedCount === 5 ? '#28a745' : '#856404';
+      }
+
+      // Enable/disable approve button based on checklist
+      const approveBtn = document.getElementById('modalApproveBtn');
+      if (approveBtn) {
+        if (checkedCount === 5) {
+          approveBtn.disabled = false;
+          approveBtn.style.opacity = '1';
+        } else {
+          approveBtn.disabled = true;
+          approveBtn.style.opacity = '0.5';
+          approveBtn.title = 'Complete all verification steps to approve';
+        }
+      }
+    }
+
+    function closeWorkerDetailModal() {
+      document.getElementById('workerDetailModal').classList.remove('show');
+    }
+
+    async function approveWorkerFromModal(workerId) {
+      closeWorkerDetailModal();
+      await approveWorker(workerId);
     }
 
     // ========== END PENDING WORKERS FUNCTIONS ==========

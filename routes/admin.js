@@ -543,6 +543,75 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get worker verification details
+  router.get('/worker-verification/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const workerId = req.params.id;
+
+      // Get comprehensive worker details
+      const workerResult = await pool.query(`
+        SELECT
+          w.id,
+          w.name,
+          w.email,
+          w.phone,
+          w.speciality,
+          w.address,
+          w.city,
+          w.postal_code,
+          w.bio,
+          w.experience,
+          w.area,
+          w.service_radius,
+          w.created_at,
+          w.approval_status,
+          w.id_type,
+          w.id_number,
+          w.id_submitted_at,
+          w.id_verified,
+          w.profile_picture,
+          w.profile_picture_uploaded_at,
+          w.emergency_name_1,
+          w.emergency_relationship_1,
+          w.emergency_phone_1,
+          w.emergency_email_1,
+          w.emergency_name_2,
+          w.emergency_relationship_2,
+          w.emergency_phone_2,
+          w.emergency_email_2
+        FROM workers w
+        WHERE w.id = $1
+      `, [workerId]);
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      // Get worker's certifications
+      const certificationsResult = await pool.query(`
+        SELECT
+          id,
+          file_url,
+          file_name,
+          file_type,
+          status,
+          uploaded_at
+        FROM certifications
+        WHERE worker_id = $1
+        ORDER BY uploaded_at DESC
+      `, [workerId]);
+
+      res.json({
+        success: true,
+        worker: workerResult.rows[0],
+        certifications: certificationsResult.rows
+      });
+    } catch (error) {
+      logger.error('Error fetching worker verification details', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch verification details' });
+    }
+  });
+
   // Approve worker
   router.post('/approve-worker/:id', requireAuth, adminOnly, async (req, res) => {
     try {
