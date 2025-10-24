@@ -461,6 +461,27 @@ async function runProfilePictureMigration() {
   }
 }
 
+// Auto-run migration for terms acceptance
+async function runTermsAcceptanceMigration() {
+  try {
+    console.log('🔄 Running terms acceptance migration...');
+
+    // Add terms acceptance columns to users table
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_version VARCHAR(10) DEFAULT '1.0'`);
+
+    // Add terms acceptance columns to workers table
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS terms_version VARCHAR(10) DEFAULT '1.0'`);
+
+    console.log('✅ Terms acceptance migration completed');
+  } catch (error) {
+    console.log('⚠️  Terms acceptance migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for message images
 async function runMessageImagesMigration() {
   try {
@@ -506,6 +527,7 @@ async function startServer() {
     await runIdentificationMigration();
     await runEmergencyContactsMigration();
     await runProfilePictureMigration();
+    await runTermsAcceptanceMigration();
     await runMessageImagesMigration();
     console.log('✅ All migrations complete');
 

@@ -24,11 +24,17 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   // Register
   router.post('/register', registrationLimiter, registerValidation, async (req, res) => {
 
-    const { type, name, email, phone, city, suburb, password, speciality } = req.body;
-
-
+    const { type, name, email, phone, city, suburb, password, speciality, acceptTerms } = req.body;
 
     try {
+
+      // Validate T&C acceptance
+      if (!acceptTerms || acceptTerms !== 'true' && acceptTerms !== true) {
+        return res.status(400).json({
+          success: false,
+          error: 'You must accept the Terms of Service, Privacy Policy, and Safety Guidelines to register.'
+        });
+      }
 
       // Get table name safely
       const table = getTableForUserType(type);
@@ -43,36 +49,55 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      const verificationToken = generateVerificationToken();
+      const termsVersion = '1.0'; // Current terms version
 
       let result;
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status, approval_status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, false, 'pending', 'pending') RETURNING id, name, email, phone, city, speciality`,
-          [name, email, phone, city, suburb || null, hashedPassword, speciality]
+          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status, approval_status, verification_token, terms_accepted, terms_accepted_at, terms_version)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, false, 'pending', 'pending', $8, true, CURRENT_TIMESTAMP, $9) RETURNING id, name, email, phone, city, speciality`,
+          [name, email, phone, city, suburb || null, hashedPassword, speciality, verificationToken, termsVersion]
         );
       } else {
         result = await pool.query(
-          `INSERT INTO users (name, email, phone, city, suburb, password)
-           VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, phone, city`,
-          [name, email, phone, city, suburb || null, hashedPassword]
+          `INSERT INTO users (name, email, phone, city, suburb, password, verification_token, email_verified, terms_accepted, terms_accepted_at, terms_version)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, CURRENT_TIMESTAMP, $8) RETURNING id, name, email, phone, city`,
+          [name, email, phone, city, suburb || null, hashedPassword, verificationToken, termsVersion]
         );
       }
 
       const user = result.rows[0];
 
-      // Email verification disabled for beta - accounts are immediately active
-      logger.info('User registered successfully', { email, userId: user.id, type });
+      // Send email verification
+      const verificationUrl = generateVerificationUrl(verificationToken, type);
+      const verificationEmail = createVerificationEmail(name, verificationUrl);
+
+      await sendEmail(user.email, verificationEmail.subject, verificationEmail.html).catch(err => {
+        logger.error('Failed to send verification email', {
+          error: err.message,
+          email: user.email
+        });
+        // Don't fail registration if email fails
+      });
+
+      logger.info('User registered successfully', {
+        email,
+        userId: user.id,
+        type,
+        termsAccepted: true,
+        emailVerificationSent: true
+      });
 
       const message = type === USER_TYPES.PROFESSIONAL
-        ? 'Registration successful! Your application is under review. You will be notified once approved.'
-        : 'Registration successful! You can now log in.';
+        ? 'Registration successful! Please check your email to verify your account. Your application will be reviewed once verified.'
+        : 'Registration successful! Please check your email to verify your account before logging in.';
 
       res.json({
         success: true,
         message,
-        requiresVerification: false,
+        requiresVerification: true,
         email: email,
         pendingApproval: type === USER_TYPES.PROFESSIONAL
       });

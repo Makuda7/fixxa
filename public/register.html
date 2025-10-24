@@ -186,6 +186,23 @@ button:hover { background:#228b22; }
         </div>
       </div>
 
+      <!-- Terms & Conditions Acceptance -->
+      <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 2px solid #dee2e6; margin-bottom: 1rem;">
+        <label style="display: flex; align-items: start; cursor: pointer; font-size: 14px; line-height: 1.6;">
+          <input type="checkbox" id="acceptTerms" name="acceptTerms" required
+                 style="width: 18px; height: 18px; margin-right: 12px; margin-top: 2px; cursor: pointer; flex-shrink: 0;">
+          <span>
+            I agree to Fixxa's
+            <a href="/terms.html" target="_blank" style="color: #4a7c59; text-decoration: underline; font-weight: 600;">Terms of Service</a>,
+            <a href="/privacy.html" target="_blank" style="color: #4a7c59; text-decoration: underline; font-weight: 600;">Privacy Policy</a>,
+            and
+            <a href="/safety.html" target="_blank" style="color: #4a7c59; text-decoration: underline; font-weight: 600;">Safety Guidelines</a>.
+            I understand that my personal information will be processed in accordance with South Africa's Protection of Personal Information Act (POPIA).
+            <span style="color: #dc3545; font-weight: 600;">*</span>
+          </span>
+        </label>
+      </div>
+
       <!-- Beta Notice -->
       <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 1rem;">
         <p style="margin: 0; font-size: 13px; color: #856404;">
@@ -194,7 +211,7 @@ button:hover { background:#228b22; }
         </p>
       </div>
 
-      <button type="submit">Register</button>
+      <button type="submit" id="registerBtn">Register</button>
     </form>
 
     <button class="link-btn" onclick="window.location.href='login.html'">
@@ -265,16 +282,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const password = document.getElementById('registerPassword').value;
     const password2 = document.getElementById('registerPassword2').value;
     const safetyAccepted = document.getElementById('safetyCheckbox').checked;
+    const termsAccepted = document.getElementById('acceptTerms').checked;
     const speciality = specialityInput.value.trim();
 
     // Validation
     if (!type) return messageDiv.innerHTML = '<div class="message error">Please select account type.</div>';
-    if (!safetyAccepted) return messageDiv.innerHTML = '<div class="message error">You must accept the Safety Guidelines, Terms & Conditions, and Privacy Policy to register.</div>';
+    if (!safetyAccepted) return messageDiv.innerHTML = '<div class="message error">You must accept the Safety Guidelines to register.</div>';
+    if (!termsAccepted) return messageDiv.innerHTML = '<div class="message error">You must accept the Terms of Service, Privacy Policy, and Safety Guidelines to register.</div>';
     if (password !== password2) return messageDiv.innerHTML = '<div class="message error">Passwords do not match!</div>';
     if (type === 'professional' && !speciality) return messageDiv.innerHTML = '<div class="message error">Speciality is required for professionals.</div>';
 
     try {
-      const payload = { type, name, email, phone, city, password };
+      const payload = { type, name, email, phone, city, password, acceptTerms: termsAccepted };
       if (suburb) payload.suburb = suburb;
       if (type === 'professional') payload.speciality = speciality;
 
