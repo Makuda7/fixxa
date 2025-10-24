@@ -1,0 +1,271 @@
+<!-- POPIA Cookie Consent Banner -->
+<div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #2c3e50; color: white; padding: 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 10000; font-family: 'Outfit', Arial, sans-serif;">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+    <div style="flex: 1; min-width: 300px;">
+      <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #ffc107;">🍪 We Value Your Privacy</h3>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+        Fixxa uses essential cookies to provide our services and improve your experience.
+        We also use optional cookies for analytics and performance tracking.
+        By clicking "Accept All", you consent to our use of cookies in accordance with
+        South Africa's Protection of Personal Information Act (POPIA).
+      </p>
+      <p style="margin: 10px 0 0 0; font-size: 13px;">
+        <a href="/privacy.html" style="color: #ffc107; text-decoration: underline;" target="_blank">Privacy Policy</a> |
+        <a href="#" id="cookieSettingsLink" style="color: #ffc107; text-decoration: underline;">Customize Settings</a>
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button id="cookieAcceptAll" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; white-space: nowrap;">
+        ✓ Accept All
+      </button>
+      <button id="cookieAcceptEssential" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; white-space: nowrap;">
+        Essential Only
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Cookie Settings Modal -->
+<div id="cookieSettingsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10001; overflow-y: auto; font-family: 'Outfit', Arial, sans-serif;">
+  <div style="max-width: 700px; margin: 50px auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 style="margin: 0; color: #2c3e50; font-size: 24px;">Cookie Preferences</h2>
+      <button id="cookieModalClose" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+    </div>
+
+    <p style="color: #666; margin-bottom: 25px; line-height: 1.6;">
+      We use cookies to enhance your experience on Fixxa. You can choose which types of cookies to allow.
+      Note that blocking some types of cookies may impact your experience on our platform.
+    </p>
+
+    <!-- Essential Cookies -->
+    <div style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex: 1;">
+          <h3 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">
+            🔐 Essential Cookies <span style="background: #dc3545; color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">REQUIRED</span>
+          </h3>
+          <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">
+            These cookies are necessary for the website to function and cannot be switched off.
+            They include session management, authentication, and security features.
+          </p>
+        </div>
+        <div style="margin-left: 15px;">
+          <input type="checkbox" id="cookieEssential" checked disabled style="width: 20px; height: 20px; cursor: not-allowed;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics Cookies -->
+    <div style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex: 1;">
+          <h3 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">📊 Analytics Cookies</h3>
+          <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">
+            These cookies help us understand how visitors interact with our website, which pages are most visited,
+            and if there are any errors. All data is anonymous.
+          </p>
+        </div>
+        <div style="margin-left: 15px;">
+          <input type="checkbox" id="cookieAnalytics" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Cookies -->
+    <div style="border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex: 1;">
+          <h3 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">⚡ Performance Cookies</h3>
+          <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">
+            These cookies enhance the performance and functionality of our website, such as remembering your preferences
+            and providing faster load times.
+          </p>
+        </div>
+        <div style="margin-left: 15px;">
+          <input type="checkbox" id="cookiePerformance" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+      <p style="margin: 0; font-size: 13px; color: #0d47a1; line-height: 1.6;">
+        <strong>POPIA Compliance:</strong> Under South Africa's Protection of Personal Information Act (POPIA),
+        you have the right to know what data we collect and how it's used. Our Privacy Policy provides full details
+        on data processing, your rights, and how to exercise them.
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button id="cookieSavePreferences" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+        Save Preferences
+      </button>
+      <button id="cookieAcceptAllModal" style="background: #4a7c59; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+        Accept All Cookies
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const COOKIE_CONSENT_KEY = 'fixxa_cookie_consent';
+  const CONSENT_EXPIRY_DAYS = 365;
+
+  // Get cookie consent from localStorage
+  function getConsent() {
+    try {
+      const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+      return consent ? JSON.parse(consent) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Save cookie consent to localStorage
+  function saveConsent(consent) {
+    const consentData = {
+      ...consent,
+      timestamp: new Date().toISOString(),
+      version: '1.0'
+    };
+    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(consentData));
+
+    // Track consent in database if user is logged in
+    if (typeof fetch !== 'undefined') {
+      fetch('/api/cookie-consent', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(consentData)
+      }).catch(err => console.error('Failed to track cookie consent:', err));
+    }
+  }
+
+  // Show cookie banner
+  function showBanner() {
+    const banner = document.getElementById('cookieConsentBanner');
+    if (banner) {
+      banner.style.display = 'block';
+    }
+  }
+
+  // Hide cookie banner
+  function hideBanner() {
+    const banner = document.getElementById('cookieConsentBanner');
+    if (banner) {
+      banner.style.display = 'none';
+    }
+  }
+
+  // Show settings modal
+  function showModal() {
+    const modal = document.getElementById('cookieSettingsModal');
+    const consent = getConsent();
+
+    if (modal) {
+      // Pre-fill checkboxes based on current consent
+      if (consent) {
+        document.getElementById('cookieAnalytics').checked = consent.analytics || false;
+        document.getElementById('cookiePerformance').checked = consent.performance || false;
+      }
+      modal.style.display = 'block';
+    }
+  }
+
+  // Hide settings modal
+  function hideModal() {
+    const modal = document.getElementById('cookieSettingsModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  // Accept all cookies
+  function acceptAll() {
+    const consent = {
+      essential: true,
+      analytics: true,
+      performance: true
+    };
+    saveConsent(consent);
+    hideBanner();
+    hideModal();
+  }
+
+  // Accept essential only
+  function acceptEssential() {
+    const consent = {
+      essential: true,
+      analytics: false,
+      performance: false
+    };
+    saveConsent(consent);
+    hideBanner();
+    hideModal();
+  }
+
+  // Save custom preferences
+  function saveCustom() {
+    const consent = {
+      essential: true, // Always true
+      analytics: document.getElementById('cookieAnalytics').checked,
+      performance: document.getElementById('cookiePerformance').checked
+    };
+    saveConsent(consent);
+    hideModal();
+    hideBanner();
+  }
+
+  // Initialize on page load
+  function init() {
+    const consent = getConsent();
+
+    // Show banner if no consent recorded
+    if (!consent) {
+      // Wait a bit before showing banner (better UX)
+      setTimeout(showBanner, 1000);
+    }
+
+    // Attach event listeners
+    const acceptAllBtn = document.getElementById('cookieAcceptAll');
+    const acceptEssentialBtn = document.getElementById('cookieAcceptEssential');
+    const settingsLink = document.getElementById('cookieSettingsLink');
+    const modalClose = document.getElementById('cookieModalClose');
+    const savePreferencesBtn = document.getElementById('cookieSavePreferences');
+    const acceptAllModalBtn = document.getElementById('cookieAcceptAllModal');
+
+    if (acceptAllBtn) acceptAllBtn.addEventListener('click', acceptAll);
+    if (acceptEssentialBtn) acceptEssentialBtn.addEventListener('click', acceptEssential);
+    if (settingsLink) {
+      settingsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showModal();
+      });
+    }
+    if (modalClose) modalClose.addEventListener('click', hideModal);
+    if (savePreferencesBtn) savePreferencesBtn.addEventListener('click', saveCustom);
+    if (acceptAllModalBtn) acceptAllModalBtn.addEventListener('click', acceptAll);
+
+    // Close modal on background click
+    const modal = document.getElementById('cookieSettingsModal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          hideModal();
+        }
+      });
+    }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Expose global function to open settings
+  window.openCookieSettings = showModal;
+})();
+</script>

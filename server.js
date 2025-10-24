@@ -255,6 +255,7 @@ const certificationsRoutes = require('./routes/certifications')(pool, logger);
 const contactFeedbackRoutes = require('./routes/contact-feedback')(pool, logger, sendEmail, emailTemplates);
 const supportRoutes = require('./routes/support')(pool, logger, sendEmail);
 const notificationsRoutes = require('./routes/notifications')(pool, logger);
+const cookieConsentRoutes = require('./routes/cookieConsent')(pool, logger);
 
 // Mount routes
 app.use('/', authRoutes);
@@ -271,6 +272,7 @@ app.use('/certifications', certificationsRoutes);
 app.use('/', contactFeedbackRoutes);
 app.use('/', supportRoutes);
 app.use('/notifications', notificationsRoutes);
+app.use('/api', cookieConsentRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

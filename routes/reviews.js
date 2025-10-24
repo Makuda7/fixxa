@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { uploadLimiter, reviewLimiter } = require('../middleware/rateLimiter');
+const { moderateContent } = require('../utils/contentModeration');
 
 module.exports = (pool, logger, upload) => {
   const { requireAuth, clientOnly } = require('../middleware/auth');
@@ -283,6 +284,31 @@ module.exports = (pool, logger, upload) => {
         return res.status(400).json({ success: false, error: 'Review already exists for this booking' });
       }
 
+      // Moderate review text for profanity
+      let moderatedText = review_text || '';
+      let moderationFlag = null;
+
+      if (review_text && review_text.trim().length > 0) {
+        const moderation = moderateContent(review_text, 'review');
+
+        if (moderation.flaggedWords && moderation.flaggedWords.length > 0) {
+          moderatedText = moderation.cleanText;
+          moderationFlag = {
+            flagged: true,
+            reason: moderation.reason,
+            flaggedWords: moderation.flaggedWords,
+            originalText: review_text,
+            action: moderation.action
+          };
+
+          logger.warn('Review contains inappropriate language', {
+            clientId,
+            bookingId: booking_id,
+            flaggedWords: moderation.flaggedWords
+          });
+        }
+      }
+
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -303,7 +329,7 @@ module.exports = (pool, logger, upload) => {
           punctuality_rating || null,
           communication_rating || null,
           value_rating || null,
-          review_text || '',
+          moderatedText, // Use moderated text instead of original
           JSON.stringify(photos || [])
         ]);
 

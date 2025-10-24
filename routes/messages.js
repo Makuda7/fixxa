@@ -4,6 +4,7 @@ const multer = require('multer');
 const { sendMessageValidation } = require('../middleware/validation');
 const { messageLimiter, uploadLimiter } = require('../middleware/rateLimiter');
 const { cloudinary, messageImageStorage } = require('../config/cloudinary');
+const { moderateContent } = require('../utils/contentModeration');
 
 // Configure multer for message image uploads
 const messageImageUpload = multer({
@@ -60,8 +61,11 @@ module.exports = (pool, logger, io, helpers) => {
       return res.status(400).json({ success: false, error: 'Message or image required' });
     }
 
-    // Only check for contact info if there's a text message
+    // Check for contact info and profanity if there's a text message
+    let cleanMessage = message || '';
+
     if (message) {
+      // Check for contact information
       const filterResult = containsContactInfo(message);
       if (filterResult.blocked) {
         return res.status(400).json({
@@ -70,12 +74,28 @@ module.exports = (pool, logger, io, helpers) => {
           blockedReason: filterResult.reason
         });
       }
+
+      // Check for profanity - block messages with inappropriate language
+      const moderation = moderateContent(message, 'message');
+      if (!moderation.allowed) {
+        logger.warn('Message blocked due to profanity', {
+          clientId: req.session.user.id,
+          workerId,
+          flaggedWords: moderation.flaggedWords
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: moderation.reason,
+          flaggedWords: moderation.flaggedWords
+        });
+      }
     }
 
     try {
       const result = await pool.query(
         'INSERT INTO messages (client_id, professional_id, content, sender_type, image_url, cloudinary_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-        [req.session.user.id, workerId, message || '', 'client', imageUrl || null, cloudinaryId || null]
+        [req.session.user.id, workerId, cleanMessage, 'client', imageUrl || null, cloudinaryId || null]
       );
 
       if (io) {
@@ -102,8 +122,11 @@ module.exports = (pool, logger, io, helpers) => {
       return res.status(400).json({ success: false, error: 'Message or image required' });
     }
 
-    // Only check for contact info if there's a text message
+    // Check for contact info and profanity if there's a text message
+    let cleanMessage = message || '';
+
     if (message) {
+      // Check for contact information
       const filterResult = containsContactInfo(message);
       if (filterResult.blocked) {
         return res.status(400).json({
@@ -112,12 +135,28 @@ module.exports = (pool, logger, io, helpers) => {
           blockedReason: filterResult.reason
         });
       }
+
+      // Check for profanity - block messages with inappropriate language
+      const moderation = moderateContent(message, 'message');
+      if (!moderation.allowed) {
+        logger.warn('Worker message blocked due to profanity', {
+          workerId: req.session.user.id,
+          clientId,
+          flaggedWords: moderation.flaggedWords
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: moderation.reason,
+          flaggedWords: moderation.flaggedWords
+        });
+      }
     }
 
     try {
       const result = await pool.query(
         'INSERT INTO messages (client_id, professional_id, content, sender_type, image_url, cloudinary_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-        [clientId, req.session.user.id, message || '', 'professional', imageUrl || null, cloudinaryId || null]
+        [clientId, req.session.user.id, cleanMessage, 'professional', imageUrl || null, cloudinaryId || null]
       );
 
       if (io) {
