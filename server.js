@@ -31,23 +31,32 @@ const { pool, testConnection } = require('./config/database');
 console.log('Loading logger...');
 const logger = require('./config/logger');
 console.log('Configuration loaded successfully');
+console.log('Loading constants...');
 const {
   SALT_ROUNDS,
   SESSION_IDLE_TIMEOUT,
   SESSION_ABSOLUTE_TIMEOUT,
   SESSION_ROLLING
 } = require('./config/constants');
+console.log('Loading helpers...');
 const helpers = require('./utils/helpers');
+console.log('Loading email utilities...');
 const { sendEmail } = require('./utils/email');
+console.log('Loading error handler...');
 const { errorHandler } = require('./middleware/errorHandler');
+console.log('Loading email templates...');
 const emailTemplates = require('./templates/emails');
+console.log('Loading sanitize middleware...');
 const { sanitizeMiddleware } = require('./utils/sanitize');
+console.log('Loading rate limiter...');
 const { globalLimiter } = require('./middleware/rateLimiter');
 
+console.log('Loading PostgreSQL session store...');
 // PostgreSQL session store
 const pgSession = require('connect-pg-simple')(session);
 
 const PORT = process.env.PORT || 3000;
+console.log('All dependencies loaded successfully');
 
 // Security middleware with comprehensive CSP configuration
 // Content Security Policy (CSP) prevents XSS attacks by controlling which resources can load
