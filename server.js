@@ -26,8 +26,11 @@ const io = socketIo(server, {
 });
 
 // Configuration and utilities
+console.log('Loading database configuration...');
 const { pool, testConnection } = require('./config/database');
+console.log('Loading logger...');
 const logger = require('./config/logger');
+console.log('Configuration loaded successfully');
 const {
   SALT_ROUNDS,
   SESSION_IDLE_TIMEOUT,
