@@ -46,11 +46,77 @@ const pgSession = require('connect-pg-simple')(session);
 
 const PORT = process.env.PORT || 3000;
 
-// Security middleware - Disabled in development to avoid conflicts
+// Security middleware with comprehensive CSP configuration
+// Content Security Policy (CSP) prevents XSS attacks by controlling which resources can load
+const cspConfig = {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"], // Only allow resources from same origin by default
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'", // Required: Inline scripts in HTML files (e.g., onclick handlers)
+        "'unsafe-eval'", // Required: Socket.io and dynamic eval() usage
+        "https://cdn.socket.io", // Socket.io CDN (if used)
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'", // Required: Inline styles in HTML and style attributes
+        "https://fonts.googleapis.com", // Google Fonts
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com", // Google Fonts static content
+        "data:", // Data URLs for fonts
+      ],
+      imgSrc: [
+        "'self'",
+        "data:", // Base64 encoded images
+        "blob:", // Blob URLs for temporary images
+        "https://res.cloudinary.com", // Cloudinary CDN (image storage)
+        "https://*.cloudinary.com", // All Cloudinary subdomains
+      ],
+      connectSrc: [
+        "'self'",
+        "wss:", // WebSocket Secure (Socket.io in production)
+        "ws:", // WebSocket (Socket.io in development)
+        "https://res.cloudinary.com", // Cloudinary API calls
+        "https://api.cloudinary.com", // Cloudinary upload API
+      ],
+      mediaSrc: [
+        "'self'",
+        "https://res.cloudinary.com", // Video/audio from Cloudinary
+        "https://*.cloudinary.com",
+      ],
+      objectSrc: ["'none'"], // Block <object>, <embed>, <applet> (prevents Flash exploits)
+      frameSrc: ["'none'"], // Block iframes (prevents clickjacking)
+      baseUri: ["'self'"], // Restrict <base> tag to same origin
+      formAction: ["'self'"], // Forms can only submit to same origin
+      frameAncestors: ["'none'"], // Prevent being embedded in iframes (clickjacking protection)
+      upgradeInsecureRequests: [], // Upgrade HTTP to HTTPS automatically
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Disabled: Required for Cloudinary to work
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin resources (Cloudinary)
+  // Additional Helmet security headers enabled by default:
+  // - X-DNS-Prefetch-Control: Controls DNS prefetching
+  // - X-Frame-Options: DENY (prevents clickjacking)
+  // - X-Content-Type-Options: nosniff (prevents MIME sniffing)
+  // - X-Download-Options: noopen (prevents IE from executing downloads)
+  // - X-Permitted-Cross-Domain-Policies: none (blocks Adobe Flash/PDF cross-domain)
+  // - Referrer-Policy: no-referrer (protects user privacy)
+  // - Strict-Transport-Security: max-age=15552000 (forces HTTPS for 6 months)
+};
+
 if (process.env.NODE_ENV === 'production') {
+  app.use(helmet(cspConfig));
+} else {
+  // Development mode: Enable CSP but in report-only mode for testing
   app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
+    ...cspConfig,
+    contentSecurityPolicy: {
+      ...cspConfig.contentSecurityPolicy,
+      reportOnly: false, // Set to true to test without blocking
+    },
   }));
 }
 
