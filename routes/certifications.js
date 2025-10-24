@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { cloudinary, certificationStorage } = require('../config/cloudinary');
+const { cloudinary } = require('../config/cloudinary');
+const { scanFile } = require('../utils/virusScanner');
 
-// Configure multer for certification uploads with Cloudinary
+// Configure multer for certification uploads with MEMORY storage (for virus scanning)
+// We'll scan first, then upload to Cloudinary if clean
 const upload = multer({
-  storage: certificationStorage,
+  storage: multer.memoryStorage(), // Store in memory for virus scanning
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
@@ -33,11 +35,48 @@ module.exports = (pool, logger) => {
       }
 
       const workerId = req.session.user.id;
-      // Cloudinary URL
-      const fileUrl = req.file.path;
-      const cloudinaryId = req.file.filename;
       const fileName = req.file.originalname;
       const fileType = req.file.mimetype.startsWith('image/') ? 'image' : 'document';
+
+      // STEP 1: Virus scan the file BEFORE uploading to Cloudinary
+      logger.info('Scanning certification for viruses', { workerId, fileName });
+      const scanResult = await scanFile(req.file);
+
+      if (!scanResult.clean) {
+        logger.warn('VIRUS DETECTED in certification upload', {
+          workerId,
+          fileName,
+          viruses: scanResult.foundViruses
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: 'File failed security scan - malware detected. Please ensure your file is safe and try again.',
+          code: 'VIRUS_DETECTED'
+        });
+      }
+
+      logger.info('Certification passed virus scan', { workerId, fileName, scanResult: scanResult.scanResult });
+
+      // STEP 2: Upload to Cloudinary (file is clean)
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'fixxa/certifications',
+            resource_type: 'auto', // Automatically detect file type
+            public_id: `cert-${workerId}-${Date.now()}`,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const cloudinaryResult = await uploadPromise;
+      const fileUrl = cloudinaryResult.secure_url;
+      const cloudinaryId = cloudinaryResult.public_id;
 
       const result = await pool.query(
         'INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
