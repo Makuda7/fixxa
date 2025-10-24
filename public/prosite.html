@@ -347,7 +347,10 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 <header class="header">
 <div class="logo"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo"></div>
 <button id="sidebarToggle">☰</button>
-<nav class="nav-links">
+<nav class="nav-links" style="display:flex; align-items:center; gap:1rem;">
+<div id="headerProfilePic" style="width:40px; height:40px; border-radius:50%; background:#f0f0f0; overflow:hidden; border:2px solid white; display:flex; align-items:center; justify-content:center;">
+  <span style="font-size:1.5rem; color:#999;">👤</span>
+</div>
 <a href="#">Notifications</a>
 <a href="settings.html">Settings</a>
 <a href="#" id="logoutBtn" style="color:#ffdddd;">Logout</a>
@@ -494,6 +497,45 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
       <label for="speciality">Profession / Speciality *</label>
       <input type="text" id="speciality" name="speciality" placeholder="e.g., Plumber, Electrician, Carpenter" required>
       <small style="color:#666; font-size:0.85rem;">What type of work do you specialize in?</small>
+    </div>
+
+    <!-- Profile Picture Section -->
+    <h4 style="color:forestgreen; margin:1.5rem 0 1rem 0; border-bottom:2px solid #eee; padding-bottom:0.5rem;">📸 Profile Picture (Required for Verification)</h4>
+    <div style="background:#e3f2fd; border-left:4px solid #2196F3; padding:1.5rem; border-radius:6px; margin-bottom:1rem;">
+      <h5 style="margin:0 0 0.75rem 0; color:#1565C0;">⚠️ Why We Need Your Profile Picture</h5>
+      <ul style="margin:0 0 1rem 0; padding-left:1.5rem; color:#1565C0; line-height:1.8;">
+        <li><strong>Identity Verification:</strong> Your profile picture must match the photo on your ID or Passport</li>
+        <li><strong>Client Trust:</strong> Clients can see your face before booking, building confidence in your services</li>
+        <li><strong>Safety & Security:</strong> Helps verify you are the same person as on your ID documents</li>
+        <li><strong>Professional Appearance:</strong> A clear photo shows professionalism and increases booking rates</li>
+      </ul>
+      <p style="margin:0; color:#1565C0; font-size:0.9rem;">
+        <strong>📋 Requirements:</strong> Clear, recent photo showing your face clearly. Same person as on your ID/Passport. Professional attire recommended.
+      </p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:1.5rem; align-items:start; margin-bottom:1rem;">
+      <!-- Current Profile Picture Display -->
+      <div style="text-align:center;">
+        <div id="profilePicturePreview" style="width:150px; height:150px; border-radius:50%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; overflow:hidden; border:3px solid #ddd; margin-bottom:0.5rem;">
+          <span style="font-size:3rem; color:#999;">👤</span>
+        </div>
+        <small style="color:#666; font-size:0.85rem;">Current Photo</small>
+      </div>
+
+      <!-- Upload Controls -->
+      <div>
+        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Upload Profile Picture *</label>
+        <input type="file" id="profilePictureInput" accept="image/jpeg,image/jpg,image/png" style="display:none;">
+        <button type="button" id="uploadProfilePictureBtn" style="background:#2196F3; color:white; border:none; padding:0.7rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600; margin-bottom:0.5rem;">
+          📷 Choose Photo
+        </button>
+        <div id="profilePictureStatus" style="display:none; padding:0.7rem; border-radius:6px; margin-top:0.5rem;"></div>
+        <small style="display:block; color:#666; font-size:0.85rem; margin-top:0.5rem;">
+          Maximum size: 5MB | Formats: JPG, PNG<br>
+          Tip: Use a clear headshot with good lighting
+        </small>
+      </div>
     </div>
 
     <!-- Identification Section -->
@@ -1415,6 +1457,84 @@ function showPortfolioStatus(message, type) {
   }, 5000);
 }
 
+// Profile Picture Upload Handlers
+document.getElementById('uploadProfilePictureBtn').addEventListener('click', () => {
+  document.getElementById('profilePictureInput').click();
+});
+
+document.getElementById('profilePictureInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Validate file size (5MB max)
+  if (file.size > 5 * 1024 * 1024) {
+    showProfilePictureStatus('Image must be less than 5MB', 'error');
+    e.target.value = '';
+    return;
+  }
+
+  // Validate file type
+  if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+    showProfilePictureStatus('Only JPG and PNG images are allowed', 'error');
+    e.target.value = '';
+    return;
+  }
+
+  showProfilePictureStatus('Uploading profile picture...', 'success');
+
+  const formData = new FormData();
+  formData.append('profilePicture', file);
+
+  try {
+    const res = await fetch('/workers/upload-profile-picture', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showProfilePictureStatus('Profile picture uploaded successfully!', 'success');
+
+      // Update preview
+      const preview = document.getElementById('profilePicturePreview');
+      preview.innerHTML = `<img src="${data.profile_picture}" alt="Profile" style="width:100%; height:100%; object-fit:cover;">`;
+
+      // Update header profile picture
+      const headerPic = document.getElementById('headerProfilePic');
+      headerPic.innerHTML = `<img src="${data.profile_picture}" alt="Profile" style="width:100%; height:100%; object-fit:cover;">`;
+
+      e.target.value = '';
+    } else {
+      showProfilePictureStatus(data.error || 'Upload failed', 'error');
+    }
+  } catch (error) {
+    console.error('Profile picture upload error:', error);
+    showProfilePictureStatus('Error uploading profile picture', 'error');
+  }
+});
+
+function showProfilePictureStatus(message, type) {
+  const status = document.getElementById('profilePictureStatus');
+  status.textContent = message;
+  status.style.display = 'block';
+
+  if (type === 'success') {
+    status.style.background = '#d4edda';
+    status.style.color = '#155724';
+    status.style.border = '1px solid #c3e6cb';
+  } else {
+    status.style.background = '#f8d7da';
+    status.style.color = '#721c24';
+    status.style.border = '1px solid #f5c6cb';
+  }
+
+  setTimeout(() => {
+    status.style.display = 'none';
+  }, 5000);
+}
+
 // Portfolio Upload Click Handler
 document.getElementById('portfolioUploadArea').addEventListener('click', () => {
   document.getElementById('portfolioFile').click();
@@ -1568,6 +1688,16 @@ async function loadWorkerProfile() {
       // Professional Information
       document.getElementById('bio').value = data.worker.bio || '';
       document.getElementById('experience').value = data.worker.experience || '';
+
+      // Profile Picture
+      if (data.worker.profile_picture) {
+        const preview = document.getElementById('profilePicturePreview');
+        preview.innerHTML = `<img src="${data.worker.profile_picture}" alt="Profile" style="width:100%; height:100%; object-fit:cover;">`;
+
+        // Update header profile picture
+        const headerPic = document.getElementById('headerProfilePic');
+        headerPic.innerHTML = `<img src="${data.worker.profile_picture}" alt="Profile" style="width:100%; height:100%; object-fit:cover;">`;
+      }
 
       // Identification Information
       if (data.worker.id_type && data.worker.id_number) {

@@ -377,6 +377,22 @@ async function runEmergencyContactsMigration() {
   }
 }
 
+// Auto-run migration for profile picture
+async function runProfilePictureMigration() {
+  try {
+    console.log('🔄 Running profile picture migration...');
+
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(500)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS profile_picture_cloudinary_id VARCHAR(255)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS profile_picture_uploaded_at TIMESTAMP`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_workers_with_picture ON workers(profile_picture) WHERE profile_picture IS NOT NULL`);
+
+    console.log('✅ Profile picture migration completed');
+  } catch (error) {
+    console.log('⚠️  Profile picture migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for message images
 async function runMessageImagesMigration() {
   try {
@@ -421,6 +437,7 @@ async function startServer() {
     await runPhoneNumbersMigration();
     await runIdentificationMigration();
     await runEmergencyContactsMigration();
+    await runProfilePictureMigration();
     await runMessageImagesMigration();
     console.log('✅ All migrations complete');
 
