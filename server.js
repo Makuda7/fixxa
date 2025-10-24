@@ -26,39 +26,25 @@ const io = socketIo(server, {
 });
 
 // Configuration and utilities
-console.log('Loading database configuration...');
 const { pool, testConnection } = require('./config/database');
-console.log('Loading logger...');
 const logger = require('./config/logger');
-console.log('Configuration loaded successfully');
-console.log('Loading constants...');
 const {
   SALT_ROUNDS,
   SESSION_IDLE_TIMEOUT,
   SESSION_ABSOLUTE_TIMEOUT,
   SESSION_ROLLING
 } = require('./config/constants');
-console.log('Loading helpers...');
 const helpers = require('./utils/helpers');
-console.log('Loading email utilities...');
 const { sendEmail } = require('./utils/email');
-console.log('Loading error handler...');
 const { errorHandler } = require('./middleware/errorHandler');
-console.log('Loading email templates...');
 const emailTemplates = require('./templates/emails');
-console.log('Loading sanitize middleware...');
 const { sanitizeMiddleware } = require('./utils/sanitize');
-console.log('Loading rate limiter...');
 const { globalLimiter } = require('./middleware/rateLimiter');
 
-console.log('Loading PostgreSQL session store...');
 // PostgreSQL session store
 const pgSession = require('connect-pg-simple')(session);
 
 const PORT = process.env.PORT || 3000;
-console.log('All dependencies loaded successfully');
-
-console.log('Configuring security middleware...');
 // Security middleware with comprehensive CSP configuration
 // Content Security Policy (CSP) prevents XSS attacks by controlling which resources can load
 const cspConfig = {
@@ -132,35 +118,25 @@ if (process.env.NODE_ENV === 'production') {
     },
   }));
 }
-console.log('Security middleware configured');
 
-console.log('Configuring CORS...');
 // CORS configuration
 app.use(cors({
   origin: process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'http://localhost:3000'),
   credentials: true
 }));
 
-console.log('CORS configured');
-
 // Trust proxy for Railway/production environments
 app.set('trust proxy', 1);
-console.log('Proxy configured');
 
 // Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-console.log('Body parser configured');
 
 // Rate limiting - Prevent abuse and DDoS attacks
 app.use(globalLimiter);
-console.log('Rate limiter configured');
 
 // XSS Protection - Sanitize all user input
 app.use(sanitizeMiddleware());
-console.log('XSS protection configured');
-
-console.log('Configuring session store...');
 // Session configuration with PostgreSQL store
 app.use(session({
   store: new pgSession({
@@ -180,19 +156,14 @@ app.use(session({
     sameSite: 'lax'
   }
 }));
-console.log('Session store configured');
 
-console.log('Configuring static files...');
 // Static files
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
-console.log('Static files configured');
 
-console.log('Loading Cloudinary configuration...');
 // File upload configurations
 // Use Cloudinary storage (imported from config/cloudinary.js)
 const { cloudinary, profilePicStorage: cloudinaryProfilePicStorage, } = require('./config/cloudinary');
-console.log('Cloudinary loaded');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 // Review photo storage (Cloudinary)
@@ -236,9 +207,7 @@ const reviewPhotoUpload = multer({
     }
   }
 });
-console.log('File upload middleware configured');
 
-console.log('Setting up health check endpoint...');
 // Health check endpoint with graceful degradation
 app.get('/health', async (req, res) => {
   const health = {
@@ -268,74 +237,25 @@ app.get('/health', async (req, res) => {
   const statusCode = health.status === 'healthy' ? 200 : 503;
   res.status(statusCode).json(health);
 });
-console.log('Health check endpoint ready');
 
 // Import routes with correct parameters
-console.log('Loading routes...');
-console.log('Loading auth routes...');
 const authRoutes = require('./routes/auth')(pool, logger, sendEmail, emailTemplates, helpers);
-console.log('Auth routes loaded');
-
-console.log('Loading bookings routes...');
 const bookingsRoutes = require('./routes/bookings')(pool, logger, sendEmail, emailTemplates, io, helpers);
-console.log('Bookings routes loaded');
-
-console.log('Loading messages routes...');
 const messagesRoutes = require('./routes/messages')(pool, logger, io, helpers);
-console.log('Messages routes loaded');
-
-console.log('Loading workers routes...');
 const workersRoutes = require('./routes/workers')(pool, logger, helpers);
-console.log('Workers routes loaded');
-
-console.log('Loading reviews routes...');
 const reviewsRoutes = require('./routes/reviews')(pool, logger, reviewPhotoUpload);
-console.log('Reviews routes loaded');
-
-console.log('Loading settings routes...');
 const settingsRoutes = require('./routes/settings')(pool, logger, bcrypt, profilePicUpload, SALT_ROUNDS);
-console.log('Settings routes loaded');
-
-console.log('Loading admin routes...');
 const adminRoutes = require('./routes/admin')(pool, logger, helpers);
-console.log('Admin routes loaded');
-
-console.log('Loading completion routes...');
 const completionRoutes = require('./routes/completion')(pool, logger, sendEmail, emailTemplates, io);
-console.log('Completion routes loaded');
-
-console.log('Loading worker requests routes...');
 const workerRequestsRoutes = require('./routes/worker-requests')(pool, logger, sendEmail, emailTemplates, io);
-console.log('Worker requests routes loaded');
-
-console.log('Loading search routes...');
 const searchRoutes = require('./routes/search')(pool, logger);
-console.log('Search routes loaded');
-
-console.log('Loading certifications routes...');
 const certificationsRoutes = require('./routes/certifications')(pool, logger);
-console.log('Certifications routes loaded');
-
-console.log('Loading contact/feedback routes...');
 const contactFeedbackRoutes = require('./routes/contact-feedback')(pool, logger, sendEmail, emailTemplates);
-console.log('Contact/feedback routes loaded');
-
-console.log('Loading support routes...');
 const supportRoutes = require('./routes/support')(pool, logger, sendEmail);
-console.log('Support routes loaded');
-
-console.log('Loading notifications routes...');
 const notificationsRoutes = require('./routes/notifications')(pool, logger);
-console.log('Notifications routes loaded');
-
-console.log('Loading cookie consent routes...');
 const cookieConsentRoutes = require('./routes/cookieConsent')(pool, logger);
-console.log('Cookie consent routes loaded');
-
-console.log('All routes loaded successfully');
 
 // Mount routes
-console.log('Mounting routes...');
 app.use('/', authRoutes);
 app.use('/bookings', bookingsRoutes);
 app.use('/messages', messagesRoutes);
