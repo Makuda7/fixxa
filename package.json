@@ -15,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bad-words": "^4.0.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
     "connect-pg-simple": "^10.0.0",
@@ -29,6 +28,7 @@
     "express-session": "^1.18.2",
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
+    "leo-profanity": "^1.8.0",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^3.0.3",

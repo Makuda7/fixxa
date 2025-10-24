@@ -1,15 +1,12 @@
-const Filter = require('bad-words');
+const filter = require('leo-profanity');
 const logger = require('../config/logger');
-
-// Initialize profanity filter
-const filter = new Filter();
 
 // Add custom South African inappropriate words/slang
 const customWords = [
   // Add any region-specific inappropriate words here
   // Example: 'poes', 'doos', 'naai', etc.
 ];
-filter.addWords(...customWords);
+filter.add(customWords);
 
 /**
  * Check if content contains profanity or inappropriate language
@@ -22,12 +19,12 @@ function checkProfanity(text) {
   }
 
   try {
-    const isProfane = filter.isProfane(text);
+    const isProfane = filter.check(text);
     const cleanText = filter.clean(text);
 
     // Find which words were flagged
     const words = text.toLowerCase().split(/\s+/);
-    const flaggedWords = words.filter(word => filter.isProfane(word));
+    const flaggedWords = words.filter(word => filter.check(word));
 
     return {
       isProfane,
