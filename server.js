@@ -275,20 +275,63 @@ console.log('Loading routes...');
 console.log('Loading auth routes...');
 const authRoutes = require('./routes/auth')(pool, logger, sendEmail, emailTemplates, helpers);
 console.log('Auth routes loaded');
+
+console.log('Loading bookings routes...');
 const bookingsRoutes = require('./routes/bookings')(pool, logger, sendEmail, emailTemplates, io, helpers);
+console.log('Bookings routes loaded');
+
+console.log('Loading messages routes...');
 const messagesRoutes = require('./routes/messages')(pool, logger, io, helpers);
+console.log('Messages routes loaded');
+
+console.log('Loading workers routes...');
 const workersRoutes = require('./routes/workers')(pool, logger, helpers);
+console.log('Workers routes loaded');
+
+console.log('Loading reviews routes...');
 const reviewsRoutes = require('./routes/reviews')(pool, logger, reviewPhotoUpload);
+console.log('Reviews routes loaded');
+
+console.log('Loading settings routes...');
 const settingsRoutes = require('./routes/settings')(pool, logger, bcrypt, profilePicUpload, SALT_ROUNDS);
+console.log('Settings routes loaded');
+
+console.log('Loading admin routes...');
 const adminRoutes = require('./routes/admin')(pool, logger, helpers);
+console.log('Admin routes loaded');
+
+console.log('Loading completion routes...');
 const completionRoutes = require('./routes/completion')(pool, logger, sendEmail, emailTemplates, io);
+console.log('Completion routes loaded');
+
+console.log('Loading worker requests routes...');
 const workerRequestsRoutes = require('./routes/worker-requests')(pool, logger, sendEmail, emailTemplates, io);
+console.log('Worker requests routes loaded');
+
+console.log('Loading search routes...');
 const searchRoutes = require('./routes/search')(pool, logger);
+console.log('Search routes loaded');
+
+console.log('Loading certifications routes...');
 const certificationsRoutes = require('./routes/certifications')(pool, logger);
+console.log('Certifications routes loaded');
+
+console.log('Loading contact/feedback routes...');
 const contactFeedbackRoutes = require('./routes/contact-feedback')(pool, logger, sendEmail, emailTemplates);
+console.log('Contact/feedback routes loaded');
+
+console.log('Loading support routes...');
 const supportRoutes = require('./routes/support')(pool, logger, sendEmail);
+console.log('Support routes loaded');
+
+console.log('Loading notifications routes...');
 const notificationsRoutes = require('./routes/notifications')(pool, logger);
+console.log('Notifications routes loaded');
+
+console.log('Loading cookie consent routes...');
 const cookieConsentRoutes = require('./routes/cookieConsent')(pool, logger);
+console.log('Cookie consent routes loaded');
+
 console.log('All routes loaded successfully');
 
 // Mount routes
