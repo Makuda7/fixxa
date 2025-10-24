@@ -490,6 +490,40 @@ async function runMessageImagesMigration() {
   }
 }
 
+// Auto-run migration for virus scan logs
+async function runVirusScanLogsMigration() {
+  try {
+    console.log('🔄 Running virus scan logs migration...');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS virus_scan_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        user_type VARCHAR(20),
+        file_name VARCHAR(255),
+        file_type VARCHAR(50),
+        file_size INTEGER,
+        scan_result VARCHAR(30),
+        viruses_found JSONB,
+        action_taken VARCHAR(20),
+        cloudinary_url TEXT,
+        cloudinary_id VARCHAR(255),
+        scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_virus_scans_user ON virus_scan_logs(user_id, user_type)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_virus_scans_result ON virus_scan_logs(scan_result)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_virus_scans_action ON virus_scan_logs(action_taken)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_virus_scans_date ON virus_scan_logs(scanned_at DESC)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_virus_scans_type ON virus_scan_logs(file_type)`);
+
+    console.log('✅ Virus scan logs migration completed');
+  } catch (error) {
+    console.log('⚠️  Virus scan logs migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Initialize reminder scheduler
 const ReminderScheduler = require('./services/reminderScheduler');
 let reminderScheduler = null;
@@ -512,6 +546,7 @@ async function startServer() {
     await runProfilePictureMigration();
     await runTermsAcceptanceMigration();
     await runMessageImagesMigration();
+    await runVirusScanLogsMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler

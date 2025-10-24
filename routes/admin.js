@@ -844,5 +844,112 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get virus scan logs (admin only)
+  router.get('/virus-scans', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { page = 1, limit = 50, filter = 'all' } = req.query;
+      const offset = (page - 1) * limit;
+
+      let whereClause = '';
+      if (filter === 'infected') {
+        whereClause = "WHERE scan_result = 'INFECTED'";
+      } else if (filter === 'failed') {
+        whereClause = "WHERE scan_result LIKE '%FAILED%' OR scan_result LIKE '%ERROR%'";
+      } else if (filter === 'clean') {
+        whereClause = "WHERE scan_result = 'CLEAN'";
+      }
+
+      const result = await pool.query(`
+        SELECT
+          vsl.*,
+          COALESCE(u.name, w.name) as user_name,
+          COALESCE(u.email, w.email) as user_email
+        FROM virus_scan_logs vsl
+        LEFT JOIN users u ON vsl.user_id = u.id AND vsl.user_type = 'client'
+        LEFT JOIN workers w ON vsl.user_id = w.id AND vsl.user_type = 'professional'
+        ${whereClause}
+        ORDER BY vsl.scanned_at DESC
+        LIMIT $1 OFFSET $2
+      `, [limit, offset]);
+
+      // Get total count
+      const countResult = await pool.query(`
+        SELECT COUNT(*) as total FROM virus_scan_logs ${whereClause}
+      `);
+
+      const total = parseInt(countResult.rows[0].total);
+
+      res.json({
+        success: true,
+        scans: result.rows,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to fetch virus scan logs', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch scan logs' });
+    }
+  });
+
+  // Get virus scan statistics (admin only)
+  router.get('/virus-scans/stats', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const stats = await pool.query(`
+        SELECT
+          COUNT(*) as total_scans,
+          COUNT(*) FILTER (WHERE scan_result = 'CLEAN') as clean_count,
+          COUNT(*) FILTER (WHERE scan_result = 'INFECTED') as infected_count,
+          COUNT(*) FILTER (WHERE scan_result LIKE '%FAILED%' OR scan_result LIKE '%ERROR%') as failed_count,
+          COUNT(*) FILTER (WHERE action_taken = 'blocked') as blocked_count,
+          COUNT(*) FILTER (WHERE file_type = 'certification') as certification_scans,
+          COUNT(*) FILTER (WHERE file_type = 'profile_pic') as profile_pic_scans,
+          COUNT(*) FILTER (WHERE file_type = 'review_photo') as review_photo_scans,
+          COUNT(*) FILTER (WHERE file_type = 'message_image') as message_image_scans,
+          COUNT(*) FILTER (WHERE scanned_at >= NOW() - INTERVAL '24 hours') as last_24h,
+          COUNT(*) FILTER (WHERE scanned_at >= NOW() - INTERVAL '7 days') as last_7d,
+          COUNT(*) FILTER (WHERE scanned_at >= NOW() - INTERVAL '30 days') as last_30d
+        FROM virus_scan_logs
+      `);
+
+      res.json({
+        success: true,
+        stats: stats.rows[0]
+      });
+    } catch (error) {
+      logger.error('Failed to fetch virus scan stats', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch stats' });
+    }
+  });
+
+  // Get recent virus detections (admin only)
+  router.get('/virus-scans/recent-threats', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+          vsl.*,
+          COALESCE(u.name, w.name) as user_name,
+          COALESCE(u.email, w.email) as user_email
+        FROM virus_scan_logs vsl
+        LEFT JOIN users u ON vsl.user_id = u.id AND vsl.user_type = 'client'
+        LEFT JOIN workers w ON vsl.user_id = w.id AND vsl.user_type = 'professional'
+        WHERE vsl.scan_result = 'INFECTED'
+        ORDER BY vsl.scanned_at DESC
+        LIMIT 20
+      `);
+
+      res.json({
+        success: true,
+        threats: result.rows
+      });
+    } catch (error) {
+      logger.error('Failed to fetch recent threats', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch threats' });
+    }
+  });
+
   return router;
 };

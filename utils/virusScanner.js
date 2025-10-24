@@ -1,6 +1,7 @@
 const CloudmersiveVirusApiClient = require('cloudmersive-virus-api-client');
 const logger = require('../config/logger');
 const fs = require('fs');
+const { pool } = require('../config/database');
 
 // Configure API client
 const defaultClient = CloudmersiveVirusApiClient.ApiClient.instance;
@@ -8,6 +9,38 @@ const Apikey = defaultClient.authentications['Apikey'];
 Apikey.apiKey = process.env.CLOUDMERSIVE_API_KEY;
 
 const apiInstance = new CloudmersiveVirusApiClient.ScanApi();
+
+/**
+ * Log virus scan to database for audit trail
+ * @param {Object} data - Scan data to log
+ */
+async function logScanToDatabase(data) {
+  try {
+    await pool.query(
+      `INSERT INTO virus_scan_logs
+       (user_id, user_type, file_name, file_type, file_size, scan_result, viruses_found, action_taken, cloudinary_url, cloudinary_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        data.userId || null,
+        data.userType || null,
+        data.fileName || null,
+        data.fileType || null,
+        data.fileSize || null,
+        data.scanResult || null,
+        data.virusesFound ? JSON.stringify(data.virusesFound) : null,
+        data.actionTaken || null,
+        data.cloudinaryUrl || null,
+        data.cloudinaryId || null
+      ]
+    );
+  } catch (error) {
+    // Don't fail the upload if logging fails
+    logger.error('Failed to log virus scan to database', {
+      error: error.message,
+      data
+    });
+  }
+}
 
 /**
  * Scan a file for viruses and malware
@@ -230,5 +263,6 @@ async function scanUrl(url) {
 module.exports = {
   scanFile,
   scanUrl,
-  virusScanMiddleware
+  virusScanMiddleware,
+  logScanToDatabase
 };
