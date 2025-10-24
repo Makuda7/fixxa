@@ -317,6 +317,46 @@ async function runPhoneNumbersMigration() {
   }
 }
 
+// Auto-run migration for ID/Passport identification fields
+async function runIdentificationMigration() {
+  try {
+    console.log('🔄 Running identification fields migration...');
+
+    // Add identification columns to workers table
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_type VARCHAR(20)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_number VARCHAR(50)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_submitted_at TIMESTAMP`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_verified BOOLEAN DEFAULT false`);
+
+    // Create ID change logs table for audit trail
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS id_change_logs (
+        id SERIAL PRIMARY KEY,
+        worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
+        old_id_type VARCHAR(20),
+        old_id_number VARCHAR(50),
+        new_id_type VARCHAR(20),
+        new_id_number VARCHAR(50),
+        change_reason TEXT,
+        requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        admin_reviewed BOOLEAN DEFAULT false,
+        admin_approved BOOLEAN DEFAULT false,
+        admin_notes TEXT,
+        reviewed_at TIMESTAMP
+      )
+    `);
+
+    // Add indexes
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_workers_id_number ON workers(id_number) WHERE id_number IS NOT NULL`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_id_change_logs_worker ON id_change_logs(worker_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_id_change_logs_pending ON id_change_logs(admin_reviewed) WHERE admin_reviewed = false`);
+
+    console.log('✅ Identification fields migration completed');
+  } catch (error) {
+    console.log('⚠️  Identification migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for message images
 async function runMessageImagesMigration() {
   try {
@@ -359,6 +399,7 @@ async function startServer() {
     console.log('📦 Running migrations...');
     await runNotificationsMigration();
     await runPhoneNumbersMigration();
+    await runIdentificationMigration();
     await runMessageImagesMigration();
     console.log('✅ All migrations complete');
 

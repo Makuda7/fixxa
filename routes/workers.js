@@ -281,12 +281,27 @@ module.exports = (pool, logger, helpers) => {
         postal_code,
         service_radius,
         bio,
-        experience
+        experience,
+        id_type,
+        id_number
       } = req.body;
 
       // Validate required fields
       if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
         return res.status(400).json({ success: false, error: 'All required fields must be filled' });
+      }
+
+      // Validate ID/Passport number
+      if (!id_type || !id_number) {
+        return res.status(400).json({ success: false, error: 'ID Type and ID/Passport Number are required' });
+      }
+
+      // Validate ID format
+      if (id_type === 'id_number' && !/^[0-9]{13}$/.test(id_number)) {
+        return res.status(400).json({ success: false, error: 'SA ID number must be exactly 13 digits' });
+      }
+      if (id_type === 'passport' && !/^[A-Z0-9]{6,20}$/i.test(id_number)) {
+        return res.status(400).json({ success: false, error: 'Passport number must be 6-20 alphanumeric characters' });
       }
 
       // Validate phone number format
@@ -299,19 +314,48 @@ module.exports = (pool, logger, helpers) => {
         return res.status(400).json({ success: false, error: 'Service radius must be between 5 and 200 km' });
       }
 
-      const result = await pool.query(
-        `UPDATE workers
+      // Check if ID is already set - if so, only admin can change it via ID change log
+      const existingWorker = await pool.query(
+        'SELECT id_type, id_number FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      let updateQuery;
+      let updateValues;
+
+      if (existingWorker.rows[0]?.id_number && existingWorker.rows[0].id_number !== id_number) {
+        // ID number exists and is being changed - this should go through change request system
+        return res.status(400).json({
+          success: false,
+          error: 'ID number already set. Use "Request ID Change" to modify it.'
+        });
+      } else if (!existingWorker.rows[0]?.id_number) {
+        // First time setting ID - include id_submitted_at
+        updateQuery = `UPDATE workers
+         SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
+             address = $6, area = $7, postal_code = $8, service_radius = $9,
+             bio = $10, experience = $11, id_type = $12, id_number = $13, id_submitted_at = CURRENT_TIMESTAMP
+         WHERE id = $14
+         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, workerId];
+      } else {
+        // ID unchanged, just update profile
+        updateQuery = `UPDATE workers
          SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
              address = $6, area = $7, postal_code = $8, service_radius = $9,
              bio = $10, experience = $11
          WHERE id = $12
-         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience`,
-        [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId]
-      );
+         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId];
+      }
+
+      const result = await pool.query(updateQuery, updateValues);
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
+
+      logger.info('Worker profile updated', { workerId, id_type_set: !!result.rows[0].id_number });
 
       res.json({
         success: true,
@@ -340,12 +384,27 @@ module.exports = (pool, logger, helpers) => {
         postal_code,
         service_radius,
         bio,
-        experience
+        experience,
+        id_type,
+        id_number
       } = req.body;
 
       // Validate required fields
       if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
         return res.status(400).json({ success: false, error: 'All required fields must be filled' });
+      }
+
+      // Validate ID/Passport number
+      if (!id_type || !id_number) {
+        return res.status(400).json({ success: false, error: 'ID Type and ID/Passport Number are required' });
+      }
+
+      // Validate ID format
+      if (id_type === 'id_number' && !/^[0-9]{13}$/.test(id_number)) {
+        return res.status(400).json({ success: false, error: 'SA ID number must be exactly 13 digits' });
+      }
+      if (id_type === 'passport' && !/^[A-Z0-9]{6,20}$/i.test(id_number)) {
+        return res.status(400).json({ success: false, error: 'Passport number must be 6-20 alphanumeric characters' });
       }
 
       // Validate phone number format
@@ -358,19 +417,48 @@ module.exports = (pool, logger, helpers) => {
         return res.status(400).json({ success: false, error: 'Service radius must be between 5 and 200 km' });
       }
 
-      const result = await pool.query(
-        `UPDATE workers
+      // Check if ID is already set
+      const existingWorker = await pool.query(
+        'SELECT id_type, id_number FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      let updateQuery;
+      let updateValues;
+
+      if (existingWorker.rows[0]?.id_number && existingWorker.rows[0].id_number !== id_number) {
+        // ID number exists and is being changed
+        return res.status(400).json({
+          success: false,
+          error: 'ID number already set. Use "Request ID Change" to modify it.'
+        });
+      } else if (!existingWorker.rows[0]?.id_number) {
+        // First time setting ID
+        updateQuery = `UPDATE workers
+         SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
+             address = $6, area = $7, postal_code = $8, service_radius = $9,
+             bio = $10, experience = $11, id_type = $12, id_number = $13, id_submitted_at = CURRENT_TIMESTAMP
+         WHERE id = $14
+         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, workerId];
+      } else {
+        // ID unchanged
+        updateQuery = `UPDATE workers
          SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
              address = $6, area = $7, postal_code = $8, service_radius = $9,
              bio = $10, experience = $11
          WHERE id = $12
-         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience`,
-        [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId]
-      );
+         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId];
+      }
+
+      const result = await pool.query(updateQuery, updateValues);
 
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
+
+      logger.info('Worker profile updated', { workerId, id_type_set: !!result.rows[0].id_number });
 
       res.json({
         success: true,
@@ -391,7 +479,8 @@ module.exports = (pool, logger, helpers) => {
 
       const result = await pool.query(
         `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
-                bio, experience, area, service_radius, approval_status, is_verified
+                bio, experience, area, service_radius, approval_status, is_verified,
+                id_type, id_number, id_verified, id_submitted_at
          FROM workers WHERE id = $1`,
         [workerId]
       );
@@ -739,6 +828,88 @@ module.exports = (pool, logger, helpers) => {
       logger.error('Get worker certifications error', { error: error.message });
       console.error('Get worker certifications error:', error);
       res.status(500).json({ success: false, error: 'Failed to fetch certifications' });
+    }
+  });
+
+  // Request ID number change (requires admin approval)
+  router.post('/request-id-change', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const { new_id_type, new_id_number, reason } = req.body;
+
+      if (!new_id_type || !new_id_number || !reason) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID type, ID number, and reason are required'
+        });
+      }
+
+      // Validate new ID format
+      if (new_id_type === 'id_number' && !/^[0-9]{13}$/.test(new_id_number)) {
+        return res.status(400).json({
+          success: false,
+          error: 'SA ID number must be exactly 13 digits'
+        });
+      }
+      if (new_id_type === 'passport' && !/^[A-Z0-9]{6,20}$/i.test(new_id_number)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Passport number must be 6-20 alphanumeric characters'
+        });
+      }
+
+      // Get current ID information
+      const currentWorker = await pool.query(
+        'SELECT id_type, id_number FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      if (!currentWorker.rows[0]?.id_number) {
+        return res.status(400).json({
+          success: false,
+          error: 'No ID number set yet. Please set it through profile update.'
+        });
+      }
+
+      const old_id_type = currentWorker.rows[0].id_type;
+      const old_id_number = currentWorker.rows[0].id_number;
+
+      // Check if there's already a pending change request
+      const pendingRequest = await pool.query(
+        'SELECT id FROM id_change_logs WHERE worker_id = $1 AND admin_reviewed = false',
+        [workerId]
+      );
+
+      if (pendingRequest.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'You already have a pending ID change request. Please wait for admin review.'
+        });
+      }
+
+      // Create change request log
+      await pool.query(
+        `INSERT INTO id_change_logs
+         (worker_id, old_id_type, old_id_number, new_id_type, new_id_number, change_reason)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [workerId, old_id_type, old_id_number, new_id_type, new_id_number, reason]
+      );
+
+      logger.info('ID change request submitted', {
+        workerId,
+        old_id_type,
+        new_id_type,
+        reason: reason.substring(0, 50)
+      });
+
+      res.json({
+        success: true,
+        message: 'ID change request submitted successfully. Admin will review your request.'
+      });
+    } catch (error) {
+      logger.error('Request ID change error', { error: error.message });
+      console.error('Request ID change error:', error);
+      res.status(500).json({ success: false, error: 'Failed to submit ID change request' });
     }
   });
 

@@ -496,6 +496,56 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
       <small style="color:#666; font-size:0.85rem;">What type of work do you specialize in?</small>
     </div>
 
+    <!-- Identification Section -->
+    <h4 style="color:forestgreen; margin:1.5rem 0 1rem 0; border-bottom:2px solid #eee; padding-bottom:0.5rem;">🪪 Identification (Required for Verification)</h4>
+    <div style="background:#fffbea; border-left:4px solid #ffc107; padding:1rem; border-radius:6px; margin-bottom:1rem;">
+      <p style="margin:0; font-size:0.9rem; color:#856404;">
+        <strong>⚠️ Important:</strong> Your ID/Passport number is required for admin verification and document correspondence.
+        This information is <strong>strictly confidential</strong> and will never be shared with clients.
+        Changes to this field require admin approval for security purposes.
+      </p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+      <div>
+        <label for="idType">ID Type *</label>
+        <select id="idType" name="id_type" required>
+          <option value="">Select Type</option>
+          <option value="id_number">SA ID Number</option>
+          <option value="passport">Passport</option>
+        </select>
+      </div>
+      <div>
+        <label for="idNumber">ID / Passport Number *</label>
+        <input type="text" id="idNumber" name="id_number" placeholder="Enter your ID or Passport number" required maxlength="50">
+        <small style="color:#666; font-size:0.85rem;" id="idNumberHelp">Enter 13-digit SA ID or passport number</small>
+      </div>
+    </div>
+
+    <!-- ID Status Display -->
+    <div id="idStatus" style="display:none; padding:0.75rem; border-radius:6px; margin-top:0.75rem;">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+        <span id="idStatusIcon"></span>
+        <strong id="idStatusText"></strong>
+      </div>
+      <p id="idStatusMessage" style="margin:0; font-size:0.9rem; color:#666;"></p>
+    </div>
+
+    <!-- Change ID Request Section (hidden by default) -->
+    <div id="changeIdSection" style="display:none; background:#f8d7da; border-left:4px solid #dc3545; padding:1rem; border-radius:6px; margin-top:1rem;">
+      <h5 style="color:#721c24; margin:0 0 0.5rem 0;">Request ID Number Change</h5>
+      <p style="margin:0 0 0.75rem 0; font-size:0.9rem; color:#721c24;">
+        Your ID number is already set. To change it, please provide a reason for admin review.
+      </p>
+      <textarea id="idChangeReason" placeholder="Explain why you need to change your ID number..." rows="3" style="width:100%; padding:0.7rem; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;"></textarea>
+      <button type="button" id="requestIdChangeBtn" style="margin-top:0.5rem; background:#dc3545; color:white; border:none; padding:0.7rem 1.2rem; border-radius:6px; cursor:pointer; font-weight:600;">
+        Submit Change Request
+      </button>
+      <button type="button" id="cancelIdChangeBtn" style="margin-top:0.5rem; background:#6c757d; color:white; border:none; padding:0.7rem 1.2rem; border-radius:6px; cursor:pointer; font-weight:600; margin-left:0.5rem;">
+        Cancel
+      </button>
+    </div>
+
     <!-- Location Information -->
     <h4 style="color:forestgreen; margin:1.5rem 0 1rem 0; border-bottom:2px solid #eee; padding-bottom:0.5rem;">📍 Location & Service Area</h4>
 
@@ -1440,12 +1490,25 @@ async function loadWorkerProfile() {
       document.getElementById('bio').value = data.worker.bio || '';
       document.getElementById('experience').value = data.worker.experience || '';
 
+      // Identification Information
+      if (data.worker.id_type && data.worker.id_number) {
+        document.getElementById('idType').value = data.worker.id_type || '';
+        document.getElementById('idNumber').value = data.worker.id_number || '';
+        document.getElementById('idNumber').setAttribute('readonly', 'readonly');
+        document.getElementById('idType').setAttribute('disabled', 'disabled');
+
+        // Show ID status and change request button
+        showIdStatus(data.worker.id_verified, data.worker.id_submitted_at);
+      }
+
       console.log('Profile form populated with:', {
         name: data.worker.name,
         speciality: data.worker.speciality,
         bio: data.worker.bio,
         experience: data.worker.experience,
-        area: data.worker.area
+        area: data.worker.area,
+        id_type: data.worker.id_type,
+        id_verified: data.worker.id_verified
       }); // Debug log
 
       isVerified = data.worker.is_verified || false;
@@ -1652,6 +1715,72 @@ function showProfileMessage(message, type) {
   setTimeout(() => {
     msgDiv.style.display = 'none';
   }, 5000);
+}
+
+// ID/Passport Number Management Functions
+function showIdStatus(isVerified, submittedAt) {
+  const statusDiv = document.getElementById('idStatus');
+  const statusIcon = document.getElementById('idStatusIcon');
+  const statusText = document.getElementById('idStatusText');
+  const statusMessage = document.getElementById('idStatusMessage');
+
+  statusDiv.style.display = 'block';
+
+  if (isVerified) {
+    statusDiv.style.background = '#d4edda';
+    statusDiv.style.border = '1px solid #c3e6cb';
+    statusIcon.textContent = '✅';
+    statusText.textContent = 'ID Verified';
+    statusText.style.color = '#155724';
+    statusMessage.textContent = 'Your identification has been verified by admin.';
+    statusMessage.style.color = '#155724';
+  } else if (submittedAt) {
+    statusDiv.style.background = '#fff3cd';
+    statusDiv.style.border = '1px solid #ffeaa7';
+    statusIcon.textContent = '⏳';
+    statusText.textContent = 'Pending Verification';
+    statusText.style.color = '#856404';
+    statusMessage.textContent = 'Your ID has been submitted and is awaiting admin verification.';
+    statusMessage.style.color = '#856404';
+  }
+
+  // Show change request button for submitted IDs
+  const changeBtn = document.createElement('button');
+  changeBtn.textContent = 'Request ID Change';
+  changeBtn.type = 'button';
+  changeBtn.style.cssText = 'margin-top:0.5rem; background:#6c757d; color:white; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem;';
+  changeBtn.onclick = showChangeIdSection;
+
+  if (!statusDiv.querySelector('button')) {
+    statusDiv.appendChild(changeBtn);
+  }
+}
+
+function showChangeIdSection() {
+  document.getElementById('changeIdSection').style.display = 'block';
+  document.getElementById('idNumber').removeAttribute('readonly');
+  document.getElementById('idType').removeAttribute('disabled');
+}
+
+function hideChangeIdSection() {
+  document.getElementById('changeIdSection').style.display = 'none';
+  document.getElementById('idNumber').setAttribute('readonly', 'readonly');
+  document.getElementById('idType').setAttribute('disabled', 'disabled');
+}
+
+function validateIdNumber(idType, idNumber) {
+  if (idType === 'id_number') {
+    // SA ID must be 13 digits
+    if (!/^[0-9]{13}$/.test(idNumber)) {
+      return { valid: false, message: 'South African ID number must be exactly 13 digits' };
+    }
+  } else if (idType === 'passport') {
+    // Passport: alphanumeric, 6-20 characters
+    if (!/^[A-Z0-9]{6,20}$/i.test(idNumber)) {
+      return { valid: false, message: 'Passport number must be 6-20 alphanumeric characters' };
+    }
+  }
+  return { valid: true };
 }
 
 // Rate Management Functions
@@ -2162,11 +2291,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bio = document.getElementById('bio').value.trim();
     const experience = document.getElementById('experience').value.trim();
 
-    console.log('Submitting profile with data:', { name, speciality, area, bio, experience }); // Debug log
+    // Identification Information
+    const id_type = document.getElementById('idType').value;
+    const id_number = document.getElementById('idNumber').value.trim();
+
+    console.log('Submitting profile with data:', { name, speciality, area, bio, experience, id_type }); // Debug log
 
     // Validate required fields
     if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
       showProfileMessage('Please fill in all required fields (marked with *)', 'error');
+      return;
+    }
+
+    // Validate ID/Passport number
+    if (!id_type || !id_number) {
+      showProfileMessage('ID Type and ID/Passport Number are required for verification', 'error');
+      return;
+    }
+
+    const idValidation = validateIdNumber(id_type, id_number);
+    if (!idValidation.valid) {
+      showProfileMessage(idValidation.message, 'error');
       return;
     }
 
@@ -2198,7 +2343,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           postal_code,
           service_radius,
           bio,
-          experience
+          experience,
+          id_type,
+          id_number
         })
       });
 
@@ -2438,6 +2585,55 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Failed to check registration status:', err);
     }
   }
+
+  // ID Change Request Handlers
+  document.getElementById('requestIdChangeBtn').addEventListener('click', async () => {
+    const reason = document.getElementById('idChangeReason').value.trim();
+    const newIdType = document.getElementById('idType').value;
+    const newIdNumber = document.getElementById('idNumber').value.trim();
+
+    if (!reason) {
+      showProfileMessage('Please provide a reason for changing your ID number', 'error');
+      return;
+    }
+
+    const idValidation = validateIdNumber(newIdType, newIdNumber);
+    if (!idValidation.valid) {
+      showProfileMessage(idValidation.message, 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/workers/request-id-change', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          new_id_type: newIdType,
+          new_id_number: newIdNumber,
+          reason: reason
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showProfileMessage('ID change request submitted for admin review', 'success');
+        hideChangeIdSection();
+        document.getElementById('idChangeReason').value = '';
+      } else {
+        showProfileMessage(data.error || 'Failed to submit ID change request', 'error');
+      }
+    } catch (error) {
+      console.error('ID change request error:', error);
+      showProfileMessage('Error submitting ID change request', 'error');
+    }
+  });
+
+  document.getElementById('cancelIdChangeBtn').addEventListener('click', () => {
+    hideChangeIdSection();
+    document.getElementById('idChangeReason').value = '';
+    loadWorkerProfile(); // Reload to restore original ID values
+  });
 
   // Initial load
   console.log('Loading initial data...');
