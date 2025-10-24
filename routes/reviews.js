@@ -341,6 +341,43 @@ module.exports = (pool, logger, upload) => {
           newRating: roundedRating,
           reviewCount: reviewCount
         });
+
+        // Send email notification to worker about the new review
+        const workerResult = await pool.query(
+          'SELECT name, email FROM workers WHERE id = $1',
+          [workerId]
+        );
+
+        const clientResult = await pool.query(
+          'SELECT name FROM users WHERE id = $1',
+          [clientId]
+        );
+
+        if (workerResult.rows.length > 0 && clientResult.rows.length > 0) {
+          const { sendEmail } = require('../utils/email');
+          const { createReviewReceivedEmail } = require('../templates/emails');
+
+          const worker = workerResult.rows[0];
+          const client = clientResult.rows[0];
+          const bookingDate = bookingCheck.rows[0].booking_date;
+
+          const emailContent = createReviewReceivedEmail(
+            worker.name,
+            client.name,
+            overall_rating,
+            review_text || '',
+            bookingDate
+          );
+
+          await sendEmail(worker.email, emailContent.subject, emailContent.html).catch(err => {
+            logger.error('Failed to send review notification email', {
+              error: err.message,
+              workerEmail: worker.email
+            });
+            // Don't fail the review submission if email fails
+          });
+        }
+
         res.json({ success: true, review: result.rows[0] });
       } catch (err) {
         await client.query('ROLLBACK');

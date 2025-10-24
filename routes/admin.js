@@ -658,8 +658,18 @@ module.exports = (pool, logger, helpers) => {
         isVerified: hasApprovedCerts
       });
 
-      // TODO: Send approval email to worker
-      // await sendEmail(worker.email, 'Welcome to Fixxa!', approvalEmailHtml);
+      // Send approval email to worker
+      const { sendEmail } = require('../utils/email');
+      const { createWorkerApprovedEmail } = require('../templates/emails');
+
+      const emailContent = createWorkerApprovedEmail(worker.name, worker.email);
+      await sendEmail(worker.email, emailContent.subject, emailContent.html).catch(err => {
+        logger.error('Failed to send worker approval email', {
+          error: err.message,
+          workerEmail: worker.email
+        });
+        // Don't fail the approval if email fails
+      });
 
       const verificationMessage = hasApprovedCerts
         ? ' and verified with approved certifications'
@@ -720,8 +730,18 @@ module.exports = (pool, logger, helpers) => {
         reason
       });
 
-      // TODO: Send rejection email to worker
-      // await sendEmail(worker.email, 'Application Update', rejectionEmailHtml);
+      // Send rejection email to worker
+      const { sendEmail } = require('../utils/email');
+      const { createWorkerRejectedEmail } = require('../templates/emails');
+
+      const emailContent = createWorkerRejectedEmail(worker.name, reason);
+      await sendEmail(worker.email, emailContent.subject, emailContent.html).catch(err => {
+        logger.error('Failed to send worker rejection email', {
+          error: err.message,
+          workerEmail: worker.email
+        });
+        // Don't fail the rejection if email fails
+      });
 
       res.json({
         success: true,

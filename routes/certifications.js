@@ -168,9 +168,9 @@ module.exports = (pool, logger) => {
       const certificationId = req.params.certificationId;
       const adminEmail = req.session.user.email;
 
-      // Update certification status
+      // Update certification status and get certificate details
       const certResult = await pool.query(
-        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id',
+        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id, file_name',
         ['approved', adminEmail, certificationId]
       );
 
@@ -179,6 +179,13 @@ module.exports = (pool, logger) => {
       }
 
       const workerId = certResult.rows[0].worker_id;
+      const fileName = certResult.rows[0].file_name;
+
+      // Get worker details for email
+      const workerResult = await pool.query(
+        'SELECT name, email FROM workers WHERE id = $1',
+        [workerId]
+      );
 
       // Check if worker has any approved certifications
       const approvedCount = await pool.query(
@@ -186,8 +193,10 @@ module.exports = (pool, logger) => {
         [workerId, 'approved']
       );
 
+      const isVerified = parseInt(approvedCount.rows[0].count) >= 1;
+
       // If this is their first approved certification, mark worker as verified
-      if (parseInt(approvedCount.rows[0].count) >= 1) {
+      if (isVerified) {
         await pool.query(
           'UPDATE workers SET is_verified = true, verification_date = NOW() WHERE id = $1',
           [workerId]
@@ -196,10 +205,26 @@ module.exports = (pool, logger) => {
 
       logger.info('Certification approved', { certificationId, workerId, adminEmail });
 
+      // Send approval email to worker
+      if (workerResult.rows.length > 0) {
+        const { sendEmail } = require('../utils/email');
+        const { createCertificateApprovedEmail } = require('../templates/emails');
+
+        const worker = workerResult.rows[0];
+        const emailContent = createCertificateApprovedEmail(worker.name, fileName, isVerified);
+        await sendEmail(worker.email, emailContent.subject, emailContent.html).catch(err => {
+          logger.error('Failed to send certificate approval email', {
+            error: err.message,
+            workerEmail: worker.email
+          });
+          // Don't fail the approval if email fails
+        });
+      }
+
       res.json({
         success: true,
         message: 'Certification approved successfully',
-        workerVerified: parseInt(approvedCount.rows[0].count) >= 1
+        workerVerified: isVerified
       });
     } catch (error) {
       logger.error('Approve certification error', { error: error.message, stack: error.stack });
@@ -215,7 +240,7 @@ module.exports = (pool, logger) => {
       const { reason } = req.body;
 
       const result = await pool.query(
-        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING *',
+        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id, file_name',
         ['rejected', adminEmail, certificationId]
       );
 
@@ -223,7 +248,32 @@ module.exports = (pool, logger) => {
         return res.status(404).json({ success: false, error: 'Certification not found' });
       }
 
+      const workerId = result.rows[0].worker_id;
+      const fileName = result.rows[0].file_name;
+
+      // Get worker details for email
+      const workerResult = await pool.query(
+        'SELECT name, email FROM workers WHERE id = $1',
+        [workerId]
+      );
+
       logger.info('Certification rejected', { certificationId, adminEmail, reason });
+
+      // Send rejection email to worker
+      if (workerResult.rows.length > 0) {
+        const { sendEmail } = require('../utils/email');
+        const { createCertificateRejectedEmail } = require('../templates/emails');
+
+        const worker = workerResult.rows[0];
+        const emailContent = createCertificateRejectedEmail(worker.name, fileName, reason);
+        await sendEmail(worker.email, emailContent.subject, emailContent.html).catch(err => {
+          logger.error('Failed to send certificate rejection email', {
+            error: err.message,
+            workerEmail: worker.email
+          });
+          // Don't fail the rejection if email fails
+        });
+      }
 
       res.json({
         success: true,
