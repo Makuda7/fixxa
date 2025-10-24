@@ -3,12 +3,13 @@ const router = express.Router();
 const multer = require('multer');
 const { sendMessageValidation } = require('../middleware/validation');
 const { messageLimiter, uploadLimiter } = require('../middleware/rateLimiter');
-const { cloudinary, messageImageStorage } = require('../config/cloudinary');
+const { cloudinary } = require('../config/cloudinary');
 const { moderateContent } = require('../utils/contentModeration');
+const { scanFile } = require('../utils/virusScanner');
 
-// Configure multer for message image uploads
+// Configure multer for message image uploads - memory storage for virus scanning
 const messageImageUpload = multer({
-  storage: messageImageStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|webp/;
@@ -32,12 +33,55 @@ module.exports = (pool, logger, io, helpers) => {
         return res.status(400).json({ success: false, error: 'No image uploaded' });
       }
 
-      const imageUrl = req.file.path;
-      const cloudinaryId = req.file.filename;
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+      const fileName = req.file.originalname;
 
-      logger.info('Message image uploaded', {
-        userId: req.session.user.id,
-        userType: req.session.user.type,
+      // STEP 1: Virus scan the file BEFORE uploading to Cloudinary
+      logger.info('Scanning message image for viruses', { userId, userType, fileName });
+      const scanResult = await scanFile(req.file);
+
+      if (!scanResult.clean) {
+        logger.warn('VIRUS DETECTED in message image upload', {
+          userId,
+          userType,
+          fileName,
+          viruses: scanResult.foundViruses
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: 'File failed security scan - malware detected. Please ensure your image is safe and try again.',
+          code: 'VIRUS_DETECTED'
+        });
+      }
+
+      logger.info('Message image passed virus scan', { userId, userType, fileName, scanResult: scanResult.scanResult });
+
+      // STEP 2: Upload to Cloudinary (file is clean)
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'fixxa/message-images',
+            resource_type: 'image',
+            transformation: [{ width: 1000, height: 1000, crop: 'limit', quality: 'auto' }],
+            public_id: `message-${userId}-${Date.now()}`,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const cloudinaryResult = await uploadPromise;
+      const imageUrl = cloudinaryResult.secure_url;
+      const cloudinaryId = cloudinaryResult.public_id;
+
+      logger.info('Message image uploaded successfully', {
+        userId,
+        userType,
         cloudinaryId
       });
 

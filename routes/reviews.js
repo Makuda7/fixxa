@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { uploadLimiter, reviewLimiter } = require('../middleware/rateLimiter');
 const { moderateContent } = require('../utils/contentModeration');
+const { scanFile } = require('../utils/virusScanner');
+const { cloudinary } = require('../config/cloudinary');
 
 module.exports = (pool, logger, upload) => {
   const { requireAuth, clientOnly } = require('../middleware/auth');
@@ -118,9 +120,49 @@ module.exports = (pool, logger, upload) => {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
 
-      // Cloudinary URL is in req.file.path
-      const fileUrl = req.file.path;
-      const cloudinaryId = req.file.filename;
+      const userId = req.session.user.id;
+      const fileName = req.file.originalname;
+
+      // STEP 1: Virus scan the file BEFORE uploading to Cloudinary
+      logger.info('Scanning review photo for viruses', { userId, fileName });
+      const scanResult = await scanFile(req.file);
+
+      if (!scanResult.clean) {
+        logger.warn('VIRUS DETECTED in review photo upload', {
+          userId,
+          fileName,
+          viruses: scanResult.foundViruses
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: 'File failed security scan - malware detected. Please ensure your image is safe and try again.',
+          code: 'VIRUS_DETECTED'
+        });
+      }
+
+      logger.info('Review photo passed virus scan', { userId, fileName, scanResult: scanResult.scanResult });
+
+      // STEP 2: Upload to Cloudinary (file is clean)
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'fixxa/review-photos',
+            resource_type: 'image',
+            transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto' }],
+            public_id: `review-${userId}-${Date.now()}`,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const cloudinaryResult = await uploadPromise;
+      const fileUrl = cloudinaryResult.secure_url;
+      const cloudinaryId = cloudinaryResult.public_id;
 
       res.json({
         success: true,
@@ -147,6 +189,8 @@ module.exports = (pool, logger, upload) => {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
 
+      const fileName = req.file.originalname;
+
       // Verify review belongs to this client and get existing photos
       const reviewCheck = await pool.query(
         'SELECT photos FROM reviews WHERE id = $1 AND client_id = $2',
@@ -157,6 +201,47 @@ module.exports = (pool, logger, upload) => {
         return res.status(403).json({ success: false, error: 'Review not found or unauthorized' });
       }
 
+      // STEP 1: Virus scan the file BEFORE uploading to Cloudinary
+      logger.info('Scanning review photo for viruses', { clientId, reviewId, fileName });
+      const scanResult = await scanFile(req.file);
+
+      if (!scanResult.clean) {
+        logger.warn('VIRUS DETECTED in review photo upload', {
+          clientId,
+          reviewId,
+          fileName,
+          viruses: scanResult.foundViruses
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: 'File failed security scan - malware detected. Please ensure your image is safe and try again.',
+          code: 'VIRUS_DETECTED'
+        });
+      }
+
+      logger.info('Review photo passed virus scan', { clientId, reviewId, fileName, scanResult: scanResult.scanResult });
+
+      // STEP 2: Upload to Cloudinary (file is clean)
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'fixxa/review-photos',
+            resource_type: 'image',
+            transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto' }],
+            public_id: `review-${clientId}-${Date.now()}`,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const cloudinaryResult = await uploadPromise;
+      const fileUrl = cloudinaryResult.secure_url;
+
       // Parse existing photos
       let existingPhotos = [];
       try {
@@ -166,8 +251,7 @@ module.exports = (pool, logger, upload) => {
         console.error('Error parsing existing photos:', e);
       }
 
-      // Add new photo (Cloudinary URL)
-      const fileUrl = req.file.path;
+      // Add new photo
       existingPhotos.push(fileUrl);
 
       // Update review with new photos array
@@ -176,8 +260,8 @@ module.exports = (pool, logger, upload) => {
         [JSON.stringify(existingPhotos), reviewId]
       );
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         url: fileUrl,
         allPhotos: existingPhotos
       });

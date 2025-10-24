@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { uploadLimiter } = require('../middleware/rateLimiter');
+const { scanFile } = require('../utils/virusScanner');
+const { cloudinary } = require('../config/cloudinary');
 
 module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
@@ -50,10 +52,49 @@ module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
 
       const userId = req.session.user.id;
       const userType = req.session.user.type;
+      const fileName = req.file.originalname;
 
-      // Cloudinary URL is in req.file.path
-      const fileUrl = req.file.path;
-      const cloudinaryId = req.file.filename;
+      // STEP 1: Virus scan the file BEFORE uploading to Cloudinary
+      logger.info('Scanning profile picture for viruses', { userId, userType, fileName });
+      const scanResult = await scanFile(req.file);
+
+      if (!scanResult.clean) {
+        logger.warn('VIRUS DETECTED in profile picture upload', {
+          userId,
+          userType,
+          fileName,
+          viruses: scanResult.foundViruses
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: 'File failed security scan - malware detected. Please ensure your image is safe and try again.',
+          code: 'VIRUS_DETECTED'
+        });
+      }
+
+      logger.info('Profile picture passed virus scan', { userId, userType, fileName, scanResult: scanResult.scanResult });
+
+      // STEP 2: Upload to Cloudinary (file is clean)
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'fixxa/profile-pics',
+            resource_type: 'image',
+            transformation: [{ width: 500, height: 500, crop: 'fill', gravity: 'face', quality: 'auto' }],
+            public_id: `profile-${userType}-${userId}-${Date.now()}`,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const cloudinaryResult = await uploadPromise;
+      const fileUrl = cloudinaryResult.secure_url;
+      const cloudinaryId = cloudinaryResult.public_id;
 
       const table = userType === 'professional' ? 'workers' : 'users';
 
@@ -65,6 +106,8 @@ module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
       // Update session with new profile picture
       req.session.user.profilePic = fileUrl;
       req.session.user.image = fileUrl;
+
+      logger.info('Profile picture updated successfully', { userId, userType, cloudinaryId });
 
       res.json({
         success: true,

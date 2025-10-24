@@ -162,28 +162,12 @@ app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
 // File upload configurations
-// Use Cloudinary storage (imported from config/cloudinary.js)
-const { cloudinary, profilePicStorage: cloudinaryProfilePicStorage, } = require('./config/cloudinary');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+// Use MEMORY storage for virus scanning, then upload to Cloudinary if clean
+const { cloudinary } = require('./config/cloudinary');
 
-// Review photo storage (Cloudinary)
-const reviewPhotoStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'fixxa/review-photos',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto' }],
-    public_id: (req, file) => {
-      const userId = req.session?.user?.id || 'unknown';
-      return `review-${userId}-${Date.now()}`;
-    }
-  }
-});
-
-const profilePicStorage = cloudinaryProfilePicStorage;
-
+// Profile picture upload - memory storage for virus scanning
 const profilePicUpload = multer({
-  storage: profilePicStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -195,8 +179,9 @@ const profilePicUpload = multer({
   }
 });
 
+// Review photo upload - memory storage for virus scanning
 const reviewPhotoUpload = multer({
-  storage: reviewPhotoStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
