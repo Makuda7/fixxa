@@ -283,12 +283,33 @@ module.exports = (pool, logger, helpers) => {
         bio,
         experience,
         id_type,
-        id_number
+        id_number,
+        emergency_name_1,
+        emergency_relationship_1,
+        emergency_phone_1,
+        emergency_email_1,
+        emergency_name_2,
+        emergency_relationship_2,
+        emergency_phone_2,
+        emergency_email_2
       } = req.body;
 
       // Validate required fields
       if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
         return res.status(400).json({ success: false, error: 'All required fields must be filled' });
+      }
+
+      // Validate emergency contact 1 (required)
+      if (!emergency_name_1 || !emergency_relationship_1 || !emergency_phone_1) {
+        return res.status(400).json({ success: false, error: 'Emergency Contact 1 is required' });
+      }
+
+      // Validate emergency phone formats
+      if (emergency_phone_1 && !/^[0-9]{10}$/.test(emergency_phone_1)) {
+        return res.status(400).json({ success: false, error: 'Emergency Contact 1 phone must be 10 digits' });
+      }
+      if (emergency_phone_2 && !/^[0-9]{10}$/.test(emergency_phone_2)) {
+        return res.status(400).json({ success: false, error: 'Emergency Contact 2 phone must be 10 digits' });
       }
 
       // Validate ID/Passport number
@@ -334,19 +355,27 @@ module.exports = (pool, logger, helpers) => {
         updateQuery = `UPDATE workers
          SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
              address = $6, area = $7, postal_code = $8, service_radius = $9,
-             bio = $10, experience = $11, id_type = $12, id_number = $13, id_submitted_at = CURRENT_TIMESTAMP
-         WHERE id = $14
-         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
-        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, workerId];
+             bio = $10, experience = $11, id_type = $12, id_number = $13, id_submitted_at = CURRENT_TIMESTAMP,
+             emergency_name_1 = $14, emergency_relationship_1 = $15, emergency_phone_1 = $16, emergency_email_1 = $17,
+             emergency_name_2 = $18, emergency_relationship_2 = $19, emergency_phone_2 = $20, emergency_email_2 = $21
+         WHERE id = $22
+         RETURNING *`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number,
+                       emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
+                       emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2, workerId];
       } else {
         // ID unchanged, just update profile
         updateQuery = `UPDATE workers
          SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
              address = $6, area = $7, postal_code = $8, service_radius = $9,
-             bio = $10, experience = $11
-         WHERE id = $12
-         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
-        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId];
+             bio = $10, experience = $11,
+             emergency_name_1 = $12, emergency_relationship_1 = $13, emergency_phone_1 = $14, emergency_email_1 = $15,
+             emergency_name_2 = $16, emergency_relationship_2 = $17, emergency_phone_2 = $18, emergency_email_2 = $19
+         WHERE id = $20
+         RETURNING *`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience,
+                       emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
+                       emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2, workerId];
       }
 
       const result = await pool.query(updateQuery, updateValues);
@@ -386,12 +415,33 @@ module.exports = (pool, logger, helpers) => {
         bio,
         experience,
         id_type,
-        id_number
+        id_number,
+        emergency_name_1,
+        emergency_relationship_1,
+        emergency_phone_1,
+        emergency_email_1,
+        emergency_name_2,
+        emergency_relationship_2,
+        emergency_phone_2,
+        emergency_email_2
       } = req.body;
 
       // Validate required fields
       if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
         return res.status(400).json({ success: false, error: 'All required fields must be filled' });
+      }
+
+      // Validate emergency contact 1 (required)
+      if (!emergency_name_1 || !emergency_relationship_1 || !emergency_phone_1) {
+        return res.status(400).json({ success: false, error: 'Emergency Contact 1 is required' });
+      }
+
+      // Validate emergency phone formats
+      if (emergency_phone_1 && !/^[0-9]{10}$/.test(emergency_phone_1)) {
+        return res.status(400).json({ success: false, error: 'Emergency Contact 1 phone must be 10 digits' });
+      }
+      if (emergency_phone_2 && !/^[0-9]{10}$/.test(emergency_phone_2)) {
+        return res.status(400).json({ success: false, error: 'Emergency Contact 2 phone must be 10 digits' });
       }
 
       // Validate ID/Passport number
@@ -437,19 +487,27 @@ module.exports = (pool, logger, helpers) => {
         updateQuery = `UPDATE workers
          SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
              address = $6, area = $7, postal_code = $8, service_radius = $9,
-             bio = $10, experience = $11, id_type = $12, id_number = $13, id_submitted_at = CURRENT_TIMESTAMP
-         WHERE id = $14
-         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
-        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, workerId];
+             bio = $10, experience = $11, id_type = $12, id_number = $13, id_submitted_at = CURRENT_TIMESTAMP,
+             emergency_name_1 = $14, emergency_relationship_1 = $15, emergency_phone_1 = $16, emergency_email_1 = $17,
+             emergency_name_2 = $18, emergency_relationship_2 = $19, emergency_phone_2 = $20, emergency_email_2 = $21
+         WHERE id = $22
+         RETURNING *`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number,
+                       emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
+                       emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2, workerId];
       } else {
         // ID unchanged
         updateQuery = `UPDATE workers
          SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
              address = $6, area = $7, postal_code = $8, service_radius = $9,
-             bio = $10, experience = $11
-         WHERE id = $12
-         RETURNING id, name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number, id_verified, id_submitted_at`;
-        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, workerId];
+             bio = $10, experience = $11,
+             emergency_name_1 = $12, emergency_relationship_1 = $13, emergency_phone_1 = $14, emergency_email_1 = $15,
+             emergency_name_2 = $16, emergency_relationship_2 = $17, emergency_phone_2 = $18, emergency_email_2 = $19
+         WHERE id = $20
+         RETURNING *`;
+        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience,
+                       emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
+                       emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2, workerId];
       }
 
       const result = await pool.query(updateQuery, updateValues);

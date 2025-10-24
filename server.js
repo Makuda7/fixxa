@@ -357,6 +357,26 @@ async function runIdentificationMigration() {
   }
 }
 
+// Auto-run migration for emergency contacts
+async function runEmergencyContactsMigration() {
+  try {
+    console.log('🔄 Running emergency contacts migration...');
+
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_name_1 VARCHAR(100)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_relationship_1 VARCHAR(50)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_phone_1 VARCHAR(20)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_email_1 VARCHAR(255)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_name_2 VARCHAR(100)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_relationship_2 VARCHAR(50)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_phone_2 VARCHAR(20)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS emergency_email_2 VARCHAR(255)`);
+
+    console.log('✅ Emergency contacts migration completed');
+  } catch (error) {
+    console.log('⚠️  Emergency contacts migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for message images
 async function runMessageImagesMigration() {
   try {
@@ -400,6 +420,7 @@ async function startServer() {
     await runNotificationsMigration();
     await runPhoneNumbersMigration();
     await runIdentificationMigration();
+    await runEmergencyContactsMigration();
     await runMessageImagesMigration();
     console.log('✅ All migrations complete');
 

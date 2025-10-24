@@ -609,6 +609,78 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
       <small style="color:#666; font-size:0.85rem;">Share your professional background and expertise</small>
     </div>
 
+    <!-- Emergency Contacts Section -->
+    <h4 style="color:forestgreen; margin:1.5rem 0 1rem 0; border-bottom:2px solid #eee; padding-bottom:0.5rem;">🚨 Emergency Contacts</h4>
+    <div style="background:#fff3cd; border-left:4px solid #ffc107; padding:1rem; border-radius:6px; margin-bottom:1rem;">
+      <p style="margin:0; font-size:0.9rem; color:#856404;">
+        <strong>⚠️ Important:</strong> Provide at least one emergency contact. This information is <strong>confidential</strong> and will only be used by admin in case of emergencies.
+      </p>
+    </div>
+
+    <h5 style="color:#555; margin:1rem 0 0.75rem 0;">Emergency Contact 1 *</h5>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+      <div>
+        <label for="emergencyName1">Full Name *</label>
+        <input type="text" id="emergencyName1" name="emergency_name_1" placeholder="John Doe" required>
+      </div>
+      <div>
+        <label for="emergencyRelationship1">Relationship *</label>
+        <select id="emergencyRelationship1" name="emergency_relationship_1" required>
+          <option value="">Select Relationship</option>
+          <option value="Spouse">Spouse</option>
+          <option value="Parent">Parent</option>
+          <option value="Sibling">Sibling</option>
+          <option value="Child">Child</option>
+          <option value="Friend">Friend</option>
+          <option value="Colleague">Colleague</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div>
+        <label for="emergencyPhone1">Phone Number *</label>
+        <input type="tel" id="emergencyPhone1" name="emergency_phone_1" placeholder="0821234567" pattern="[0-9]{10}" required>
+        <small style="color:#666; font-size:0.85rem;">10-digit number</small>
+      </div>
+      <div>
+        <label for="emergencyEmail1">Email (Optional)</label>
+        <input type="email" id="emergencyEmail1" name="emergency_email_1" placeholder="emergency@example.com">
+      </div>
+    </div>
+
+    <h5 style="color:#555; margin:1.5rem 0 0.75rem 0;">Emergency Contact 2 (Optional)</h5>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+      <div>
+        <label for="emergencyName2">Full Name</label>
+        <input type="text" id="emergencyName2" name="emergency_name_2" placeholder="Jane Smith">
+      </div>
+      <div>
+        <label for="emergencyRelationship2">Relationship</label>
+        <select id="emergencyRelationship2" name="emergency_relationship_2">
+          <option value="">Select Relationship</option>
+          <option value="Spouse">Spouse</option>
+          <option value="Parent">Parent</option>
+          <option value="Sibling">Sibling</option>
+          <option value="Child">Child</option>
+          <option value="Friend">Friend</option>
+          <option value="Colleague">Colleague</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div>
+        <label for="emergencyPhone2">Phone Number</label>
+        <input type="tel" id="emergencyPhone2" name="emergency_phone_2" placeholder="0821234567" pattern="[0-9]{10}">
+        <small style="color:#666; font-size:0.85rem;">10-digit number</small>
+      </div>
+      <div>
+        <label for="emergencyEmail2">Email (Optional)</label>
+        <input type="email" id="emergencyEmail2" name="emergency_email_2" placeholder="emergency2@example.com">
+      </div>
+    </div>
+
     <div style="margin-top:1.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
       <button type="submit" style="background:forestgreen; color:white; border:none; padding:0.8rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600;">💾 Save All Changes</button>
     </div>
@@ -709,14 +781,21 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
       ⏳ Not Verified
     </span>
   </h3>
-  <p style="color:#666; margin-bottom:1rem;">
-    Upload your <strong>certified copy of ID document</strong>, professional certifications, licenses, or qualifications for admin review.
-    Once approved, you'll receive a verified badge on your profile!
-  </p>
+  <div style="background:#e8f5e9; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #28a745;">
+    <h4 style="margin:0 0 1rem 0; color:#155724;">📋 Required Documents for Verification</h4>
+    <p style="margin:0 0 0.75rem 0; color:#155724; font-size:0.95rem;">
+      Upload <strong>all</strong> of the following documents to receive your verified badge:
+    </p>
+    <ul style="margin:0; padding-left:1.5rem; color:#155724; line-height:1.8;">
+      <li><strong>Proof of Residence</strong> - Municipal bill, bank statement, or lease agreement (not older than 3 months)</li>
+      <li><strong>Certified ID or Passport</strong> - Certified copy stamped by commissioner of oaths, police station, or notary</li>
+      <li><strong>Proof of Qualifications</strong> - Trade certificates, diplomas, licenses, or professional certifications relevant to your service</li>
+    </ul>
+  </div>
 
   <div style="background:#fff3cd; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid #ffc107;">
     <p style="margin:0; font-size:0.9rem; color:#856404;">
-      <strong>⚠️ Important:</strong> Please upload a <strong>certified copy</strong> of your ID document (stamped by a commissioner of oaths, police station, or notary). Regular photocopies will not be accepted.
+      <strong>⚠️ Important:</strong> Upload each document separately. Regular photocopies will not be accepted - ID/Passport must be certified. Once all documents are approved, you'll receive your verified badge!
     </p>
   </div>
 
@@ -1500,6 +1579,16 @@ async function loadWorkerProfile() {
         // Show ID status and change request button
         showIdStatus(data.worker.id_verified, data.worker.id_submitted_at);
       }
+
+      // Emergency Contacts
+      document.getElementById('emergencyName1').value = data.worker.emergency_name_1 || '';
+      document.getElementById('emergencyRelationship1').value = data.worker.emergency_relationship_1 || '';
+      document.getElementById('emergencyPhone1').value = data.worker.emergency_phone_1 || '';
+      document.getElementById('emergencyEmail1').value = data.worker.emergency_email_1 || '';
+      document.getElementById('emergencyName2').value = data.worker.emergency_name_2 || '';
+      document.getElementById('emergencyRelationship2').value = data.worker.emergency_relationship_2 || '';
+      document.getElementById('emergencyPhone2').value = data.worker.emergency_phone_2 || '';
+      document.getElementById('emergencyEmail2').value = data.worker.emergency_email_2 || '';
 
       console.log('Profile form populated with:', {
         name: data.worker.name,
@@ -2295,11 +2384,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     const id_type = document.getElementById('idType').value;
     const id_number = document.getElementById('idNumber').value.trim();
 
+    // Emergency Contacts
+    const emergency_name_1 = document.getElementById('emergencyName1').value.trim();
+    const emergency_relationship_1 = document.getElementById('emergencyRelationship1').value;
+    const emergency_phone_1 = document.getElementById('emergencyPhone1').value.trim();
+    const emergency_email_1 = document.getElementById('emergencyEmail1').value.trim();
+    const emergency_name_2 = document.getElementById('emergencyName2').value.trim();
+    const emergency_relationship_2 = document.getElementById('emergencyRelationship2').value;
+    const emergency_phone_2 = document.getElementById('emergencyPhone2').value.trim();
+    const emergency_email_2 = document.getElementById('emergencyEmail2').value.trim();
+
     console.log('Submitting profile with data:', { name, speciality, area, bio, experience, id_type }); // Debug log
 
     // Validate required fields
     if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
       showProfileMessage('Please fill in all required fields (marked with *)', 'error');
+      return;
+    }
+
+    // Validate emergency contact 1 (required)
+    if (!emergency_name_1 || !emergency_relationship_1 || !emergency_phone_1) {
+      showProfileMessage('Emergency Contact 1 is required (Name, Relationship, Phone)', 'error');
+      return;
+    }
+
+    // Validate emergency phone formats
+    if (emergency_phone_1 && !/^[0-9]{10}$/.test(emergency_phone_1)) {
+      showProfileMessage('Emergency Contact 1 phone must be 10 digits', 'error');
+      return;
+    }
+    if (emergency_phone_2 && !/^[0-9]{10}$/.test(emergency_phone_2)) {
+      showProfileMessage('Emergency Contact 2 phone must be 10 digits', 'error');
       return;
     }
 
@@ -2345,7 +2460,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           bio,
           experience,
           id_type,
-          id_number
+          id_number,
+          emergency_name_1,
+          emergency_relationship_1,
+          emergency_phone_1,
+          emergency_email_1,
+          emergency_name_2,
+          emergency_relationship_2,
+          emergency_phone_2,
+          emergency_email_2
         })
       });
 
