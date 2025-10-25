@@ -524,6 +524,25 @@ async function runVirusScanLogsMigration() {
   }
 }
 
+// Auto-run migration for referral source
+async function runReferralSourceMigration() {
+  try {
+    console.log('🔄 Running referral source migration...');
+
+    // Add referral_source column to users table
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_source VARCHAR(50)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_referral_source ON users(referral_source)`);
+
+    // Add referral_source column to workers table
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS referral_source VARCHAR(50)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_workers_referral_source ON workers(referral_source)`);
+
+    console.log('✅ Referral source migration completed');
+  } catch (error) {
+    console.log('⚠️  Referral source migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Initialize reminder scheduler
 const ReminderScheduler = require('./services/reminderScheduler');
 let reminderScheduler = null;
@@ -547,6 +566,7 @@ async function startServer() {
     await runTermsAcceptanceMigration();
     await runMessageImagesMigration();
     await runVirusScanLogsMigration();
+    await runReferralSourceMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler

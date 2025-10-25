@@ -953,3 +953,175 @@ module.exports = (pool, logger, helpers) => {
 
   return router;
 };
+  // Get referral source statistics (admin only)
+  router.get('/stats/referrals', requireAuth, adminOnly, async (req, res) => {
+    try {
+      // Get referral breakdown for clients
+      const clientReferrals = await pool.query(`
+        SELECT
+          referral_source,
+          COUNT(*) as count
+        FROM users
+        WHERE referral_source IS NOT NULL
+        GROUP BY referral_source
+        ORDER BY count DESC
+      `);
+
+      // Get referral breakdown for workers
+      const workerReferrals = await pool.query(`
+        SELECT
+          referral_source,
+          COUNT(*) as count
+        FROM workers
+        WHERE referral_source IS NOT NULL
+        GROUP BY referral_source
+        ORDER BY count DESC
+      `);
+
+      // Combined stats
+      const combinedStats = {};
+      clientReferrals.rows.forEach(row => {
+        combinedStats[row.referral_source] = {
+          source: row.referral_source,
+          clients: parseInt(row.count),
+          workers: 0,
+          total: parseInt(row.count)
+        };
+      });
+
+      workerReferrals.rows.forEach(row => {
+        if (combinedStats[row.referral_source]) {
+          combinedStats[row.referral_source].workers = parseInt(row.count);
+          combinedStats[row.referral_source].total += parseInt(row.count);
+        } else {
+          combinedStats[row.referral_source] = {
+            source: row.referral_source,
+            clients: 0,
+            workers: parseInt(row.count),
+            total: parseInt(row.count)
+          };
+        }
+      });
+
+      // Convert to array and sort by total
+      const referralBreakdown = Object.values(combinedStats)
+        .sort((a, b) => b.total - a.total);
+
+      // Get totals
+      const totals = await pool.query(`
+        SELECT
+          (SELECT COUNT(*) FROM users WHERE referral_source IS NOT NULL) as total_clients,
+          (SELECT COUNT(*) FROM workers WHERE referral_source IS NOT NULL) as total_workers,
+          (SELECT COUNT(*) FROM users WHERE referral_source IS NOT NULL) +
+          (SELECT COUNT(*) FROM workers WHERE referral_source IS NOT NULL) as total_all
+      `);
+
+      res.json({
+        success: true,
+        totals: {
+          total_clients: parseInt(totals.rows[0].total_clients),
+          total_workers: parseInt(totals.rows[0].total_workers),
+          total_all: parseInt(totals.rows[0].total_all)
+        },
+        breakdown: referralBreakdown,
+        clients: clientReferrals.rows,
+        workers: workerReferrals.rows
+      });
+    } catch (error) {
+      logger.error('Failed to fetch referral stats', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch referral stats' });
+    }
+  });
+
+  // Get comprehensive platform statistics (admin only)
+  router.get('/stats/platform', requireAuth, adminOnly, async (req, res) => {
+    try {
+      // User stats
+      const userStats = await pool.query(`
+        SELECT
+          COUNT(*) as total_users,
+          COUNT(*) FILTER (WHERE email_verified = true) as verified_users,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as users_last_7d,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as users_last_30d
+        FROM users
+      `);
+
+      // Worker stats
+      const workerStats = await pool.query(`
+        SELECT
+          COUNT(*) as total_workers,
+          COUNT(*) FILTER (WHERE is_active = true) as active_workers,
+          COUNT(*) FILTER (WHERE approval_status = 'pending') as pending_approval,
+          COUNT(*) FILTER (WHERE approval_status = 'approved') as approved_workers,
+          COUNT(*) FILTER (WHERE approval_status = 'rejected') as rejected_workers,
+          COUNT(*) FILTER (WHERE is_available = true) as available_workers,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as workers_last_7d,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as workers_last_30d
+        FROM workers
+      `);
+
+      // Booking stats
+      const bookingStats = await pool.query(`
+        SELECT
+          COUNT(*) as total_bookings,
+          COUNT(*) FILTER (WHERE status = 'Pending') as pending_bookings,
+          COUNT(*) FILTER (WHERE status = 'Confirmed') as confirmed_bookings,
+          COUNT(*) FILTER (WHERE status = 'Completed') as completed_bookings,
+          COUNT(*) FILTER (WHERE status = 'Cancelled') as cancelled_bookings,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as bookings_last_7d,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as bookings_last_30d
+        FROM bookings
+      `);
+
+      // Review stats
+      const reviewStats = await pool.query(`
+        SELECT
+          COUNT(*) as total_reviews,
+          AVG(overall_rating) as average_rating,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as reviews_last_7d,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as reviews_last_30d
+        FROM reviews
+      `);
+
+      // Message stats
+      const messageStats = await pool.query(`
+        SELECT
+          COUNT(*) as total_messages,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '24 hours') as messages_last_24h,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as messages_last_7d
+        FROM messages
+      `);
+
+      // Certification stats  
+      const certStats = await pool.query(`
+        SELECT
+          COUNT(*) as total_certifications,
+          COUNT(*) FILTER (WHERE status = 'pending') as pending_certifications,
+          COUNT(*) FILTER (WHERE status = 'approved') as approved_certifications,
+          COUNT(*) FILTER (WHERE status = 'rejected') as rejected_certifications
+        FROM certifications
+      `);
+
+      res.json({
+        success: true,
+        stats: {
+          users: userStats.rows[0],
+          workers: workerStats.rows[0],
+          bookings: bookingStats.rows[0],
+          reviews: {
+            ...reviewStats.rows[0],
+            average_rating: reviewStats.rows[0].average_rating ? parseFloat(reviewStats.rows[0].average_rating).toFixed(2) : '0.00'
+          },
+          messages: messageStats.rows[0],
+          certifications: certStats.rows[0]
+        },
+        generated_at: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Failed to fetch platform stats', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch platform stats' });
+    }
+  });
+
+  return router;
+};

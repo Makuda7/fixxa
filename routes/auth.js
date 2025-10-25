@@ -24,7 +24,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   // Register
   router.post('/register', registrationLimiter, registerValidation, async (req, res) => {
 
-    const { type, name, email, phone, city, suburb, password, speciality, acceptTerms } = req.body;
+    const { type, name, email, phone, city, suburb, password, speciality, acceptTerms, referralSource } = req.body;
 
     try {
 
@@ -33,6 +33,14 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
         return res.status(400).json({
           success: false,
           error: 'You must accept the Terms of Service, Privacy Policy, and Safety Guidelines to register.'
+        });
+      }
+
+      // Validate referral source
+      if (!referralSource) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please tell us how you heard about Fixxa.'
         });
       }
 
@@ -56,15 +64,15 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status, approval_status, verification_token, terms_accepted, terms_accepted_at, terms_version)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, false, 'pending', 'pending', $8, true, CURRENT_TIMESTAMP, $9) RETURNING id, name, email, phone, city, speciality`,
-          [name, email, phone, city, suburb || null, hashedPassword, speciality, verificationToken, termsVersion]
+          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status, approval_status, verification_token, terms_accepted, terms_accepted_at, terms_version, referral_source)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, false, 'pending', 'pending', $8, true, CURRENT_TIMESTAMP, $9, $10) RETURNING id, name, email, phone, city, speciality`,
+          [name, email, phone, city, suburb || null, hashedPassword, speciality, verificationToken, termsVersion, referralSource]
         );
       } else {
         result = await pool.query(
-          `INSERT INTO users (name, email, phone, city, suburb, password, verification_token, email_verified, terms_accepted, terms_accepted_at, terms_version)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, CURRENT_TIMESTAMP, $8) RETURNING id, name, email, phone, city`,
-          [name, email, phone, city, suburb || null, hashedPassword, verificationToken, termsVersion]
+          `INSERT INTO users (name, email, phone, city, suburb, password, verification_token, email_verified, terms_accepted, terms_accepted_at, terms_version, referral_source)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, CURRENT_TIMESTAMP, $8, $9) RETURNING id, name, email, phone, city`,
+          [name, email, phone, city, suburb || null, hashedPassword, verificationToken, termsVersion, referralSource]
         );
       }
 

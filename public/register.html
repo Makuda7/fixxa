@@ -186,6 +186,25 @@ button:hover { background:#228b22; }
         </div>
       </div>
 
+      <!-- How did you hear about us -->
+      <div>
+        <label for="referralSource">How did you hear about us?</label>
+        <select id="referralSource" name="referralSource" required>
+          <option value="">Select an option *</option>
+          <option value="google">Google Search</option>
+          <option value="facebook">Facebook</option>
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+          <option value="twitter">Twitter/X</option>
+          <option value="friend">Friend or Family</option>
+          <option value="ad">Online Advertisement</option>
+          <option value="flyer">Flyer/Poster</option>
+          <option value="radio">Radio</option>
+          <option value="news">News Article</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
       <!-- Terms & Conditions Acceptance -->
       <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 2px solid #dee2e6; margin-bottom: 1rem;">
         <label style="display: flex; align-items: start; cursor: pointer; font-size: 14px; line-height: 1.6;">
@@ -283,17 +302,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const password2 = document.getElementById('registerPassword2').value;
     const safetyAccepted = document.getElementById('safetyCheckbox').checked;
     const termsAccepted = document.getElementById('acceptTerms').checked;
+    const referralSource = document.getElementById('referralSource').value;
     const speciality = specialityInput.value.trim();
 
     // Validation
     if (!type) return messageDiv.innerHTML = '<div class="message error">Please select account type.</div>';
     if (!safetyAccepted) return messageDiv.innerHTML = '<div class="message error">You must accept the Safety Guidelines to register.</div>';
     if (!termsAccepted) return messageDiv.innerHTML = '<div class="message error">You must accept the Terms of Service, Privacy Policy, and Safety Guidelines to register.</div>';
+    if (!referralSource) return messageDiv.innerHTML = '<div class="message error">Please tell us how you heard about Fixxa.</div>';
     if (password !== password2) return messageDiv.innerHTML = '<div class="message error">Passwords do not match!</div>';
     if (type === 'professional' && !speciality) return messageDiv.innerHTML = '<div class="message error">Speciality is required for professionals.</div>';
 
     try {
-      const payload = { type, name, email, phone, city, password, acceptTerms: termsAccepted };
+      const payload = { type, name, email, phone, city, password, acceptTerms: termsAccepted, referralSource };
       if (suburb) payload.suburb = suburb;
       if (type === 'professional') payload.speciality = speciality;
 
