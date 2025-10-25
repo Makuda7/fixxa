@@ -951,8 +951,6 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
-  return router;
-};
   // Get referral source statistics (admin only)
   router.get('/stats/referrals', requireAuth, adminOnly, async (req, res) => {
     try {
