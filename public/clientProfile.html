@@ -710,7 +710,7 @@ async function loadMyReviews() {
           <strong>Photos:</strong>
           <div class="review-photos-grid">
             ${review.photos.map(photo => 
-              `<img src="${photo}" class="review-photo-thumb" onclick="viewPhoto('${photo}', 'My review photo')" alt="Review photo" />`
+              `<img src="${photo}" class="review-photo-thumb" data-action="view-photo" data-photo-url="${photo}" data-photo-caption="My review photo" alt="Review photo" />`
             ).join('')}
           </div>
         </div>` : '';
@@ -734,7 +734,7 @@ async function loadMyReviews() {
           ${photosHtml}
           
           <div class="review-actions">
-            <button class="btn edit-btn" onclick="openEditReviewModal(${review.id})">
+            <button class="btn edit-btn" data-action="edit-review" data-review-id="${review.id}">
               Edit Review
             </button>
           </div>
@@ -803,7 +803,7 @@ function displayEditPhotos(photos) {
   grid.innerHTML = photos.map(photo => `
     <div class="edit-photo-item">
       <img src="${photo}" alt="Review photo" />
-      <button class="remove-photo-btn" onclick="removeEditPhoto('${photo}')" title="Remove photo">×</button>
+      <button class="remove-photo-btn" data-action="remove-edit-photo" data-photo-url="${photo}" title="Remove photo">×</button>
     </div>
   `).join('');
 }
@@ -1003,7 +1003,7 @@ async function loadCompletionRequests() {
           <strong>Completion Photos:</strong>
           <div class="photo-grid">
             ${req.photos.map(photo => `
-              <img src="${photo}" class="completion-photo" onclick="viewPhoto('${photo}')" alt="Completion photo" />
+              <img src="${photo}" class="completion-photo" data-action="view-photo" data-photo-url="${photo}" alt="Completion photo" />
             `).join('')}
           </div>
         </div>
@@ -1039,10 +1039,10 @@ async function loadCompletionRequests() {
           ${photosHtml}
           
           <div class="btn-row">
-            <button class="btn approve-btn" onclick="openCompletionApproval(${req.id}, '${req.worker_name}', '${req.worker_service}', '${req.completion_notes || ''}', '${req.booking_amount || ''}')">
+            <button class="btn approve-btn" data-action="open-completion-approval" data-request-id="${req.id}" data-worker-name="${req.worker_name}" data-worker-service="${req.worker_service}" data-completion-notes="${req.completion_notes || ''}" data-booking-amount="${req.booking_amount || ''}">
               ✅ Review & Approve
             </button>
-            <button class="btn reject-btn" onclick="handleCompletionResponse(${req.id}, 'reject')">
+            <button class="btn reject-btn" data-action="handle-completion-response" data-request-id="${req.id}" data-response-action="reject">
               ❌ Job Not Complete
             </button>
           </div>
@@ -1222,14 +1222,14 @@ async function loadBookings() {
           
           <div class="btn-row">
             ${b.status !== 'pending_completion' && b.status !== 'pending_reschedule' && b.status !== 'pending_cancellation' && b.status !== 'Completed' && b.status !== 'Cancelled' ? `
-              <button class="btn reschedule-btn" onclick="openBookingModal(${b.id}, 'reschedule')">Request Reschedule</button>
-              <button class="btn cancel-btn" onclick="openBookingModal(${b.id}, 'cancel')">Request Cancellation</button>
+              <button class="btn reschedule-btn" data-action="open-booking-modal" data-booking-id="${b.id}" data-modal-action="reschedule">Request Reschedule</button>
+              <button class="btn cancel-btn" data-action="open-booking-modal" data-booking-id="${b.id}" data-modal-action="cancel">Request Cancellation</button>
             ` : ''}
             ${(b.status === 'pending_reschedule' || b.status === 'pending_cancellation') ? `
               <p style="font-style: italic; color: #666; margin: 0.5rem 0;">Your request is pending professional approval</p>
             ` : ''}
             ${b.status === 'Completed' ? `
-              <button class="btn" style="background: #17a2b8; color: white;" onclick="viewJobHistory(${b.id})">View Details</button>
+              <button class="btn" style="background: #17a2b8; color: white;" data-action="view-job-history" data-booking-id="${b.id}">View Details</button>
             ` : ''}
           </div>
         `;
@@ -1648,6 +1648,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Refresh unread count every 30 seconds
   setInterval(loadUnreadMessageCount, 30000);
+
+  // Event delegation for all dynamic content
+  document.body.addEventListener('click', (e) => {
+    const action = e.target.dataset.action;
+
+    if (!action) return;
+
+    // View photo
+    if (action === 'view-photo') {
+      const photoUrl = e.target.dataset.photoUrl;
+      if (photoUrl) {
+        window.viewPhoto(photoUrl);
+      }
+    }
+
+    // Edit review
+    if (action === 'edit-review') {
+      const reviewId = parseInt(e.target.dataset.reviewId);
+      if (reviewId) {
+        window.openEditReviewModal(reviewId);
+      }
+    }
+
+    // Remove edit photo
+    if (action === 'remove-edit-photo') {
+      const photoUrl = e.target.dataset.photoUrl;
+      if (photoUrl) {
+        window.removeEditPhoto(photoUrl);
+      }
+    }
+
+    // Open completion approval
+    if (action === 'open-completion-approval') {
+      const requestId = parseInt(e.target.dataset.requestId);
+      const workerName = e.target.dataset.workerName;
+      const workerService = e.target.dataset.workerService;
+      const completionNotes = e.target.dataset.completionNotes;
+      const bookingAmount = e.target.dataset.bookingAmount;
+      if (requestId) {
+        openCompletionApproval(requestId, workerName, workerService, completionNotes, bookingAmount);
+      }
+    }
+
+    // Handle completion response
+    if (action === 'handle-completion-response') {
+      const requestId = parseInt(e.target.dataset.requestId);
+      const responseAction = e.target.dataset.responseAction;
+      if (requestId && responseAction) {
+        window.handleCompletionResponse(requestId, responseAction);
+      }
+    }
+
+    // Open booking modal
+    if (action === 'open-booking-modal') {
+      const bookingId = parseInt(e.target.dataset.bookingId);
+      const modalAction = e.target.dataset.modalAction;
+      if (bookingId && modalAction) {
+        openBookingModal(bookingId, modalAction);
+      }
+    }
+
+    // View job history
+    if (action === 'view-job-history') {
+      const bookingId = parseInt(e.target.dataset.bookingId);
+      if (bookingId) {
+        window.viewJobHistory(bookingId);
+      }
+    }
+  });
 
   window.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
