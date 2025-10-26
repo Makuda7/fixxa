@@ -360,6 +360,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   if(logoutBtn) logoutBtn.addEventListener('click', handleLogout);
   if(logoutBtnBottom) logoutBtnBottom.addEventListener('click', handleLogout);
+
+  // Event delegation for booking action buttons
+  document.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-action]');
+    if (!button) return;
+
+    const action = button.getAttribute('data-action');
+    const bookingId = button.getAttribute('data-booking-id');
+    const workerId = button.getAttribute('data-worker-id');
+
+    if (action === 'view' && bookingId) {
+      viewJobDetails(parseInt(bookingId));
+    } else if (action === 'rebook' && workerId) {
+      rebookService(parseInt(workerId));
+    } else if (action === 'cancel' && bookingId) {
+      cancelBooking(parseInt(bookingId));
+    }
+  });
 });
 
 // Initialize Socket.io for real-time updates
@@ -518,16 +536,16 @@ function getActionButtons(booking, category) {
   let buttons = '';
 
   if (category === 'completed') {
-    buttons += `<button class="btn-view" onclick="viewJobDetails(${booking.id})">View Details</button>`;
-    buttons += `<button class="btn-rebook" onclick="rebookService(${booking.worker_id})">Book Again</button>`;
+    buttons += `<button class="btn-view" data-action="view" data-booking-id="${booking.id}">View Details</button>`;
+    buttons += `<button class="btn-rebook" data-action="rebook" data-worker-id="${booking.worker_id}">Book Again</button>`;
   } else if (category === 'active') {
-    buttons += `<button class="btn-view" onclick="viewJobDetails(${booking.id})">View Details</button>`;
+    buttons += `<button class="btn-view" data-action="view" data-booking-id="${booking.id}">View Details</button>`;
     if (!booking.status?.includes('pending')) {
-      buttons += `<button class="btn-remove" onclick="cancelBooking(${booking.id})">Cancel</button>`;
+      buttons += `<button class="btn-remove" data-action="cancel" data-booking-id="${booking.id}">Cancel</button>`;
     }
   } else if (category === 'cancelled') {
-    buttons += `<button class="btn-view" onclick="viewJobDetails(${booking.id})">View Details</button>`;
-    buttons += `<button class="btn-rebook" onclick="rebookService(${booking.worker_id})">Book Again</button>`;
+    buttons += `<button class="btn-view" data-action="view" data-booking-id="${booking.id}">View Details</button>`;
+    buttons += `<button class="btn-rebook" data-action="rebook" data-worker-id="${booking.worker_id}">Book Again</button>`;
   }
 
   return buttons;
