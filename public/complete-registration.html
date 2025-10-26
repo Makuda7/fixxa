@@ -368,7 +368,7 @@ body { font-family: 'Outfit', sans-serif; background: #f5f6fa; }
 
       <div class="form-group">
         <label>South African ID Document <span class="required">*</span></label>
-        <div class="file-upload" onclick="document.getElementById('idDocument').click()">
+        <div class="file-upload" data-trigger-input="idDocument">
           <label class="file-upload-label">
             <span class="file-icon">🆔</span>
             <span class="file-text">Click to upload your SA ID (Front and Back)</span>
@@ -384,7 +384,7 @@ body { font-family: 'Outfit', sans-serif; background: #f5f6fa; }
 
       <div class="form-group">
         <label>Proof of Address <span class="required">*</span></label>
-        <div class="file-upload" onclick="document.getElementById('proofOfAddress').click()">
+        <div class="file-upload" data-trigger-input="proofOfAddress">
           <label class="file-upload-label">
             <span class="file-icon">🏠</span>
             <span class="file-text">Upload utility bill or bank statement (not older than 3 months)</span>
@@ -407,7 +407,7 @@ body { font-family: 'Outfit', sans-serif; background: #f5f6fa; }
 
       <div class="form-group">
         <label>Trade/Qualification Certificate <span class="required">*</span></label>
-        <div class="file-upload" onclick="document.getElementById('certificate').click()">
+        <div class="file-upload" data-trigger-input="certificate">
           <label class="file-upload-label">
             <span class="file-icon">📜</span>
             <span class="file-text">Upload your professional certificate or license</span>
@@ -423,7 +423,7 @@ body { font-family: 'Outfit', sans-serif; background: #f5f6fa; }
 
       <div class="form-group">
         <label>Additional Certifications (Optional)</label>
-        <div class="file-upload" onclick="document.getElementById('additionalCerts').click()">
+        <div class="file-upload" data-trigger-input="additionalCerts">
           <label class="file-upload-label">
             <span class="file-icon">📑</span>
             <span class="file-text">Upload additional certificates if applicable</span>
@@ -704,6 +704,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       messageBox.classList.remove('show');
     }, 5000);
   }
+
+  // Event delegation for file upload triggers
+  document.addEventListener('click', (e) => {
+    const uploadTrigger = e.target.closest('[data-trigger-input]');
+    if (uploadTrigger) {
+      const inputId = uploadTrigger.getAttribute('data-trigger-input');
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.click();
+      }
+    }
+  });
 
   // Initialize
   await checkApprovalStatus();
