@@ -1095,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
         galleryContainer.innerHTML = data.photos.map((photo, index) => {
           const description = photo.description || 'Work example';
           return `
-            <div class="gallery-thumb" onclick="viewGalleryPhoto('${photo.photo_url}', '${description}')">
+            <div class="gallery-thumb" data-action="view-gallery-photo" data-photo-url="${photo.photo_url}" data-description="${description}">
               <img src="${photo.photo_url}" alt="${description}" loading="lazy" />
             </div>`;
         }).join('');
@@ -1140,22 +1140,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       modal.innerHTML = `
         <div class="reviews-modal">
-          <button class="reviews-modal-close" onclick="closeGalleryModal()">&times;</button>
+          <button class="reviews-modal-close" data-action="close-gallery-modal">&times;</button>
           <h3>Work Gallery (${data.photos.length} photos)</h3>
-          
+
           <div class="gallery-grid" style="margin-top:1rem; max-height:60vh; overflow-y:auto;">
             ${data.photos.map(photo => {
               const dateStr = photo.date ? new Date(photo.date).toLocaleDateString() : '';
               return `
-                <div class="gallery-item" onclick="viewGalleryPhoto('${photo.url}', '${photo.caption || ''}', '${dateStr}')">
+                <div class="gallery-item" data-action="view-gallery-photo" data-photo-url="${photo.url}" data-caption="${photo.caption || ''}" data-date="${dateStr}">
                   <img src="${photo.url}" alt="Work example" loading="lazy" />
                   ${dateStr ? `<div class="gallery-date">${dateStr}</div>` : ''}
                 </div>`;
             }).join('')}
           </div>
-          
+
           <div style="text-align:center; margin-top:1rem;">
-            <button class="btn btn-secondary" onclick="closeGalleryModal()" style="background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Close</button>
+            <button class="btn btn-secondary" data-action="close-gallery-modal" style="background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Close</button>
           </div>
         </div>
       `;
@@ -1262,8 +1262,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const recentReviewHtml = formatReviewItem(recentReview, true);
     
-    const viewAllButton = totalReviews > 1 ? 
-      `<button class="view-all-reviews-btn" onclick="openAllReviewsModal(${workerId})">
+    const viewAllButton = totalReviews > 1 ?
+      `<button class="view-all-reviews-btn" data-action="open-all-reviews-modal" data-worker-id="${workerId}">
         View All ${totalReviews} Reviews
       </button>` : '';
 
@@ -1282,7 +1282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="guest-login-prompt">
           <p><strong>Want to see all ${totalReviews} reviews?</strong></p>
           <p>Login to view detailed reviews, ratings, and photos</p>
-          <button class="guest-login-btn" onclick="window.location.href='login.html'">
+          <button class="guest-login-btn" data-action="navigate-login">
             Login to View All Reviews
           </button>
         </div>
@@ -1314,8 +1314,8 @@ document.addEventListener('DOMContentLoaded', () => {
       photosHtml = `
         <div class="review-photos">
           <div class="review-photos-grid">
-            ${review.photos.slice(0, 3).map(photo => 
-              `<img src="${photo}" class="review-photo-thumb" onclick="viewPhoto('${photo}', 'Review by ${review.client_name}')" alt="Review photo" />`
+            ${review.photos.slice(0, 3).map(photo =>
+              `<img src="${photo}" class="review-photo-thumb" data-action="view-photo" data-photo-url="${photo}" data-caption="Review by ${review.client_name}" alt="Review photo" />`
             ).join('')}
             ${review.photos.length > 3 ? `<div style="font-size:0.8rem;color:#666;">+${review.photos.length - 3} more</div>` : ''}
           </div>
@@ -1358,21 +1358,21 @@ document.addEventListener('DOMContentLoaded', () => {
       
       modal.innerHTML = `
         <div class="reviews-modal">
-          <button class="reviews-modal-close" onclick="closeAllReviewsModal()">&times;</button>
+          <button class="reviews-modal-close" data-action="close-all-reviews-modal">&times;</button>
           <h3>All Customer Reviews (${totalReviews})</h3>
-          
+
           <div class="reviews-summary">
             <div style="font-size:1.2rem; margin-bottom:1rem;">
               <strong>Average Rating: ${avgRating}/5 ★</strong> (${totalReviews} reviews)
             </div>
           </div>
-          
+
           <div style="max-height:400px; overflow-y:auto;">
             ${reviews.map(review => formatReviewItem(review, true)).join('')}
           </div>
-          
+
           <div style="text-align:center; margin-top:1rem;">
-            <button class="btn btn-secondary" onclick="closeAllReviewsModal()" style="background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Close</button>
+            <button class="btn btn-secondary" data-action="close-all-reviews-modal" style="background:#6c757d; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Close</button>
           </div>
         </div>
       `;
@@ -1405,20 +1405,20 @@ document.addEventListener('DOMContentLoaded', () => {
       photoModal.className = 'reviews-modal-overlay';
       photoModal.innerHTML = `
         <div class="reviews-modal" style="max-width:600px;">
-          <button class="reviews-modal-close" onclick="closePhotoModal()">&times;</button>
+          <button class="reviews-modal-close" data-action="close-photo-modal">&times;</button>
           <img id="photo-view-image" src="" alt="Photo" style="width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:8px;" />
           <div id="photo-view-caption" style="text-align:center;margin-top:1rem;color:#666;font-style:italic;"></div>
         </div>
       `;
       document.body.appendChild(photoModal);
-      
+
       photoModal.addEventListener('click', (e) => {
         if (e.target === photoModal) {
           closePhotoModal();
         }
       });
     }
-    
+
     document.getElementById('photo-view-image').src = photoUrl;
     document.getElementById('photo-view-caption').textContent = caption || '';
     photoModal.style.display = 'flex';
@@ -1882,6 +1882,58 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnContinueBooking) {
     btnContinueBooking.addEventListener('click', closeSafetyModalAndBook);
   }
+
+  // Event delegation for dynamically generated content
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+
+    switch(action) {
+      case 'view-gallery-photo':
+        e.preventDefault();
+        const photoUrl = target.dataset.photoUrl;
+        const description = target.dataset.description || '';
+        const date = target.dataset.date || '';
+        const caption = target.dataset.caption || '';
+        viewGalleryPhoto(photoUrl, description || caption, date);
+        break;
+
+      case 'close-gallery-modal':
+        e.preventDefault();
+        closeGalleryModal();
+        break;
+
+      case 'open-all-reviews-modal':
+        e.preventDefault();
+        const workerId = parseInt(target.dataset.workerId, 10);
+        if (workerId) openAllReviewsModal(workerId);
+        break;
+
+      case 'navigate-login':
+        e.preventDefault();
+        window.location.href = 'login.html';
+        break;
+
+      case 'view-photo':
+        e.preventDefault();
+        const photoUrlToView = target.dataset.photoUrl;
+        const photoCaption = target.dataset.caption || '';
+        viewPhoto(photoUrlToView, photoCaption);
+        break;
+
+      case 'close-all-reviews-modal':
+        e.preventDefault();
+        closeAllReviewsModal();
+        break;
+
+      case 'close-photo-modal':
+        e.preventDefault();
+        closePhotoModal();
+        break;
+    }
+  });
 
   loadWorkerProfile();
 });
