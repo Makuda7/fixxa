@@ -5,8 +5,8 @@ const { retryEmailSend } = require('./retry');
 const transporterConfig = process.env.SENDGRID_API_KEY ? {
   // SendGrid configuration (Production - Recommended)
   host: 'smtp.sendgrid.net',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  port: 465, // Using SSL port instead of 587 for better Railway compatibility
+  secure: true, // Use SSL
   auth: {
     user: 'apikey', // This is literally the string 'apikey'
     pass: process.env.SENDGRID_API_KEY
@@ -16,7 +16,10 @@ const transporterConfig = process.env.SENDGRID_API_KEY ? {
   socketTimeout: 30000,
   pool: true,
   maxConnections: 5,
-  maxMessages: 100
+  maxMessages: 100,
+  tls: {
+    rejectUnauthorized: false // Accept self-signed certificates
+  }
 } : {
   // Gmail fallback configuration
   service: process.env.EMAIL_SERVICE || 'gmail',
