@@ -197,8 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Listen for incoming messages via socket
   socket.on('receiveMessage', (msg) => {
     // Only add to chat if it's for the currently open conversation
-    if (chatModal.style.display === 'flex' && 
-        msg.client_id === userId && 
+    if (chatModal.style.display === 'flex' &&
+        msg.client_id === userId &&
         msg.professional_id == currentProfessionalId &&
         msg.sender_type === 'professional') {
       addChatMessage(msg);
@@ -206,6 +206,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Refresh message list if any message involves this user
     if (msg.client_id === userId) {
       loadMessages(currentPage);
+    }
+  });
+
+  // Event delegation for message images - click to open in new tab
+  chatMessages.addEventListener('click', (e) => {
+    if (e.target.classList.contains('message-image-clickable')) {
+      const imgUrl = e.target.getAttribute('data-img-url');
+      if (imgUrl) {
+        window.open(imgUrl, '_blank');
+      }
     }
   });
 
@@ -422,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let messageBody = '';
     if (msg.image_url) {
-      messageBody += `<img src="${msg.image_url}" alt="Shared image" onclick="window.open('${msg.image_url}', '_blank')">`;
+      messageBody += `<img src="${msg.image_url}" alt="Shared image" class="message-image-clickable" data-img-url="${msg.image_url}" style="cursor: pointer;">`;
     }
     if (msg.content) {
       messageBody += `<div class="chat-message-body">${msg.content}</div>`;
