@@ -7,10 +7,25 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
   },
-  // Add timeout settings
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 5000,
-  socketTimeout: 15000
+  // Increased timeout settings for better reliability
+  connectionTimeout: 30000, // 30 seconds
+  greetingTimeout: 10000,   // 10 seconds
+  socketTimeout: 30000,     // 30 seconds
+  pool: true,               // Use pooled connections
+  maxConnections: 5,        // Max simultaneous connections
+  maxMessages: 100,         // Max messages per connection
+  rateDelta: 1000,          // Rate limiting: 1 second between messages
+  rateLimit: 3              // Max 3 emails per rateDelta
+});
+
+// Verify email configuration on startup
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('❌ Email transporter verification failed:', error.message);
+    console.error('   Please check EMAIL_SERVICE, EMAIL_USER, and EMAIL_PASSWORD environment variables');
+  } else {
+    console.log('✅ Email transporter is ready to send emails');
+  }
 });
 
 async function sendEmail(to, subject, html, logger) {
@@ -28,10 +43,26 @@ async function sendEmail(to, subject, html, logger) {
       to
     );
     logger.info('Email sent successfully', { to, subject });
-    console.log(`Email sent to ${to}: ${subject}`);
+    console.log(`✅ Email sent to ${to}: ${subject}`);
   } catch (error) {
-    logger.error('Email send failed after retries', { error: error.message, to, subject });
-    console.error('Email error:', error.message);
+    logger.error('Email send failed after retries', {
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      to,
+      subject
+    });
+    console.error(`❌ Email error (${to}): ${error.message}`);
+
+    // Log specific error types for troubleshooting
+    if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET') {
+      console.error('   Network timeout - check internet connection or Gmail settings');
+    } else if (error.code === 'EAUTH') {
+      console.error('   Authentication failed - check EMAIL_USER and EMAIL_PASSWORD');
+    } else if (error.responseCode === 550) {
+      console.error('   Recipient address rejected - check email address validity');
+    }
+
     // Don't throw - email failures shouldn't break user-facing operations
   }
 }
