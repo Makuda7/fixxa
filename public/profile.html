@@ -944,9 +944,9 @@
       </div>
     </div>
     <div class="safety-modal-footer">
-      <button class="btn-skip" onclick="skipSafetyTips()">Skip</button>
-      <button class="btn-read-full" onclick="window.open('safety.html', '_blank')">Read Full Guide</button>
-      <button class="btn-continue" onclick="closeSafetyModalAndBook()">I Understand, Continue</button>
+      <button class="btn-skip" id="btnSkipSafety">Skip</button>
+      <button class="btn-read-full" id="btnReadFullGuide">Read Full Guide</button>
+      <button class="btn-continue" id="btnContinueBooking">I Understand, Continue</button>
     </div>
   </div>
 </div>
@@ -1864,6 +1864,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadUnreadMessageCount();
   setInterval(loadUnreadMessageCount, 30000);
+
+  // Safety modal event listeners
+  const btnSkipSafety = document.getElementById('btnSkipSafety');
+  if (btnSkipSafety) {
+    btnSkipSafety.addEventListener('click', skipSafetyTips);
+  }
+
+  const btnReadFullGuide = document.getElementById('btnReadFullGuide');
+  if (btnReadFullGuide) {
+    btnReadFullGuide.addEventListener('click', () => {
+      window.open('safety.html', '_blank');
+    });
+  }
+
+  const btnContinueBooking = document.getElementById('btnContinueBooking');
+  if (btnContinueBooking) {
+    btnContinueBooking.addEventListener('click', closeSafetyModalAndBook);
+  }
 
   loadWorkerProfile();
 });
