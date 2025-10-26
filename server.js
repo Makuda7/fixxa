@@ -524,6 +524,47 @@ async function runVirusScanLogsMigration() {
   }
 }
 
+// Auto-run migration for payment fields
+async function runPaymentFieldsMigration() {
+  try {
+    console.log('🔄 Running payment fields migration...');
+
+    // Add payment-related fields to bookings table
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) CHECK (payment_method IN ('cash', 'eft', 'online') OR payment_method IS NULL)`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'disputed', 'refunded'))`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_proof_url TEXT`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_proof_id VARCHAR(255)`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_notes TEXT`);
+
+    // Create indexes
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bookings_payment_status ON bookings(payment_status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_bookings_payment_method ON bookings(payment_method)`);
+
+    // Create payment disputes table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS payment_disputes (
+        id SERIAL PRIMARY KEY,
+        booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+        raised_by VARCHAR(20) NOT NULL CHECK (raised_by IN ('client', 'worker', 'admin')),
+        reason TEXT NOT NULL,
+        status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'investigating', 'resolved', 'closed')),
+        resolution TEXT,
+        resolved_by INTEGER REFERENCES workers(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        resolved_at TIMESTAMP
+      )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_disputes_booking ON payment_disputes(booking_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_disputes_status ON payment_disputes(status)`);
+
+    console.log('✅ Payment fields migration complete');
+  } catch (error) {
+    console.log('⚠️  Payment fields migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for referral source
 async function runReferralSourceMigration() {
   try {
@@ -567,6 +608,7 @@ async function startServer() {
     await runMessageImagesMigration();
     await runVirusScanLogsMigration();
     await runReferralSourceMigration();
+    await runPaymentFieldsMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler

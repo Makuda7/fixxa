@@ -31,9 +31,9 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
 
       // Insert booking with Pending status (requires worker approval)
       const result = await client.query(
-        `INSERT INTO bookings (user_id, worker_id, booking_date, booking_time, note, status)
-         VALUES ($1, $2, $3, $4, $5, 'Pending') RETURNING *`,
-        [req.session.user.id, workerId, booking_date, booking_time, note || '']
+        `INSERT INTO bookings (user_id, worker_id, booking_date, booking_time, note, status, payment_method, booking_amount, payment_status)
+         VALUES ($1, $2, $3, $4, $5, 'Pending', $6, $7, 'pending') RETURNING *`,
+        [req.session.user.id, workerId, booking_date, booking_time, note || '', req.body.payment_method || null, req.body.booking_amount || null]
       );
 
       const booking = result.rows[0];
@@ -473,18 +473,263 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
     }
   });
 
+  // Mark payment as received (worker only)
+  router.post('/:id/mark-paid', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+      const workerId = req.session.user.id;
+      const { payment_method, payment_notes } = req.body;
+
+      // Validate payment method
+      if (!payment_method || !['cash', 'eft'].includes(payment_method)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment method must be either cash or eft'
+        });
+      }
+
+      // Get booking and verify ownership
+      const bookingResult = await pool.query(
+        `SELECT b.*, u.name as client_name, u.email as client_email,
+                w.name as professional_name
+         FROM bookings b
+         JOIN users u ON b.user_id = u.id
+         JOIN workers w ON b.worker_id = w.id
+         WHERE b.id = $1`,
+        [bookingId]
+      );
+
+      if (bookingResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Booking not found' });
+      }
+
+      const booking = bookingResult.rows[0];
+
+      if (booking.worker_id !== workerId) {
+        return res.status(403).json({ success: false, error: 'Not authorized' });
+      }
+
+      // Only allow marking as paid if booking is completed
+      if (booking.status !== 'Completed') {
+        return res.status(400).json({
+          success: false,
+          error: 'Can only mark completed bookings as paid'
+        });
+      }
+
+      // Update payment status
+      await pool.query(
+        `UPDATE bookings
+         SET payment_status = 'paid',
+             payment_method = $1,
+             payment_notes = $2,
+             paid_at = CURRENT_TIMESTAMP
+         WHERE id = $3`,
+        [payment_method, payment_notes || '', bookingId]
+      );
+
+      // Send confirmation email to client
+      const paymentEmail = {
+        subject: 'Payment Confirmed - Fixxa',
+        html: `
+          <h2>Payment Confirmed</h2>
+          <p>Hi ${booking.client_name},</p>
+          <p>${booking.professional_name} has confirmed receipt of your payment for the booking on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.booking_time}.</p>
+          <p><strong>Payment Method:</strong> ${payment_method.toUpperCase()}</p>
+          ${payment_notes ? `<p><strong>Notes:</strong> ${payment_notes}</p>` : ''}
+          ${booking.booking_amount ? `<p><strong>Amount:</strong> R${booking.booking_amount}</p>` : ''}
+          <p>Thank you for using Fixxa!</p>
+        `
+      };
+
+      sendEmail(booking.client_email, paymentEmail.subject, paymentEmail.html, logger).catch(err =>
+        logger.error('Failed to send payment confirmation email', { error: err.message })
+      );
+
+      if (io) {
+        io.emit('payment-updated', {
+          bookingId,
+          payment_status: 'paid',
+          user_id: booking.user_id,
+          worker_id: workerId
+        });
+      }
+
+      logger.info('Payment marked as received', { bookingId, payment_method, workerId });
+      res.json({
+        success: true,
+        message: 'Payment marked as received',
+        payment_status: 'paid'
+      });
+    } catch (err) {
+      logger.error('Mark paid error', { error: err.message });
+      console.error('Mark paid error:', err);
+      res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
+  // Update payment method (client or worker)
+  router.post('/:id/update-payment', requireAuth, async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+      const userId = req.session.user.id;
+      const { payment_method, booking_amount } = req.body;
+
+      // Validate payment method
+      if (payment_method && !['cash', 'eft', 'online'].includes(payment_method)) {
+        return res.status(400).json({ success: false, error: 'Invalid payment method' });
+      }
+
+      // Get booking and verify ownership
+      const bookingResult = await pool.query(
+        `SELECT * FROM bookings WHERE id = $1 AND (user_id = $2 OR worker_id = $2)`,
+        [bookingId, userId]
+      );
+
+      if (bookingResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Booking not found or not authorized' });
+      }
+
+      const booking = bookingResult.rows[0];
+
+      // Build update query
+      const updates = [];
+      const values = [];
+      let idx = 1;
+
+      if (payment_method) {
+        updates.push(`payment_method = $${idx++}`);
+        values.push(payment_method);
+      }
+
+      if (booking_amount !== undefined) {
+        updates.push(`booking_amount = $${idx++}`);
+        values.push(booking_amount);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ success: false, error: 'Nothing to update' });
+      }
+
+      values.push(bookingId);
+      const query = `UPDATE bookings SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`;
+      const result = await pool.query(query, values);
+
+      if (io) {
+        io.emit('payment-updated', {
+          bookingId,
+          payment_method,
+          booking_amount,
+          user_id: booking.user_id,
+          worker_id: booking.worker_id
+        });
+      }
+
+      logger.info('Payment details updated', { bookingId, payment_method, booking_amount });
+      res.json({ success: true, booking: result.rows[0] });
+    } catch (err) {
+      logger.error('Update payment error', { error: err.message });
+      console.error('Update payment error:', err);
+      res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
+  // Raise payment dispute (client or worker)
+  router.post('/:id/dispute-payment', requireAuth, async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+      const { reason } = req.body;
+
+      if (!reason || reason.trim().length === 0) {
+        return res.status(400).json({ success: false, error: 'Dispute reason is required' });
+      }
+
+      // Get booking and verify ownership
+      const bookingResult = await pool.query(
+        `SELECT b.*, u.name as client_name, u.email as client_email,
+                w.name as professional_name, w.email as professional_email
+         FROM bookings b
+         JOIN users u ON b.user_id = u.id
+         JOIN workers w ON b.worker_id = w.id
+         WHERE b.id = $1 AND (b.user_id = $2 OR b.worker_id = $2)`,
+        [bookingId, userId]
+      );
+
+      if (bookingResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Booking not found or not authorized' });
+      }
+
+      const booking = bookingResult.rows[0];
+      const raised_by = userType === 'professional' ? 'worker' : 'client';
+
+      // Create dispute record
+      await pool.query(
+        `INSERT INTO payment_disputes (booking_id, raised_by, reason)
+         VALUES ($1, $2, $3)`,
+        [bookingId, raised_by, reason]
+      );
+
+      // Update booking payment status
+      await pool.query(
+        `UPDATE bookings SET payment_status = 'disputed' WHERE id = $1`,
+        [bookingId]
+      );
+
+      // Send notification emails
+      const disputeEmail = {
+        subject: 'Payment Dispute Raised - Fixxa',
+        html: `
+          <h2>Payment Dispute</h2>
+          <p>A payment dispute has been raised for booking #${bookingId}</p>
+          <p><strong>Raised by:</strong> ${raised_by === 'client' ? booking.client_name : booking.professional_name}</p>
+          <p><strong>Reason:</strong> ${reason}</p>
+          <p>Our support team will review this dispute and contact both parties soon.</p>
+        `
+      };
+
+      sendEmail(booking.client_email, disputeEmail.subject, disputeEmail.html, logger).catch(err =>
+        logger.error('Failed to send dispute email to client', { error: err.message })
+      );
+
+      sendEmail(booking.professional_email, disputeEmail.subject, disputeEmail.html, logger).catch(err =>
+        logger.error('Failed to send dispute email to professional', { error: err.message })
+      );
+
+      if (io) {
+        io.emit('payment-dispute', {
+          bookingId,
+          raised_by,
+          user_id: booking.user_id,
+          worker_id: booking.worker_id
+        });
+      }
+
+      logger.info('Payment dispute raised', { bookingId, raised_by, userId });
+      res.json({
+        success: true,
+        message: 'Payment dispute raised. Support team will contact you soon.'
+      });
+    } catch (err) {
+      logger.error('Raise dispute error', { error: err.message });
+      console.error('Raise dispute error:', err);
+      res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
   // Legacy endpoints
   router.post('/:id/request-reschedule', requireAuth, async (req, res) => {
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       message: 'Use /bookings/:id/reschedule endpoint instead',
       redirect: true
     });
   });
 
   router.post('/:id/request-cancellation', requireAuth, async (req, res) => {
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       message: 'Use DELETE /bookings/:id endpoint instead',
       redirect: true
     });
