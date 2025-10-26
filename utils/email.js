@@ -1,91 +1,96 @@
 const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 const { retryEmailSend } = require('./retry');
 
-// Configure transporter based on environment
-const transporterConfig = process.env.SENDGRID_API_KEY ? {
-  // SendGrid configuration (Production - Recommended)
-  host: 'smtp.sendgrid.net',
-  port: 465, // Using SSL port instead of 587 for better Railway compatibility
-  secure: true, // Use SSL
-  auth: {
-    user: 'apikey', // This is literally the string 'apikey'
-    pass: process.env.SENDGRID_API_KEY
-  },
-  connectionTimeout: 30000,
-  greetingTimeout: 10000,
-  socketTimeout: 30000,
-  pool: true,
-  maxConnections: 5,
-  maxMessages: 100,
-  tls: {
-    rejectUnauthorized: false // Accept self-signed certificates
-  }
-} : {
-  // Gmail fallback configuration
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  },
-  connectionTimeout: 30000,
-  greetingTimeout: 10000,
-  socketTimeout: 30000,
-  pool: true,
-  maxConnections: 5,
-  maxMessages: 100,
-  rateDelta: 1000,
-  rateLimit: 3
-};
+// Configure SendGrid HTTP API or Gmail SMTP
+const useSendGrid = !!process.env.SENDGRID_API_KEY;
+const emailProvider = useSendGrid ? 'SendGrid (HTTP API)' : (process.env.EMAIL_SERVICE || 'Gmail');
 
-const transporter = nodemailer.createTransport(transporterConfig);
+if (useSendGrid) {
+  // Configure SendGrid HTTP API (works on all platforms, no SMTP blocking)
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log(`✅ Email configured via ${emailProvider}`);
+} else {
+  // Gmail SMTP fallback configuration
+  var transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    },
+    connectionTimeout: 30000,
+    greetingTimeout: 10000,
+    socketTimeout: 30000,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100
+  });
 
-// Verify email configuration on startup
-const emailProvider = process.env.SENDGRID_API_KEY ? 'SendGrid' : (process.env.EMAIL_SERVICE || 'Gmail');
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error(`❌ Email transporter verification failed (${emailProvider}):`, error.message);
-    if (process.env.SENDGRID_API_KEY) {
-      console.error('   Please check SENDGRID_API_KEY environment variable');
-    } else {
+  // Verify Gmail configuration on startup
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error(`❌ Email transporter verification failed (${emailProvider}):`, error.message);
       console.error('   Please check EMAIL_SERVICE, EMAIL_USER, and EMAIL_PASSWORD environment variables');
+    } else {
+      console.log(`✅ Email transporter is ready to send emails via ${emailProvider}`);
     }
-  } else {
-    console.log(`✅ Email transporter is ready to send emails via ${emailProvider}`);
-  }
-});
+  });
+}
 
 async function sendEmail(to, subject, html, logger) {
   try {
-    await retryEmailSend(
-      async () => {
-        await transporter.sendMail({
-          from: process.env.EMAIL_FROM,
-          to,
-          subject,
-          html
-        });
-      },
-      logger,
-      to
-    );
-    logger.info('Email sent successfully', { to, subject });
-    console.log(`✅ Email sent to ${to}: ${subject}`);
+    if (useSendGrid) {
+      // Use SendGrid HTTP API
+      await retryEmailSend(
+        async () => {
+          const msg = {
+            to,
+            from: process.env.EMAIL_FROM,
+            subject,
+            html
+          };
+          await sgMail.send(msg);
+        },
+        logger,
+        to
+      );
+    } else {
+      // Use Gmail SMTP
+      await retryEmailSend(
+        async () => {
+          await transporter.sendMail({
+            from: process.env.EMAIL_FROM,
+            to,
+            subject,
+            html
+          });
+        },
+        logger,
+        to
+      );
+    }
+
+    logger.info('Email sent successfully', { to, subject, provider: emailProvider });
+    console.log(`✅ Email sent to ${to}: ${subject} (via ${emailProvider})`);
   } catch (error) {
     logger.error('Email send failed after retries', {
       error: error.message,
       code: error.code,
-      command: error.command,
+      response: error.response?.body,
       to,
-      subject
+      subject,
+      provider: emailProvider
     });
     console.error(`❌ Email error (${to}): ${error.message}`);
 
     // Log specific error types for troubleshooting
     if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET') {
-      console.error('   Network timeout - check internet connection or Gmail settings');
-    } else if (error.code === 'EAUTH') {
-      console.error('   Authentication failed - check EMAIL_USER and EMAIL_PASSWORD');
-    } else if (error.responseCode === 550) {
+      console.error('   Network timeout - check internet connection or email settings');
+    } else if (error.code === 'EAUTH' || error.code === 401) {
+      console.error('   Authentication failed - check API key or credentials');
+    } else if (error.code === 403) {
+      console.error('   SendGrid: Verify sender email address in SendGrid dashboard');
+    } else if (error.responseCode === 550 || error.code === 550) {
       console.error('   Recipient address rejected - check email address validity');
     }
 
