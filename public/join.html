@@ -99,7 +99,7 @@
         <li style="--emoji:'📝';">Access reviews and feedback</li>
         <li style="--emoji:'📢';">Marketing support</li>
       </ul>
-      <button class="join-btn" onclick="showModal('professional')">Join as Professional</button>
+      <button class="join-btn" data-type="professional">Join as Professional</button>
     </div>
 
     <div class="join-card">
@@ -114,7 +114,7 @@
         <li style="--emoji:'🤝';">Dedicated account management</li>
         <li style="--emoji:'🎨';">Custom branding opportunities</li>
       </ul>
-      <button class="join-btn" onclick="showModal('organization')">Join as Organization</button>
+      <button class="join-btn" data-type="organization">Join as Organization</button>
     </div>
   </div>
 </main>
@@ -129,7 +129,7 @@
       <h4>Please email us to complete your registration:</h4>
       <div id="emailList"></div>
     </div>
-    <button class="close-btn" onclick="closeModal()">Close</button>
+    <button class="close-btn" id="closeModalBtn">Close</button>
   </div>
 </div>
 
@@ -225,6 +225,20 @@ async function checkLogin() {
 
 document.addEventListener('DOMContentLoaded', () => {
   checkLogin();
+
+  // Add event listeners for join buttons
+  document.querySelectorAll('.join-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.getAttribute('data-type');
+      showModal(type);
+    });
+  });
+
+  // Add event listener for close button
+  const closeBtn = document.getElementById('closeModalBtn');
+  if(closeBtn){
+    closeBtn.addEventListener('click', closeModal);
+  }
 
   const userBtn = document.getElementById('userBtn');
   const userDropdown = document.getElementById('userDropdown');
