@@ -292,9 +292,9 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('pending')">Pending Reviews</button>
-    <button class="tab" onclick="switchTab('completed')">My Reviews</button>
-    <button class="tab" onclick="switchTab('stats')">Statistics</button>
+    <button class="tab active" data-tab="pending">Pending Reviews</button>
+    <button class="tab" data-tab="completed">My Reviews</button>
+    <button class="tab" data-tab="stats">Statistics</button>
   </div>
 
   <!-- Pending Reviews Tab -->
@@ -643,6 +643,37 @@ function setupEventListeners() {
     window.location.href = 'login.html';
   });
 
+  // Tab switching event delegation
+  document.querySelector('.tabs').addEventListener('click', (e) => {
+    if (e.target.classList.contains('tab')) {
+      const tabName = e.target.dataset.tab;
+      switchTab(tabName);
+    }
+  });
+
+  // Event delegation for dynamic buttons and elements
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+
+    if (action === 'openReviewModal') {
+      const bookingId = parseInt(target.dataset.bookingId);
+      openReviewModal(bookingId);
+    } else if (action === 'viewPhoto') {
+      const photoUrl = target.dataset.photoUrl;
+      const caption = target.dataset.caption || '';
+      viewPhoto(photoUrl, caption);
+    } else if (action === 'editReview') {
+      const reviewId = parseInt(target.dataset.reviewId);
+      editReview(reviewId);
+    } else if (action === 'removeEditPhoto') {
+      const photoUrl = target.dataset.photoUrl;
+      removeEditPhoto(photoUrl);
+    }
+  });
+
   // Rating system
   setupRatingSystem();
 
@@ -966,7 +997,7 @@ function displayPendingReviews(jobs) {
     return;
   }
   
-  container.innerHTML = jobs.map(job => 
+  container.innerHTML = jobs.map(job =>
     '<div class="job-card">' +
       '<div class="job-header">' +
         '<h3 class="job-title">' + (job.professional_service || 'Service') + '</h3>' +
@@ -981,7 +1012,7 @@ function displayPendingReviews(jobs) {
         '<span class="status-badge status-pending">Review Pending</span>' +
       '</div>' +
       '<div class="action-buttons">' +
-        '<button class="btn btn-primary" onclick="openReviewModal(' + job.id + ')">Write Review</button>' +
+        '<button class="btn btn-primary" data-action="openReviewModal" data-booking-id="' + job.id + '">Write Review</button>' +
       '</div>' +
     '</div>'
   ).join('');
@@ -1012,9 +1043,9 @@ function displayMyReviews(reviews) {
   }
   
   container.innerHTML = reviews.map(review => {
-    const photosHtml = review.photos && review.photos.length > 0 ? 
+    const photosHtml = review.photos && review.photos.length > 0 ?
       '<div class="review-photos"><strong>Photos:</strong><div class="review-photos-grid">' +
-      review.photos.map(photo => '<img src="' + photo + '" class="review-photo" onclick="viewPhoto(\'' + photo + '\', \'Work completed by ' + review.professional_name + '\')" alt="Review photo" />').join('') +
+      review.photos.map(photo => '<img src="' + photo + '" class="review-photo" data-action="viewPhoto" data-photo-url="' + photo + '" data-caption="Work completed by ' + review.professional_name + '" alt="Review photo" />').join('') +
       '</div></div>' : '';
 
     return '<div class="review-card">' +
@@ -1036,7 +1067,7 @@ function displayMyReviews(reviews) {
       (review.review_text ? '<div class="review-card-text">"' + review.review_text + '"</div>' : '') +
       photosHtml +
       '<div class="review-actions">' +
-        '<button class="btn btn-primary" onclick="editReview(' + review.id + ')">Edit Review</button>' +
+        '<button class="btn btn-primary" data-action="editReview" data-review-id="' + review.id + '">Edit Review</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -1089,11 +1120,11 @@ async function updateStatistics() {
 
 function switchTab(tabName) {
   document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-  event.target.classList.add('active');
-  
+  document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
   document.getElementById(tabName + 'Tab').classList.add('active');
-  
+
   if (tabName === 'stats') {
     updateStatistics();
   }
@@ -1195,22 +1226,22 @@ async function submitReview() {
   }
 }
 
-window.editReview = async function(reviewId) {
+async function editReview(reviewId) {
   try {
     const res = await fetch('/reviews/client', { credentials: 'include' });
     const data = await res.json();
-    
+
     if (!data.success) {
       showNotification('Failed to load review', 'error');
       return;
     }
-    
+
     const review = data.reviews.find(r => r.id === reviewId);
     if (!review) {
       showNotification('Review not found', 'error');
       return;
     }
-    
+
     currentEditReview = review;
     editRatings = {
       overall: review.overall_rating || 0,
@@ -1219,45 +1250,45 @@ window.editReview = async function(reviewId) {
       communication: review.communication_rating || 0,
       value: review.value_rating || 0
     };
-    
+
     document.getElementById('editReviewDetails').innerHTML = `
       <div style="background:#f8f9fa; padding:1rem; border-radius:6px; margin-bottom:1rem;">
         <strong>${review.professional_name}</strong> - ${review.service}
       </div>
     `;
-    
+
     document.getElementById('editReviewText').value = review.review_text || '';
     updateEditCharCount();
-    
+
     setEditRating('overall', editRatings.overall);
     setEditRating('quality', editRatings.quality);
     setEditRating('punctuality', editRatings.punctuality);
     setEditRating('communication', editRatings.communication);
     setEditRating('value', editRatings.value);
-    
+
     displayEditPhotos(review.photos || []);
-    
+
     document.getElementById('editReviewModal').style.display = 'flex';
-    
+
   } catch (e) {
     console.error('Open edit review error:', e);
     showNotification('Error loading review', 'error');
   }
-};
+}
 
 function displayEditPhotos(photos) {
   const grid = document.getElementById('editPhotosGrid');
   grid.innerHTML = photos.map(photo => `
     <div class="edit-photo-item">
       <img src="${photo}" alt="Review photo" />
-      <button class="photo-remove-btn" onclick="removeEditPhoto('${photo}')" title="Remove photo">×</button>
+      <button class="photo-remove-btn" data-action="removeEditPhoto" data-photo-url="${photo}" title="Remove photo">×</button>
     </div>
   `).join('');
 }
 
-window.removeEditPhoto = async function(photoUrl) {
+async function removeEditPhoto(photoUrl) {
   if (!currentEditReview || !confirm('Remove this photo?')) return;
-  
+
   try {
     const res = await fetch(`/reviews/${currentEditReview.id}/photos`, {
       method: 'DELETE',
@@ -1265,7 +1296,7 @@ window.removeEditPhoto = async function(photoUrl) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ photoUrl })
     });
-    
+
     const data = await res.json();
     if (data.success) {
       showNotification('Photo removed', 'success');
@@ -1278,7 +1309,7 @@ window.removeEditPhoto = async function(photoUrl) {
     console.error('Remove photo error:', e);
     showNotification('Error removing photo', 'error');
   }
-};
+}
 
 async function handleEditPhotoUpload(e) {
   const file = e.target.files[0];
@@ -1369,11 +1400,11 @@ async function saveEditedReview() {
   }
 }
 
-window.viewPhoto = function(photoUrl, caption) {
+function viewPhoto(photoUrl, caption) {
   document.getElementById('photoViewImage').src = photoUrl;
   document.getElementById('photoViewCaption').textContent = caption || '';
   document.getElementById('photoViewModal').style.display = 'flex';
-};
+}
 
 function showNotification(message, type) {
   const container = document.getElementById('notificationContainer');
@@ -1398,8 +1429,6 @@ function showNotification(message, type) {
 function showError(message) {
   showNotification(message, 'error');
 }
-
-window.openReviewModal = openReviewModal;
 
 setInterval(async () => {
   if (currentUser && document.visibilityState === 'visible') {
