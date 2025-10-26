@@ -125,7 +125,7 @@ button:hover { background:#228b22; }
           <input type="password" id="registerPassword" required minlength="8" style="padding-right: 40px;"
                  pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$"
                  title="Password must be at least 8 characters with uppercase, lowercase, and a number" />
-          <span onclick="togglePassword('registerPassword')" style="position: absolute; right: 12px; top: 12px; cursor: pointer; user-select: none;">👁️</span>
+          <span id="togglePassword1" data-target="registerPassword" class="password-toggle" style="position: absolute; right: 12px; top: 12px; cursor: pointer; user-select: none;">👁️</span>
         </div>
         <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
           Must be at least 8 characters with uppercase, lowercase, and a number
@@ -136,7 +136,7 @@ button:hover { background:#228b22; }
         <label for="registerPassword2">Confirm Password:</label>
         <div style="position: relative;">
           <input type="password" id="registerPassword2" required minlength="8" style="padding-right: 40px;" />
-          <span onclick="togglePassword('registerPassword2')" style="position: absolute; right: 12px; top: 12px; cursor: pointer; user-select: none;">👁️</span>
+          <span id="togglePassword2" data-target="registerPassword2" class="password-toggle" style="position: absolute; right: 12px; top: 12px; cursor: pointer; user-select: none;">👁️</span>
         </div>
       </div>
 
@@ -233,7 +233,7 @@ button:hover { background:#228b22; }
       <button type="submit" id="registerBtn">Register</button>
     </form>
 
-    <button class="link-btn" onclick="window.location.href='login.html'">
+    <button class="link-btn" id="loginLinkBtn">
       Already have an account? Login
     </button>
   </div>
@@ -261,11 +261,6 @@ button:hover { background:#228b22; }
 </footer>
 
 <script>
-function togglePassword(fieldId) {
-  const field = document.getElementById(fieldId);
-  field.type = field.type === 'password' ? 'text' : 'password';
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('registerFormElement');
   const messageDiv = document.getElementById('registerMessage');
@@ -359,6 +354,25 @@ document.addEventListener('DOMContentLoaded', () => {
       messageDiv.innerHTML = `<div class="message error">Error: ${err.message}</div>`;
     }
   });
+
+  // Password toggle event listeners
+  document.querySelectorAll('.password-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const targetId = toggle.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    });
+  });
+
+  // Login link button
+  const loginLinkBtn = document.getElementById('loginLinkBtn');
+  if (loginLinkBtn) {
+    loginLinkBtn.addEventListener('click', () => {
+      window.location.href = 'login.html';
+    });
+  }
 });
 </script>
 

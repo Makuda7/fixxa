@@ -83,11 +83,11 @@ button:hover { background:#228b22; }
       <button type="submit">Login</button>
     </form>
 
-    <button class="link-btn" onclick="window.location.href='forgot-password.html'" style="margin-top: 0.5rem;">
+    <button class="link-btn" id="forgotPasswordBtn" style="margin-top: 0.5rem;">
       Forgot Password?
     </button>
 
-    <button class="link-btn" onclick="window.location.href='register.html'">
+    <button class="link-btn" id="registerBtn">
       Don't have an account? Register
     </button>
   </div>
@@ -149,6 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if(userBtn) userBtn.addEventListener('click', e => { e.stopPropagation(); userDropdown.style.display = (userDropdown.style.display==='block')?'none':'block'; });
   if(logoutBtn) logoutBtn.addEventListener('click', async e => { e.preventDefault(); await fetch('/logout',{method:'POST',credentials:'include'}); location.reload(); });
   document.addEventListener('click', e => { if(userDropdown && !userDropdown.contains(e.target) && userBtn && !userBtn.contains(e.target)) userDropdown.style.display='none'; });
+
+  // Navigation button event listeners
+  const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+  const registerBtn = document.getElementById('registerBtn');
+  if(forgotPasswordBtn) forgotPasswordBtn.addEventListener('click', () => { window.location.href = 'forgot-password.html'; });
+  if(registerBtn) registerBtn.addEventListener('click', () => { window.location.href = 'register.html'; });
 
   loginForm.addEventListener('submit', async e => {
     e.preventDefault();
