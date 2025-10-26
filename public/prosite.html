@@ -1266,8 +1266,8 @@ function renderCertifications() {
         </div>
         <span class="cert-status ${statusClass}">${statusText}</span>
         <div class="cert-actions">
-          <button class="view-btn" onclick="viewCertification('${cert.document_url}')">View</button>
-          <button class="delete-btn" onclick="deleteCertification(${cert.id})">Delete</button>
+          <button class="view-btn" data-action="view-cert" data-url="${cert.document_url}">View</button>
+          <button class="delete-btn" data-action="delete-cert" data-cert-id="${cert.id}">Delete</button>
         </div>
       </div>
     `;
@@ -1403,14 +1403,14 @@ function renderPortfolioPhotos() {
     const uploadDate = new Date(photo.uploaded_at).toLocaleDateString();
     return `
       <div class="portfolio-photo-card">
-        <img src="${photo.photo_url}" alt="Portfolio" onclick="window.open('${photo.photo_url}', '_blank')">
+        <img src="${photo.photo_url}" alt="Portfolio" data-action="view-portfolio" data-url="${photo.photo_url}">
         <div class="portfolio-photo-info">
           <p title="${escapeHTML(photo.description || 'No description')}">${escapeHTML(photo.description || 'No description')}</p>
           <small style="color:#999; font-size:0.75rem;">${uploadDate}</small>
         </div>
         <div class="portfolio-photo-actions">
-          <button style="background:#17a2b8; color:white;" onclick="viewPortfolioPhoto('${photo.photo_url}')">View</button>
-          <button style="background:#dc3545; color:white;" onclick="deletePortfolioPhoto(${photo.id})">Delete</button>
+          <button style="background:#17a2b8; color:white;" data-action="view-portfolio" data-url="${photo.photo_url}">View</button>
+          <button style="background:#dc3545; color:white;" data-action="delete-portfolio" data-photo-id="${photo.id}">Delete</button>
         </div>
       </div>
     `;
@@ -2127,10 +2127,10 @@ async function loadRequests(){
             ${req.note ? `<p><strong>Client Note:</strong> <em>${escapeHTML(req.note)}</em></p>` : ''}
             <p style="font-size:0.85rem; color:#666; margin-top:0.5rem;">Received: ${new Date(req.created_at).toLocaleString()}</p>
             <div class="request-actions">
-              <button class="approve-btn" onclick="handleNewBookingResponse(${req.booking_id}, 'approve')">
+              <button class="approve-btn" data-action="approve-new-booking" data-booking-id="${req.booking_id}">
                 ✓ Approve Booking
               </button>
-              <button class="reject-btn" onclick="openDeclineModal(${req.booking_id}, '${escapeHTML(req.client_name)}')">
+              <button class="reject-btn" data-action="decline-booking" data-booking-id="${req.booking_id}" data-client-name="${escapeHTML(req.client_name)}">
                 ✕ Decline Booking
               </button>
             </div>
@@ -2181,10 +2181,10 @@ async function loadRequests(){
           ${req.note ? `<p><strong>Additional Note:</strong> <em>${escapeHTML(req.note)}</em></p>` : ''}
           <p style="font-size:0.85rem; color:#666; margin-top:0.5rem;">Requested: ${new Date(req.created_at).toLocaleString()}</p>
           <div class="request-actions">
-            <button class="approve-btn" onclick="handleRequestResponse(${req.id}, 'approve')">
+            <button class="approve-btn" data-action="approve-request" data-request-id="${req.id}">
               ${req.request_type === 'cancellation' ? '✓ Approve Cancellation' : '✓ Approve Reschedule'}
             </button>
-            <button class="reject-btn" onclick="handleRequestResponse(${req.id}, 'reject')">
+            <button class="reject-btn" data-action="reject-request" data-request-id="${req.id}">
               ✕ Decline Request
             </button>
           </div>
@@ -2325,7 +2325,7 @@ function appendChatMessage(msg){
 
   let messageBody = '';
   if (msg.image_url) {
-    messageBody += `<img src="${msg.image_url}" alt="Shared image" onclick="window.open('${msg.image_url}', '_blank')">`;
+    messageBody += `<img src="${msg.image_url}" alt="Shared image" data-action="view-image" data-url="${msg.image_url}">`;
   }
   if (msg.content) {
     messageBody += `<div class="chat-message-body">${escapeHTML(msg.content)}</div>`;
@@ -2471,6 +2471,63 @@ document.addEventListener('DOMContentLoaded', async () => {
       const target = document.getElementById(targetId);
       if(target) target.classList.add('active');
     });
+  });
+
+  // Event delegation for dynamically created elements (CSP-compliant)
+  document.body.addEventListener('click', (e) => {
+    const action = e.target.dataset.action;
+    if (!action) return;
+
+    // Certification handlers
+    if (action === 'view-cert') {
+      e.preventDefault();
+      const url = e.target.dataset.url;
+      if (url) viewCertification(url);
+    }
+    else if (action === 'delete-cert') {
+      e.preventDefault();
+      const certId = parseInt(e.target.dataset.certId, 10);
+      if (certId) deleteCertification(certId);
+    }
+    // Portfolio handlers
+    else if (action === 'view-portfolio') {
+      e.preventDefault();
+      const url = e.target.dataset.url;
+      if (url) viewPortfolioPhoto(url);
+    }
+    else if (action === 'delete-portfolio') {
+      e.preventDefault();
+      const photoId = parseInt(e.target.dataset.photoId, 10);
+      if (photoId) deletePortfolioPhoto(photoId);
+    }
+    // Booking request handlers
+    else if (action === 'approve-new-booking') {
+      e.preventDefault();
+      const bookingId = parseInt(e.target.dataset.bookingId, 10);
+      if (bookingId) handleNewBookingResponse(bookingId, 'approve');
+    }
+    else if (action === 'decline-booking') {
+      e.preventDefault();
+      const bookingId = parseInt(e.target.dataset.bookingId, 10);
+      const clientName = e.target.dataset.clientName;
+      if (bookingId) openDeclineModal(bookingId, clientName);
+    }
+    else if (action === 'approve-request') {
+      e.preventDefault();
+      const requestId = parseInt(e.target.dataset.requestId, 10);
+      if (requestId) handleRequestResponse(requestId, 'approve');
+    }
+    else if (action === 'reject-request') {
+      e.preventDefault();
+      const requestId = parseInt(e.target.dataset.requestId, 10);
+      if (requestId) handleRequestResponse(requestId, 'reject');
+    }
+    // Chat image handler
+    else if (action === 'view-image') {
+      e.preventDefault();
+      const url = e.target.dataset.url;
+      if (url) window.open(url, '_blank');
+    }
   });
 
   // Availability toggle buttons
