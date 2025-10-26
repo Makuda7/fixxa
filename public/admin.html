@@ -749,7 +749,7 @@
       </div>
       <div class="dashboard-header-right">
         <div class="user-email" id="adminEmail">Loading...</div>
-        <button class="refresh-btn" id="refresh-btn" onclick="refreshDashboard()">
+        <button class="refresh-btn" id="refresh-btn" data-action="refresh">
           Refresh
         </button>
       </div>
@@ -759,26 +759,26 @@
 
     <!-- Navigation -->
     <div class="nav-tabs">
-      <button class="nav-tab active" onclick="switchTab('overview')">Overview</button>
-      <button class="nav-tab" onclick="switchTab('pending-workers')">
+      <button class="nav-tab active" data-tab="overview">Overview</button>
+      <button class="nav-tab" data-tab="pending-workers">
         Pending Workers
         <span class="badge" id="pendingWorkersBadge" style="display:none;">0</span>
       </button>
-      <button class="nav-tab" onclick="switchTab('certifications')">
+      <button class="nav-tab" data-tab="certifications">
         Certifications
         <span class="badge" id="pendingCertsBadge" style="display:none;">0</span>
       </button>
-      <button class="nav-tab" onclick="switchTab('support')">
+      <button class="nav-tab" data-tab="support">
         Worker Support
         <span class="badge" id="supportBadge" style="display:none;">0</span>
       </button>
-      <button class="nav-tab" onclick="switchTab('suggestions')">
+      <button class="nav-tab" data-tab="suggestions">
         Feature Suggestions
         <span class="badge" id="suggestionsBadge" style="display:none;">0</span>
       </button>
-      <button class="nav-tab" onclick="switchTab('workers')">Professionals</button>
-      <button class="nav-tab" onclick="switchTab('clients')">Clients</button>
-      <button class="nav-tab" onclick="switchTab('settings')">Settings</button>
+      <button class="nav-tab" data-tab="workers">Professionals</button>
+      <button class="nav-tab" data-tab="clients">Clients</button>
+      <button class="nav-tab" data-tab="settings">Settings</button>
     </div>
 
     <!-- Overview Tab -->
@@ -833,10 +833,10 @@
         <p>Review and approve professional certifications</p>
         
         <div style="margin: 1rem 0; display: flex; gap: 0.5rem;">
-          <button class="btn btn-primary btn-small" onclick="filterCertifications('pending')">Pending</button>
-          <button class="btn btn-secondary btn-small" onclick="filterCertifications('approved')">Approved</button>
-          <button class="btn btn-secondary btn-small" onclick="filterCertifications('rejected')">Rejected</button>
-          <button class="btn btn-secondary btn-small" onclick="filterCertifications('all')">All</button>
+          <button class="btn btn-primary btn-small" data-filter="pending" data-filter-type="certifications">Pending</button>
+          <button class="btn btn-secondary btn-small" data-filter="approved" data-filter-type="certifications">Approved</button>
+          <button class="btn btn-secondary btn-small" data-filter="rejected" data-filter-type="certifications">Rejected</button>
+          <button class="btn btn-secondary btn-small" data-filter="all" data-filter-type="certifications">All</button>
         </div>
 
         <div class="cert-grid" id="certifications-grid">
@@ -870,9 +870,9 @@
     <!-- Worker Support Tab -->
     <div id="support-tab" class="tab-content">
       <div class="filter-tabs">
-        <button class="filter-tab active" onclick="filterSupport('pending')">Pending</button>
-        <button class="filter-tab" onclick="filterSupport('responded')">Responded</button>
-        <button class="filter-tab" onclick="filterSupport('all')">All</button>
+        <button class="filter-tab active" data-filter="pending" data-filter-type="support">Pending</button>
+        <button class="filter-tab" data-filter="responded" data-filter-type="support">Responded</button>
+        <button class="filter-tab" data-filter="all" data-filter-type="support">All</button>
       </div>
       <div id="supportMessages" style="margin-top:1rem;">
         <p style="text-align:center; padding:2rem; color:#999;">Loading support messages...</p>
@@ -882,9 +882,9 @@
     <!-- Feature Suggestions Tab -->
     <div id="suggestions-tab" class="tab-content">
       <div class="filter-tabs">
-        <button class="filter-tab active" onclick="filterSuggestions('pending')">Pending Review</button>
-        <button class="filter-tab" onclick="filterSuggestions('reviewed')">Reviewed</button>
-        <button class="filter-tab" onclick="filterSuggestions('all')">All</button>
+        <button class="filter-tab active" data-filter="pending" data-filter-type="suggestions">Pending Review</button>
+        <button class="filter-tab" data-filter="reviewed" data-filter-type="suggestions">Reviewed</button>
+        <button class="filter-tab" data-filter="all" data-filter-type="suggestions">All</button>
       </div>
       <div id="suggestionsList" style="margin-top:1rem;">
         <p style="text-align:center; padding:2rem; color:#999;">Loading suggestions...</p>
@@ -915,7 +915,7 @@
             <span style="color: #dc3545; font-weight: 600;">⚠️ CAUTION: This will add missing columns to the production database</span>
             <span style="display: block; margin-top: 0.5rem;">This fixes all the "column does not exist" errors by adding missing database columns. Safe to run multiple times.</span>
           </div>
-          <button class="btn btn-primary" onclick="syncDatabaseSchema()" id="syncSchemaBtn">
+          <button class="btn btn-primary" data-action="sync-schema" id="syncSchemaBtn">
             🔄 Run Schema Sync
           </button>
           <div id="schemaSyncResult" style="margin-top: 1rem; display: none;"></div>
@@ -930,7 +930,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Certification Preview</h3>
-        <button class="modal-close" onclick="closeCertModal()">×</button>
+        <button class="modal-close" data-action="close-cert-modal">×</button>
       </div>
       <div id="certModalBody">
         <img id="certPreview" class="cert-preview" src="" alt="Certification">
@@ -944,14 +944,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Reject Worker Application</h3>
-        <button class="modal-close" onclick="closeRejectionModal()">×</button>
+        <button class="modal-close" data-action="close-rejection-modal">×</button>
       </div>
       <div style="padding:1.5rem;">
         <p style="color:#666; margin-bottom:1rem;">Provide a detailed reason for rejecting this application. The worker will be notified.</p>
         <textarea id="rejectionReason" rows="5" style="width:100%; padding:0.75rem; border:1px solid #ccc; border-radius:8px; font-family:inherit;" placeholder="Enter rejection reason (minimum 10 characters)..."></textarea>
         <div style="margin-top:1rem; display:flex; gap:0.5rem; justify-content:flex-end;">
-          <button class="btn btn-secondary" onclick="closeRejectionModal()">Cancel</button>
-          <button class="btn btn-danger" onclick="confirmRejectWorker()">Reject Application</button>
+          <button class="btn btn-secondary" data-action="close-rejection-modal">Cancel</button>
+          <button class="btn btn-danger" data-action="confirm-reject-worker">Reject Application</button>
         </div>
       </div>
     </div>
@@ -962,7 +962,7 @@
     <div class="modal-content" style="max-width: 800px;">
       <div class="modal-header">
         <h3 id="workerDetailName">Worker Details</h3>
-        <button class="modal-close" onclick="closeWorkerDetailModal()">×</button>
+        <button class="modal-close" data-action="close-worker-detail-modal">×</button>
       </div>
       <div id="workerDetailBody" style="padding: 0;">
         <!-- Content will be populated by JavaScript -->
@@ -1109,14 +1109,14 @@
             </div>
 
             <div class="cert-actions">
-              <button class="btn btn-secondary btn-small" onclick="viewCertificationByIndex(${index})">
+              <button class="btn btn-secondary btn-small" data-action="view-cert" data-cert-index="${index}">
                 View Document
               </button>
               ${cert.status === 'pending' ? `
-                <button class="btn btn-success btn-small" onclick="approveCertification(${cert.id})">
+                <button class="btn btn-success btn-small" data-action="approve-cert" data-cert-id="${cert.id}">
                   Approve
                 </button>
-                <button class="btn btn-danger btn-small" onclick="rejectCertification(${cert.id})">
+                <button class="btn btn-danger btn-small" data-action="reject-cert" data-cert-id="${cert.id}">
                   Reject
                 </button>
               ` : ''}
@@ -1162,7 +1162,7 @@
             <a href="${pdfUrl}" target="_blank" class="btn btn-primary" style="text-align: center;">
               📄 Open PDF in New Tab
             </a>
-            <button onclick="downloadDocument('${pdfUrl}', '${docName}')" class="btn btn-secondary" style="text-align: center;">
+            <button data-action="download-doc" data-url="${pdfUrl}" data-filename="${docName}" class="btn btn-secondary" style="text-align: center;">
               ⬇️ Download Document
             </button>
             <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; font-size: 0.9rem; color: #666;">
@@ -1398,7 +1398,7 @@
         const verifiedBadge = pro.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
 
         grid.innerHTML += `
-          <div class="worker-card ${cardClass}" onclick="showWorkerDetail(${pro.id})" style="position: relative;">
+          <div class="worker-card ${cardClass}" data-action="show-worker-detail" data-worker-id="${pro.id}" style="position: relative;">
             <div class="worker-header">
               <div class="worker-info">
                 <h4>${pro.name} ${verifiedBadge}</h4>
@@ -1422,7 +1422,7 @@
               </div>
             </div>
             <button class="btn ${pro.is_active ? 'btn-danger' : 'btn-success'} btn-small"
-                    onclick="event.stopPropagation(); toggleProfessionalStatus(${pro.id}, ${!pro.is_active})" style="width: 100%;">
+                    data-action="toggle-professional" data-worker-id="${pro.id}" data-is-active="${!pro.is_active}" style="width: 100%;">
               ${pro.is_active ? 'Deactivate' : 'Activate'} Professional
             </button>
           </div>
@@ -1567,13 +1567,15 @@
     }
 
     // Switch tabs
-    function switchTab(tabName) {
+    function switchTab(tabName, target) {
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
-      event.target.classList.add('active');
+
+      if (target) {
+        target.classList.add('active');
+      }
       document.getElementById(tabName + '-tab').classList.add('active');
-      
+
       // Load data if switching to tabs
       if (tabName === 'certifications') {
         loadCertifications();
@@ -1674,7 +1676,7 @@
         <div class="worker-card">
           <div class="worker-header">
             <div class="worker-info">
-              <h4 style="color:#228b22; cursor:pointer; text-decoration:underline;" onclick="openWorkerVerificationModal(${worker.id})">
+              <h4 style="color:#228b22; cursor:pointer; text-decoration:underline;" data-action="open-verification-modal" data-worker-id="${worker.id}">
                 ${escapeHTML(worker.name)} 📋
               </h4>
               <p>${escapeHTML(worker.email)} ${worker.phone ? '• ' + escapeHTML(worker.phone) : ''}</p>
@@ -1689,11 +1691,11 @@
           ${worker.bio ? `<p style="color:#666; margin-bottom:1rem;">${escapeHTML(worker.bio)}</p>` : ''}
           ${worker.experience ? `<p style="color:#666; margin-bottom:1rem;"><strong>Experience:</strong> ${escapeHTML(worker.experience)}</p>` : ''}
           <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-            <button class="btn btn-primary" onclick="openWorkerVerificationModal(${worker.id})" style="background:#2196F3;">
+            <button class="btn btn-primary" data-action="open-verification-modal" data-worker-id="${worker.id}" style="background:#2196F3;">
               📋 Review Details
             </button>
-            <button class="btn btn-success" onclick="approveWorker(${worker.id})">Approve</button>
-            <button class="btn btn-danger" onclick="openRejectWorkerModal(${worker.id})">Reject</button>
+            <button class="btn btn-success" data-action="approve-worker" data-worker-id="${worker.id}">Approve</button>
+            <button class="btn btn-danger" data-action="open-reject-modal" data-worker-id="${worker.id}">Reject</button>
           </div>
         </div>
       `).join('');
@@ -1930,7 +1932,7 @@
                             Status: <span style="color:${cert.status === 'approved' ? '#28a745' : cert.status === 'pending' ? '#ffc107' : '#dc3545'}; font-weight:600;">${cert.status.toUpperCase()}</span>
                           </p>
                         </div>
-                        <button class="btn btn-secondary" onclick="window.open('${cert.file_url}', '_blank')" style="padding:0.5rem 1rem;">
+                        <button class="btn btn-secondary" data-action="open-url" data-url="${cert.file_url}" style="padding:0.5rem 1rem;">
                           View
                         </button>
                       </div>
@@ -1961,11 +1963,11 @@
 
             <!-- Action Buttons -->
             <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
-              <button class="btn btn-secondary" onclick="closeWorkerDetailModal()">Close</button>
-              <button class="btn btn-success" onclick="approveWorkerFromModal(${workerId})" id="modalApproveBtn">
+              <button class="btn btn-secondary" data-action="close-worker-detail-modal">Close</button>
+              <button class="btn btn-success" data-action="approve-worker-modal" data-worker-id="${workerId}" id="modalApproveBtn">
                 ✅ Approve Worker
               </button>
-              <button class="btn btn-danger" onclick="openRejectWorkerModal(${workerId}); closeWorkerDetailModal();">
+              <button class="btn btn-danger" data-action="reject-worker-modal" data-worker-id="${workerId}">
                 ❌ Reject Application
               </button>
             </div>
@@ -2186,7 +2188,142 @@
     // ========== END WORKER DETAIL MODAL FUNCTIONS ==========
 
     // Run on page load
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+
+      // Event delegation for all click handlers
+      document.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action], [data-tab], [data-filter]');
+        if (!target) return;
+
+        // Tab navigation
+        if (target.hasAttribute('data-tab')) {
+          const tabName = target.getAttribute('data-tab');
+          switchTab(tabName, target);
+          return;
+        }
+
+        // Filter buttons
+        if (target.hasAttribute('data-filter')) {
+          const filterValue = target.getAttribute('data-filter');
+          const filterType = target.getAttribute('data-filter-type');
+
+          if (filterType === 'certifications') {
+            filterCertifications(filterValue);
+          } else if (filterType === 'support') {
+            filterSupport(filterValue, target);
+          } else if (filterType === 'suggestions') {
+            filterSuggestions(filterValue, target);
+          }
+          return;
+        }
+
+        // Action handlers
+        const action = target.getAttribute('data-action');
+
+        switch(action) {
+          // Dashboard actions
+          case 'refresh':
+            refreshDashboard();
+            break;
+          case 'sync-schema':
+            syncDatabaseSchema();
+            break;
+
+          // Modal actions
+          case 'close-cert-modal':
+            closeCertModal();
+            break;
+          case 'close-rejection-modal':
+            closeRejectionModal();
+            break;
+          case 'close-worker-detail-modal':
+            closeWorkerDetailModal();
+            break;
+          case 'confirm-reject-worker':
+            confirmRejectWorker();
+            break;
+
+          // Certification actions
+          case 'view-cert':
+            e.preventDefault();
+            const certIndex = parseInt(target.getAttribute('data-cert-index'));
+            viewCertificationByIndex(certIndex);
+            break;
+          case 'approve-cert':
+            e.preventDefault();
+            const approveCertId = parseInt(target.getAttribute('data-cert-id'));
+            approveCertification(approveCertId);
+            break;
+          case 'reject-cert':
+            e.preventDefault();
+            const rejectCertId = parseInt(target.getAttribute('data-cert-id'));
+            rejectCertification(rejectCertId);
+            break;
+          case 'download-doc':
+            e.preventDefault();
+            const docUrl = target.getAttribute('data-url');
+            const docFilename = target.getAttribute('data-filename');
+            downloadDocument(docUrl, docFilename);
+            break;
+
+          // Worker actions
+          case 'show-worker-detail':
+            // Don't trigger if clicking on a button inside the card
+            if (e.target.closest('button') && e.target.closest('button') !== target) {
+              return;
+            }
+            const detailWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            showWorkerDetail(detailWorkerId);
+            break;
+          case 'toggle-professional':
+            e.stopPropagation();
+            const toggleWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            const isActive = target.getAttribute('data-is-active') === 'true';
+            toggleProfessionalStatus(toggleWorkerId, isActive);
+            break;
+
+          // Pending worker actions
+          case 'open-verification-modal':
+            const verifyWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            openWorkerVerificationModal(verifyWorkerId);
+            break;
+          case 'approve-worker':
+            const approveWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            approveWorker(approveWorkerId);
+            break;
+          case 'open-reject-modal':
+            const rejectModalWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            openRejectWorkerModal(rejectModalWorkerId);
+            break;
+          case 'approve-worker-modal':
+            const approveModalWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            approveWorkerFromModal(approveModalWorkerId);
+            break;
+          case 'reject-worker-modal':
+            const rejectWorkerModalId = parseInt(target.getAttribute('data-worker-id'));
+            closeWorkerDetailModal();
+            openRejectWorkerModal(rejectWorkerModalId);
+            break;
+
+          // Support and suggestion actions
+          case 'mark-support-resolved':
+            const messageId = parseInt(target.getAttribute('data-message-id'));
+            markSupportResolved(messageId);
+            break;
+          case 'mark-suggestion-reviewed':
+            const suggestionId = parseInt(target.getAttribute('data-suggestion-id'));
+            markSuggestionReviewed(suggestionId);
+            break;
+
+          // Open URL in new tab
+          case 'open-url':
+            const url = target.getAttribute('data-url');
+            window.open(url, '_blank');
+            break;
+        }
+      });
+    });
 
     // Auto-refresh every 30 seconds
     setInterval(() => {
@@ -2259,7 +2396,7 @@
                   Reply via Email
                 </a>
                 ${!msg.admin_response ? `
-                  <button class="btn btn-secondary" onclick="markSupportResolved(${msg.id})">
+                  <button class="btn btn-secondary" data-action="mark-support-resolved" data-message-id="${msg.id}">
                     Mark as Resolved
                   </button>
                 ` : ''}
@@ -2277,10 +2414,12 @@
       }
     }
 
-    function filterSupport(status) {
+    function filterSupport(status, target) {
       currentSupportFilter = status;
       document.querySelectorAll('#support-tab .filter-tab').forEach(tab => tab.classList.remove('active'));
-      event.target.classList.add('active');
+      if (target) {
+        target.classList.add('active');
+      }
       loadSupportMessages();
     }
 
@@ -2356,7 +2495,7 @@
               ` : ''}
               <div style="display:flex; gap:0.5rem;">
                 ${sug.status === 'pending' ? `
-                  <button class="btn btn-primary" onclick="markSuggestionReviewed(${sug.id})">
+                  <button class="btn btn-primary" data-action="mark-suggestion-reviewed" data-suggestion-id="${sug.id}">
                     Mark as Reviewed
                   </button>
                 ` : ''}
@@ -2377,10 +2516,12 @@
       }
     }
 
-    function filterSuggestions(status) {
+    function filterSuggestions(status, target) {
       currentSuggestionsFilter = status;
       document.querySelectorAll('#suggestions-tab .filter-tab').forEach(tab => tab.classList.remove('active'));
-      event.target.classList.add('active');
+      if (target) {
+        target.classList.add('active');
+      }
       loadSuggestions();
     }
 
