@@ -1,30 +1,53 @@
 const nodemailer = require('nodemailer');
 const { retryEmailSend } = require('./retry');
 
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE,
+// Configure transporter based on environment
+const transporterConfig = process.env.SENDGRID_API_KEY ? {
+  // SendGrid configuration (Production - Recommended)
+  host: 'smtp.sendgrid.net',
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: 'apikey', // This is literally the string 'apikey'
+    pass: process.env.SENDGRID_API_KEY
+  },
+  connectionTimeout: 30000,
+  greetingTimeout: 10000,
+  socketTimeout: 30000,
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100
+} : {
+  // Gmail fallback configuration
+  service: process.env.EMAIL_SERVICE || 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
   },
-  // Increased timeout settings for better reliability
-  connectionTimeout: 30000, // 30 seconds
-  greetingTimeout: 10000,   // 10 seconds
-  socketTimeout: 30000,     // 30 seconds
-  pool: true,               // Use pooled connections
-  maxConnections: 5,        // Max simultaneous connections
-  maxMessages: 100,         // Max messages per connection
-  rateDelta: 1000,          // Rate limiting: 1 second between messages
-  rateLimit: 3              // Max 3 emails per rateDelta
-});
+  connectionTimeout: 30000,
+  greetingTimeout: 10000,
+  socketTimeout: 30000,
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  rateDelta: 1000,
+  rateLimit: 3
+};
+
+const transporter = nodemailer.createTransport(transporterConfig);
 
 // Verify email configuration on startup
+const emailProvider = process.env.SENDGRID_API_KEY ? 'SendGrid' : (process.env.EMAIL_SERVICE || 'Gmail');
 transporter.verify(function(error, success) {
   if (error) {
-    console.error('❌ Email transporter verification failed:', error.message);
-    console.error('   Please check EMAIL_SERVICE, EMAIL_USER, and EMAIL_PASSWORD environment variables');
+    console.error(`❌ Email transporter verification failed (${emailProvider}):`, error.message);
+    if (process.env.SENDGRID_API_KEY) {
+      console.error('   Please check SENDGRID_API_KEY environment variable');
+    } else {
+      console.error('   Please check EMAIL_SERVICE, EMAIL_USER, and EMAIL_PASSWORD environment variables');
+    }
   } else {
-    console.log('✅ Email transporter is ready to send emails');
+    console.log(`✅ Email transporter is ready to send emails via ${emailProvider}`);
   }
 });
 
