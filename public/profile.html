@@ -1505,10 +1505,16 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <div class="quick-specs">
-              <span class="spec-badge">📍 ${worker.area}</span>
+              <span class="spec-badge">📍 ${worker.primary_suburb || worker.area}${worker.province ? ', ' + worker.province : ''}</span>
               <span class="spec-badge">⭐ ${worker.experience}</span>
               <span class="spec-badge" title="Days this professional is available to work">📅 Works: ${getAvailabilityText(worker.availability_schedule)}</span>
             </div>
+
+            ${worker.secondary_areas && worker.secondary_areas.length > 0 ? `
+            <div class="profile-bio" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid forestgreen; margin-bottom: 1rem;">
+              <strong>🚗 Also Willing to Work In:</strong> ${Array.isArray(worker.secondary_areas) ? worker.secondary_areas.join(', ') : worker.secondary_areas}
+            </div>
+            ` : ''}
 
             <div class="profile-bio">
               <strong>About</strong>
