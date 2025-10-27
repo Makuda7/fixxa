@@ -464,6 +464,146 @@ const emailTemplates = {
         <p style="color: #666; font-size: 14px;">Thank you for providing excellent service on Fixxa!</p>
       </div>
     `
+  }),
+
+  // Quote received email (sent to client)
+  createQuoteReceivedEmail: (clientName, workerName, totalAmount, validUntil) => ({
+    subject: `Quote Received from ${workerName} - Fixxa`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #2196F3;">📋 You've Received a Quote!</h1>
+        <p>Hi ${clientName},</p>
+        <p><strong>${workerName}</strong> has sent you a quote for your booking request.</p>
+
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196F3;">
+          <h3 style="margin-top: 0; color: #0d47a1;">💰 Quote Amount</h3>
+          <p style="font-size: 24px; font-weight: bold; margin: 0; color: #0d47a1;">R ${totalAmount}</p>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <p style="margin: 0;"><strong>⏰ Valid Until:</strong> ${validUntil}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${baseUrl}/clientProfile.html"
+             style="background: #4a7c59; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View Quote & Respond
+          </a>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">Review the quote details and accept or reject it in your dashboard.</p>
+        <p style="color: #666; font-size: 14px;">Thank you for using Fixxa!</p>
+      </div>
+    `
+  }),
+
+  // Quote accepted email (sent to worker)
+  createQuoteAcceptedEmail: (workerName, clientName, totalAmount) => ({
+    subject: `Quote Accepted by ${clientName} - Fixxa`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #28a745;">✅ Quote Accepted!</h1>
+        <p>Hi ${workerName},</p>
+        <p>Great news! <strong>${clientName}</strong> has accepted your quote of <strong>R ${totalAmount}</strong>.</p>
+
+        <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <h3 style="margin-top: 0; color: #155724;">🎉 Job Confirmed</h3>
+          <p style="margin: 0;">The booking is now confirmed. Please coordinate with the client to schedule the work.</p>
+        </div>
+
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Next Steps:</h3>
+          <p>1. Contact the client to confirm date/time</p>
+          <p>2. Complete the job as quoted</p>
+          <p style="margin-bottom: 0;">3. Mark the job as complete in your dashboard</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${baseUrl}/prosite.html"
+             style="background: #4a7c59; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View Booking Details
+          </a>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">Thank you for using Fixxa!</p>
+      </div>
+    `
+  }),
+
+  // Quote rejected email (sent to worker)
+  createQuoteRejectedEmail: (workerName, clientName, reason) => ({
+    subject: `Quote Not Accepted by ${clientName} - Fixxa`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #dc3545;">Quote Not Accepted</h1>
+        <p>Hi ${workerName},</p>
+        <p><strong>${clientName}</strong> has declined your quote.</p>
+
+        <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+          <h3 style="margin-top: 0; color: #721c24;">Reason:</h3>
+          <p style="margin: 0;">${reason}</p>
+        </div>
+
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196F3;">
+          <h3 style="margin-top: 0; color: #0d47a1;">💡 What's Next?</h3>
+          <p style="margin-bottom: 0;">You can send a revised quote if you'd like to negotiate. Contact the client through the messaging system to discuss their needs.</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${baseUrl}/prosite.html"
+             style="background: #4a7c59; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View Booking
+          </a>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">Thank you for using Fixxa!</p>
+      </div>
+    `
+  }),
+
+  // Job completion receipt (sent to client)
+  createJobCompletionReceiptEmail: (clientName, workerName, receipt) => ({
+    subject: `Receipt for Completed Job - ${workerName} - Fixxa`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #28a745;">📧 Job Completion Receipt</h1>
+        <p>Hi ${clientName},</p>
+        <p>Your job with <strong>${workerName}</strong> has been completed!</p>
+
+        <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <h3 style="margin-top: 0; color: #155724;">✓ Job Completed</h3>
+          <p style="margin: 0;">Receipt Number: <strong>${receipt.receipt_number}</strong></p>
+        </div>
+
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Receipt Details</h3>
+          ${receipt.line_items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+              <span>${item.description}</span>
+              <span><strong>R ${parseFloat(item.amount).toFixed(2)}</strong></span>
+            </div>
+          `).join('')}
+          <hr style="border: none; border-top: 2px solid #ddd; margin: 15px 0;">
+          <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: bold;">
+            <span>Total:</span>
+            <span>R ${parseFloat(receipt.total_amount).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <p style="margin: 0;"><strong>💳 Payment Status:</strong> ${receipt.payment_status === 'paid' ? 'Paid' : 'Payment handled directly with professional'}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${baseUrl}/clientProfile.html"
+             style="background: #4a7c59; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Leave a Review
+          </a>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">Thank you for using Fixxa!</p>
+      </div>
+    `
   })
 };
 

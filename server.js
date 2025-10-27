@@ -240,6 +240,7 @@ const supportRoutes = require('./routes/support')(pool, logger, sendEmail);
 const notificationsRoutes = require('./routes/notifications')(pool, logger);
 const cookieConsentRoutes = require('./routes/cookieConsent')(pool, logger);
 const suburbsRoutes = require('./routes/suburbs');
+const quotesRoutes = require('./routes/quotes')(pool, logger, sendEmail, emailTemplates);
 
 // Mount routes
 app.use('/', authRoutes);
@@ -258,6 +259,7 @@ app.use('/', supportRoutes);
 app.use('/notifications', notificationsRoutes);
 app.use('/api', cookieConsentRoutes);
 app.use('/suburbs', suburbsRoutes);
+app.use('/quotes', quotesRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -586,6 +588,23 @@ async function runReferralSourceMigration() {
   }
 }
 
+// Auto-run migration for quotes system
+async function runQuotesMigration() {
+  try {
+    console.log('🔄 Running quotes system migration...');
+    const fs = require('fs');
+    const path = require('path');
+
+    const migrationPath = path.join(__dirname, 'database', 'migrations', '010_add_quotes_system.sql');
+    const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+
+    await pool.query(migrationSQL);
+    console.log('✅ Quotes system migration completed');
+  } catch (error) {
+    console.log('⚠️  Quotes migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for suburbs system
 async function runSuburbsMigration() {
   try {
@@ -672,6 +691,7 @@ async function startServer() {
     await runReferralSourceMigration();
     await runPaymentFieldsMigration();
     await runSuburbsMigration();
+    await runQuotesMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
