@@ -562,6 +562,9 @@ module.exports = (pool, logger, helpers) => {
           w.bio,
           w.experience,
           w.area,
+          w.province,
+          w.primary_suburb,
+          w.secondary_areas,
           w.service_radius,
           w.created_at,
           w.approval_status,
@@ -616,6 +619,7 @@ module.exports = (pool, logger, helpers) => {
   router.post('/approve-worker/:id', requireAuth, adminOnly, async (req, res) => {
     try {
       const { id } = req.params;
+      const { province, primary_suburb, secondary_areas } = req.body;
       const adminEmail = req.session.user.email;
 
       // Get worker details for email
@@ -638,18 +642,42 @@ module.exports = (pool, logger, helpers) => {
 
       const hasApprovedCerts = parseInt(certResult.rows[0].count) > 0;
 
-      // Update worker status - set is_verified if they have approved certifications
-      await pool.query(
-        `UPDATE workers
+      // Build update query dynamically based on provided suburb data
+      let updateQuery = `UPDATE workers
          SET approval_status = 'approved',
              is_active = true,
              is_verified = $1,
              approval_date = NOW(),
              approved_by = $2,
-             verification_date = CASE WHEN $1 = true THEN NOW() ELSE verification_date END
-         WHERE id = $3`,
-        [hasApprovedCerts, adminEmail, id]
-      );
+             verification_date = CASE WHEN $1 = true THEN NOW() ELSE verification_date END`;
+
+      const params = [hasApprovedCerts, adminEmail];
+      let paramIndex = 3;
+
+      // Add suburb corrections if provided
+      if (province !== undefined && province !== null) {
+        updateQuery += `, province = $${paramIndex}`;
+        params.push(province.trim());
+        paramIndex++;
+      }
+
+      if (primary_suburb !== undefined && primary_suburb !== null) {
+        updateQuery += `, primary_suburb = $${paramIndex}`;
+        params.push(primary_suburb.trim());
+        paramIndex++;
+      }
+
+      if (secondary_areas !== undefined && secondary_areas !== null) {
+        updateQuery += `, secondary_areas = $${paramIndex}`;
+        params.push(secondary_areas); // Already an array
+        paramIndex++;
+      }
+
+      updateQuery += ` WHERE id = $${paramIndex}`;
+      params.push(id);
+
+      // Update worker status with corrected suburb data
+      await pool.query(updateQuery, params);
 
       logger.info('Worker approved by admin', {
         workerId: id,

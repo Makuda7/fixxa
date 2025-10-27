@@ -1713,16 +1713,27 @@
       }
     }
 
-    async function approveWorker(workerId) {
+    async function approveWorker(workerId, suburbData = {}) {
       if (!confirm('Are you sure you want to approve this worker? They will be able to accept bookings.')) {
         return;
       }
 
       try {
         setLoading(true);
+
+        // Prepare request body with suburb corrections if provided
+        const requestBody = {};
+        if (suburbData.province) requestBody.province = suburbData.province;
+        if (suburbData.primary_suburb) requestBody.primary_suburb = suburbData.primary_suburb;
+        if (suburbData.secondary_areas) requestBody.secondary_areas = suburbData.secondary_areas;
+
         const res = await fetch(`/admin/approve-worker/${workerId}`, {
           method: 'POST',
-          credentials: 'include'
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
         });
         const data = await res.json();
 
@@ -1916,6 +1927,48 @@
               </label>
             </div>
 
+            <!-- Location Information (Editable) -->
+            <div style="background:#e8f4fd; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #0066cc;">
+              <h4 style="margin:0 0 1rem 0; color:#0066cc;">📍 Location Information <span style="font-size:0.85rem; color:#666;">(Editable - Fix spelling before approval)</span></h4>
+              <div style="background:#fff; padding:1rem; border-radius:6px; margin-bottom:1rem;">
+                <div style="margin-bottom:1rem;">
+                  <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Province:</label>
+                  <select id="edit-province" style="width:100%; padding:0.75rem; border:1px solid #ccc; border-radius:6px; font-family:inherit;">
+                    <option value="">Select Province</option>
+                    <option value="Gauteng" ${(worker.province || worker.area) === 'Gauteng' ? 'selected' : ''}>Gauteng</option>
+                    <option value="Western Cape" ${(worker.province || worker.area) === 'Western Cape' ? 'selected' : ''}>Western Cape</option>
+                    <option value="KwaZulu-Natal" ${(worker.province || worker.area) === 'KwaZulu-Natal' ? 'selected' : ''}>KwaZulu-Natal</option>
+                    <option value="Eastern Cape" ${(worker.province || worker.area) === 'Eastern Cape' ? 'selected' : ''}>Eastern Cape</option>
+                    <option value="Free State" ${(worker.province || worker.area) === 'Free State' ? 'selected' : ''}>Free State</option>
+                    <option value="Limpopo" ${(worker.province || worker.area) === 'Limpopo' ? 'selected' : ''}>Limpopo</option>
+                    <option value="Mpumalanga" ${(worker.province || worker.area) === 'Mpumalanga' ? 'selected' : ''}>Mpumalanga</option>
+                    <option value="Northern Cape" ${(worker.province || worker.area) === 'Northern Cape' ? 'selected' : ''}>Northern Cape</option>
+                    <option value="North West" ${(worker.province || worker.area) === 'North West' ? 'selected' : ''}>North West</option>
+                  </select>
+                  <small style="color:#666; font-size:0.85rem;">Large region (e.g., Gauteng, Western Cape)</small>
+                </div>
+                <div style="margin-bottom:1rem;">
+                  <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Primary Suburb / Area: <span style="color:#dc3545;">*</span></label>
+                  <input type="text" id="edit-primary-suburb" value="${escapeHTML(worker.primary_suburb || worker.area || '')}"
+                         style="width:100%; padding:0.75rem; border:2px solid #0066cc; border-radius:6px; font-family:inherit; font-size:1rem;"
+                         placeholder="e.g., Benoni, Boksburg, Sandton">
+                  <small style="color:#666; font-size:0.85rem;">✏️ Fix spelling here - clients will search by this suburb. Use proper capitalization (e.g., "Benoni" not "benoni")</small>
+                </div>
+                <div>
+                  <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Also Willing to Work In (Optional):</label>
+                  <input type="text" id="edit-secondary-areas" value="${worker.secondary_areas ? (Array.isArray(worker.secondary_areas) ? worker.secondary_areas.join(', ') : worker.secondary_areas) : ''}"
+                         style="width:100%; padding:0.75rem; border:1px solid #ccc; border-radius:6px; font-family:inherit;"
+                         placeholder="e.g., Germiston, Brakpan, Springs">
+                  <small style="color:#666; font-size:0.85rem;">Comma-separated list of other suburbs. Shown on profile but not used in search.</small>
+                </div>
+              </div>
+              <div style="background:#fff3cd; padding:0.75rem; border-radius:6px; border-left:4px solid #ffc107;">
+                <p style="margin:0; font-size:0.9rem; color:#856404;">
+                  <strong>⚠️ Important:</strong> Edit spelling before approving to prevent duplicate suburbs (e.g., "benoni" vs "Benoni")
+                </p>
+              </div>
+            </div>
+
             <!-- Documents/Certifications -->
             <div style="background:#e8f5e9; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #28a745;">
               <h4 style="margin:0 0 1rem 0; color:#155724;">📄 Uploaded Documents</h4>
@@ -2029,8 +2082,24 @@
     }
 
     async function approveWorkerFromModal(workerId) {
+      // Collect edited suburb data from form
+      const province = document.getElementById('edit-province')?.value;
+      const primary_suburb = document.getElementById('edit-primary-suburb')?.value?.trim();
+      const secondary_areas_input = document.getElementById('edit-secondary-areas')?.value?.trim();
+
+      // Parse secondary areas
+      const secondary_areas = secondary_areas_input
+        ? secondary_areas_input.split(',').map(s => s.trim()).filter(s => s)
+        : [];
+
+      // Validate required field
+      if (!primary_suburb) {
+        showMessage('Primary suburb is required', 'error');
+        return;
+      }
+
       closeWorkerDetailModal();
-      await approveWorker(workerId);
+      await approveWorker(workerId, { province, primary_suburb, secondary_areas });
     }
 
     // ========== END PENDING WORKERS FUNCTIONS ==========
