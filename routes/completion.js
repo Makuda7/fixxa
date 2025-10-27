@@ -127,7 +127,100 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io) => {
 
           await client.query('COMMIT');
 
-          // TODO: Process payment here when payment system is implemented
+          // Generate receipt if quote was accepted
+          try {
+            const quoteCheck = await pool.query(
+              'SELECT * FROM quotes WHERE booking_id = $1 AND status = $2',
+              [request.booking_id, 'accepted']
+            );
+
+            if (quoteCheck.rows.length > 0) {
+              const quote = quoteCheck.rows[0];
+
+              // Create receipt
+              await pool.query(`
+                INSERT INTO receipts (
+                  booking_id, quote_id, worker_id, client_id,
+                  line_items, subtotal, tax_amount, total_amount,
+                  payment_method, payment_status, emailed_to
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+              `, [
+                request.booking_id,
+                quote.id,
+                request.worker_id,
+                clientId,
+                quote.line_items,
+                quote.subtotal,
+                quote.tax_amount,
+                quote.total_amount,
+                'pending', // payment_method - set when client pays
+                'pending', // payment_status
+                null // emailed_at - will be set when email is sent
+              ]);
+
+              // Get receipt number for email
+              const receiptResult = await pool.query(
+                'SELECT * FROM receipts WHERE booking_id = $1 ORDER BY created_at DESC LIMIT 1',
+                [request.booking_id]
+              );
+
+              if (receiptResult.rows.length > 0) {
+                const receipt = receiptResult.rows[0];
+
+                // Get client details
+                const clientDetails = await pool.query(
+                  'SELECT email, name FROM users WHERE id = $1',
+                  [clientId]
+                );
+
+                if (clientDetails.rows.length > 0) {
+                  const clientEmail = clientDetails.rows[0].email;
+                  const clientName = clientDetails.rows[0].name;
+
+                  // Send receipt email
+                  const receiptEmailContent = emailTemplates.createJobCompletionReceiptEmail(
+                    clientName,
+                    request.worker_name,
+                    {
+                      receipt_number: receipt.receipt_number,
+                      line_items: typeof receipt.line_items === 'string'
+                        ? JSON.parse(receipt.line_items)
+                        : receipt.line_items,
+                      total_amount: receipt.total_amount,
+                      payment_status: receipt.payment_status
+                    }
+                  );
+
+                  try {
+                    await sendEmail(clientEmail, receiptEmailContent.subject, receiptEmailContent.html);
+
+                    // Update receipt with email sent timestamp
+                    await pool.query(
+                      'UPDATE receipts SET emailed_to = $1, emailed_at = NOW() WHERE id = $2',
+                      [clientEmail, receipt.id]
+                    );
+
+                    logger.info('Receipt generated and emailed', {
+                      receiptId: receipt.id,
+                      receiptNumber: receipt.receipt_number,
+                      bookingId: request.booking_id
+                    });
+                  } catch (emailError) {
+                    logger.error('Failed to send receipt email', {
+                      error: emailError.message,
+                      receiptId: receipt.id
+                    });
+                  }
+                }
+              }
+            }
+          } catch (receiptError) {
+            logger.error('Failed to generate receipt', {
+              error: receiptError.message,
+              bookingId: request.booking_id
+            });
+            // Don't fail completion if receipt generation fails
+          }
 
           // Send notification to worker (after successful commit)
           if (io) {
