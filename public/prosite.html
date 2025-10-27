@@ -1175,12 +1175,99 @@ tr:hover { background:#f0f0f0; cursor:pointer; }
 </div>
 </div>
 <div class="modal-actions">
+<button class="btn primary" id="sendQuoteBtn" style="background:#2196F3;">💰 Send Quote</button>
 <button class="btn primary" id="saveRescheduleBtn">Save Reschedule</button>
 <button class="btn warn" id="changeStatusBtn">Update Status</button>
 <button class="btn danger" id="cancelBookingBtn">Cancel Booking</button>
 <button class="btn" id="closeBookingBtn">Close</button>
 </div>
 <div id="bookingModalMsg" style="margin-top:0.6rem;color:green;display:none;">Updated successfully</div>
+</div>
+</div>
+
+<!-- Quote Modal -->
+<div id="quoteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1200;">
+<div style="background:white; border-radius:12px; max-width:600px; width:95%; max-height:90%; overflow-y:auto; padding:1.5rem;">
+<div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:1rem; border-bottom:2px solid #eee;">
+<h3 style="margin:0; color:#2196F3;">💰 Send Quote</h3>
+<button id="closeQuoteModal" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
+</div>
+<div style="padding-top:1rem;">
+<p style="color:#666; margin-bottom:1rem;">Create a detailed quote for <strong id="quoteClientName"></strong></p>
+
+<!-- Line Items -->
+<div id="quoteLineItems">
+<div style="background:#f5f5f5; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+<h4 style="margin:0 0 0.5rem 0;">Line Items</h4>
+<div id="lineItemsContainer"></div>
+<button id="addLineItemBtn" type="button" style="background:#4CAF50; color:white; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; margin-top:0.5rem;">+ Add Item</button>
+</div>
+</div>
+
+<!-- Totals -->
+<div style="background:#e3f2fd; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+<div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+<span><strong>Subtotal:</strong></span>
+<span id="quoteSubtotal">R 0.00</span>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:bold; padding-top:0.5rem; border-top:2px solid #2196F3;">
+<span>Total:</span>
+<span id="quoteTotal">R 0.00</span>
+</div>
+</div>
+
+<!-- Payment Methods -->
+<div style="margin-bottom:1rem;">
+<label style="font-weight:600; display:block; margin-bottom:0.5rem;">Payment Methods Accepted:</label>
+<div style="display:flex; gap:1rem; flex-wrap:wrap;">
+<label style="display:flex; align-items:center; gap:0.3rem;">
+<input type="checkbox" name="paymentMethod" value="cash" checked> Cash
+</label>
+<label style="display:flex; align-items:center; gap:0.3rem;">
+<input type="checkbox" name="paymentMethod" value="eft"> EFT
+</label>
+<label style="display:flex; align-items:center; gap:0.3rem;">
+<input type="checkbox" name="paymentMethod" value="card"> Card
+</label>
+</div>
+</div>
+
+<!-- Banking Details (shown if EFT selected) -->
+<div id="bankingDetailsSection" style="display:none; background:#fff3cd; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+<h4 style="margin:0 0 0.5rem 0;">Banking Details for EFT</h4>
+<input type="text" id="bankName" placeholder="Bank Name" style="width:100%; padding:0.5rem; margin-bottom:0.5rem; border:1px solid #ccc; border-radius:6px;">
+<input type="text" id="accountNumber" placeholder="Account Number" style="width:100%; padding:0.5rem; margin-bottom:0.5rem; border:1px solid #ccc; border-radius:6px;">
+<select id="accountType" style="width:100%; padding:0.5rem; margin-bottom:0.5rem; border:1px solid #ccc; border-radius:6px;">
+<option value="">Select Account Type</option>
+<option value="Cheque">Cheque</option>
+<option value="Savings">Savings</option>
+</select>
+<input type="text" id="branchCode" placeholder="Branch Code" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:6px;">
+</div>
+
+<!-- Notes -->
+<div style="margin-bottom:1rem;">
+<label style="font-weight:600; display:block; margin-bottom:0.5rem;">Additional Notes (Optional):</label>
+<textarea id="quoteNotes" rows="3" placeholder="e.g., Materials to be purchased by client, Payment due on completion" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:6px;"></textarea>
+</div>
+
+<!-- Valid Days -->
+<div style="margin-bottom:1rem;">
+<label style="font-weight:600; display:block; margin-bottom:0.5rem;">Quote Valid For:</label>
+<select id="quoteValidDays" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:6px;">
+<option value="7">7 Days</option>
+<option value="14">14 Days</option>
+<option value="30">30 Days</option>
+</select>
+</div>
+
+<!-- Actions -->
+<div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+<button id="cancelQuoteBtn" style="background:#e0e0e0; color:#333; border:none; padding:0.7rem 1.5rem; border-radius:6px; cursor:pointer;">Cancel</button>
+<button id="submitQuoteBtn" style="background:#4CAF50; color:white; border:none; padding:0.7rem 1.5rem; border-radius:6px; cursor:pointer; font-weight:600;">Send Quote</button>
+</div>
+<div id="quoteMsg" style="margin-top:1rem; display:none;"></div>
+</div>
 </div>
 </div>
 
@@ -2819,6 +2906,187 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert('Cancel failed: ' + (result.error || 'Unknown error'));
     }
   });
+
+  // Quote Modal Event Listeners
+  let quoteLineItems = [];
+
+  document.getElementById('sendQuoteBtn').addEventListener('click', () => {
+    if (!currentBooking) return;
+    openQuoteModal();
+  });
+
+  document.getElementById('closeQuoteModal').addEventListener('click', closeQuoteModal);
+  document.getElementById('cancelQuoteBtn').addEventListener('click', closeQuoteModal);
+
+  document.getElementById('quoteModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('quoteModal')) closeQuoteModal();
+  });
+
+  // Show/hide banking details based on EFT checkbox
+  document.querySelectorAll('input[name="paymentMethod"]').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      const eftChecked = document.querySelector('input[name="paymentMethod"][value="eft"]').checked;
+      document.getElementById('bankingDetailsSection').style.display = eftChecked ? 'block' : 'none';
+    });
+  });
+
+  // Add line item
+  document.getElementById('addLineItemBtn').addEventListener('click', addLineItem);
+
+  // Submit quote
+  document.getElementById('submitQuoteBtn').addEventListener('click', submitQuote);
+
+  function openQuoteModal() {
+    document.getElementById('quoteClientName').textContent = currentBooking.client_name || 'Client';
+    quoteLineItems = [];
+    document.getElementById('lineItemsContainer').innerHTML = '';
+    addLineItem(); // Start with one line item
+    calculateQuoteTotal();
+    document.getElementById('quoteModal').style.display = 'flex';
+  }
+
+  function closeQuoteModal() {
+    document.getElementById('quoteModal').style.display = 'none';
+    document.getElementById('quoteMsg').style.display = 'none';
+  }
+
+  function addLineItem() {
+    const index = quoteLineItems.length;
+    const itemDiv = document.createElement('div');
+    itemDiv.style.cssText = 'background:white; padding:0.75rem; border-radius:6px; margin-bottom:0.5rem; border:1px solid #ddd;';
+    itemDiv.innerHTML = `
+      <div style="display:grid; grid-template-columns:2fr 1fr auto; gap:0.5rem; align-items:center;">
+        <input type="text" placeholder="Description (e.g., Labor, Materials)" data-index="${index}" class="lineItemDesc" style="padding:0.5rem; border:1px solid #ccc; border-radius:4px;">
+        <input type="number" placeholder="Amount" step="0.01" min="0" data-index="${index}" class="lineItemAmount" style="padding:0.5rem; border:1px solid #ccc; border-radius:4px;">
+        <button type="button" class="removeLineItem" data-index="${index}" style="background:#dc3545; color:white; border:none; padding:0.5rem 0.75rem; border-radius:4px; cursor:pointer;">✕</button>
+      </div>
+    `;
+    document.getElementById('lineItemsContainer').appendChild(itemDiv);
+    quoteLineItems.push({ description: '', amount: 0 });
+
+    // Add event listeners
+    itemDiv.querySelector('.lineItemDesc').addEventListener('input', (e) => {
+      quoteLineItems[index].description = e.target.value;
+    });
+
+    itemDiv.querySelector('.lineItemAmount').addEventListener('input', (e) => {
+      quoteLineItems[index].amount = parseFloat(e.target.value) || 0;
+      calculateQuoteTotal();
+    });
+
+    itemDiv.querySelector('.removeLineItem').addEventListener('click', () => {
+      if (quoteLineItems.length > 1) {
+        quoteLineItems.splice(index, 1);
+        renderLineItems();
+      } else {
+        alert('You must have at least one line item');
+      }
+    });
+  }
+
+  function renderLineItems() {
+    document.getElementById('lineItemsContainer').innerHTML = '';
+    const tempItems = [...quoteLineItems];
+    quoteLineItems = [];
+    tempItems.forEach(() => addLineItem());
+    tempItems.forEach((item, i) => {
+      document.querySelector(`.lineItemDesc[data-index="${i}"]`).value = item.description;
+      document.querySelector(`.lineItemAmount[data-index="${i}"]`).value = item.amount;
+      quoteLineItems[i] = item;
+    });
+    calculateQuoteTotal();
+  }
+
+  function calculateQuoteTotal() {
+    const subtotal = quoteLineItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    const total = subtotal;
+    document.getElementById('quoteSubtotal').textContent = `R ${subtotal.toFixed(2)}`;
+    document.getElementById('quoteTotal').textContent = `R ${total.toFixed(2)}`;
+  }
+
+  async function submitQuote() {
+    if (!currentBooking) return;
+
+    // Validate
+    const validItems = quoteLineItems.filter(item => item.description.trim() && item.amount > 0);
+    if (validItems.length === 0) {
+      alert('Please add at least one line item with a description and amount');
+      return;
+    }
+
+    // Get payment methods
+    const paymentMethods = Array.from(document.querySelectorAll('input[name="paymentMethod"]:checked'))
+      .map(cb => cb.value);
+
+    if (paymentMethods.length === 0) {
+      alert('Please select at least one payment method');
+      return;
+    }
+
+    // Get banking details if EFT selected
+    let bankingDetails = null;
+    if (paymentMethods.includes('eft')) {
+      const bankName = document.getElementById('bankName').value.trim();
+      const accountNumber = document.getElementById('accountNumber').value.trim();
+      const accountType = document.getElementById('accountType').value;
+      const branchCode = document.getElementById('branchCode').value.trim();
+
+      if (!bankName || !accountNumber || !accountType || !branchCode) {
+        alert('Please fill in all banking details for EFT payments');
+        return;
+      }
+
+      bankingDetails = { bank: bankName, account_number: accountNumber, account_type: accountType, branch_code: branchCode };
+    }
+
+    const notes = document.getElementById('quoteNotes').value.trim();
+    const validDays = parseInt(document.getElementById('quoteValidDays').value);
+
+    const quoteData = {
+      booking_id: currentBooking.id,
+      line_items: validItems,
+      payment_methods: paymentMethods,
+      banking_details: bankingDetails,
+      notes: notes || null,
+      valid_days: validDays
+    };
+
+    try {
+      document.getElementById('submitQuoteBtn').disabled = true;
+      document.getElementById('submitQuoteBtn').textContent = 'Sending...';
+
+      const res = await fetch('/quotes/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(quoteData)
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        document.getElementById('quoteMsg').textContent = '✅ Quote sent successfully!';
+        document.getElementById('quoteMsg').style.color = 'green';
+        document.getElementById('quoteMsg').style.display = 'block';
+        setTimeout(() => {
+          closeQuoteModal();
+          closeBookingModal();
+        }, 1500);
+      } else {
+        document.getElementById('quoteMsg').textContent = '❌ ' + (data.error || 'Failed to send quote');
+        document.getElementById('quoteMsg').style.color = 'red';
+        document.getElementById('quoteMsg').style.display = 'block';
+      }
+    } catch (err) {
+      console.error('Submit quote error:', err);
+      document.getElementById('quoteMsg').textContent = '❌ Failed to send quote';
+      document.getElementById('quoteMsg').style.color = 'red';
+      document.getElementById('quoteMsg').style.display = 'block';
+    } finally {
+      document.getElementById('submitQuoteBtn').disabled = false;
+      document.getElementById('submitQuoteBtn').textContent = 'Send Quote';
+    }
+  }
 
   // Chat event listeners (workers can only send text, not images - security measure)
   document.getElementById('closeChat').addEventListener('click', ()=> {
