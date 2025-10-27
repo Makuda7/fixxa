@@ -407,9 +407,10 @@ module.exports = (pool, logger, helpers) => {
         phone,
         speciality,
         city,
-        suburb,
+        province,
+        primary_suburb,
+        secondary_areas,
         address,
-        area,
         postal_code,
         service_radius,
         bio,
@@ -427,7 +428,7 @@ module.exports = (pool, logger, helpers) => {
       } = req.body;
 
       // Validate required fields
-      if (!name || !phone || !speciality || !city || !area || !bio || !experience || !service_radius) {
+      if (!name || !phone || !speciality || !city || !province || !primary_suburb || !bio || !experience || !service_radius) {
         return res.status(400).json({ success: false, error: 'All required fields must be filled' });
       }
 
@@ -485,27 +486,27 @@ module.exports = (pool, logger, helpers) => {
       } else if (!existingWorker.rows[0]?.id_number) {
         // First time setting ID
         updateQuery = `UPDATE workers
-         SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
-             address = $6, area = $7, postal_code = $8, service_radius = $9,
-             bio = $10, experience = $11, id_type = $12, id_number = $13, id_submitted_at = CURRENT_TIMESTAMP,
-             emergency_name_1 = $14, emergency_relationship_1 = $15, emergency_phone_1 = $16, emergency_email_1 = $17,
-             emergency_name_2 = $18, emergency_relationship_2 = $19, emergency_phone_2 = $20, emergency_email_2 = $21
-         WHERE id = $22
+         SET name = $1, phone = $2, speciality = $3, city = $4, province = $5,
+             primary_suburb = $6, secondary_areas = $7, address = $8, postal_code = $9, service_radius = $10,
+             bio = $11, experience = $12, id_type = $13, id_number = $14, id_submitted_at = CURRENT_TIMESTAMP,
+             emergency_name_1 = $15, emergency_relationship_1 = $16, emergency_phone_1 = $17, emergency_email_1 = $18,
+             emergency_name_2 = $19, emergency_relationship_2 = $20, emergency_phone_2 = $21, emergency_email_2 = $22
+         WHERE id = $23
          RETURNING *`;
-        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience, id_type, id_number,
+        updateValues = [name, phone, speciality, city, province, primary_suburb, secondary_areas, address, postal_code, service_radius, bio, experience, id_type, id_number,
                        emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
                        emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2, workerId];
       } else {
         // ID unchanged
         updateQuery = `UPDATE workers
-         SET name = $1, phone = $2, speciality = $3, city = $4, suburb = $5,
-             address = $6, area = $7, postal_code = $8, service_radius = $9,
-             bio = $10, experience = $11,
-             emergency_name_1 = $12, emergency_relationship_1 = $13, emergency_phone_1 = $14, emergency_email_1 = $15,
-             emergency_name_2 = $16, emergency_relationship_2 = $17, emergency_phone_2 = $18, emergency_email_2 = $19
-         WHERE id = $20
+         SET name = $1, phone = $2, speciality = $3, city = $4, province = $5,
+             primary_suburb = $6, secondary_areas = $7, address = $8, postal_code = $9, service_radius = $10,
+             bio = $11, experience = $12,
+             emergency_name_1 = $13, emergency_relationship_1 = $14, emergency_phone_1 = $15, emergency_email_1 = $16,
+             emergency_name_2 = $17, emergency_relationship_2 = $18, emergency_phone_2 = $19, emergency_email_2 = $20
+         WHERE id = $21
          RETURNING *`;
-        updateValues = [name, phone, speciality, city, suburb, address, area, postal_code, service_radius, bio, experience,
+        updateValues = [name, phone, speciality, city, province, primary_suburb, secondary_areas, address, postal_code, service_radius, bio, experience,
                        emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
                        emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2, workerId];
       }
