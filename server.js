@@ -239,6 +239,7 @@ const contactFeedbackRoutes = require('./routes/contact-feedback')(pool, logger,
 const supportRoutes = require('./routes/support')(pool, logger, sendEmail);
 const notificationsRoutes = require('./routes/notifications')(pool, logger);
 const cookieConsentRoutes = require('./routes/cookieConsent')(pool, logger);
+const suburbsRoutes = require('./routes/suburbs');
 
 // Mount routes
 app.use('/', authRoutes);
@@ -256,6 +257,7 @@ app.use('/', contactFeedbackRoutes);
 app.use('/', supportRoutes);
 app.use('/notifications', notificationsRoutes);
 app.use('/api', cookieConsentRoutes);
+app.use('/suburbs', suburbsRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -584,6 +586,66 @@ async function runReferralSourceMigration() {
   }
 }
 
+// Auto-run migration for suburbs system
+async function runSuburbsMigration() {
+  try {
+    console.log('🔄 Running suburbs system migration...');
+
+    // Create suburbs table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS suburbs (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        province VARCHAR(100) NOT NULL,
+        worker_count INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(name, province)
+      )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_suburbs_province ON suburbs(province)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_suburbs_active ON suburbs(is_active) WHERE is_active = true`);
+
+    // Add new fields to workers table
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS primary_suburb VARCHAR(100)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS province VARCHAR(100)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS secondary_areas TEXT[]`);
+
+    // Migrate existing data: move 'area' to 'primary_suburb'
+    await pool.query(`
+      UPDATE workers
+      SET primary_suburb = area
+      WHERE primary_suburb IS NULL AND area IS NOT NULL AND area != ''
+    `);
+
+    // Add indexes
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_workers_primary_suburb ON workers(primary_suburb)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_workers_province ON workers(province)`);
+
+    // Initial population: add suburbs from existing approved workers
+    await pool.query(`
+      INSERT INTO suburbs (name, province, worker_count)
+      SELECT
+        INITCAP(TRIM(primary_suburb)) as name,
+        INITCAP(TRIM(COALESCE(province, 'Gauteng'))) as province,
+        COUNT(*) as worker_count
+      FROM workers
+      WHERE primary_suburb IS NOT NULL
+        AND primary_suburb != ''
+        AND is_active = true
+        AND approval_status = 'approved'
+      GROUP BY INITCAP(TRIM(primary_suburb)), INITCAP(TRIM(COALESCE(province, 'Gauteng')))
+      ON CONFLICT (name, province) DO NOTHING
+    `);
+
+    console.log('✅ Suburbs system migration completed');
+  } catch (error) {
+    console.log('⚠️  Suburbs migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Initialize reminder scheduler
 const ReminderScheduler = require('./services/reminderScheduler');
 let reminderScheduler = null;
@@ -609,6 +671,7 @@ async function startServer() {
     await runVirusScanLogsMigration();
     await runReferralSourceMigration();
     await runPaymentFieldsMigration();
+    await runSuburbsMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
