@@ -6,27 +6,30 @@ module.exports = (pool, logger) => {
   // Search workers with filters
   router.get('/search/workers', async (req, res) => {
     try {
-      const { 
-        speciality, 
-        area, 
-        minRating, 
-        available, 
+      const {
+        speciality,
+        suburb,
+        province,
+        area, // Legacy parameter
+        minRating,
+        available,
         sortBy = 'rating',
         limit = 20,
-        offset = 0 
+        offset = 0
       } = req.query;
 
       let query = `
         SELECT
-          w.id, w.name, w.speciality, w.area, w.bio,
-          w.profile_pic, w.is_available,
+          w.id, w.name, w.speciality,
+          w.primary_suburb, w.province, w.area,
+          w.bio, w.profile_pic, w.is_available,
           COALESCE(AVG(r.overall_rating), 0) as avg_rating,
           COUNT(DISTINCT r.id) as review_count,
           COUNT(DISTINCT b.id) as completed_jobs
         FROM workers w
         LEFT JOIN reviews r ON w.id = r.worker_id
         LEFT JOIN bookings b ON w.id = b.worker_id AND b.status = 'Completed'
-        WHERE w.is_active = true
+        WHERE w.is_active = true AND w.approval_status = 'approved'
       `;
 
       const params = [];
@@ -39,9 +42,21 @@ module.exports = (pool, logger) => {
         paramCount++;
       }
 
-      // Filter by area
-      if (area) {
-        query += ` AND LOWER(w.area) LIKE LOWER($${paramCount})`;
+      // Filter by suburb (PRIMARY search - locals first!)
+      if (suburb) {
+        query += ` AND LOWER(w.primary_suburb) = LOWER($${paramCount})`;
+        params.push(suburb);
+        paramCount++;
+      }
+      // Fallback: Filter by province if no suburb specified
+      else if (province) {
+        query += ` AND LOWER(w.province) = LOWER($${paramCount})`;
+        params.push(province);
+        paramCount++;
+      }
+      // Legacy: Filter by old area field
+      else if (area) {
+        query += ` AND (LOWER(w.area) LIKE LOWER($${paramCount}) OR LOWER(w.province) LIKE LOWER($${paramCount}))`;
         params.push(`%${area}%`);
         paramCount++;
       }
@@ -92,9 +107,9 @@ module.exports = (pool, logger) => {
         SELECT COUNT(DISTINCT w.id) as total
         FROM workers w
         LEFT JOIN reviews r ON w.id = r.worker_id
-        WHERE w.is_active = true
+        WHERE w.is_active = true AND w.approval_status = 'approved'
       `;
-      
+
       const countParams = [];
       let countParamCount = 1;
 
@@ -104,8 +119,16 @@ module.exports = (pool, logger) => {
         countParamCount++;
       }
 
-      if (area) {
-        countQuery += ` AND LOWER(w.area) LIKE LOWER($${countParamCount})`;
+      if (suburb) {
+        countQuery += ` AND LOWER(w.primary_suburb) = LOWER($${countParamCount})`;
+        countParams.push(suburb);
+        countParamCount++;
+      } else if (province) {
+        countQuery += ` AND LOWER(w.province) = LOWER($${countParamCount})`;
+        countParams.push(province);
+        countParamCount++;
+      } else if (area) {
+        countQuery += ` AND (LOWER(w.area) LIKE LOWER($${countParamCount}) OR LOWER(w.province) LIKE LOWER($${countParamCount}))`;
         countParams.push(`%${area}%`);
         countParamCount++;
       }
@@ -115,14 +138,24 @@ module.exports = (pool, logger) => {
       }
 
       if (minRating) {
+        // Build location filter for subquery
+        let locationFilter = '';
+        if (suburb) {
+          locationFilter = `AND LOWER(w.primary_suburb) = LOWER($${countParams.length > 0 ? countParams.length + 1 : 1})`;
+        } else if (province) {
+          locationFilter = `AND LOWER(w.province) = LOWER($${countParams.length > 0 ? countParams.length + 1 : 1})`;
+        } else if (area) {
+          locationFilter = `AND (LOWER(w.area) LIKE LOWER($${countParams.length > 0 ? countParams.length + 1 : 1}) OR LOWER(w.province) LIKE LOWER($${countParams.length > 0 ? countParams.length + 1 : 1}))`;
+        }
+
         countQuery = `
           SELECT COUNT(*) as total FROM (
             SELECT w.id
             FROM workers w
             LEFT JOIN reviews r ON w.id = r.worker_id
-            WHERE w.is_active = true
+            WHERE w.is_active = true AND w.approval_status = 'approved'
             ${speciality ? `AND LOWER(w.speciality) LIKE LOWER($1)` : ''}
-            ${area ? `AND LOWER(w.area) LIKE LOWER($${countParams.length + 1})` : ''}
+            ${locationFilter}
             ${available === 'true' ? 'AND w.is_available = true' : ''}
             GROUP BY w.id
             HAVING COALESCE(AVG(r.overall_rating), 0) >= $${countParams.length + 1}

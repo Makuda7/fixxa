@@ -679,6 +679,49 @@ module.exports = (pool, logger, helpers) => {
       // Update worker status with corrected suburb data
       await pool.query(updateQuery, params);
 
+      // Add suburb to suburbs table for dynamic dropdown
+      if (primary_suburb && province) {
+        try {
+          // Capitalize properly
+          const capitalizedSuburb = primary_suburb.trim().split(' ').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          ).join(' ');
+
+          const capitalizedProvince = province.trim().split(' ').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          ).join(' ');
+
+          // Insert or update suburb in suburbs table
+          await pool.query(`
+            INSERT INTO suburbs (name, province, worker_count)
+            VALUES ($1, $2, 1)
+            ON CONFLICT (name, province)
+            DO UPDATE SET
+              worker_count = (
+                SELECT COUNT(*)
+                FROM workers
+                WHERE primary_suburb = $1
+                  AND province = $2
+                  AND is_active = true
+                  AND approval_status = 'approved'
+              ),
+              updated_at = NOW()
+          `, [capitalizedSuburb, capitalizedProvince]);
+
+          logger.info('Suburb added/updated in suburbs table', {
+            suburb: capitalizedSuburb,
+            province: capitalizedProvince,
+            workerId: id
+          });
+        } catch (suburbError) {
+          logger.error('Failed to update suburbs table', {
+            error: suburbError.message,
+            workerId: id
+          });
+          // Don't fail approval if suburb update fails
+        }
+      }
+
       logger.info('Worker approved by admin', {
         workerId: id,
         workerEmail: worker.email,

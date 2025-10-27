@@ -312,6 +312,10 @@
       <option value="North West">North West</option>
     </select>
 
+    <select name="suburb" id="suburbSelect">
+      <option value="">Select suburb first...</option>
+    </select>
+
     <select name="availability" id="availabilitySelect" title="Filter professionals who are currently accepting new bookings">
       <option value="">Worker Status (Any)</option>
       <option value="true">✓ Currently Accepting Bookings</option>
@@ -375,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const serviceSelect = document.getElementById('serviceSelect');
   const provinceSelect = document.getElementById('provinceSelect');
+  const suburbSelect = document.getElementById('suburbSelect');
   const availabilitySelect = document.getElementById('availabilitySelect');
   const searchBtn = document.getElementById('searchBtn');
   const sortSelect = document.getElementById('sortSelect');
@@ -441,44 +446,115 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('service')) serviceSelect.value = urlParams.get('service');
   if (urlParams.get('province')) provinceSelect.value = urlParams.get('province');
+  if (urlParams.get('suburb')) suburbSelect.value = urlParams.get('suburb');
+
+  // Load suburbs when province changes
+  async function loadSuburbs(province) {
+    try {
+      suburbSelect.innerHTML = '<option value="">Loading suburbs...</option>';
+      suburbSelect.disabled = true;
+
+      const params = new URLSearchParams();
+      if (province) {
+        params.append('province', province);
+      }
+
+      const res = await fetch(`/suburbs?${params.toString()}`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to load suburbs');
+      }
+
+      suburbSelect.innerHTML = '<option value="">All Suburbs</option>';
+
+      if (data.suburbs && data.suburbs.length > 0) {
+        data.suburbs.forEach(suburb => {
+          const option = document.createElement('option');
+          option.value = suburb.name;
+          option.textContent = `${suburb.name} (${suburb.worker_count})`;
+          suburbSelect.appendChild(option);
+        });
+      } else {
+        suburbSelect.innerHTML = '<option value="">No suburbs available</option>';
+      }
+
+      suburbSelect.disabled = false;
+
+      // Restore from URL if present
+      if (urlParams.get('suburb')) {
+        suburbSelect.value = urlParams.get('suburb');
+      }
+
+    } catch (err) {
+      console.error('Failed to load suburbs', err);
+      suburbSelect.innerHTML = '<option value="">Failed to load suburbs</option>';
+      suburbSelect.disabled = false;
+    }
+  }
+
+  // Province change event
+  provinceSelect.addEventListener('change', () => {
+    const province = provinceSelect.value;
+    if (province) {
+      loadSuburbs(province);
+    } else {
+      suburbSelect.innerHTML = '<option value="">Select province first...</option>';
+      suburbSelect.disabled = true;
+    }
+  });
+
+  // Load suburbs on page load if province is pre-selected
+  if (provinceSelect.value) {
+    loadSuburbs(provinceSelect.value);
+  }
 
   async function loadWorkers() {
     workersGrid.innerHTML = '<p style="text-align:center;">Loading...</p>';
-    
+
     try {
       const params = new URLSearchParams();
-      
+
       if (serviceSelect.value) {
         params.append('speciality', serviceSelect.value);
       }
-      if (provinceSelect.value) {
-        params.append('area', provinceSelect.value);
+
+      // Search by suburb (primary_suburb field) - this is the key change for "locals first"
+      if (suburbSelect.value) {
+        params.append('suburb', suburbSelect.value);
+      } else if (provinceSelect.value) {
+        // Fallback to province if no suburb selected
+        params.append('province', provinceSelect.value);
       }
+
       if (availabilitySelect.value === 'true') {
         params.append('available', 'true');
       }
-      
+
       params.append('sortBy', sortSelect.value || 'rating');
-      
-      const res = await fetch(`/search/workers?${params.toString()}`, { 
-        credentials: 'include' 
+
+      const res = await fetch(`/search/workers?${params.toString()}`, {
+        credentials: 'include'
       });
-      
+
       const data = await res.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Search failed');
       }
 
       displayWorkers(data.workers);
-      
-      const filterCount = [serviceSelect.value, provinceSelect.value].filter(v => v).length;
+
+      const filterCount = [serviceSelect.value, suburbSelect.value || provinceSelect.value].filter(v => v).length;
       if (filterCount > 0) {
-        resultsTitle.textContent = `Found ${data.workers.length} Professional${data.workers.length !== 1 ? 's' : ''}`;
+        const locationText = suburbSelect.value ? `in ${suburbSelect.value}` : (provinceSelect.value ? `in ${provinceSelect.value}` : '');
+        resultsTitle.textContent = `Found ${data.workers.length} Professional${data.workers.length !== 1 ? 's' : ''} ${locationText}`;
       } else {
         resultsTitle.textContent = 'All Professionals';
       }
-      
+
     } catch (err) {
       console.error('Failed to load workers', err);
       workersGrid.innerHTML = '<p class="no-results">Unable to load professionals. Please try again.</p>';
