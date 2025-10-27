@@ -158,7 +158,7 @@ const emailTemplates = {
             <p><strong>Reason:</strong> ${booking.cancellation_reason}</p>
           </div>
         ` : ''}
-        <p>If you have any questions, please contact support.</p>
+        <p>If you have any questions, please contact us at <a href="mailto:support@fixxa.co.za" style="color: #4a7c59; font-weight: 600;">support@fixxa.co.za</a></p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${baseUrl}/${isClient ? 'clientProfile.html' : 'prosite.html'}"
              style="background: #4a7c59; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
@@ -207,7 +207,7 @@ const emailTemplates = {
             View Booking
           </a>
         </div>
-        <p style="color: #666; font-size: 14px;">If you have any concerns, please contact support.</p>
+        <p style="color: #666; font-size: 14px;">If you have any concerns, please contact us at <a href="mailto:support@fixxa.co.za" style="color: #4a7c59; font-weight: 600;">support@fixxa.co.za</a></p>
       </div>
     `
   }),
@@ -275,7 +275,7 @@ const emailTemplates = {
           </a>
         </div>
 
-        <p style="color: #666; font-size: 14px; margin-top: 30px;">Welcome to the Fixxa community! If you have any questions, please don't hesitate to contact our support team.</p>
+        <p style="color: #666; font-size: 14px; margin-top: 30px;">Welcome to the Fixxa community! If you have any questions, please don't hesitate to contact us at <a href="mailto:support@fixxa.co.za" style="color: #4a7c59; font-weight: 600;">support@fixxa.co.za</a></p>
 
         <p style="color: #666; font-size: 14px;">Thank you for choosing Fixxa!</p>
       </div>
@@ -306,7 +306,7 @@ const emailTemplates = {
             <li>Review the reason provided above and address any issues</li>
             <li>Update your profile information if needed</li>
             <li>Upload missing or updated documentation</li>
-            <li>Contact our support team if you have questions or need clarification</li>
+            <li>Contact us at <a href="mailto:support@fixxa.co.za" style="color: #4a7c59;">support@fixxa.co.za</a> if you have questions or need clarification</li>
           </ul>
         </div>
 
@@ -413,7 +413,7 @@ const emailTemplates = {
           </a>
         </div>
 
-        <p style="color: #666; font-size: 14px;">If you have questions about this decision, please contact our support team.</p>
+        <p style="color: #666; font-size: 14px;">If you have questions about this decision, please contact us at <a href="mailto:support@fixxa.co.za" style="color: #4a7c59; font-weight: 600;">support@fixxa.co.za</a></p>
       </div>
     `
   }),
