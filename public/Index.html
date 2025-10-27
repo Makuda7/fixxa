@@ -532,7 +532,8 @@ document.addEventListener('DOMContentLoaded', () => {
       container.innerHTML = '';
       workers.forEach(worker => {
         const rating = Math.min(Math.max(Number(worker.rating) || 0, 0), 5);
-        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        const roundedRating = Math.round(rating); // Round to nearest integer for star display
+        const stars = '★'.repeat(roundedRating) + '☆'.repeat(5 - roundedRating);
         const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
         
         const proCard = document.createElement('a');
