@@ -1179,7 +1179,17 @@ async function loadBookings() {
     const bookingsList = document.getElementById('bookingsList');
     bookingsList.innerHTML = '';
     if (data.bookings?.length > 0) {
-      data.bookings.forEach(b => {
+      // Load all bookings with quotes
+      for (const b of data.bookings) {
+        // Fetch quote for this booking
+        try {
+          const quoteRes = await fetch(`/quotes/booking/${b.id}`, { credentials: 'include' });
+          const quoteData = await quoteRes.json();
+          b.quote = quoteData.success && quoteData.quote ? quoteData.quote : null;
+        } catch (err) {
+          b.quote = null;
+        }
+
         const card = document.createElement('div');
         card.className = 'booking-card';
         
@@ -1215,13 +1225,44 @@ async function loadBookings() {
           </div>
           
           <p><strong>Status:</strong> <span style="${statusColor}">${b.status || 'Pending'}${statusBadge}</span></p>
-          
+
           ${b.booking_amount ? `<p><strong>Amount:</strong> ${b.booking_amount}</p>` : ''}
           ${b.note ? `<p><strong>Your Note:</strong> <em>${b.note}</em></p>` : ''}
           ${b.professional_response ? `<p><strong>Professional's Response:</strong> <em>${b.professional_response}</em></p>` : ''}
-          
+
+          ${b.quote ? `
+            <div style="background: ${b.quote.status === 'pending' ? '#e3f2fd' : b.quote.status === 'accepted' ? '#d4edda' : '#f8d7da'}; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid ${b.quote.status === 'pending' ? '#2196F3' : b.quote.status === 'accepted' ? '#28a745' : '#dc3545'};">
+              <h4 style="margin: 0 0 0.5rem 0; color: ${b.quote.status === 'pending' ? '#0d47a1' : b.quote.status === 'accepted' ? '#155724' : '#721c24'};">
+                💰 Quote ${b.quote.status === 'accepted' ? 'Accepted' : b.quote.status === 'rejected' ? 'Declined' : 'Received'}
+              </h4>
+              ${b.quote.line_items && Array.isArray(b.quote.line_items) ? b.quote.line_items.map(item => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.9rem;">
+                  <span>${item.description}</span>
+                  <span><strong>R ${parseFloat(item.amount).toFixed(2)}</strong></span>
+                </div>
+              `).join('') : ''}
+              <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; margin-top: 0.5rem; border-top: 2px solid ${b.quote.status === 'pending' ? '#2196F3' : b.quote.status === 'accepted' ? '#28a745' : '#dc3545'}; font-size: 1.1rem; font-weight: bold;">
+                <span>Total:</span>
+                <span>R ${parseFloat(b.quote.total_amount).toFixed(2)}</span>
+              </div>
+              ${b.quote.payment_methods && b.quote.payment_methods.length > 0 ? `
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;"><strong>Payment:</strong> ${b.quote.payment_methods.join(', ').toUpperCase()}</p>
+              ` : ''}
+              ${b.quote.notes ? `
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; font-style: italic;">"${b.quote.notes}"</p>
+              ` : ''}
+              ${b.quote.status === 'pending' ? `
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">Valid until: ${new Date(b.quote.valid_until).toLocaleDateString()}</p>
+              ` : ''}
+            </div>
+          ` : ''}
+
           <div class="btn-row">
-            ${b.status !== 'pending_completion' && b.status !== 'pending_reschedule' && b.status !== 'pending_cancellation' && b.status !== 'Completed' && b.status !== 'Cancelled' ? `
+            ${b.quote && b.quote.status === 'pending' ? `
+              <button class="btn" style="background: #28a745; color: white;" data-action="accept-quote" data-quote-id="${b.quote.id}" data-booking-id="${b.id}">✅ Accept Quote</button>
+              <button class="btn" style="background: #dc3545; color: white;" data-action="reject-quote" data-quote-id="${b.quote.id}" data-booking-id="${b.id}">❌ Decline Quote</button>
+            ` : ''}
+            ${b.status !== 'pending_completion' && b.status !== 'pending_reschedule' && b.status !== 'pending_cancellation' && b.status !== 'Completed' && b.status !== 'Cancelled' && (!b.quote || b.quote.status !== 'pending') ? `
               <button class="btn reschedule-btn" data-action="open-booking-modal" data-booking-id="${b.id}" data-modal-action="reschedule">Request Reschedule</button>
               <button class="btn cancel-btn" data-action="open-booking-modal" data-booking-id="${b.id}" data-modal-action="cancel">Request Cancellation</button>
             ` : ''}
@@ -1234,13 +1275,77 @@ async function loadBookings() {
           </div>
         `;
         bookingsList.appendChild(card);
+      }
+
+      // Add event listeners for quote accept/reject buttons
+      document.querySelectorAll('[data-action="accept-quote"]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const quoteId = e.target.dataset.quoteId;
+          const bookingId = e.target.dataset.bookingId;
+          if (confirm('Accept this quote? The job will be confirmed.')) {
+            await acceptQuote(quoteId, bookingId);
+          }
+        });
       });
+
+      document.querySelectorAll('[data-action="reject-quote"]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const quoteId = e.target.dataset.quoteId;
+          const bookingId = e.target.dataset.bookingId;
+          const reason = prompt('Please provide a reason for declining this quote (optional):');
+          await rejectQuote(quoteId, bookingId, reason);
+        });
+      });
+
     } else {
       bookingsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;"><p>You have no bookings yet.</p><p>Browse our services to get started!</p></div>';
     }
-  } catch (e) { 
-    console.error(e); 
-    document.getElementById('bookingsList').innerHTML = '<p style="color:red;">Failed to load bookings. Please refresh the page.</p>'; 
+  } catch (e) {
+    console.error(e);
+    document.getElementById('bookingsList').innerHTML = '<p style="color:red;">Failed to load bookings. Please refresh the page.</p>';
+  }
+}
+
+async function acceptQuote(quoteId, bookingId) {
+  try {
+    const res = await fetch(`/quotes/${quoteId}/accept`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showNotification('Quote accepted! Booking confirmed.', 'success');
+      await loadBookings();
+    } else {
+      showNotification(data.error || 'Failed to accept quote', 'error');
+    }
+  } catch (err) {
+    console.error('Accept quote error:', err);
+    showNotification('Failed to accept quote', 'error');
+  }
+}
+
+async function rejectQuote(quoteId, bookingId, reason) {
+  try {
+    const res = await fetch(`/quotes/${quoteId}/reject`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reason || 'No reason provided' })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showNotification('Quote declined', 'success');
+      await loadBookings();
+    } else {
+      showNotification(data.error || 'Failed to decline quote', 'error');
+    }
+  } catch (err) {
+    console.error('Reject quote error:', err);
+    showNotification('Failed to decline quote', 'error');
   }
 }
 
