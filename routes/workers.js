@@ -42,7 +42,7 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        'SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount FROM workers WHERE is_active = true AND approval_status = \'approved\' ORDER BY name ASC'
+        'SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified FROM workers WHERE is_active = true AND approval_status = \'approved\' ORDER BY name ASC'
       );
 
       // Convert old local profile pic paths to default SVG
@@ -80,7 +80,8 @@ module.exports = (pool, logger, helpers) => {
       const maxRadius = parseFloat(radius);
 
       const result = await pool.query(`
-        SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image,
+        SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas,
+               bio, experience, rating, profile_pic as image,
                availability_schedule, is_available, latitude, longitude, service_radius, is_verified,
                rate_type, rate_amount
         FROM workers
