@@ -950,6 +950,70 @@
   body {
     overscroll-behavior-y: none !important;
   }
+
+  /* ===== SCROLL INDICATOR BANNER ===== */
+  /* Shows "Scroll down for more" at bottom of scrollable sections */
+
+  .scroll-indicator {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 50%, transparent 100%);
+    padding: 2rem 1rem 1rem 1rem;
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 10;
+    animation: fadeInOut 2s ease-in-out infinite;
+  }
+
+  .scroll-indicator-icon {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 0.25rem;
+    animation: bounce 1.5s ease-in-out infinite;
+  }
+
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(5px); }
+  }
+
+  /* Add scroll indicator to sections with multiple items */
+  .bookings:has(> div:nth-child(4)),
+  .active-jobs:has(> div:nth-child(4)),
+  .completion-requests:has(> div:nth-child(3)),
+  .my-reviews-section:has(> div:nth-child(3)),
+  .workers-grid:has(> *:nth-child(6)),
+  .reviews-list:has(> div:nth-child(5)) {
+    position: relative;
+    padding-bottom: 3rem;
+  }
+
+  /* Alternative: Gradient fade at bottom to indicate more content */
+  .scroll-fade-bottom {
+    position: relative;
+  }
+
+  .scroll-fade-bottom::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to top, white 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 5;
+  }
 }
 
 /* ============ ACCESSIBILITY IMPROVEMENTS ============ */
