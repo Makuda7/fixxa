@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fixxa</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="mobile.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -538,12 +539,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const proCard = document.createElement('a');
         proCard.href = `profile.html?id=${worker.id}`;
+
+        // Display location: primary_suburb + province (new format), fallback to area
+        const location = worker.primary_suburb && worker.province
+          ? `${worker.primary_suburb}, ${worker.province}`
+          : (worker.primary_suburb || worker.area || 'Location not set');
+
         proCard.innerHTML = `
           <div class="pro-card">
             ${worker.distance ? `<div class="distance-badge">${worker.distance} km away</div>` : ''}
             <img src="${worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
             <h3>${worker.name} ${verifiedBadge}</h3>
-            <p>${worker.speciality} • ${worker.experience || 'N/A'} years experience</p>
+            <p>${worker.speciality} • ${location}</p>
+            <p style="font-size:0.85rem; color:#666;">${worker.experience || 'N/A'} years experience</p>
             <span>${stars}</span>
           </div>
         `;
