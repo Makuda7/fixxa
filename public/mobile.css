@@ -4,6 +4,15 @@
    <link rel="stylesheet" href="mobile.css">
    ======================================== */
 
+/* Hide mobile menu toggle on desktop */
+.mobile-menu-toggle {
+  display: none;
+}
+
+.mobile-menu-overlay {
+  display: none;
+}
+
 /* ============ BASE MOBILE FIXES ============ */
 
 /* Fix viewport font sizing issue */
@@ -73,48 +82,153 @@
 /* ============ HEADER & NAVIGATION ============ */
 @media (max-width: 768px) {
   .header {
-    flex-direction: column !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
     padding: 1rem !important;
-    align-items: flex-start !important;
+    position: relative;
   }
 
   .header .logo {
-    margin-bottom: 0.5rem;
-    width: 100%;
-    text-align: center;
+    margin-bottom: 0;
   }
 
   .header .logo img {
-    max-width: 100px !important;
+    max-width: 80px !important;
   }
 
+  /* Hamburger Menu Button */
+  .mobile-menu-toggle {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 25px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+    position: relative;
+  }
+
+  .mobile-menu-toggle span {
+    width: 30px;
+    height: 3px;
+    background: #333;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+  }
+
+  /* Hamburger animation when open */
+  .mobile-menu-toggle.open span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+
+  .mobile-menu-toggle.open span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .mobile-menu-toggle.open span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
+  /* Hide nav links by default on mobile */
   .nav-links {
+    position: fixed !important;
+    top: 0;
+    right: -100% !important;
+    width: 70% !important;
+    max-width: 300px !important;
+    height: 100vh !important;
+    background: white !important;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
     flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 80px 0 20px 0 !important;
+    gap: 0 !important;
+    z-index: 1000;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+  }
+
+  /* Show nav when menu is open */
+  .nav-links.mobile-menu-open {
+    right: 0 !important;
+  }
+
+  /* Mobile overlay */
+  .mobile-menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    gap: 0.5rem !important;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    transition: opacity 0.3s ease;
+  }
+
+  .mobile-menu-overlay.show {
+    display: block;
   }
 
   .nav-links a {
-    display: block;
-    padding: 0.75rem !important;
-    text-align: center;
-    border-bottom: 1px solid #eee;
+    display: block !important;
+    width: 100% !important;
+    padding: 1rem 1.5rem !important;
+    text-align: left !important;
+    border-bottom: 1px solid #eee !important;
+    color: #333 !important;
+    font-size: 16px !important;
+    text-decoration: none;
+  }
+
+  .nav-links a:hover {
+    background: #f5f5f5;
   }
 
   .user-menu {
-    width: 100%;
+    width: 100% !important;
+    position: relative !important;
   }
 
   .user-btn {
-    width: 100%;
-    text-align: center;
-    padding: 0.75rem !important;
+    width: 100% !important;
+    text-align: left !important;
+    padding: 1rem 1.5rem !important;
+    border-bottom: 1px solid #eee;
   }
 
   .user-dropdown {
-    position: static !important;
-    width: 100%;
-    margin-top: 0.5rem;
+    position: relative !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #f9f9f9 !important;
+  }
+
+  .user-dropdown a {
+    padding: 0.75rem 2rem !important;
+    background: #f9f9f9 !important;
+  }
+
+  /* Inbox icon in mobile menu */
+  .inbox-icon-link.show {
+    display: flex !important;
+    width: 100% !important;
+    padding: 1rem 1.5rem !important;
+    justify-content: flex-start !important;
+    border-bottom: 1px solid #eee !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .inbox-icon-link:hover {
+    background: #f5f5f5 !important;
   }
 }
 
