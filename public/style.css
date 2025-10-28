@@ -1,5 +1,5 @@
 html {
-    font-size: 1vw; /* or remove if not needed */
+    font-size: 16px; /* Fixed from 1vw for better mobile readability */
     box-sizing: border-box;
 }
 

@@ -13,8 +13,60 @@
   }
 
   body {
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Force readable text sizes on all elements */
+  * {
+    font-size: inherit !important;
+  }
+
+  /* Specific text element overrides */
+  p {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+    margin: 0.75rem 0 !important;
+  }
+
+  h1 {
+    font-size: 1.75rem !important; /* 28px */
+    line-height: 1.3 !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important; /* 24px */
+    line-height: 1.3 !important;
+  }
+
+  h3 {
+    font-size: 1.25rem !important; /* 20px */
+    line-height: 1.4 !important;
+  }
+
+  h4 {
+    font-size: 1.1rem !important; /* 17.6px */
+    line-height: 1.4 !important;
+  }
+
+  span, label, a {
+    font-size: 16px !important;
+  }
+
+  /* Links should be readable */
+  a {
+    line-height: 1.6 !important;
+  }
+
+  /* Small text should still be readable */
+  small, .small {
+    font-size: 14px !important;
+  }
+
+  /* Button text */
+  button, .btn {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
   }
 }
 
@@ -99,7 +151,7 @@
   }
 
   .search-section h1 {
-    font-size: 1.5rem !important;
+    font-size: 1.75rem !important; /* Increased for readability */
   }
 
   .results-section {
@@ -112,12 +164,21 @@
     gap: 1rem;
   }
 
+  .results-header h2 {
+    font-size: 1.5rem !important;
+  }
+
   .sort-controls {
     width: 100%;
   }
 
+  .sort-controls label {
+    font-size: 16px !important;
+  }
+
   .sort-controls select {
     width: 100%;
+    font-size: 16px !important;
   }
 
   /* Workers Grid - Stack vertically */
@@ -132,6 +193,19 @@
 
   .worker-card img {
     height: 150px !important;
+  }
+
+  /* Worker card text */
+  .worker-card h3 {
+    font-size: 1.2rem !important;
+  }
+
+  .worker-card p,
+  .worker-card .speciality,
+  .worker-card .rating,
+  .worker-card .experience {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
   }
 }
 
@@ -151,11 +225,16 @@
   }
 
   .pro-card h3 {
-    font-size: 1rem !important;
+    font-size: 1.1rem !important; /* Increased from 1rem */
   }
 
   .pro-card p {
-    font-size: 0.85rem !important;
+    font-size: 16px !important; /* Increased from 0.85rem */
+    line-height: 1.5 !important;
+  }
+
+  .pro-card span {
+    font-size: 16px !important;
   }
 }
 
@@ -209,8 +288,32 @@
     margin-bottom: 1rem !important;
   }
 
+  /* Ensure all text in cards is readable */
+  .booking-card p,
+  .booking-card h4,
+  .booking-card span,
+  .inquiry-card p,
+  .completion-card p,
+  .review-display-card p {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+
+  .booking-card h4 {
+    font-size: 1.1rem !important;
+  }
+
+  .booking-card strong,
+  .completion-card strong {
+    font-size: 16px !important;
+  }
+
   .completion-details {
     grid-template-columns: 1fr !important;
+  }
+
+  .completion-details p {
+    font-size: 16px !important;
   }
 
   .photo-grid,
@@ -227,6 +330,7 @@
   .btn {
     width: 100% !important;
     padding: 0.75rem !important;
+    font-size: 16px !important;
   }
 }
 
