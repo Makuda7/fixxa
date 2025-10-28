@@ -83,12 +83,12 @@
     menuToggle.addEventListener('click', toggleMenu);
     overlay.addEventListener('click', closeMenu);
 
-    // Close menu when clicking a link
-    const navLinks = nav.querySelectorAll('a');
+    // Close menu when clicking a link or button
+    const navLinks = nav.querySelectorAll('a, button');
     navLinks.forEach(link => {
       link.addEventListener('click', () => {
-        // Small delay to allow navigation to start
-        setTimeout(closeMenu, 100);
+        // Close menu immediately on selection
+        closeMenu();
       });
     });
 

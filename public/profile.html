@@ -1497,7 +1497,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="rating-display">${rating > 0 ? rating : 'New'}/5</div>
               <div class="rating-stars">${rating > 0 ? stars : '☆☆☆☆☆'}</div>
               ${rating >= 4.5 ? '<span class="price-badge">Top Rated</span>' : ''}
-              ${reviewCount > 0 ? `<span style="color:#666; font-size:0.9rem;">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>` : '<span style="color:#666; font-size:0.9rem;">(No reviews yet)</span>'}
+              ${reviewCount > 0 ? `<span style="color:#666; font-size:0.9rem; cursor:pointer; text-decoration:underline;" data-action="scroll-to-reviews" title="Click to view reviews">(${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})</span>` : '<span style="color:#666; font-size:0.9rem;">(No reviews yet)</span>'}
             </div>
 
             <div class="worker-name-section">
@@ -1938,6 +1938,14 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'close-photo-modal':
         e.preventDefault();
         closePhotoModal();
+        break;
+
+      case 'scroll-to-reviews':
+        e.preventDefault();
+        const reviewsSection = document.querySelector('.profile-sections');
+        if (reviewsSection) {
+          reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         break;
     }
   });
