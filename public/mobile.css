@@ -512,36 +512,67 @@
   }
 
   /* Booking Form - Stack date/time vertically on mobile */
+  #booking-form {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Override inline grid styles with super specific selectors */
   #booking-form > div[style*="grid"],
-  #booking-form div[style*="grid-template-columns"] {
+  #booking-form > div[style*="grid-template-columns"],
+  #booking-form div[style*="display: grid"] {
     display: flex !important;
     flex-direction: column !important;
     gap: 1rem !important;
-    grid-template-columns: 1fr !important;
+    grid-template-columns: none !important;
   }
 
-  #booking-form > div > div {
+  /* Force all child divs to be full width */
+  #booking-form > div > div,
+  #booking-form > div {
     width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
   }
 
+  /* Force all inputs to be full width */
   #booking-form input[type="date"],
   #booking-form input[type="time"],
   #booking-form input,
-  #booking-form textarea {
+  #booking-form textarea,
+  #booking-form #booking-date,
+  #booking-form #booking-time,
+  #booking-form #booking-note {
     width: 100% !important;
+    max-width: 100% !important;
     padding: 0.75rem !important;
     font-size: 16px !important;
     box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+
+  /* Textarea specific */
+  #booking-form textarea,
+  #booking-form #booking-note {
+    min-height: 100px !important;
+    resize: vertical !important;
   }
 
   #booking-form label {
     font-size: 16px !important;
     margin-bottom: 0.5rem !important;
     display: block !important;
+    width: 100% !important;
   }
 
   #booking-form h4 {
     font-size: 1.25rem !important;
+  }
+
+  /* Warning box should also be full width */
+  #booking-form > div[style*="background"] {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Contact Form */
@@ -882,6 +913,42 @@
 
   .loading-text {
     font-size: 0.9rem !important;
+  }
+}
+
+/* ============ SCROLL BEHAVIOR FIXES ============ */
+@media (max-width: 768px) {
+  /* Fix: Prevent scroll continuation from scrollable containers to page */
+  /* When user reaches bottom of scrollable div, don't scroll page */
+
+  .workers-grid,
+  .pro-grid,
+  .reviews-list,
+  .messages-container,
+  .bookings,
+  .active-jobs,
+  .completion-requests,
+  .my-reviews-section,
+  .nav-links.mobile-menu-open {
+    overscroll-behavior: contain !important;
+  }
+
+  /* For any scrollable modals or containers */
+  .modal,
+  .modal-overlay,
+  [style*="overflow-y: auto"],
+  [style*="overflow: auto"] {
+    overscroll-behavior: contain !important;
+  }
+
+  /* Smooth scrolling on mobile */
+  html {
+    scroll-behavior: smooth !important;
+  }
+
+  /* Prevent rubber band effect on body */
+  body {
+    overscroll-behavior-y: none !important;
   }
 }
 
