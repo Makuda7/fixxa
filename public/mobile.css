@@ -396,6 +396,57 @@
   .complete-form select {
     font-size: 16px !important;
   }
+
+  /* Booking Form - Stack date/time vertically on mobile */
+  #booking-form > div[style*="grid"],
+  #booking-form div[style*="grid-template-columns"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  #booking-form > div > div {
+    width: 100% !important;
+  }
+
+  #booking-form input[type="date"],
+  #booking-form input[type="time"],
+  #booking-form input,
+  #booking-form textarea {
+    width: 100% !important;
+    padding: 0.75rem !important;
+    font-size: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  #booking-form label {
+    font-size: 16px !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+  }
+
+  #booking-form h4 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Contact Form */
+  #contact-form input,
+  #contact-form textarea {
+    width: 100% !important;
+    padding: 0.75rem !important;
+    font-size: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  #contact-form label {
+    font-size: 16px !important;
+  }
+
+  /* Form containers */
+  .form-container {
+    padding: 1rem !important;
+  }
 }
 
 /* ============ FOOTER ============ */
