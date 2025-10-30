@@ -431,6 +431,76 @@ tr.cancelled-row td {
   font-size:1.2rem;
 }
 
+/* Welcome Video Modal */
+#welcomeVideoModal {
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.7);
+  justify-content:center;
+  align-items:center;
+  z-index:2001;
+  animation:fadeIn 0.3s ease;
+}
+#welcomeVideoModal .modal-content {
+  background:white;
+  border-radius:16px;
+  max-width:700px;
+  width:90%;
+  padding:2rem;
+  box-shadow:0 10px 40px rgba(0,0,0,0.3);
+  animation:slideDown 0.3s ease;
+}
+#welcomeVideoModal h2 {
+  margin:0 0 1rem 0;
+  color:forestgreen;
+  font-size:1.6rem;
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+#welcomeVideoModal p {
+  margin:0.5rem 0 1.5rem 0;
+  color:#555;
+  line-height:1.6;
+}
+#welcomeVideoModal .video-container {
+  position:relative;
+  padding-bottom:56.25%;
+  height:0;
+  overflow:hidden;
+  border-radius:8px;
+  margin-bottom:1.5rem;
+}
+#welcomeVideoModal .video-container iframe {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  border:none;
+}
+#welcomeVideoModal button {
+  width:100%;
+  padding:0.75rem 1.5rem;
+  border:none;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  font-size:1rem;
+  background:forestgreen;
+  color:white;
+}
+#welcomeVideoModal button:hover {
+  background:#2d5016;
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(34,139,34,0.3);
+}
+
 /* Responsive */
 @media(max-width:768px){
 .sidebar { transform:translateX(-100%); position:fixed; z-index:100; }
@@ -470,6 +540,7 @@ tr.cancelled-row td {
 <a data-target="earningsMain"><span>💰</span> Earnings</a>
 <a data-target="profileMain"><span>⚙️</span> Profile & Availability</a>
 <a data-target="certificationsMain"><span>🎓</span> Certifications</a>
+<a data-target="gettingStartedMain"><span>🎬</span> Getting Started</a>
 <a data-target="rulesMain"><span>📜</span> Rules & Guidelines</a>
 <a data-target="contactMain"><span>📞</span> Contact & Feedback</a>
 </div>
@@ -978,6 +1049,65 @@ tr.cancelled-row td {
   <div class="cert-list" id="certificationsList">
     <p style="color:#666; text-align:center; padding:1rem;">No certifications uploaded yet</p>
   </div>
+</div>
+</div>
+
+<!-- Getting Started Section -->
+<div class="main" id="gettingStartedMain">
+<h2>🎬 Getting Started with Fixxa</h2>
+
+<div style="background:linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left:4px solid forestgreen; padding:1.5rem; border-radius:8px; margin-bottom:2rem;">
+  <h3 style="margin:0 0 0.5rem 0; color:#2e7d32;">👋 Welcome to Fixxa!</h3>
+  <p style="margin:0; color:#1b5e20; line-height:1.6;">
+    Watch this video to learn how to use the Fixxa platform, manage your bookings, communicate with clients, and grow your business. This tutorial covers everything you need to know to get started and succeed on Fixxa.
+  </p>
+</div>
+
+<!-- Video Section -->
+<div style="background:white; border-radius:12px; padding:2rem; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:2rem;">
+  <h3 style="margin:0 0 1.5rem 0; color:forestgreen;">📺 How to Get Started with Fixxa</h3>
+
+  <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:8px; margin-bottom:1rem;">
+    <iframe
+      style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;"
+      src="https://www.youtube.com/embed/eloSnb-dKRE?si=sd9JQ-3nwaHfDRgG"
+      title="YouTube video player"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+  <p style="color:#666; font-size:0.9rem; text-align:center; margin:1rem 0 0 0;">
+    💡 <strong>Tip:</strong> Watch this video whenever you need help navigating the platform
+  </p>
+</div>
+
+<!-- Quick Tips Section -->
+<div style="background:#f8f9fa; border-radius:8px; padding:1.5rem; margin-bottom:1rem;">
+  <h3 style="margin:0 0 1rem 0; color:#333;">🚀 Quick Tips for Success</h3>
+  <ul style="margin:0; padding-left:1.5rem; line-height:2; color:#555;">
+    <li><strong>Complete Your Profile:</strong> Add a professional bio, experience, and certifications to attract more clients</li>
+    <li><strong>Upload Portfolio Photos:</strong> Showcase your best work to build trust with potential clients</li>
+    <li><strong>Respond Quickly:</strong> Reply to booking requests within 24 hours to maintain a high acceptance rate</li>
+    <li><strong>Use Professional Communication:</strong> Always be courteous and professional in your messages</li>
+    <li><strong>Send Detailed Quotes:</strong> Break down costs clearly and keep receipts for materials</li>
+    <li><strong>Ask for Reviews:</strong> Encourage satisfied clients to leave reviews to boost your profile</li>
+  </ul>
+</div>
+
+<!-- Need Help Section -->
+<div style="background:#e3f2fd; border-left:4px solid #2196F3; padding:1.5rem; border-radius:8px;">
+  <h3 style="margin:0 0 0.5rem 0; color:#1565c0;">❓ Need Help?</h3>
+  <p style="margin:0 0 1rem 0; color:#0d47a1; line-height:1.6;">
+    If you have questions or need assistance, visit the <strong>Contact & Feedback</strong> section to reach our support team.
+  </p>
+  <button
+    onclick="document.querySelector('[data-target=&quot;contactMain&quot;]').click();"
+    style="background:#2196F3; color:white; border:none; padding:0.7rem 1.5rem; border-radius:6px; cursor:pointer; font-weight:600;">
+    Go to Contact & Feedback
+  </button>
 </div>
 </div>
 
@@ -3103,15 +3233,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Profile completion modal button handlers
   document.getElementById('completeProfileBtn').addEventListener('click', () => {
     document.getElementById('profileCompletionModal').style.display = 'none';
-    // Navigate to Profile & Settings section
-    const profileLink = document.querySelector('[data-target="profileMain"]');
-    if (profileLink) profileLink.click();
+
+    // Show welcome video modal if it's the first time
+    const hasSeenVideo = localStorage.getItem('hasSeenWelcomeVideo');
+    if (!hasSeenVideo) {
+      setTimeout(() => {
+        document.getElementById('welcomeVideoModal').style.display = 'flex';
+      }, 300);
+    } else {
+      // Navigate to Profile & Settings section
+      const profileLink = document.querySelector('[data-target="profileMain"]');
+      if (profileLink) profileLink.click();
+    }
   });
 
   document.getElementById('laterBtn').addEventListener('click', () => {
     document.getElementById('profileCompletionModal').style.display = 'none';
     // Remember dismissal for this session only
     sessionStorage.setItem('profileModalDismissed', 'true');
+
+    // Show welcome video modal if it's the first time
+    const hasSeenVideo = localStorage.getItem('hasSeenWelcomeVideo');
+    if (!hasSeenVideo) {
+      setTimeout(() => {
+        document.getElementById('welcomeVideoModal').style.display = 'flex';
+      }, 300);
+    }
+  });
+
+  // Welcome video modal button handler
+  document.getElementById('closeVideoBtn').addEventListener('click', () => {
+    document.getElementById('welcomeVideoModal').style.display = 'none';
+    localStorage.setItem('hasSeenWelcomeVideo', 'true');
+
+    // Navigate to Getting Started section
+    const gettingStartedLink = document.querySelector('[data-target="gettingStartedMain"]');
+    if (gettingStartedLink) gettingStartedLink.click();
   });
 
   // Booking actions
@@ -3718,6 +3875,34 @@ async function loadRecentSubmissions() {
       <button class="btn-primary" id="completeProfileBtn">Complete Profile Now</button>
       <button class="btn-secondary" id="laterBtn">I'll Do It Later</button>
     </div>
+  </div>
+</div>
+
+<!-- Welcome Video Modal -->
+<div id="welcomeVideoModal">
+  <div class="modal-content">
+    <h2>
+      <span>🎬</span>
+      <span>Watch: How to Get Started with Fixxa</span>
+    </h2>
+    <p>Before you dive in, take a few minutes to watch this helpful tutorial on how to use the platform, manage bookings, and grow your business on Fixxa.</p>
+
+    <div class="video-container">
+      <iframe
+        src="https://www.youtube.com/embed/eloSnb-dKRE?si=sd9JQ-3nwaHfDRgG"
+        title="YouTube video player"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <p style="font-size:0.9rem; color:#666; margin-bottom:1.5rem;">
+      💡 You can always access this video from the <strong>Getting Started</strong> section in the side menu.
+    </p>
+
+    <button id="closeVideoBtn">Got It, Let's Get Started!</button>
   </div>
 </div>
 
