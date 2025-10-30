@@ -351,27 +351,27 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         return res.status(404).json({ success: false, error: 'Booking not found' });
       }
 
-      // Get quote
+      // Get all quotes for this booking (to show history)
       const quoteResult = await pool.query(
-        'SELECT * FROM quotes WHERE booking_id = $1 ORDER BY sent_at DESC LIMIT 1',
+        'SELECT * FROM quotes WHERE booking_id = $1 ORDER BY created_at DESC',
         [bookingId]
       );
 
       if (quoteResult.rows.length === 0) {
-        return res.json({ success: true, quote: null });
+        return res.json({ success: true, quotes: [] });
       }
 
-      const quote = quoteResult.rows[0];
+      const quotes = quoteResult.rows.map(quote => ({
+        ...quote,
+        line_items: typeof quote.line_items === 'string' ? JSON.parse(quote.line_items) : quote.line_items,
+        banking_details: quote.banking_details && typeof quote.banking_details === 'string'
+          ? JSON.parse(quote.banking_details)
+          : quote.banking_details
+      }));
 
       res.json({
         success: true,
-        quote: {
-          ...quote,
-          line_items: typeof quote.line_items === 'string' ? JSON.parse(quote.line_items) : quote.line_items,
-          banking_details: quote.banking_details && typeof quote.banking_details === 'string'
-            ? JSON.parse(quote.banking_details)
-            : quote.banking_details
-        }
+        quotes: quotes
       });
 
     } catch (error) {

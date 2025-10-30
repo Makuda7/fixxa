@@ -2599,6 +2599,10 @@ async function loadBookingQuotes(bookingId) {
     const data = await res.json();
 
     console.log('Quotes API response:', data);
+    console.log('data.success:', data.success);
+    console.log('data.quotes:', data.quotes);
+    console.log('quotes length:', data.quotes?.length);
+    console.log('Full data structure:', JSON.stringify(data, null, 2));
 
     if (data.success && data.quotes && data.quotes.length > 0) {
       console.log('Found', data.quotes.length, 'quotes - displaying section');
