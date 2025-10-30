@@ -1028,5 +1028,41 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get worker completion rate statistics
+  router.get('/:workerId/completion-rate', async (req, res) => {
+    try {
+      const workerId = req.params.workerId;
+
+      // Get all bookings for this worker (excluding cancelled ones from total)
+      const result = await pool.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE status = 'Completed') as completed_jobs,
+          COUNT(*) FILTER (WHERE status IN ('Completed', 'Confirmed', 'In Progress', 'Pending')) as total_jobs
+        FROM bookings
+        WHERE worker_id = $1
+      `, [workerId]);
+
+      const stats = result.rows[0];
+      const completedJobs = parseInt(stats.completed_jobs) || 0;
+      const totalJobs = parseInt(stats.total_jobs) || 0;
+
+      // Calculate completion rate percentage
+      const completionRate = totalJobs > 0
+        ? Math.round((completedJobs / totalJobs) * 100)
+        : 0;
+
+      res.json({
+        success: true,
+        completedJobs,
+        totalJobs,
+        completionRate
+      });
+    } catch (error) {
+      logger.error('Get completion rate error', { error: error.message });
+      console.error('Get completion rate error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get completion rate' });
+    }
+  });
+
   return router;
 };

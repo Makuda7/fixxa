@@ -183,6 +183,13 @@
     font-weight:500;
   }
 
+  .completion-rate-badge {
+    background:linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border:1px solid #28a745;
+    color:#155724;
+    font-weight:600;
+  }
+
   .dealer-info {
     padding-top:1rem;
     border-top:1px solid #e0e0e0;
@@ -1482,6 +1489,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const fullStars = Math.floor(actualRating);
     const stars = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
 
+    // Fetch completion rate for reliability metric
+    let completionRate = null;
+    let completedJobs = 0;
+    let totalJobs = 0;
+    try {
+      const statsRes = await fetch(`/workers/${worker.id}/completion-rate`, { credentials: 'include' });
+      const statsData = await statsRes.json();
+      if (statsData.success) {
+        completionRate = statsData.completionRate;
+        completedJobs = statsData.completedJobs;
+        totalJobs = statsData.totalJobs;
+      }
+    } catch (err) {
+      console.error('Failed to fetch completion rate:', err);
+    }
+
     container.innerHTML = `
       <article class="worker-card">
         <div class="profile-main">
@@ -1509,6 +1532,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="spec-badge">📍 ${worker.primary_suburb || worker.area}${worker.province ? ', ' + worker.province : ''}</span>
               <span class="spec-badge">⭐ ${worker.experience}</span>
               <span class="spec-badge" title="Days this professional is available to work">📅 Works: ${getAvailabilityText(worker.availability_schedule)}</span>
+              ${completionRate !== null && totalJobs > 0 ? `<span class="spec-badge completion-rate-badge" title="${completedJobs} completed out of ${totalJobs} total jobs">✅ ${completionRate}% completion rate</span>` : ''}
             </div>
 
             ${worker.secondary_areas && worker.secondary_areas.length > 0 ? `
