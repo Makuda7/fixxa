@@ -87,7 +87,11 @@ const cspConfig = {
         "https://*.cloudinary.com",
       ],
       objectSrc: ["'none'"], // Block <object>, <embed>, <applet> (prevents Flash exploits)
-      frameSrc: ["'none'"], // Block iframes (prevents clickjacking)
+      frameSrc: [
+        "'self'",
+        "https://www.youtube.com", // Allow YouTube embeds for tutorial videos
+        "https://www.youtube-nocookie.com", // Privacy-enhanced YouTube embeds
+      ],
       baseUri: ["'self'"], // Restrict <base> tag to same origin
       formAction: ["'self'"], // Forms can only submit to same origin
       frameAncestors: ["'none'"], // Prevent being embedded in iframes (clickjacking protection)
