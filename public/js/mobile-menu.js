@@ -88,8 +88,22 @@
     navLinks.forEach(link => {
       link.addEventListener('click', () => {
         // Close menu immediately on selection
-        closeMenu();
+        // Add slight delay to ensure the click event is processed
+        setTimeout(() => {
+          closeMenu();
+        }, 100);
       });
+    });
+
+    // Also listen for clicks on the nav itself (catch dynamically added elements)
+    nav.addEventListener('click', (e) => {
+      // Check if clicked element is a link or button
+      const target = e.target.closest('a, button');
+      if (target && nav.classList.contains('mobile-menu-open')) {
+        setTimeout(() => {
+          closeMenu();
+        }, 100);
+      }
     });
 
     // Close menu on escape key
