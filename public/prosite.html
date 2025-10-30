@@ -63,6 +63,41 @@ table { width:100%; border-collapse:collapse; }
 th, td { padding:0.75rem 1rem; text-align:left; border-bottom:1px solid #eee; }
 th { background:#f9f9f9; font-weight:600; }
 tr:hover { background:#f0f0f0; cursor:pointer; }
+/* Status Badges */
+.status-badge {
+  display:inline-block;
+  padding:0.35rem 0.8rem;
+  border-radius:20px;
+  font-size:0.85rem;
+  font-weight:600;
+  text-align:center;
+  white-space:nowrap;
+}
+.status-pending {
+  background:#fff3cd;
+  color:#856404;
+  border:1px solid #ffeaa7;
+}
+.status-confirmed {
+  background:#d1ecf1;
+  color:#0c5460;
+  border:1px solid #bee5eb;
+}
+.status-in-progress {
+  background:#cfe2ff;
+  color:#084298;
+  border:1px solid #b6d4fe;
+}
+.status-completed {
+  background:#d4edda;
+  color:#155724;
+  border:1px solid #c3e6cb;
+}
+.status-cancelled {
+  background:#f8d7da;
+  color:#721c24;
+  border:1px solid #f5c6cb;
+}
 /* Request Cards */
 .request-card { background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); padding:1rem; margin-bottom:1rem; border-left:4px solid #ffc107; }
 .request-card.reschedule { border-left-color:#17a2b8; }
@@ -2141,6 +2176,34 @@ function showRateMessage(message, type) {
   }, 5000);
 }
 
+// Helper function to create status badge
+function createStatusBadge(status) {
+  const statusLower = (status || '').toLowerCase().replace(/\s+/g, '-');
+  const statusClass = `status-badge status-${statusLower}`;
+
+  // Add icon based on status
+  let icon = '';
+  switch(statusLower) {
+    case 'pending':
+      icon = '⏳ ';
+      break;
+    case 'confirmed':
+      icon = '✓ ';
+      break;
+    case 'in-progress':
+      icon = '🔧 ';
+      break;
+    case 'completed':
+      icon = '✅ ';
+      break;
+    case 'cancelled':
+      icon = '❌ ';
+      break;
+  }
+
+  return `<span class="${statusClass}">${icon}${escapeHTML(status || '')}</span>`;
+}
+
 // Load functions
 async function loadBookings(){
   try{
@@ -2162,12 +2225,12 @@ async function loadBookings(){
     bookingsTableBody.innerHTML = '';
     
     bookings.slice(0, 5).forEach(b=>{
-      const dateTime = b.booking_date && b.booking_time ? 
-        `${new Date(b.booking_date).toLocaleDateString()} ${b.booking_time}` : 
+      const dateTime = b.booking_date && b.booking_time ?
+        `${new Date(b.booking_date).toLocaleDateString()} ${b.booking_time}` :
         'No date set';
-      
+
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHTML(b.client_name || '')}</td><td>${escapeHTML(b.service || 'General Service')}</td><td>${escapeHTML(dateTime)}</td><td>${escapeHTML(b.status || '')}</td>`;
+      tr.innerHTML = `<td>${escapeHTML(b.client_name || '')}</td><td>${escapeHTML(b.service || 'General Service')}</td><td>${escapeHTML(dateTime)}</td><td>${createStatusBadge(b.status)}</td>`;
       tr.addEventListener('click', ()=> openBookingModal(b));
       bookingsTableBody.appendChild(tr);
     });
@@ -2175,14 +2238,14 @@ async function loadBookings(){
     // Update all bookings table
     const allBookingsTableBody = document.querySelector('#allBookingsTable tbody');
     allBookingsTableBody.innerHTML = '';
-    
+
     bookings.forEach(b=>{
-      const dateTime = b.booking_date && b.booking_time ? 
-        `${new Date(b.booking_date).toLocaleDateString()} ${b.booking_time}` : 
+      const dateTime = b.booking_date && b.booking_time ?
+        `${new Date(b.booking_date).toLocaleDateString()} ${b.booking_time}` :
         'No date set';
-      
+
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHTML(b.client_name || '')}</td><td>${escapeHTML(dateTime)}</td><td>${escapeHTML(b.service || 'General Service')}</td><td>${escapeHTML(b.status || '')}</td>`;
+      tr.innerHTML = `<td>${escapeHTML(b.client_name || '')}</td><td>${escapeHTML(dateTime)}</td><td>${escapeHTML(b.service || 'General Service')}</td><td>${createStatusBadge(b.status)}</td>`;
       tr.addEventListener('click', ()=> openBookingModal(b));
       allBookingsTableBody.appendChild(tr);
     });
@@ -2401,7 +2464,7 @@ function openBookingModal(booking){
   document.getElementById('modalClientName').textContent = booking.client_name || '';
   document.getElementById('modalService').textContent = booking.service || 'General Service';
   document.getElementById('modalPrice').textContent = '0.00';
-  document.getElementById('modalStatus').textContent = booking.status || '';
+  document.getElementById('modalStatus').innerHTML = createStatusBadge(booking.status);
   document.getElementById('modalNote').textContent = booking.note || '';
 
   if(booking.booking_date && booking.booking_time){
