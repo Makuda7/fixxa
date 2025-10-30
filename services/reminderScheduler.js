@@ -183,7 +183,7 @@ class ReminderScheduler {
           </p>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${process.env.BASE_URL || 'https://fixxa-app-production.up.railway.app'}/clientProfile.html"
+            <a href="${process.env.BASE_URL || 'https://www.fixxa.co.za'}/clientProfile.html"
                style="background: #228b22; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
               View Booking
             </a>
@@ -262,7 +262,7 @@ class ReminderScheduler {
           </p>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="${process.env.BASE_URL || 'https://fixxa-app-production.up.railway.app'}/prosite.html"
+            <a href="${process.env.BASE_URL || 'https://www.fixxa.co.za'}/prosite.html"
                style="background: #228b22; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
               View Booking
             </a>

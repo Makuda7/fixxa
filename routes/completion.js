@@ -241,7 +241,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io) => {
             const clientName = clientDetails.rows[0].name;
 
             // Send completion confirmation email with review link
-            const reviewUrl = `${process.env.BASE_URL || 'https://fixxa-app-production.up.railway.app'}/clientProfile.html#reviews`;
+            const reviewUrl = `${process.env.BASE_URL || 'https://www.fixxa.co.za'}/clientProfile.html#reviews`;
 
             const emailSubject = `✅ Job Completed - Review Your Experience with ${request.worker_name}`;
             const emailBody = `

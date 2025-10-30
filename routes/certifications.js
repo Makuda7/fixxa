@@ -105,9 +105,9 @@ module.exports = (pool, logger) => {
           certificationId
         );
 
-        // Send to admin email (fixxaapp@gmail.com)
+        // Send to admin email (support@fixxa.co.za)
         await sendEmail(
-          'fixxaapp@gmail.com',
+          'support@fixxa.co.za',
           emailContent.subject,
           emailContent.html,
           logger

@@ -29,7 +29,7 @@ module.exports = (pool, logger, sendEmail) => {
       }
 
       // Send email to admin
-      const adminEmail = process.env.ADMIN_EMAILS?.split(',')[0]?.trim() || 'fixxaapp@gmail.com';
+      const adminEmail = process.env.ADMIN_EMAILS?.split(',')[0]?.trim() || 'support@fixxa.co.za';
 
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -108,7 +108,7 @@ module.exports = (pool, logger, sendEmail) => {
             <p>Best regards,<br><strong>The Fixxa Support Team</strong></p>
 
             <p style="color: #666; font-size: 12px; margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 15px;">
-              This is an automated confirmation. Please do not reply to this email. For urgent issues, email us at fixxaapp@gmail.com
+              This is an automated confirmation. Please do not reply to this email. For urgent issues, email us at support@fixxa.co.za
             </p>
           </div>
         </div>
@@ -133,7 +133,7 @@ module.exports = (pool, logger, sendEmail) => {
       console.error('Support error:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to submit support request. Please email us directly at fixxaapp@gmail.com'
+        error: 'Failed to submit support request. Please email us directly at support@fixxa.co.za'
       });
     }
   });
