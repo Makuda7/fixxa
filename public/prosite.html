@@ -274,6 +274,67 @@ tr.cancelled-row td {
 #bookingModal .btn.primary { background:forestgreen; color:white; }
 #bookingModal .btn.warn { background:#ffb74d; color:#333; }
 #bookingModal .btn.danger { background:#e53935; color:white; }
+/* Quote Card Styles */
+.quote-card {
+  background:#f8f9fa;
+  border-radius:8px;
+  padding:1rem;
+  margin-bottom:1rem;
+  border-left:4px solid #2196F3;
+}
+.quote-card-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:0.5rem;
+}
+.quote-card-date {
+  font-size:0.85rem;
+  color:#666;
+}
+.quote-card-status {
+  display:inline-block;
+  padding:0.25rem 0.6rem;
+  border-radius:12px;
+  font-size:0.75rem;
+  font-weight:600;
+}
+.quote-status-pending {
+  background:#fff3cd;
+  color:#856404;
+}
+.quote-status-accepted {
+  background:#d4edda;
+  color:#155724;
+}
+.quote-status-rejected {
+  background:#f8d7da;
+  color:#721c24;
+}
+.quote-card-total {
+  font-size:1.2rem;
+  font-weight:700;
+  color:#2196F3;
+  margin:0.5rem 0;
+}
+.quote-card-items {
+  font-size:0.85rem;
+  color:#666;
+  margin:0.5rem 0;
+}
+.quote-card-item {
+  display:flex;
+  justify-content:space-between;
+  padding:0.25rem 0;
+}
+.quote-card-notes {
+  font-size:0.85rem;
+  color:#666;
+  font-style:italic;
+  margin-top:0.5rem;
+  padding-top:0.5rem;
+  border-top:1px solid #dee2e6;
+}
 #bookingModal label { font-weight:600; font-size:0.9rem; display:block; margin-bottom:0.3rem; }
 /* Profile Completion Modal */
 #profileCompletionModal {
@@ -1227,6 +1288,15 @@ tr.cancelled-row td {
 </select>
 </div>
 </div>
+
+<!-- Sent Quotes Section -->
+<div id="sentQuotesSection" style="margin-top:1.5rem; padding-top:1.5rem; border-top:2px solid #eee; display:none;">
+<h4 style="color:#2196F3; margin:0 0 1rem 0;">📋 Sent Quotes History</h4>
+<div id="sentQuotesList" style="max-height:300px; overflow-y:auto;">
+<!-- Quotes will be loaded here -->
+</div>
+</div>
+
 <div class="modal-actions">
 <button class="btn primary" id="sendQuoteBtn" style="background:#2196F3;">💰 Send Quote</button>
 <button class="btn primary" id="saveRescheduleBtn">Save Reschedule</button>
@@ -2502,12 +2572,89 @@ function openBookingModal(booking){
 
   document.getElementById('modalStatusSelect').value = booking.status || 'Pending';
   document.getElementById('bookingModalMsg').style.display = 'none';
+
+  // Load quotes for this booking
+  loadBookingQuotes(booking.id);
+
   document.getElementById('bookingModal').style.display = 'flex';
 }
 
 function closeBookingModal(){
   document.getElementById('bookingModal').style.display = 'none';
   currentBooking = null;
+}
+
+// Load and display quotes for a booking
+async function loadBookingQuotes(bookingId) {
+  const quotesSection = document.getElementById('sentQuotesSection');
+  const quotesList = document.getElementById('sentQuotesList');
+
+  try {
+    const res = await fetch(`/quotes/booking/${bookingId}`, { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.success && data.quotes && data.quotes.length > 0) {
+      quotesSection.style.display = 'block';
+
+      quotesList.innerHTML = data.quotes.map(quote => {
+        const sentDate = new Date(quote.created_at).toLocaleString();
+        const statusClass = `quote-status-${(quote.status || 'pending').toLowerCase()}`;
+        const statusText = quote.status || 'Pending';
+
+        // Parse line items
+        let lineItems = [];
+        try {
+          lineItems = typeof quote.line_items === 'string' ? JSON.parse(quote.line_items) : quote.line_items;
+        } catch (e) {
+          lineItems = [];
+        }
+
+        const itemsHtml = lineItems.map(item =>
+          `<div class="quote-card-item">
+            <span>${escapeHTML(item.description)}</span>
+            <span>R ${parseFloat(item.amount).toFixed(2)}</span>
+          </div>`
+        ).join('');
+
+        const total = lineItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+
+        // Parse payment methods
+        let paymentMethods = [];
+        try {
+          paymentMethods = typeof quote.payment_methods === 'string' ? JSON.parse(quote.payment_methods) : quote.payment_methods;
+        } catch (e) {
+          paymentMethods = [];
+        }
+
+        const paymentText = Array.isArray(paymentMethods) && paymentMethods.length > 0
+          ? paymentMethods.join(', ')
+          : 'Not specified';
+
+        return `
+          <div class="quote-card">
+            <div class="quote-card-header">
+              <div class="quote-card-date">Sent: ${sentDate}</div>
+              <div class="quote-card-status ${statusClass}">${statusText}</div>
+            </div>
+            <div class="quote-card-total">Total: R ${total.toFixed(2)}</div>
+            <div class="quote-card-items">
+              <strong>Items:</strong>
+              ${itemsHtml}
+            </div>
+            <div style="font-size:0.85rem; color:#666; margin-top:0.5rem;">
+              <strong>Payment:</strong> ${escapeHTML(paymentText)}
+            </div>
+            ${quote.notes ? `<div class="quote-card-notes"><strong>Notes:</strong> ${escapeHTML(quote.notes)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    } else {
+      quotesSection.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Failed to load booking quotes:', err);
+    quotesSection.style.display = 'none';
+  }
 }
 
 // Chat functions
