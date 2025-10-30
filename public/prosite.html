@@ -2589,11 +2589,16 @@ async function loadBookingQuotes(bookingId) {
   const quotesSection = document.getElementById('sentQuotesSection');
   const quotesList = document.getElementById('sentQuotesList');
 
+  console.log('Loading quotes for booking:', bookingId);
+
   try {
     const res = await fetch(`/quotes/booking/${bookingId}`, { credentials: 'include' });
     const data = await res.json();
 
+    console.log('Quotes API response:', data);
+
     if (data.success && data.quotes && data.quotes.length > 0) {
+      console.log('Found', data.quotes.length, 'quotes - displaying section');
       quotesSection.style.display = 'block';
 
       quotesList.innerHTML = data.quotes.map(quote => {
@@ -2649,6 +2654,7 @@ async function loadBookingQuotes(bookingId) {
         `;
       }).join('');
     } else {
+      console.log('No quotes found for this booking - hiding section');
       quotesSection.style.display = 'none';
     }
   } catch (err) {
