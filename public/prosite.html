@@ -2573,6 +2573,9 @@ function openBookingModal(booking){
   document.getElementById('modalStatusSelect').value = booking.status || 'Pending';
   document.getElementById('bookingModalMsg').style.display = 'none';
 
+  // TEMP: Test if new version is loaded
+  console.log('=== NEW VERSION LOADED - Booking ID:', booking.id, '===');
+
   // Load quotes for this booking
   loadBookingQuotes(booking.id);
 
