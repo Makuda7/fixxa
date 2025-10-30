@@ -59,7 +59,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     const data = await res.json();
 
     if(data.success){
-      window.location.href = '/worker/dashboard.html';
+      window.location.href = 'prosite.html';
     } else {
       errorMsg.textContent = data.error || 'Login failed';
       errorMsg.style.display = 'block';
