@@ -609,6 +609,23 @@ async function runQuotesMigration() {
   }
 }
 
+// Auto-run migration for booking address
+async function runBookingAddressMigration() {
+  try {
+    console.log('🔄 Running booking address migration...');
+    const fs = require('fs');
+    const path = require('path');
+
+    const migrationPath = path.join(__dirname, 'database', 'migrations', '018_add_booking_address.sql');
+    const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+
+    await pool.query(migrationSQL);
+    console.log('✅ Booking address migration completed');
+  } catch (error) {
+    console.log('⚠️  Booking address migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for suburbs system
 async function runSuburbsMigration() {
   try {
@@ -696,6 +713,7 @@ async function startServer() {
     await runPaymentFieldsMigration();
     await runSuburbsMigration();
     await runQuotesMigration();
+    await runBookingAddressMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler

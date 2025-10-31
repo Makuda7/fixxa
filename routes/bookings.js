@@ -718,6 +718,61 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
     }
   });
 
+  // Submit service address for accepted booking (client only)
+  router.post('/:id/submit-address', requireAuth, clientOnly, async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+      const userId = req.session.user.id;
+      const { service_address } = req.body;
+
+      if (!service_address || !service_address.trim()) {
+        return res.status(400).json({ success: false, error: 'Service address is required' });
+      }
+
+      // Verify booking belongs to this client and is confirmed
+      const bookingCheck = await pool.query(
+        'SELECT id, status FROM bookings WHERE id = $1 AND user_id = $2',
+        [bookingId, userId]
+      );
+
+      if (bookingCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Booking not found' });
+      }
+
+      const booking = bookingCheck.rows[0];
+      if (booking.status !== 'Confirmed') {
+        return res.status(400).json({
+          success: false,
+          error: 'Can only provide address for confirmed bookings'
+        });
+      }
+
+      // Update booking with service address
+      await pool.query(
+        `UPDATE bookings
+         SET service_address = $1, service_address_provided_at = NOW()
+         WHERE id = $2`,
+        [service_address.trim(), bookingId]
+      );
+
+      logger.info('Service address provided for booking', {
+        bookingId,
+        userId
+      });
+
+      res.json({
+        success: true,
+        message: 'Service address shared with professional successfully'
+      });
+    } catch (error) {
+      logger.error('Error submitting service address', {
+        error: error.message,
+        bookingId: req.params.id
+      });
+      res.status(500).json({ success: false, error: 'Failed to submit address' });
+    }
+  });
+
   // Legacy endpoints
   router.post('/:id/request-reschedule', requireAuth, async (req, res) => {
     return res.status(200).json({
