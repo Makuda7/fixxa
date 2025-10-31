@@ -2029,8 +2029,11 @@
             </div>
 
             <!-- Action Buttons -->
-            <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end; flex-wrap:wrap;">
               <button class="btn btn-secondary" data-action="close-worker-detail-modal">Close</button>
+              <button class="btn" style="background:#2196F3; color:white;" data-action="send-incomplete-email" data-worker-id="${workerId}">
+                📧 Send Completion Email
+              </button>
               <button class="btn btn-success" data-action="approve-worker-modal" data-worker-id="${workerId}" id="modalApproveBtn">
                 ✅ Approve Worker
               </button>
@@ -2123,6 +2126,37 @@
     // ========== END PENDING WORKERS FUNCTIONS ==========
 
     // ========== WORKER DETAIL MODAL FUNCTIONS ==========
+
+    async function sendIncompleteProfileEmail(workerId) {
+      try {
+        if (!confirm('Send an inspiring email to this professional to complete their profile?')) {
+          return;
+        }
+
+        setLoading(true);
+        const res = await fetch(`/admin/send-incomplete-profile-email/${workerId}`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        const data = await res.json();
+        setLoading(false);
+
+        if (data.success) {
+          if (data.complete) {
+            showMessage('Profile is already complete! No email sent.', 'info');
+          } else {
+            showMessage(`✅ Email sent successfully!\n\nMissing items:\n${data.missingItems.join('\n')}`, 'success');
+          }
+        } else {
+          showMessage(data.error || 'Failed to send email', 'error');
+        }
+      } catch (err) {
+        console.error('Send email error:', err);
+        setLoading(false);
+        showMessage('Failed to send email', 'error');
+      }
+    }
 
     async function showWorkerDetail(workerId) {
       try {
@@ -2391,6 +2425,10 @@
             const rejectWorkerModalId = parseInt(target.getAttribute('data-worker-id'));
             closeWorkerDetailModal();
             openRejectWorkerModal(rejectWorkerModalId);
+            break;
+          case 'send-incomplete-email':
+            const emailWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            sendIncompleteProfileEmail(emailWorkerId);
             break;
 
           // Support and suggestion actions

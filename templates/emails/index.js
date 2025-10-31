@@ -604,6 +604,95 @@ const emailTemplates = {
         <p style="color: #666; font-size: 14px;">Thank you for using Fixxa!</p>
       </div>
     `
+  }),
+
+  // Incomplete professional profile email
+  createIncompleteProfileEmail: (professionalName, missingItems) => ({
+    subject: 'Complete Your Fixxa Profile - You\'re Almost There! 🚀',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #4a7c59;">Welcome to the Fixxa Family, ${professionalName}! 🎉</h1>
+
+        <p style="font-size: 16px; line-height: 1.6;">
+          Thank you for taking the first step towards growing your business with Fixxa!
+          We're excited to have you join our community of trusted professionals.
+        </p>
+
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin: 30px 0; text-align: center;">
+          <h2 style="margin: 0 0 15px 0; font-size: 24px;">✨ You're SO Close! ✨</h2>
+          <p style="margin: 0; font-size: 18px; opacity: 0.95;">
+            Just a few more details and you'll be ready to start receiving jobs!
+          </p>
+        </div>
+
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <h3 style="margin-top: 0; color: #856404;">📋 Missing Items for Verification:</h3>
+          <ul style="color: #856404; line-height: 1.8; padding-left: 20px;">
+            ${missingItems.map(item => `<li><strong>${item}</strong></li>`).join('')}
+          </ul>
+        </div>
+
+        <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <h3 style="margin-top: 0; color: #155724;">💪 Why Complete Your Profile?</h3>
+          <ul style="color: #155724; line-height: 1.8; padding-left: 20px; margin: 10px 0;">
+            <li>✅ <strong>Get verified faster</strong> - Stand out from the competition</li>
+            <li>💼 <strong>Receive job requests</strong> - Start earning immediately</li>
+            <li>⭐ <strong>Build trust</strong> - Clients prefer complete, verified profiles</li>
+            <li>🎯 <strong>Higher visibility</strong> - Complete profiles rank higher in search</li>
+          </ul>
+        </div>
+
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196F3;">
+          <h3 style="margin-top: 0; color: #0d47a1;">🎁 Special Launch Benefit:</h3>
+          <p style="color: #0d47a1; margin: 10px 0; font-size: 16px;">
+            As one of our early professionals, <strong>you'll be featured prominently</strong> to clients
+            in your area once your profile is complete. Don't miss out on this advantage!
+          </p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${baseUrl}/prosite.html"
+             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 30px; display: inline-block; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+            🚀 Complete My Profile Now
+          </a>
+        </div>
+
+        <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+          <h3 style="margin-top: 0; color: #333;">📞 Need Help?</h3>
+          <p style="margin: 5px 0; color: #666;">
+            Our support team is here to guide you through the process.
+            Contact us at <a href="mailto:support@fixxa.co.za" style="color: #4a7c59; text-decoration: none;"><strong>support@fixxa.co.za</strong></a>
+          </p>
+          <p style="margin: 5px 0; color: #666;">
+            We typically review and approve profiles within <strong>24-48 hours</strong> of completion.
+          </p>
+        </div>
+
+        <div style="margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; text-align: center; color: white;">
+          <h3 style="margin: 0 0 10px 0;">💡 Pro Tip</h3>
+          <p style="margin: 0; font-size: 15px; opacity: 0.95;">
+            Professionals with complete profiles get <strong>3x more</strong> job requests than incomplete ones.
+            Take 5 minutes now to unlock your earning potential!
+          </p>
+        </div>
+
+        <p style="color: #333; font-size: 16px; line-height: 1.6; margin-top: 30px;">
+          We believe in your potential and can't wait to see you succeed! 💪
+        </p>
+
+        <p style="color: #333; font-size: 16px; line-height: 1.6;">
+          <strong>Let's do this!</strong><br>
+          The Fixxa Team
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          You're receiving this email because you started a professional registration on Fixxa.<br>
+          Need help? Reply to this email or visit <a href="${baseUrl}/support.html" style="color: #4a7c59;">our support page</a>.
+        </p>
+      </div>
+    `
   })
 };
 

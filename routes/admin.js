@@ -1182,5 +1182,101 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Send incomplete profile email to worker
+  router.post('/send-incomplete-profile-email/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const workerId = req.params.id;
+      const adminEmail = req.session.user.email;
+
+      // Get worker details
+      const workerResult = await pool.query(
+        `SELECT * FROM workers WHERE id = $1`,
+        [workerId]
+      );
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const worker = workerResult.rows[0];
+
+      // Check what's missing from the profile
+      const missingItems = [];
+
+      // Check profile picture
+      if (!worker.profile_picture) {
+        missingItems.push('Profile Picture');
+      }
+
+      // Check ID/Passport info
+      if (!worker.id_type || !worker.id_number) {
+        missingItems.push('ID/Passport Information');
+      }
+
+      // Check emergency contacts
+      if (!worker.emergency_name_1 || !worker.emergency_phone_1 ||
+          !worker.emergency_name_2 || !worker.emergency_phone_2) {
+        missingItems.push('Emergency Contact Information');
+      }
+
+      // Check professional info
+      if (!worker.bio || !worker.experience || !worker.speciality) {
+        missingItems.push('Professional Information (Bio, Experience, Service Type)');
+      }
+
+      // Check location/suburb info
+      if (!worker.province || !worker.primary_suburb) {
+        missingItems.push('Service Area Information (Province & Primary Suburb)');
+      }
+
+      // Check certifications/documents
+      const certResult = await pool.query(
+        'SELECT COUNT(*) FROM certifications WHERE worker_id = $1',
+        [workerId]
+      );
+
+      if (parseInt(certResult.rows[0].count) === 0) {
+        missingItems.push('Certifications or Proof of Work Documents');
+      }
+
+      if (missingItems.length === 0) {
+        return res.json({
+          success: true,
+          message: 'Profile is complete! No email sent.',
+          complete: true
+        });
+      }
+
+      // Send the incomplete profile email
+      const { sendEmail } = require('../utils/email');
+      const { createIncompleteProfileEmail } = require('../templates/emails');
+
+      const emailContent = createIncompleteProfileEmail(worker.name, missingItems);
+      await sendEmail(worker.email, emailContent.subject, emailContent.html).catch(err => {
+        logger.error('Failed to send incomplete profile email', {
+          workerId,
+          workerEmail: worker.email,
+          error: err.message
+        });
+      });
+
+      logger.info('Incomplete profile email sent by admin', {
+        workerId,
+        workerEmail: worker.email,
+        adminEmail,
+        missingItems
+      });
+
+      res.json({
+        success: true,
+        message: `Incomplete profile email sent to ${worker.name}`,
+        missingItems
+      });
+    } catch (error) {
+      logger.error('Failed to send incomplete profile email', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to send email' });
+    }
+  });
+
   return router;
 };
