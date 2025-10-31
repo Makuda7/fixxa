@@ -2575,9 +2575,15 @@
             </div>
           `).join('');
 
-          // Update badge
-          const pendingCount = data.suggestions.filter(s => s.status === 'pending').length;
-          updateBadge('suggestionsBadge', pendingCount);
+          // Update badge - fetch all suggestions to get accurate pending count
+          const allSuggestionsResponse = await fetch('/admin/feature-suggestions', { credentials: 'include' });
+          if (allSuggestionsResponse.ok) {
+            const allSuggestionsData = await allSuggestionsResponse.json();
+            if (allSuggestionsData.success) {
+              const pendingCount = allSuggestionsData.suggestions.filter(s => s.status === 'pending').length;
+              updateBadge('suggestionsBadge', pendingCount);
+            }
+          }
         }
       } catch (error) {
         console.error('Load suggestions error:', error);
