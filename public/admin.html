@@ -1805,11 +1805,19 @@
     // Worker Verification Modal
     async function openWorkerVerificationModal(workerId) {
       try {
+        console.log('Opening worker verification modal for worker ID:', workerId);
         setLoading(true);
 
         // Fetch comprehensive worker verification data
         const res = await fetch(`/admin/worker-verification/${workerId}`, { credentials: 'include' });
+        console.log('Fetch response status:', res.status);
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
         const data = await res.json();
+        console.log('Received worker verification data:', data);
 
         if (!data.success) {
           showMessage(data.error || 'Failed to load worker details', 'error');
@@ -2042,7 +2050,11 @@
         });
 
         updateVerificationSummary();
-        document.getElementById('workerDetailModal').classList.add('show');
+
+        const modal = document.getElementById('workerDetailModal');
+        console.log('Modal element:', modal);
+        modal.classList.add('show');
+        console.log('Modal should now be visible with class:', modal.className);
       } catch (err) {
         console.error('Load verification details error:', err);
         showMessage('Failed to load worker verification details', 'error');
