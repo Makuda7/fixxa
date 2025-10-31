@@ -1820,7 +1820,8 @@
         console.log('Received worker verification data:', data);
 
         if (!data.success) {
-          showMessage(data.error || 'Failed to load worker details', 'error');
+          console.error('API returned error:', data);
+          showMessage((data.error || 'Failed to load worker details') + (data.details ? ': ' + data.details : ''), 'error');
           return;
         }
 

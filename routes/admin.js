@@ -610,8 +610,16 @@ module.exports = (pool, logger, helpers) => {
         certifications: certificationsResult.rows
       });
     } catch (error) {
-      logger.error('Error fetching worker verification details', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to fetch verification details' });
+      logger.error('Error fetching worker verification details', {
+        error: error.message,
+        stack: error.stack,
+        workerId: req.params.id
+      });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch verification details',
+        details: error.message
+      });
     }
   });
 
