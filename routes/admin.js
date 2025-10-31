@@ -547,6 +547,9 @@ module.exports = (pool, logger, helpers) => {
   router.get('/worker-verification/:id', requireAuth, adminOnly, async (req, res) => {
     try {
       const workerId = req.params.id;
+      console.log('=== Worker Verification Request ===');
+      console.log('Worker ID:', workerId);
+      console.log('User:', req.session?.user?.email);
 
       // Get comprehensive worker details - Use * to get all columns that exist
       const workerResult = await pool.query(`
@@ -555,7 +558,10 @@ module.exports = (pool, logger, helpers) => {
         WHERE w.id = $1
       `, [workerId]);
 
+      console.log('Worker query result:', workerResult.rows.length);
+
       if (workerResult.rows.length === 0) {
+        console.log('Worker not found');
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
 
@@ -573,12 +579,20 @@ module.exports = (pool, logger, helpers) => {
         ORDER BY uploaded_at DESC
       `, [workerId]);
 
+      console.log('Certifications query result:', certificationsResult.rows.length);
+
+      console.log('Sending success response');
       res.json({
         success: true,
         worker: workerResult.rows[0],
         certifications: certificationsResult.rows
       });
     } catch (error) {
+      console.error('=== ERROR in worker-verification endpoint ===');
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('Worker ID:', req.params.id);
+
       logger.error('Error fetching worker verification details', {
         error: error.message,
         stack: error.stack,
