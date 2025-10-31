@@ -17,16 +17,25 @@ function workerOnly(req, res, next) {
 }
 
 function adminOnly(req, res, next) {
+  console.log('=== adminOnly middleware ===');
+  console.log('Session user:', req.session?.user);
+  console.log('Path:', req.path);
+
   if (!req.session?.user?.id) {
+    console.log('No session user - returning 401');
     return res.status(401).json({ success: false, error: 'Authentication required' });
   }
-  
+
   const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(e => e);
-  
+  console.log('Admin emails:', adminEmails);
+  console.log('User email:', req.session.user.email);
+
   if (adminEmails.length === 0 || !adminEmails.includes(req.session.user.email)) {
+    console.log('Not admin - returning 403');
     return res.status(403).json({ success: false, error: 'Admin access required' });
   }
-  
+
+  console.log('Admin check passed - calling next()');
   next();
 }
 
