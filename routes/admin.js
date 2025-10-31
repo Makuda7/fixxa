@@ -569,9 +569,8 @@ module.exports = (pool, logger, helpers) => {
       const certificationsResult = await pool.query(`
         SELECT
           id,
-          file_url,
-          file_name,
-          file_type,
+          document_url as file_url,
+          document_name as file_name,
           status,
           uploaded_at
         FROM certifications
