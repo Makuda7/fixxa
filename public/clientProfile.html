@@ -1235,6 +1235,38 @@ async function loadBookings() {
           ${b.note ? `<p><strong>Your Note:</strong> <em>${b.note}</em></p>` : ''}
           ${b.professional_response ? `<p><strong>Professional's Response:</strong> <em>${b.professional_response}</em></p>` : ''}
 
+          ${b.status === 'Confirmed' && !b.service_address ? `
+            <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #ffc107;">
+              <h4 style="margin: 0 0 0.5rem 0; color: #856404;">📍 Service Address Required</h4>
+              <p style="margin: 0 0 1rem 0; font-size: 0.9rem; color: #856404;">
+                Please provide your service address so the professional can arrive for the job.
+              </p>
+              <textarea
+                id="address-input-${b.id}"
+                placeholder="Enter your full service address (street, suburb, city, postal code)"
+                style="width: 100%; padding: 0.75rem; border: 2px solid #ffc107; border-radius: 6px; font-family: inherit; font-size: 0.95rem; min-height: 80px; resize: vertical;"
+              ></textarea>
+              <button
+                class="btn"
+                style="background: #28a745; color: white; margin-top: 0.5rem; width: 100%;"
+                data-action="submit-address"
+                data-booking-id="${b.id}">
+                ✅ Share Address with Professional
+              </button>
+            </div>
+          ` : ''}
+          ${b.status === 'Confirmed' && b.service_address ? `
+            <div style="background: #d4edda; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #28a745;">
+              <h4 style="margin: 0 0 0.5rem 0; color: #155724;">✅ Service Address Shared</h4>
+              <p style="margin: 0; font-size: 0.9rem; color: #155724;">
+                <strong>Address:</strong> ${b.service_address}
+              </p>
+              <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666; font-style: italic;">
+                Shared on ${new Date(b.service_address_provided_at).toLocaleDateString()}
+              </p>
+            </div>
+          ` : ''}
+
           ${b.quote ? `
             <div style="background: ${b.quote.status === 'pending' ? '#e3f2fd' : b.quote.status === 'accepted' ? '#d4edda' : '#f8d7da'}; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid ${b.quote.status === 'pending' ? '#2196F3' : b.quote.status === 'accepted' ? '#28a745' : '#dc3545'};">
               <h4 style="margin: 0 0 0.5rem 0; color: ${b.quote.status === 'pending' ? '#0d47a1' : b.quote.status === 'accepted' ? '#155724' : '#721c24'};">
@@ -1302,6 +1334,27 @@ async function loadBookings() {
         });
       });
 
+      // Add event listeners for address submission buttons
+      document.querySelectorAll('[data-action="submit-address"]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const bookingId = e.target.dataset.bookingId;
+          const addressInput = document.getElementById(`address-input-${bookingId}`);
+          const address = addressInput.value.trim();
+
+          if (!address) {
+            showNotification('Please enter your service address', 'error');
+            return;
+          }
+
+          if (address.length < 10) {
+            showNotification('Please provide a complete address with street, suburb, and city', 'error');
+            return;
+          }
+
+          await submitServiceAddress(bookingId, address);
+        });
+      });
+
     } else {
       bookingsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;"><p>You have no bookings yet.</p><p>Browse our services to get started!</p></div>';
     }
@@ -1351,6 +1404,28 @@ async function rejectQuote(quoteId, bookingId, reason) {
   } catch (err) {
     console.error('Reject quote error:', err);
     showNotification('Failed to decline quote', 'error');
+  }
+}
+
+async function submitServiceAddress(bookingId, address) {
+  try {
+    const res = await fetch(`/bookings/${bookingId}/submit-address`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service_address: address })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showNotification('✅ Service address shared with professional!', 'success');
+      await loadBookings(); // Reload to show confirmation
+    } else {
+      showNotification(data.error || 'Failed to submit address', 'error');
+    }
+  } catch (err) {
+    console.error('Submit address error:', err);
+    showNotification('Failed to submit address', 'error');
   }
 }
 
