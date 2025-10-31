@@ -1553,6 +1553,10 @@ tr.cancelled-row td {
 <p><strong>Price:</strong> R<span id="modalPrice">0.00</span></p>
 <p><strong>Status:</strong> <span id="modalStatus"></span></p>
 <p><strong>Note:</strong> <span id="modalNote"></span></p>
+<div id="modalAddressContainer" style="display:none; background:#d4edda; padding:0.75rem; border-radius:6px; margin:1rem 0; border-left:4px solid #28a745;">
+<p style="margin:0 0 0.5rem 0;"><strong style="color:#155724;">📍 Service Address:</strong></p>
+<p id="modalAddress" style="margin:0; font-size:0.95rem; color:#155724;"></p>
+</div>
 </div>
 <div class="col">
 <label for="modalDate">Reschedule Date</label>
@@ -2844,6 +2848,16 @@ function openBookingModal(booking){
   document.getElementById('modalPrice').textContent = '0.00';
   document.getElementById('modalStatus').innerHTML = createStatusBadge(booking.status);
   document.getElementById('modalNote').textContent = booking.note || '';
+
+  // Show service address if provided and booking is confirmed
+  const addressContainer = document.getElementById('modalAddressContainer');
+  const addressText = document.getElementById('modalAddress');
+  if (booking.service_address && booking.status === 'Confirmed') {
+    addressText.textContent = booking.service_address;
+    addressContainer.style.display = 'block';
+  } else {
+    addressContainer.style.display = 'none';
+  }
 
   if(booking.booking_date && booking.booking_time){
     document.getElementById('modalDate').value = booking.booking_date;
