@@ -68,7 +68,7 @@ class ReminderScheduler {
         w.email as worker_email,
         w.speciality as worker_service
       FROM bookings b
-      JOIN users u ON b.client_id = u.id
+      JOIN users u ON b.user_id = u.id
       JOIN workers w ON b.worker_id = w.id
       WHERE b.status = 'Confirmed'
         AND b.booking_date >= CURRENT_DATE

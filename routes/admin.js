@@ -42,7 +42,7 @@ module.exports = (pool, logger, helpers) => {
   router.get('/messages', requireAuth, adminOnly, async (req, res) => {
     try {
       const feedbackQuery = await pool.query(`
-        SELECT 
+        SELECT
           'feedback' as type,
           r.id,
           u.name as sender,
@@ -51,7 +51,7 @@ module.exports = (pool, logger, helpers) => {
           r.created_at,
           false as read
         FROM reviews r
-        JOIN users u ON r.client_id = u.id
+        JOIN users u ON r.user_id = u.id
         ORDER BY r.created_at DESC
         LIMIT 10
       `);
