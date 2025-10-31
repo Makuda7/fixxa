@@ -1182,6 +1182,49 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Test email sending
+  router.post('/test-email', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const adminEmail = req.session.user.email;
+      const { sendEmail } = require('../utils/email');
+
+      const testEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #4a7c59;">✅ Email System Test</h1>
+          <p>Congratulations! Your Fixxa email system is working perfectly.</p>
+          <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+            <p style="margin: 0; color: #155724;">
+              <strong>✓ SendGrid connected</strong><br>
+              <strong>✓ Email sending functional</strong><br>
+              <strong>✓ Ready for production</strong>
+            </p>
+          </div>
+          <p>This test email confirms that you can successfully send emails to professionals and clients.</p>
+          <p style="color: #666; font-size: 14px; margin-top: 30px;">
+            Sent at: ${new Date().toLocaleString()}<br>
+            From: Fixxa Admin Panel
+          </p>
+        </div>
+      `;
+
+      await sendEmail(adminEmail, 'Fixxa Email System Test ✅', testEmailHtml, logger);
+
+      logger.info('Test email sent from admin panel', { adminEmail });
+
+      res.json({
+        success: true,
+        message: `Test email sent to ${adminEmail}. Check your inbox!`
+      });
+    } catch (error) {
+      logger.error('Test email failed', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send test email',
+        details: error.message
+      });
+    }
+  });
+
   // Send incomplete profile email to worker
   router.post('/send-incomplete-profile-email/:id', requireAuth, adminOnly, async (req, res) => {
     try {

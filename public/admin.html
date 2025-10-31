@@ -913,6 +913,20 @@
       </div>
 
       <div class="settings-section" style="margin-top: 2rem;">
+        <h3>Email System</h3>
+        <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 1rem;">
+          <div class="setting-label">
+            <strong>Test Email Delivery</strong>
+            <span>Send a test email to verify SendGrid is working correctly</span>
+          </div>
+          <button class="btn" style="background:#2196F3; color:white;" data-action="test-email">
+            📧 Send Test Email to My Inbox
+          </button>
+          <div id="emailTestResult" style="display:none; padding:1rem; border-radius:6px; width:100%; margin-top:0.5rem;"></div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="margin-top: 2rem;">
         <h3>Database Management</h3>
         <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 1rem;">
           <div class="setting-label">
@@ -2158,6 +2172,45 @@
       }
     }
 
+    async function testEmailSystem() {
+      try {
+        const resultDiv = document.getElementById('emailTestResult');
+        resultDiv.innerHTML = '<p style="color:#666;">Sending test email...</p>';
+
+        const res = await fetch('/admin/test-email', {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          resultDiv.innerHTML = `
+            <div style="background:#d4edda; padding:1rem; border-radius:8px; border-left:4px solid #28a745;">
+              <p style="margin:0; color:#155724;"><strong>✅ ${data.message}</strong></p>
+              <p style="margin:0.5rem 0 0 0; color:#155724; font-size:0.9rem;">
+                Check your inbox (including spam/junk folder). If you don't receive it within 2 minutes,
+                check SendGrid dashboard and Railway logs.
+              </p>
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div style="background:#f8d7da; padding:1rem; border-radius:8px; border-left:4px solid #dc3545;">
+              <p style="margin:0; color:#721c24;"><strong>❌ ${data.error || 'Failed to send test email'}</strong></p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Test email error:', err);
+        document.getElementById('emailTestResult').innerHTML = `
+          <div style="background:#f8d7da; padding:1rem; border-radius:8px; border-left:4px solid #dc3545;">
+            <p style="margin:0; color:#721c24;"><strong>❌ Failed to send test email</strong></p>
+          </div>
+        `;
+      }
+    }
+
     async function showWorkerDetail(workerId) {
       try {
         setLoading(true);
@@ -2439,6 +2492,9 @@
           case 'mark-suggestion-reviewed':
             const suggestionId = parseInt(target.getAttribute('data-suggestion-id'));
             markSuggestionReviewed(suggestionId);
+            break;
+          case 'test-email':
+            testEmailSystem();
             break;
 
           // Open URL in new tab
