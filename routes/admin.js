@@ -548,40 +548,9 @@ module.exports = (pool, logger, helpers) => {
     try {
       const workerId = req.params.id;
 
-      // Get comprehensive worker details
+      // Get comprehensive worker details - Use * to get all columns that exist
       const workerResult = await pool.query(`
-        SELECT
-          w.id,
-          w.name,
-          w.email,
-          w.phone,
-          w.speciality,
-          w.address,
-          w.city,
-          w.postal_code,
-          w.bio,
-          w.experience,
-          w.area,
-          w.province,
-          w.primary_suburb,
-          w.secondary_areas,
-          w.service_radius,
-          w.created_at,
-          w.approval_status,
-          w.id_type,
-          w.id_number,
-          w.id_submitted_at,
-          w.id_verified,
-          w.profile_picture,
-          w.profile_picture_uploaded_at,
-          w.emergency_name_1,
-          w.emergency_relationship_1,
-          w.emergency_phone_1,
-          w.emergency_email_1,
-          w.emergency_name_2,
-          w.emergency_relationship_2,
-          w.emergency_phone_2,
-          w.emergency_email_2
+        SELECT *
         FROM workers w
         WHERE w.id = $1
       `, [workerId]);
