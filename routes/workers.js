@@ -574,6 +574,125 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get profile completion checklist
+  router.get('/profile/completion-checklist', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      const result = await pool.query(
+        `SELECT profile_picture, id_type, id_number, id_verified,
+                emergency_name_1, emergency_phone_1,
+                bio, experience, area, speciality,
+                approval_status, is_verified
+         FROM workers WHERE id = $1`,
+        [workerId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const worker = result.rows[0];
+
+      // Check certifications
+      const certResult = await pool.query(
+        'SELECT COUNT(*) as cert_count FROM certifications WHERE worker_id = $1',
+        [workerId]
+      );
+      const hasCertificates = certResult.rows[0].cert_count > 0;
+
+      // Check service area suburbs
+      const suburbsResult = await pool.query(
+        'SELECT COUNT(*) as suburb_count FROM worker_suburbs WHERE worker_id = $1',
+        [workerId]
+      );
+      const hasServiceArea = suburbsResult.rows[0].suburb_count > 0;
+
+      // Build checklist
+      const checklist = [
+        {
+          id: 'profile_picture',
+          label: 'Upload Profile Picture',
+          completed: !!worker.profile_picture,
+          required: true,
+          icon: '📸',
+          action: 'Go to Settings → Update Profile Picture'
+        },
+        {
+          id: 'id_verification',
+          label: 'Provide ID/Passport Information',
+          completed: !!(worker.id_type && worker.id_number),
+          required: true,
+          icon: '🪪',
+          action: 'Complete registration form'
+        },
+        {
+          id: 'emergency_contact',
+          label: 'Add Emergency Contact',
+          completed: !!(worker.emergency_name_1 && worker.emergency_phone_1),
+          required: true,
+          icon: '🚨',
+          action: 'Complete registration form'
+        },
+        {
+          id: 'professional_info',
+          label: 'Add Bio & Experience',
+          completed: !!(worker.bio && worker.experience),
+          required: true,
+          icon: '📝',
+          action: 'Go to Settings → Professional Profile'
+        },
+        {
+          id: 'service_area',
+          label: 'Set Service Area (Province & Suburbs)',
+          completed: !!worker.area && hasServiceArea,
+          required: true,
+          icon: '📍',
+          action: 'Go to Settings → Service Area'
+        },
+        {
+          id: 'speciality',
+          label: 'Select Your Trade/Speciality',
+          completed: !!worker.speciality,
+          required: true,
+          icon: '🔧',
+          action: 'Complete registration form'
+        },
+        {
+          id: 'certifications',
+          label: 'Upload Certifications/Licenses',
+          completed: hasCertificates,
+          required: false,
+          icon: '📜',
+          action: 'Go to Certifications tab'
+        }
+      ];
+
+      const totalItems = checklist.filter(item => item.required).length;
+      const completedItems = checklist.filter(item => item.required && item.completed).length;
+      const completionPercentage = Math.round((completedItems / totalItems) * 100);
+
+      const allRequiredComplete = completedItems === totalItems;
+
+      res.json({
+        success: true,
+        checklist,
+        summary: {
+          total: totalItems,
+          completed: completedItems,
+          percentage: completionPercentage,
+          allRequiredComplete,
+          approvalStatus: worker.approval_status,
+          isVerified: worker.is_verified
+        }
+      });
+    } catch (error) {
+      logger.error('Get completion checklist error', { error: error.message });
+      console.error('Get completion checklist error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get checklist' });
+    }
+  });
+
   // Portfolio Routes
 
   // Upload portfolio photo

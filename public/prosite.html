@@ -562,6 +562,31 @@ tr.cancelled-row td {
 <!-- Dashboard -->
 <div class="main active" id="dashboardMain">
 <h1>Welcome, Worker!</h1>
+
+<!-- Profile Completion Checklist -->
+<div id="profileCompletionWidget" style="display:none; margin-bottom:2rem;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h3 style="margin: 0; font-size: 1.3rem;">📋 Profile Completion</h3>
+      <div style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px;">
+        <span id="completionPercentage" style="font-size: 1.5rem; font-weight: 700;">0%</span>
+      </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.2); height: 10px; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem;">
+      <div id="completionProgressBar" style="background: #4ade80; height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+    </div>
+
+    <div id="checklistItems" style="display: grid; gap: 0.75rem;">
+      <!-- Checklist items will be inserted here -->
+    </div>
+
+    <div id="completionStatus" style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.9); border-radius: 8px; color: #333; display: none;">
+      <p style="margin: 0; font-weight: 600;"></p>
+    </div>
+  </div>
+</div>
+
 <div class="dashboard-cards">
 <div class="card"><h3>Pending Bookings</h3><p id="pendingBookings">0</p></div>
 <div class="card"><h3>Pending Requests</h3><p id="pendingRequests">0</p></div>
@@ -2585,6 +2610,78 @@ function createStatusBadge(status) {
 }
 
 // Load functions
+
+// Load profile completion checklist
+async function loadProfileChecklist() {
+  try {
+    const res = await fetch('/workers/profile/completion-checklist', { credentials: 'include' });
+    const data = await res.json();
+
+    if (!data.success) {
+      console.error('Failed to load checklist:', data.error);
+      return;
+    }
+
+    const { checklist, summary } = data;
+
+    // Show/hide widget based on completion
+    const widget = document.getElementById('profileCompletionWidget');
+    if (summary.allRequiredComplete) {
+      widget.style.display = 'none'; // Hide if everything is complete
+      return;
+    }
+
+    widget.style.display = 'block';
+
+    // Update percentage and progress bar
+    document.getElementById('completionPercentage').textContent = `${summary.percentage}%`;
+    document.getElementById('completionProgressBar').style.width = `${summary.percentage}%`;
+
+    // Render checklist items
+    const checklistContainer = document.getElementById('checklistItems');
+    checklistContainer.innerHTML = checklist.map(item => {
+      const checkIcon = item.completed ? '✅' : '⭕';
+      const opacity = item.completed ? '0.6' : '1';
+      const bgColor = item.completed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)';
+
+      return `
+        <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: ${bgColor}; border-radius: 8px; opacity: ${opacity};">
+          <div style="font-size: 1.5rem;">${item.icon}</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">${checkIcon} ${item.label}</div>
+            ${!item.completed ? `<div style="font-size: 0.85rem; opacity: 0.9;">💡 ${item.action}</div>` : ''}
+          </div>
+          ${item.required ? '<span style="background: rgba(255,200,0,0.3); padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">Required</span>' : ''}
+        </div>
+      `;
+    }).join('');
+
+    // Show status message
+    const statusDiv = document.getElementById('completionStatus');
+    const statusText = statusDiv.querySelector('p');
+
+    if (summary.percentage === 100) {
+      statusDiv.style.display = 'block';
+      statusDiv.style.background = 'rgba(72, 222, 128, 0.9)';
+      statusText.style.color = '#065f46';
+      statusText.textContent = '🎉 Profile 100% Complete! Waiting for admin approval...';
+    } else if (summary.percentage >= 75) {
+      statusDiv.style.display = 'block';
+      statusDiv.style.background = 'rgba(251, 191, 36, 0.9)';
+      statusText.style.color = '#78350f';
+      statusText.textContent = `⚡ Almost there! ${summary.total - summary.completed} more ${summary.total - summary.completed === 1 ? 'item' : 'items'} to go!`;
+    } else {
+      statusDiv.style.display = 'block';
+      statusDiv.style.background = 'rgba(96, 165, 250, 0.9)';
+      statusText.style.color = '#1e40af';
+      statusText.textContent = `📝 Complete ${summary.total - summary.completed} more ${summary.total - summary.completed === 1 ? 'item' : 'items'} to get approved!`;
+    }
+
+  } catch (error) {
+    console.error('Error loading profile checklist:', error);
+  }
+}
+
 async function loadBookings(){
   try{
     const res = await fetch('/bookings/worker', { credentials:'include' });
@@ -3821,6 +3918,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadRate();
   await loadCertifications();
   await loadPortfolioPhotos();
+  await loadProfileChecklist(); // Load profile completion checklist
   await loadBookings();
   await loadRequests();
   await loadMessages();
@@ -3828,6 +3926,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Refresh unread count every 30 seconds
   setInterval(loadUnreadMessageCount, 30000);
+
+  // Refresh profile checklist every 60 seconds (in case they update profile)
+  setInterval(loadProfileChecklist, 60000);
 
   // Decline modal event listeners
   document.getElementById('declineReasonSelect').addEventListener('change', (e) => {
