@@ -1082,15 +1082,15 @@
         const data = await response.json();
         
         if (!data.loggedIn) {
-          window.location.href = '/adminLogin.html';
+          window.location.href = '/login.html';
           return false;
         }
-        
+
         document.getElementById('adminEmail').textContent = data.user.email;
         return true;
       } catch (error) {
         console.error('Auth check failed:', error);
-        window.location.href = '/adminLogin.html';
+        window.location.href = '/login.html';
         return false;
       }
     }

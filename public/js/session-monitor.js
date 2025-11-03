@@ -200,9 +200,8 @@
     // Redirect to appropriate login page
     if (currentPage.includes('prosite') || currentPage.includes('worker')) {
       loginPage = '/proLogin.html';
-    } else if (currentPage.includes('admin')) {
-      loginPage = '/adminLogin.html';
     }
+    // Admin users use regular client login page
 
     // Show message and redirect
     alert(`${reason}. You will be redirected to the login page.`);
