@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-48NETTXMR5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-48NETTXMR5');
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - Fixxa</title>
@@ -810,6 +818,50 @@
         </div>
       </div>
 
+      <!-- Website Analytics Section -->
+      <div class="table-section" style="margin-top: 2rem;">
+        <h3>📊 Website Analytics</h3>
+        <p style="color: #666;">Track your website traffic and visitor behavior</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;" id="visitorsToday">-</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Visitors Today</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;" id="visitorsThisWeek">-</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Visitors This Week</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;" id="pageViewsToday">-</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Page Views Today</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;" id="activeUsers">-</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Active Users Now</div>
+          </div>
+        </div>
+
+        <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h4 style="margin: 0 0 1rem 0; color: #2d5016;">📈 View Full Analytics</h4>
+          <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">
+            Access your complete Google Analytics dashboard for detailed insights, user demographics, traffic sources, and more.
+          </p>
+          <a href="https://analytics.google.com/analytics/web/#/p467208493/reports/intelligenthome"
+             target="_blank"
+             class="btn btn-primary"
+             style="display: inline-block; text-decoration: none;">
+            🚀 Open Google Analytics Dashboard
+          </a>
+          <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+            <div style="font-size: 0.85rem; color: #666;">
+              <strong>Property ID:</strong> G-48NETTXMR5<br>
+              <strong>Tracking Status:</strong> <span style="color: #28a745; font-weight: 600;">✅ Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="table-section">
         <h3>Recent Bookings</h3>
         <p style="color: #666;">Last 10 bookings on the platform</p>
@@ -1059,6 +1111,26 @@
         console.error('Error loading stats:', error);
         showMessage('Error loading statistics', 'error');
       }
+    }
+
+    // Load website analytics
+    function loadAnalytics() {
+      // Display helpful message to check Google Analytics
+      document.getElementById('visitorsToday').textContent = '📊';
+      document.getElementById('visitorsToday').style.fontSize = '1.5rem';
+      document.getElementById('visitorsToday').nextElementSibling.innerHTML = 'Check Google<br>Analytics';
+
+      document.getElementById('visitorsThisWeek').textContent = '📈';
+      document.getElementById('visitorsThisWeek').style.fontSize = '1.5rem';
+      document.getElementById('visitorsThisWeek').nextElementSibling.innerHTML = 'For Real-Time<br>Data';
+
+      document.getElementById('pageViewsToday').textContent = '👥';
+      document.getElementById('pageViewsToday').style.fontSize = '1.5rem';
+      document.getElementById('pageViewsToday').nextElementSibling.innerHTML = 'Click Button<br>Below';
+
+      document.getElementById('activeUsers').textContent = '🚀';
+      document.getElementById('activeUsers').style.fontSize = '1.5rem';
+      document.getElementById('activeUsers').nextElementSibling.innerHTML = 'View Full<br>Details';
     }
 
     // Load certifications
@@ -1629,6 +1701,9 @@
           loadSuggestions(),
           loadSettings()
         ]);
+
+        // Load analytics after dashboard loads
+        loadAnalytics();
 
         console.log('Dashboard loaded successfully');
       } catch (error) {
