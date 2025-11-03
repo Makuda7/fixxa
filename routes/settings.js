@@ -3,6 +3,7 @@ const router = express.Router();
 const { uploadLimiter } = require('../middleware/rateLimiter');
 const { scanFile } = require('../utils/virusScanner');
 const { cloudinary } = require('../config/cloudinary');
+const { logProfileUpdate } = require('../utils/profileUpdateLogger');
 
 module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
@@ -27,13 +28,60 @@ module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
         return res.status(400).json({ success: false, error: 'Invalid province selected' });
       }
 
+      // Get current values for logging
+      const currentWorker = await pool.query(
+        'SELECT name, email, bio, experience, area FROM workers w JOIN users u ON w.id = u.id WHERE w.id = $1',
+        [workerId]
+      );
+
       await pool.query(
         `UPDATE workers SET bio = $1, experience = $2, area = $3 WHERE id = $4`,
         [bio, experience, area, workerId]
       );
 
-      res.json({ 
-        success: true, 
+      // Log updates for admin tracking
+      if (currentWorker.rows.length > 0) {
+        const worker = currentWorker.rows[0];
+
+        if (worker.bio !== bio) {
+          await logProfileUpdate(pool, {
+            workerId,
+            workerName: worker.name,
+            workerEmail: worker.email,
+            updateType: 'profile_info',
+            fieldChanged: 'Bio/About Me',
+            oldValue: worker.bio,
+            newValue: bio
+          });
+        }
+
+        if (worker.experience !== experience) {
+          await logProfileUpdate(pool, {
+            workerId,
+            workerName: worker.name,
+            workerEmail: worker.email,
+            updateType: 'profile_info',
+            fieldChanged: 'Experience',
+            oldValue: worker.experience,
+            newValue: experience
+          });
+        }
+
+        if (worker.area !== area) {
+          await logProfileUpdate(pool, {
+            workerId,
+            workerName: worker.name,
+            workerEmail: worker.email,
+            updateType: 'service_area',
+            fieldChanged: 'Province',
+            oldValue: worker.area,
+            newValue: area
+          });
+        }
+      }
+
+      res.json({
+        success: true,
         message: 'Professional profile updated successfully. Changes will appear on your public profile.'
       });
     } catch (error) {

@@ -1321,5 +1321,46 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // ===== WORKER PROFILE UPDATES TRACKING =====
+
+  // Get all profile updates with optional status filter
+  router.get('/profile-updates', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const { getPendingUpdates, getUpdateCounts } = require('../utils/profileUpdateLogger');
+
+      const updates = await getPendingUpdates(pool, status);
+      const counts = await getUpdateCounts(pool);
+
+      res.json({
+        success: true,
+        updates,
+        counts
+      });
+    } catch (error) {
+      logger.error('Get profile updates error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to load profile updates' });
+    }
+  });
+
+  // Mark profile update as reviewed
+  router.post('/profile-updates/:id/review', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const updateId = parseInt(req.params.id);
+      const adminId = req.session.user.id;
+      const { markAsReviewed } = require('../utils/profileUpdateLogger');
+
+      await markAsReviewed(pool, updateId, adminId);
+
+      res.json({
+        success: true,
+        message: 'Profile update marked as reviewed'
+      });
+    } catch (error) {
+      logger.error('Review profile update error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to mark as reviewed' });
+    }
+  });
+
   return router;
 };

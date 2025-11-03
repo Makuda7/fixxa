@@ -777,6 +777,10 @@
         Pending Workers
         <span class="badge" id="pendingWorkersBadge" style="display:none;">0</span>
       </button>
+      <button class="nav-tab" data-tab="profile-updates">
+        Profile Updates
+        <span class="badge" id="profileUpdatesBadge" style="display:none;">0</span>
+      </button>
       <button class="nav-tab" data-tab="certifications">
         Certifications
         <span class="badge" id="pendingCertsBadge" style="display:none;">0</span>
@@ -945,6 +949,26 @@
       </div>
       <div id="suggestionsList" style="margin-top:1rem;">
         <p style="text-align:center; padding:2rem; color:#999;">Loading suggestions...</p>
+      </div>
+    </div>
+
+    <!-- Profile Updates Tab -->
+    <div id="profile-updates-tab" class="tab-content">
+      <div style="background: #fff3cd; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <h4 style="margin: 0 0 0.5rem 0; color: #856404;">📝 Worker Profile Activity Tracker</h4>
+        <p style="margin: 0; color: #856404; font-size: 0.9rem;">
+          Track all profile changes made by workers. Review updates to ensure accuracy and verify new information added by professionals.
+        </p>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="pending" data-filter-type="profile-updates">Pending Review</button>
+        <button class="filter-tab" data-filter="reviewed" data-filter-type="profile-updates">Reviewed</button>
+        <button class="filter-tab" data-filter="all" data-filter-type="profile-updates">All</button>
+      </div>
+
+      <div id="profileUpdatesList" style="margin-top:1rem;">
+        <p style="text-align:center; padding:2rem; color:#999;">Loading profile updates...</p>
       </div>
     </div>
 
@@ -1676,6 +1700,8 @@
         loadSupportMessages();
       } else if (tabName === 'suggestions') {
         loadSuggestions();
+      } else if (tabName === 'profile-updates') {
+        loadProfileUpdates();
       }
     }
 
@@ -1699,6 +1725,7 @@
           loadPendingWorkers(),
           loadSupportMessages(),
           loadSuggestions(),
+          loadProfileUpdates(),
           loadSettings()
         ]);
 
@@ -2463,6 +2490,8 @@
             filterSupport(filterValue, target);
           } else if (filterType === 'suggestions') {
             filterSuggestions(filterValue, target);
+          } else if (filterType === 'profile-updates') {
+            filterProfileUpdates(filterValue, target);
           }
           return;
         }
@@ -2567,6 +2596,10 @@
           case 'mark-suggestion-reviewed':
             const suggestionId = parseInt(target.getAttribute('data-suggestion-id'));
             markSuggestionReviewed(suggestionId);
+            break;
+          case 'mark-update-reviewed':
+            const updateId = parseInt(target.getAttribute('data-update-id'));
+            markUpdateReviewed(updateId);
             break;
           case 'test-email':
             testEmailSystem();
@@ -2807,6 +2840,136 @@
       } catch (error) {
         console.error('Mark reviewed error:', error);
         showMessage('Error updating suggestion', 'error');
+      }
+    }
+
+    // ========== PROFILE UPDATES FUNCTIONS ==========
+    let currentProfileUpdatesFilter = 'pending';
+
+    async function loadProfileUpdates() {
+      try {
+        const status = currentProfileUpdatesFilter === 'all' ? '' : currentProfileUpdatesFilter;
+        const url = status ? `/admin/profile-updates?status=${status}` : '/admin/profile-updates';
+
+        const response = await fetch(url, { credentials: 'include' });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          const container = document.getElementById('profileUpdatesList');
+
+          if (data.updates.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:2rem; color:#999;">No profile updates found</p>';
+            updateBadge('profileUpdatesBadge', 0);
+            return;
+          }
+
+          container.innerHTML = data.updates.map(update => {
+            const updateTypeColors = {
+              'profile_info': '#17a2b8',
+              'certifications': '#28a745',
+              'emergency_contact': '#ffc107',
+              'service_area': '#6f42c1',
+              'availability': '#fd7e14'
+            };
+            const color = updateTypeColors[update.update_type] || '#6c757d';
+
+            return `
+              <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${color};">
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:1rem;">
+                  <div>
+                    <h4 style="margin:0 0 0.5rem 0; color:${color};">
+                      ${escapeHTML(update.worker_name)}
+                      <span style="font-size:0.85rem; color:#666; font-weight:normal;">
+                        updated ${escapeHTML(update.field_changed)}
+                      </span>
+                    </h4>
+                    <p style="margin:0; color:#666; font-size:0.9rem;">
+                      Email: ${escapeHTML(update.worker_email)}
+                    </p>
+                    <p style="margin:0.25rem 0 0 0; color:#666; font-size:0.85rem;">
+                      ${new Date(update.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <span class="status-badge status-${update.status}">${update.status}</span>
+                </div>
+
+                ${update.old_value || update.new_value ? `
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                    ${update.old_value ? `
+                      <div style="background:#f8d7da; padding:1rem; border-radius:8px;">
+                        <p style="margin:0 0 0.5rem 0; font-weight:600; color:#721c24;">Old Value:</p>
+                        <p style="margin:0; white-space:pre-wrap; color:#721c24;">${escapeHTML(update.old_value)}</p>
+                      </div>
+                    ` : ''}
+                    ${update.new_value ? `
+                      <div style="background:#d4edda; padding:1rem; border-radius:8px;">
+                        <p style="margin:0 0 0.5rem 0; font-weight:600; color:#155724;">New Value:</p>
+                        <p style="margin:0; white-space:pre-wrap; color:#155724;">${escapeHTML(update.new_value)}</p>
+                      </div>
+                    ` : ''}
+                  </div>
+                ` : ''}
+
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                  ${update.status === 'pending' ? `
+                    <button class="btn btn-primary" data-action="mark-update-reviewed" data-update-id="${update.id}">
+                      ✓ Mark as Reviewed
+                    </button>
+                  ` : ''}
+                  <a href="/admin.html?tab=workers&worker=${update.worker_id}" class="btn btn-secondary" style="text-decoration:none;">
+                    View Full Profile
+                  </a>
+                  <a href="mailto:${update.worker_email}" class="btn btn-secondary" style="text-decoration:none;">
+                    Email Worker
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          // Update badge
+          updateBadge('profileUpdatesBadge', data.counts.pending);
+        }
+      } catch (error) {
+        console.error('Load profile updates error:', error);
+        document.getElementById('profileUpdatesList').innerHTML = '<p style="text-align:center; padding:2rem; color:#dc3545;">Failed to load profile updates</p>';
+      }
+    }
+
+    function filterProfileUpdates(status, target) {
+      currentProfileUpdatesFilter = status;
+      document.querySelectorAll('#profile-updates-tab .filter-tab').forEach(tab => tab.classList.remove('active'));
+      if (target) {
+        target.classList.add('active');
+      }
+      loadProfileUpdates();
+    }
+
+    async function markUpdateReviewed(updateId) {
+      if (!confirm('Mark this profile update as reviewed?')) return;
+
+      try {
+        const response = await fetch(`/admin/profile-updates/${updateId}/review`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showMessage('Profile update marked as reviewed', 'success');
+          loadProfileUpdates();
+        } else {
+          showMessage(data.error || 'Failed to update', 'error');
+        }
+      } catch (error) {
+        console.error('Mark update reviewed error:', error);
+        showMessage('Error updating profile update', 'error');
       }
     }
 

@@ -630,6 +630,23 @@ async function runBookingAddressMigration() {
   }
 }
 
+// Auto-run migration for worker profile updates log
+async function runWorkerProfileUpdatesMigration() {
+  try {
+    console.log('🔄 Running worker profile updates log migration...');
+    const fs = require('fs');
+    const path = require('path');
+
+    const migrationPath = path.join(__dirname, 'database', 'migrations', '019_worker_profile_updates_log.sql');
+    const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+
+    await pool.query(migrationSQL);
+    console.log('✅ Worker profile updates log migration completed');
+  } catch (error) {
+    console.log('⚠️  Worker profile updates log migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for suburbs system
 async function runSuburbsMigration() {
   try {
@@ -718,6 +735,7 @@ async function startServer() {
     await runSuburbsMigration();
     await runQuotesMigration();
     await runBookingAddressMigration();
+    await runWorkerProfileUpdatesMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
