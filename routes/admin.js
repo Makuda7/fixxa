@@ -583,9 +583,27 @@ module.exports = (pool, logger, helpers) => {
 
       console.log('Certifications query result:', certificationsResult.rows.length);
 
-      // Just return the certifications as-is from database
-      const certifications = certificationsResult.rows;
-      console.log('Returning certifications with original URLs from database');
+      // Fetch CORRECT URLs from Cloudinary API (database URLs might be wrong)
+      const certifications = await Promise.all(certificationsResult.rows.map(async (cert) => {
+        if (cert.file_type === 'document' && cert.cloudinary_id) {
+          try {
+            // Get the resource info from Cloudinary to get the REAL URL
+            const cloudinaryFile = await cloudinary.api.resource(cert.cloudinary_id, {
+              resource_type: 'image', // PDFs are stored as image type
+              type: 'upload'
+            });
+
+            console.log('Fixed URL for cert', cert.id, ':', cloudinaryFile.secure_url);
+            return { ...cert, file_url: cloudinaryFile.secure_url };
+          } catch (error) {
+            console.log('Could not fetch Cloudinary URL for cert', cert.id, ':', error.message);
+            return cert; // Return with original URL if fetch fails
+          }
+        }
+        return cert;
+      }));
+
+      console.log('Returning certifications with CORRECT Cloudinary URLs');
 
       console.log('Sending success response');
       res.json({
