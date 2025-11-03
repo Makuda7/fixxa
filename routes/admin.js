@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { cloudinary } = require('../config/cloudinary');
 
 module.exports = (pool, logger, helpers) => {
   const { requireAuth, adminOnly } = require('../middleware/auth');
@@ -570,7 +571,9 @@ module.exports = (pool, logger, helpers) => {
         SELECT
           id,
           document_url as file_url,
+          cloudinary_id,
           document_name as file_name,
+          file_type,
           status,
           uploaded_at
         FROM certifications
@@ -580,11 +583,32 @@ module.exports = (pool, logger, helpers) => {
 
       console.log('Certifications query result:', certificationsResult.rows.length);
 
+      // Generate signed URLs for PDFs to fix 401 errors
+      const certifications = certificationsResult.rows.map(cert => {
+        // If it's a PDF and has a cloudinary_id, generate a signed URL
+        if (cert.file_type === 'document' && cert.cloudinary_id) {
+          try {
+            // Generate signed URL that expires in 1 hour
+            const signedUrl = cloudinary.url(cert.cloudinary_id, {
+              resource_type: 'raw',
+              type: 'upload',
+              sign_url: true,
+              secure: true
+            });
+            return { ...cert, file_url: signedUrl };
+          } catch (error) {
+            logger.error('Error generating signed URL for PDF', { error: error.message, cloudinaryId: cert.cloudinary_id });
+            return cert; // Return original if signing fails
+          }
+        }
+        return cert;
+      });
+
       console.log('Sending success response');
       res.json({
         success: true,
         worker: workerResult.rows[0],
-        certifications: certificationsResult.rows
+        certifications: certifications
       });
     } catch (error) {
       console.error('=== ERROR in worker-verification endpoint ===');

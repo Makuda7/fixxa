@@ -65,6 +65,8 @@ module.exports = (pool, logger) => {
             folder: 'fixxa/certifications',
             resource_type: 'auto', // Automatically detect file type
             public_id: `cert-${workerId}-${Date.now()}`,
+            type: 'upload', // Use 'upload' type for public access
+            access_mode: 'public', // Make PDFs publicly accessible
           },
           (error, result) => {
             if (error) reject(error);
