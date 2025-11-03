@@ -56,6 +56,8 @@ const cspConfig = {
         "'unsafe-inline'", // Required: Inline scripts in HTML files (e.g., onclick handlers)
         "'unsafe-eval'", // Required: Socket.io and dynamic eval() usage
         "https://cdn.socket.io", // Socket.io CDN (if used)
+        "https://www.googletagmanager.com", // Google Tag Manager (gtag.js)
+        "https://www.google-analytics.com", // Google Analytics
       ],
       styleSrc: [
         "'self'",
@@ -80,6 +82,8 @@ const cspConfig = {
         "ws:", // WebSocket (Socket.io in development)
         "https://res.cloudinary.com", // Cloudinary API calls
         "https://api.cloudinary.com", // Cloudinary upload API
+        "https://www.google-analytics.com", // Google Analytics data collection
+        "https://www.googletagmanager.com", // Google Tag Manager
       ],
       mediaSrc: [
         "'self'",
