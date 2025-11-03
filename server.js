@@ -95,8 +95,7 @@ const cspConfig = {
         "'self'",
         "https://www.youtube.com", // Allow YouTube embeds for tutorial videos
         "https://www.youtube-nocookie.com", // Privacy-enhanced YouTube embeds
-        "https://docs.google.com", // Google Docs PDF viewer for certifications
-        "https://drive.google.com", // Google Drive viewer
+        "https://mozilla.github.io", // Mozilla PDF.js viewer for certifications
         "https://res.cloudinary.com", // Cloudinary direct PDF embeds
         "https://*.cloudinary.com", // All Cloudinary subdomains
       ],

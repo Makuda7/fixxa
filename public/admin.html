@@ -1917,14 +1917,13 @@
       const fileName = url.split('/').pop().split('?')[0];
       document.getElementById('pdfViewerTitle').textContent = `Document: ${decodeURIComponent(fileName)}`;
 
-      // Use Google's PDF viewer for better compatibility
-      // This works reliably across all browsers
-      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+      // Use Mozilla's PDF.js viewer (CDN hosted, works with CSP)
+      // This is more reliable and doesn't require Google Docs in CSP
+      const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(url)}`;
       iframe.src = viewerUrl;
 
-      // Setup download button
+      // Setup download button - opens PDF directly in new tab
       downloadBtn.onclick = () => {
-        // Open in new tab for download
         window.open(url, '_blank');
       };
 
