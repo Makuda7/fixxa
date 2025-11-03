@@ -1967,6 +1967,35 @@
       }
     }
 
+    async function deleteAllWorkerCertifications(workerId) {
+      if (!confirm('Delete ALL certifications for this worker? They will need to re-upload everything. This cannot be undone!')) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const res = await fetch(`/admin/worker/${workerId}/certifications`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage(data.message + ' - Worker can now re-upload.', 'success');
+          // Reload the worker verification modal
+          await openWorkerVerificationModal(workerId);
+        } else {
+          showMessage(data.error || 'Failed to delete certifications', 'error');
+        }
+      } catch (err) {
+        console.error('Delete all certifications error:', err);
+        showMessage('Failed to delete certifications', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
     async function confirmRejectWorker() {
       const reason = document.getElementById('rejectionReason').value.trim();
 
@@ -2209,6 +2238,13 @@
                       </div>
                     `).join('')}
                   </div>
+                </div>
+                <div style="background:#fff3cd; padding:1rem; border-radius:6px; margin-bottom:1rem; border-left:4px solid #ffc107;">
+                  <p style="margin:0 0 0.5rem 0; font-weight:600; color:#856404;">⚠️ PDFs not loading?</p>
+                  <p style="margin:0 0 0.5rem 0; font-size:0.9rem; color:#666;">If certifications give 401/404 errors, they were never successfully uploaded to Cloudinary.</p>
+                  <button class="btn" style="background:#dc3545; color:white;" data-action="delete-all-worker-certs" data-worker-id="${workerId}">
+                    🗑️ Delete All Broken Certifications
+                  </button>
                 </div>
                 <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
                   <input type="checkbox" id="check-documents" style="width:20px; height:20px; cursor:pointer;">
@@ -2714,6 +2750,12 @@
             const certId = target.getAttribute('data-cert-id');
             const workerId = target.getAttribute('data-worker-id');
             deleteBrokenCertification(certId, workerId);
+            break;
+
+          // Delete all broken certifications for worker
+          case 'delete-all-worker-certs':
+            const delWorkerId = target.getAttribute('data-worker-id');
+            deleteAllWorkerCertifications(delWorkerId);
             break;
         }
       });

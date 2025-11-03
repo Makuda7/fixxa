@@ -1426,5 +1426,35 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Delete all broken certifications for a worker (admin only)
+  router.delete('/worker/:workerId/certifications', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+
+      // Delete all certifications for this worker
+      const result = await pool.query(
+        'DELETE FROM certifications WHERE worker_id = $1 RETURNING id, document_name',
+        [workerId]
+      );
+
+      logger.info('Admin deleted broken certifications', {
+        adminEmail: req.session.user.email,
+        workerId,
+        deletedCount: result.rowCount,
+        deletedCerts: result.rows
+      });
+
+      res.json({
+        success: true,
+        message: `Deleted ${result.rowCount} certification(s)`,
+        deleted: result.rows
+      });
+    } catch (error) {
+      console.error('Delete certifications error:', error);
+      logger.error('Failed to delete certifications', { error: error.message, workerId: req.params.workerId });
+      res.status(500).json({ success: false, error: 'Failed to delete certifications' });
+    }
+  });
+
   return router;
 };
