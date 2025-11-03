@@ -589,12 +589,14 @@ module.exports = (pool, logger, helpers) => {
         // If it's a PDF and has a cloudinary_id, generate a signed URL
         if (cert.file_type === 'document' && cert.cloudinary_id) {
           try {
+            // Cloudinary stores PDFs uploaded with resource_type: 'auto' as 'image' not 'raw'
             // Generate signed URL that expires in 1 hour
             const signedUrl = cloudinary.url(cert.cloudinary_id, {
-              resource_type: 'raw',
+              resource_type: 'image', // Changed from 'raw' - PDFs are stored as images when using 'auto'
               type: 'upload',
               sign_url: true,
-              secure: true
+              secure: true,
+              format: 'pdf' // Explicitly specify PDF format
             });
             console.log('Generated signed URL for PDF:', { cloudinaryId: cert.cloudinary_id, signedUrl });
             return { ...cert, file_url: signedUrl };
