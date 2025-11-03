@@ -583,33 +583,9 @@ module.exports = (pool, logger, helpers) => {
 
       console.log('Certifications query result:', certificationsResult.rows.length);
 
-      // Make PDFs publicly accessible by updating their access type in Cloudinary
-      const certifications = await Promise.all(certificationsResult.rows.map(async (cert) => {
-        console.log('Processing certification:', { id: cert.id, file_type: cert.file_type, cloudinary_id: cert.cloudinary_id, original_url: cert.file_url });
-
-        // If it's a PDF and has a cloudinary_id, make it public
-        if (cert.file_type === 'document' && cert.cloudinary_id) {
-          try {
-            // Use Cloudinary's explicit API to change the file to public access
-            const result = await cloudinary.uploader.explicit(cert.cloudinary_id, {
-              resource_type: 'image', // PDFs uploaded with 'auto' are stored as 'image'
-              type: 'upload',
-              access_mode: 'public' // Make the file publicly accessible
-            });
-
-            const publicUrl = result.secure_url;
-            console.log('Made PDF public:', { cloudinaryId: cert.cloudinary_id, publicUrl });
-
-            return { ...cert, file_url: publicUrl };
-          } catch (error) {
-            console.error('Error making PDF public:', error);
-            logger.error('Error making PDF public', { error: error.message, cloudinaryId: cert.cloudinary_id });
-            // Return original URL as fallback
-            return cert;
-          }
-        }
-        return cert;
-      }));
+      // Just return the certifications as-is from database
+      const certifications = certificationsResult.rows;
+      console.log('Returning certifications with original URLs from database');
 
       console.log('Sending success response');
       res.json({
