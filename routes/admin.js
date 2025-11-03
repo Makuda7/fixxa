@@ -1393,5 +1393,39 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Proxy endpoint to serve PDFs from Cloudinary (bypasses authentication issues)
+  router.get('/certification-pdf/:certId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { certId } = req.params;
+
+      // Get certification details from database
+      const result = await pool.query(
+        'SELECT cloudinary_id, document_name FROM certifications WHERE id = $1',
+        [certId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Certification not found' });
+      }
+
+      const { cloudinary_id, document_name } = result.rows[0];
+
+      // Generate a temporary signed URL with Cloudinary API (this will work even for private files)
+      const signedUrl = cloudinary.utils.private_download_url(cloudinary_id, 'pdf', {
+        resource_type: 'image',
+        expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour expiry
+      });
+
+      console.log('Serving PDF via proxy:', { certId, cloudinary_id, signedUrl });
+
+      // Redirect to the signed URL
+      res.redirect(signedUrl);
+    } catch (error) {
+      console.error('PDF proxy error:', error);
+      logger.error('Failed to serve PDF', { error: error.message, certId: req.params.certId });
+      res.status(500).json({ success: false, error: 'Failed to retrieve PDF' });
+    }
+  });
+
   return router;
 };
