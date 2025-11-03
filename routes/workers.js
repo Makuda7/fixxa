@@ -601,12 +601,19 @@ module.exports = (pool, logger, helpers) => {
       );
       const hasCertificates = certResult.rows[0].cert_count > 0;
 
-      // Check service area suburbs
-      const suburbsResult = await pool.query(
-        'SELECT COUNT(*) as suburb_count FROM worker_suburbs WHERE worker_id = $1',
-        [workerId]
-      );
-      const hasServiceArea = suburbsResult.rows[0].suburb_count > 0;
+      // Check service area suburbs (optional - table may not exist yet)
+      let hasServiceArea = false;
+      try {
+        const suburbsResult = await pool.query(
+          'SELECT COUNT(*) as suburb_count FROM worker_suburbs WHERE worker_id = $1',
+          [workerId]
+        );
+        hasServiceArea = suburbsResult.rows[0].suburb_count > 0;
+      } catch (error) {
+        // worker_suburbs table doesn't exist yet - that's okay
+        logger.warn('worker_suburbs table not found, skipping suburb check');
+        hasServiceArea = false;
+      }
 
       // Build checklist
       const checklist = [
@@ -644,11 +651,11 @@ module.exports = (pool, logger, helpers) => {
         },
         {
           id: 'service_area',
-          label: 'Set Service Area (Province & Suburbs)',
-          completed: !!worker.area && hasServiceArea,
+          label: 'Set Service Area (Province)',
+          completed: !!worker.area,
           required: true,
           icon: '📍',
-          action: 'Go to Settings → Service Area'
+          action: 'Complete registration form'
         },
         {
           id: 'speciality',
