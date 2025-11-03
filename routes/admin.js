@@ -1389,6 +1389,8 @@ module.exports = (pool, logger, helpers) => {
 
   // Proxy endpoint to serve PDFs from Cloudinary (bypasses authentication issues)
   router.get('/certification-pdf/:certId', requireAuth, adminOnly, async (req, res) => {
+    const https = require('https');
+
     try {
       const { certId } = req.params;
 
@@ -1404,43 +1406,34 @@ module.exports = (pool, logger, helpers) => {
 
       const { cloudinary_id, document_name } = result.rows[0];
 
-      // Try different resource types to find where the PDF is actually stored
-      const resourceTypes = ['raw', 'image', 'video', 'auto'];
-      let signedUrl = null;
+      // Use Cloudinary Admin API to get authenticated download URL
+      const downloadUrl = cloudinary.url(cloudinary_id, {
+        resource_type: 'image',
+        type: 'upload',
+        sign_url: true,
+        attachment: true,
+        flags: 'attachment:' + (document_name || 'document.pdf')
+      });
 
-      for (const resourceType of resourceTypes) {
-        try {
-          console.log(`Trying resource_type: ${resourceType} for ${cloudinary_id}`);
+      console.log('Streaming PDF from Cloudinary:', downloadUrl);
 
-          // For 'raw' type, don't specify format
-          if (resourceType === 'raw') {
-            signedUrl = cloudinary.utils.private_download_url(cloudinary_id, null, {
-              resource_type: 'raw',
-              expires_at: Math.floor(Date.now() / 1000) + 3600
-            });
-          } else {
-            signedUrl = cloudinary.utils.private_download_url(cloudinary_id, 'pdf', {
-              resource_type: resourceType,
-              expires_at: Math.floor(Date.now() / 1000) + 3600
-            });
-          }
+      // Fetch the file from Cloudinary using the authenticated SDK
+      https.get(downloadUrl, (cloudinaryRes) => {
+        // Set proper headers for PDF display/download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${document_name || 'certification.pdf'}"`);
 
-          console.log(`Generated signed URL with ${resourceType}:`, signedUrl);
+        // Stream the PDF data to the client
+        cloudinaryRes.pipe(res);
+      }).on('error', (error) => {
+        console.error('Error streaming PDF:', error);
+        res.status(500).json({ success: false, error: 'Failed to stream PDF' });
+      });
 
-          // Test if this URL works by redirecting
-          return res.redirect(signedUrl);
-        } catch (error) {
-          console.log(`Failed with resource_type ${resourceType}:`, error.message);
-          continue;
-        }
-      }
-
-      // If we get here, none of the resource types worked
-      throw new Error('Could not generate signed URL with any resource type');
     } catch (error) {
       console.error('PDF proxy error:', error);
       logger.error('Failed to serve PDF', { error: error.message, certId: req.params.certId });
-      res.status(500).json({ success: false, error: 'Failed to retrieve PDF. The file may need to be re-uploaded.' });
+      res.status(500).json({ success: false, error: 'Failed to retrieve PDF' });
     }
   });
 
