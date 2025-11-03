@@ -1917,12 +1917,11 @@
       const fileName = url.split('/').pop().split('?')[0];
       document.getElementById('pdfViewerTitle').textContent = `Document: ${decodeURIComponent(fileName)}`;
 
-      // Use Mozilla's PDF.js viewer (CDN hosted, works with CSP)
-      // This is more reliable and doesn't require Google Docs in CSP
-      const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(url)}`;
-      iframe.src = viewerUrl;
+      // Embed PDF directly from Cloudinary
+      // Most modern browsers have built-in PDF viewers that work with direct embeds
+      iframe.src = url;
 
-      // Setup download button - opens PDF directly in new tab
+      // Setup download button - opens PDF directly in new tab for download
       downloadBtn.onclick = () => {
         window.open(url, '_blank');
       };
