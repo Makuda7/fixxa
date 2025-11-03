@@ -2169,9 +2169,9 @@
                             Status: <span style="color:${cert.status === 'approved' ? '#28a745' : cert.status === 'pending' ? '#ffc107' : '#dc3545'}; font-weight:600;">${cert.status.toUpperCase()}</span>
                           </p>
                         </div>
-                        <button class="btn btn-secondary" data-action="open-url" data-url="${cert.file_url}" style="padding:0.5rem 1rem;">
-                          View
-                        </button>
+                        <a href="${cert.file_url}" download target="_blank" class="btn btn-secondary" style="padding:0.5rem 1rem; text-decoration:none; display:inline-block;">
+                          📥 Download
+                        </a>
                       </div>
                     `).join('')}
                   </div>
