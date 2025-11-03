@@ -583,31 +583,33 @@ module.exports = (pool, logger, helpers) => {
 
       console.log('Certifications query result:', certificationsResult.rows.length);
 
-      // Generate signed URLs for PDFs to fix 401 errors
-      const certifications = certificationsResult.rows.map(cert => {
-        console.log('Processing certification:', { id: cert.id, file_type: cert.file_type, cloudinary_id: cert.cloudinary_id });
-        // If it's a PDF and has a cloudinary_id, generate a signed URL
+      // Make PDFs publicly accessible by updating their access type in Cloudinary
+      const certifications = await Promise.all(certificationsResult.rows.map(async (cert) => {
+        console.log('Processing certification:', { id: cert.id, file_type: cert.file_type, cloudinary_id: cert.cloudinary_id, original_url: cert.file_url });
+
+        // If it's a PDF and has a cloudinary_id, make it public
         if (cert.file_type === 'document' && cert.cloudinary_id) {
           try {
-            // Cloudinary stores PDFs uploaded with resource_type: 'auto' as 'image' not 'raw'
-            // Generate signed URL that expires in 1 hour
-            const signedUrl = cloudinary.url(cert.cloudinary_id, {
-              resource_type: 'image', // Changed from 'raw' - PDFs are stored as images when using 'auto'
+            // Use Cloudinary's explicit API to change the file to public access
+            const result = await cloudinary.uploader.explicit(cert.cloudinary_id, {
+              resource_type: 'image', // PDFs uploaded with 'auto' are stored as 'image'
               type: 'upload',
-              sign_url: true,
-              secure: true,
-              format: 'pdf' // Explicitly specify PDF format
+              access_mode: 'public' // Make the file publicly accessible
             });
-            console.log('Generated signed URL for PDF:', { cloudinaryId: cert.cloudinary_id, signedUrl });
-            return { ...cert, file_url: signedUrl };
+
+            const publicUrl = result.secure_url;
+            console.log('Made PDF public:', { cloudinaryId: cert.cloudinary_id, publicUrl });
+
+            return { ...cert, file_url: publicUrl };
           } catch (error) {
-            console.error('Error generating signed URL:', error);
-            logger.error('Error generating signed URL for PDF', { error: error.message, cloudinaryId: cert.cloudinary_id });
-            return cert; // Return original if signing fails
+            console.error('Error making PDF public:', error);
+            logger.error('Error making PDF public', { error: error.message, cloudinaryId: cert.cloudinary_id });
+            // Return original URL as fallback
+            return cert;
           }
         }
         return cert;
-      });
+      }));
 
       console.log('Sending success response');
       res.json({
