@@ -1410,20 +1410,43 @@ module.exports = (pool, logger, helpers) => {
 
       const { cloudinary_id, document_name } = result.rows[0];
 
-      // Generate a temporary signed URL with Cloudinary API (this will work even for private files)
-      const signedUrl = cloudinary.utils.private_download_url(cloudinary_id, 'pdf', {
-        resource_type: 'image',
-        expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour expiry
-      });
+      // Try different resource types to find where the PDF is actually stored
+      const resourceTypes = ['raw', 'image', 'video', 'auto'];
+      let signedUrl = null;
 
-      console.log('Serving PDF via proxy:', { certId, cloudinary_id, signedUrl });
+      for (const resourceType of resourceTypes) {
+        try {
+          console.log(`Trying resource_type: ${resourceType} for ${cloudinary_id}`);
 
-      // Redirect to the signed URL
-      res.redirect(signedUrl);
+          // For 'raw' type, don't specify format
+          if (resourceType === 'raw') {
+            signedUrl = cloudinary.utils.private_download_url(cloudinary_id, null, {
+              resource_type: 'raw',
+              expires_at: Math.floor(Date.now() / 1000) + 3600
+            });
+          } else {
+            signedUrl = cloudinary.utils.private_download_url(cloudinary_id, 'pdf', {
+              resource_type: resourceType,
+              expires_at: Math.floor(Date.now() / 1000) + 3600
+            });
+          }
+
+          console.log(`Generated signed URL with ${resourceType}:`, signedUrl);
+
+          // Test if this URL works by redirecting
+          return res.redirect(signedUrl);
+        } catch (error) {
+          console.log(`Failed with resource_type ${resourceType}:`, error.message);
+          continue;
+        }
+      }
+
+      // If we get here, none of the resource types worked
+      throw new Error('Could not generate signed URL with any resource type');
     } catch (error) {
       console.error('PDF proxy error:', error);
       logger.error('Failed to serve PDF', { error: error.message, certId: req.params.certId });
-      res.status(500).json({ success: false, error: 'Failed to retrieve PDF' });
+      res.status(500).json({ success: false, error: 'Failed to retrieve PDF. The file may need to be re-uploaded.' });
     }
   });
 
