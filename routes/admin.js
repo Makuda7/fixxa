@@ -585,6 +585,7 @@ module.exports = (pool, logger, helpers) => {
 
       // Generate signed URLs for PDFs to fix 401 errors
       const certifications = certificationsResult.rows.map(cert => {
+        console.log('Processing certification:', { id: cert.id, file_type: cert.file_type, cloudinary_id: cert.cloudinary_id });
         // If it's a PDF and has a cloudinary_id, generate a signed URL
         if (cert.file_type === 'document' && cert.cloudinary_id) {
           try {
@@ -595,8 +596,10 @@ module.exports = (pool, logger, helpers) => {
               sign_url: true,
               secure: true
             });
+            console.log('Generated signed URL for PDF:', { cloudinaryId: cert.cloudinary_id, signedUrl });
             return { ...cert, file_url: signedUrl };
           } catch (error) {
+            console.error('Error generating signed URL:', error);
             logger.error('Error generating signed URL for PDF', { error: error.message, cloudinaryId: cert.cloudinary_id });
             return cert; // Return original if signing fails
           }
