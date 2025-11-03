@@ -95,6 +95,10 @@ const cspConfig = {
         "'self'",
         "https://www.youtube.com", // Allow YouTube embeds for tutorial videos
         "https://www.youtube-nocookie.com", // Privacy-enhanced YouTube embeds
+        "https://docs.google.com", // Google Docs PDF viewer for certifications
+        "https://drive.google.com", // Google Drive viewer
+        "https://res.cloudinary.com", // Cloudinary direct PDF embeds
+        "https://*.cloudinary.com", // All Cloudinary subdomains
       ],
       baseUri: ["'self'"], // Restrict <base> tag to same origin
       formAction: ["'self'"], // Forms can only submit to same origin
