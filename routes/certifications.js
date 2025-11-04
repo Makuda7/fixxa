@@ -211,7 +211,7 @@ module.exports = (pool, logger) => {
 
       // Update certification status and get certificate details
       const certResult = await pool.query(
-        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id, file_name',
+        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id, document_name',
         ['approved', adminEmail, certificationId]
       );
 
@@ -220,7 +220,7 @@ module.exports = (pool, logger) => {
       }
 
       const workerId = certResult.rows[0].worker_id;
-      const fileName = certResult.rows[0].file_name;
+      const fileName = certResult.rows[0].document_name;
 
       // Get worker details for email
       const workerResult = await pool.query(
@@ -281,7 +281,7 @@ module.exports = (pool, logger) => {
       const { reason } = req.body;
 
       const result = await pool.query(
-        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id, file_name',
+        'UPDATE certifications SET status = $1, reviewed_at = NOW(), reviewed_by_email = $2 WHERE id = $3 RETURNING worker_id, document_name',
         ['rejected', adminEmail, certificationId]
       );
 
@@ -290,7 +290,7 @@ module.exports = (pool, logger) => {
       }
 
       const workerId = result.rows[0].worker_id;
-      const fileName = result.rows[0].file_name;
+      const fileName = result.rows[0].document_name;
 
       // Get worker details for email
       const workerResult = await pool.query(
