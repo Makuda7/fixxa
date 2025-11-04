@@ -228,21 +228,9 @@ module.exports = (pool, logger) => {
         [workerId]
       );
 
-      // Check if worker has any approved certifications
-      const approvedCount = await pool.query(
-        'SELECT COUNT(*) FROM certifications WHERE worker_id = $1 AND status = $2',
-        [workerId, 'approved']
-      );
-
-      const isVerified = parseInt(approvedCount.rows[0].count) >= 1;
-
-      // If this is their first approved certification, mark worker as verified
-      if (isVerified) {
-        await pool.query(
-          'UPDATE workers SET is_verified = true WHERE id = $1',
-          [workerId]
-        );
-      }
+      // Note: Approving a certification does NOT automatically verify the worker
+      // Worker verification (is_verified) is set when admin approves their required documents
+      // Certifications are separate - they show the "Certified" badge
 
       logger.info('Certification approved', { certificationId, workerId, adminEmail });
 
@@ -252,7 +240,8 @@ module.exports = (pool, logger) => {
         const { createCertificateApprovedEmail } = require('../templates/emails');
 
         const worker = workerResult.rows[0];
-        const emailContent = createCertificateApprovedEmail(worker.name, fileName, isVerified);
+        // Don't pass isVerified - certification approval is separate from worker verification
+        const emailContent = createCertificateApprovedEmail(worker.name, fileName, false);
         await sendEmail(worker.email, emailContent.subject, emailContent.html).catch(err => {
           logger.error('Failed to send certificate approval email', {
             error: err.message,
@@ -264,8 +253,7 @@ module.exports = (pool, logger) => {
 
       res.json({
         success: true,
-        message: 'Certification approved successfully',
-        workerVerified: isVerified
+        message: 'Professional certification approved successfully'
       });
     } catch (error) {
       logger.error('Approve certification error', { error: error.message, stack: error.stack });
