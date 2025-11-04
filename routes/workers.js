@@ -38,16 +38,14 @@ module.exports = (pool, logger, helpers) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
   const { calculateDistance } = helpers;
 
-  // Get all active workers (approved + pending for "Coming Soon" cards)
+  // Get all active workers (approved only - home screen)
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
         `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_pic, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified, approval_status
          FROM workers
-         WHERE is_active = true AND approval_status IN ('approved', 'pending')
-         ORDER BY
-           CASE WHEN approval_status = 'approved' THEN 0 ELSE 1 END,
-           name ASC`
+         WHERE is_active = true AND approval_status = 'approved'
+         ORDER BY name ASC`
       );
 
       // Convert old local profile pic paths to default SVG
