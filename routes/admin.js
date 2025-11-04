@@ -593,8 +593,15 @@ module.exports = (pool, logger, helpers) => {
               type: 'upload'
             });
 
-            console.log('Fixed URL for cert', cert.id, ':', cloudinaryFile.secure_url);
-            return { ...cert, file_url: cloudinaryFile.secure_url };
+            // Use PDF URL directly, or convert to JPG if PDF delivery is blocked
+            let pdfUrl = cloudinaryFile.secure_url;
+
+            // Alternative: Convert PDF first page to JPG as fallback
+            // Uncomment if PDFs still don't work:
+            // pdfUrl = pdfUrl.replace('.pdf', '.jpg').replace('/upload/', '/upload/pg_1/');
+
+            console.log('Fixed URL for cert', cert.id, ':', pdfUrl);
+            return { ...cert, file_url: pdfUrl };
           } catch (error) {
             console.log('Could not fetch Cloudinary URL for cert', cert.id, ':', error.message);
             return cert; // Return with original URL if fetch fails
