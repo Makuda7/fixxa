@@ -714,6 +714,33 @@ async function runWorkerApprovalMigration() {
   }
 }
 
+// Activate pending workers so they show in "Coming Soon" listings
+async function activatePendingWorkers() {
+  try {
+    console.log('🔄 Activating pending workers for Coming Soon display...');
+
+    const result = await pool.query(`
+      UPDATE workers
+      SET is_active = true
+      WHERE approval_status = 'pending' AND is_active = false
+      RETURNING id, name, speciality
+    `);
+
+    if (result.rows.length > 0) {
+      console.log(`  ✓ Activated ${result.rows.length} pending worker(s):`);
+      result.rows.forEach(w => {
+        console.log(`    - ${w.name} (${w.speciality})`);
+      });
+    } else {
+      console.log('  ✓ No pending workers needed activation');
+    }
+
+    console.log('✅ Pending workers activation complete');
+  } catch (error) {
+    console.log('⚠️  Pending workers activation skipped:', error.message);
+  }
+}
+
 // Auto-run migration for suburbs system
 async function runSuburbsMigration() {
   try {
@@ -805,6 +832,7 @@ async function startServer() {
     await runWorkerProfileUpdatesMigration();
     await runCertificationColumnsMigration();
     await runWorkerApprovalMigration();
+    await activatePendingWorkers();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
