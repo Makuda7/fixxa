@@ -645,9 +645,9 @@ document.addEventListener('DOMContentLoaded', () => {
       card.href = `profile.html?id=${worker.id}`;
       card.className = worker.is_pending ? 'worker-card pending' : 'worker-card';
 
-      // For pending workers, show "Coming Soon" banner
+      // For pending workers, show "Coming Soon" banner with worker's name
       const comingSoonBanner = worker.is_pending ?
-        `<div class="coming-soon-banner">${worker.speciality || 'Professional'} Coming Soon in ${worker.primary_suburb || worker.area || 'Your Area'}</div>` : '';
+        `<div class="coming-soon-banner">${worker.name}<br>${worker.speciality || 'Professional'} Coming Soon</div>` : '';
 
       card.innerHTML = `
         ${comingSoonBanner}
