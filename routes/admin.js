@@ -644,13 +644,21 @@ module.exports = (pool, logger, helpers) => {
       const { province, primary_suburb, secondary_areas } = req.body;
       const adminEmail = req.session.user.email;
 
+      console.log('=== APPROVE WORKER REQUEST ===');
+      console.log('Worker ID:', id);
+      console.log('Province:', province);
+      console.log('Primary Suburb:', primary_suburb);
+      console.log('Admin Email:', adminEmail);
+
       // Get worker details for email
       const workerResult = await pool.query(
         'SELECT name, email FROM workers WHERE id = $1',
         [id]
       );
+      console.log('Worker found:', workerResult.rows.length);
 
       if (workerResult.rows.length === 0) {
+        console.log('ERROR: Worker not found');
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
 
@@ -774,8 +782,11 @@ module.exports = (pool, logger, helpers) => {
         isVerified: hasApprovedCerts
       });
     } catch (error) {
-      logger.error('Error approving worker', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to approve worker' });
+      console.log('=== APPROVE WORKER ERROR ===');
+      console.log('Error message:', error.message);
+      console.log('Error stack:', error.stack);
+      logger.error('Error approving worker', { error: error.message, stack: error.stack });
+      res.status(500).json({ success: false, error: 'Failed to approve worker', details: error.message });
     }
   });
 
