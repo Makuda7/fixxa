@@ -75,6 +75,8 @@ const cspConfig = {
         "blob:", // Blob URLs for temporary images
         "https://res.cloudinary.com", // Cloudinary CDN (image storage)
         "https://*.cloudinary.com", // All Cloudinary subdomains
+        "https://www.google-analytics.com", // Google Analytics tracking pixels
+        "https://www.googletagmanager.com", // Google Tag Manager tracking pixels
       ],
       connectSrc: [
         "'self'",
