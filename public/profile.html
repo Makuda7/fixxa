@@ -1000,21 +1000,34 @@ function showBookingForm() {
 
 // Helper function to parse availability schedule
 function getAvailabilityText(availability_schedule) {
-  if (!availability_schedule) return 'Not specified';
+  if (!availability_schedule) return 'All week';
 
   try {
-    // If it's already parsed
-    const schedule = typeof availability_schedule === 'string'
-      ? JSON.parse(availability_schedule)
-      : availability_schedule;
+    let type;
 
-    const type = schedule.type || schedule;
+    // Handle different data formats
+    if (typeof availability_schedule === 'string') {
+      // Try to parse if it's a JSON string
+      try {
+        const parsed = JSON.parse(availability_schedule);
+        type = parsed.type || parsed;
+      } catch {
+        // If parsing fails, use the string directly
+        type = availability_schedule;
+      }
+    } else if (typeof availability_schedule === 'object' && availability_schedule !== null) {
+      // It's already an object - extract the type
+      type = availability_schedule.type;
+    } else {
+      type = availability_schedule;
+    }
 
-    // If type is an object or not a string, return default
+    // If type is still not a string, return default
     if (typeof type !== 'string') {
       return 'All week';
     }
 
+    // Convert to display text
     switch(type.toLowerCase()) {
       case 'weekdays':
         return 'Weekdays only';
@@ -1024,10 +1037,10 @@ function getAvailabilityText(availability_schedule) {
       case 'all':
         return 'All week';
       default:
-        return type;
+        return 'All week';
     }
   } catch (e) {
-    // If parsing fails, return default
+    // If anything fails, return default
     return 'All week';
   }
 }
