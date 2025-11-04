@@ -277,6 +277,30 @@
   font-weight: 600;
   white-space: nowrap;
 }
+.share-button {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  z-index: 5;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.share-button:hover {
+  background: #228b22;
+  color: white;
+  transform: scale(1.1);
+  border-color: #228b22;
+}
 .no-results {
   text-align: center;
   padding: 3rem;
@@ -636,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${!worker.is_pending ? `<p class="experience">${worker.completed_jobs || 0} completed jobs</p>` : ''}
         ${worker.area && !worker.is_pending ? `<p class="experience">${worker.area}</p>` : ''}
         ${worker.hourly_rate && !worker.is_pending ? `<p class="experience">R${worker.hourly_rate}/hr</p>` : ''}
+        <button class="share-button" onclick="shareWorker(event, ${worker.id}, '${worker.name.replace(/'/g, "\\'")}', '${worker.speciality || 'Professional'}'); return false;" title="Share this professional">🔗</button>
       `;
       workersGrid.appendChild(card);
     });
@@ -686,6 +711,80 @@ document.addEventListener('DOMContentLoaded', () => {
   loadUnreadMessageCount();
   setInterval(loadUnreadMessageCount, 30000);
 });
+
+// Share worker profile function
+function shareWorker(event, workerId, workerName, workerSpeciality) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const profileUrl = `${window.location.origin}/profile.html?id=${workerId}`;
+  const shareText = `Check out ${workerName} - ${workerSpeciality} on Fixxa`;
+
+  // Use Web Share API if available (mobile devices)
+  if (navigator.share) {
+    navigator.share({
+      title: `${workerName} - Fixxa`,
+      text: shareText,
+      url: profileUrl
+    }).catch(err => {
+      // User cancelled or error occurred - fallback to copy
+      if (err.name !== 'AbortError') {
+        copyToClipboard(profileUrl, workerName);
+      }
+    });
+  } else {
+    // Fallback: Copy to clipboard
+    copyToClipboard(profileUrl, workerName);
+  }
+}
+
+function copyToClipboard(text, workerName) {
+  // Create temporary input element
+  const tempInput = document.createElement('input');
+  tempInput.value = text;
+  document.body.appendChild(tempInput);
+  tempInput.select();
+
+  try {
+    document.execCommand('copy');
+    // Show success message
+    showShareMessage(`Link copied! Share ${workerName}'s profile.`);
+  } catch (err) {
+    // Fallback for older browsers
+    showShareMessage('Unable to copy. Please copy manually: ' + text);
+  }
+
+  document.body.removeChild(tempInput);
+}
+
+function showShareMessage(message) {
+  // Create and show a toast message
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #228b22;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    font-size: 0.95rem;
+    max-width: 90%;
+    text-align: center;
+  `;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => document.body.removeChild(toast), 300);
+  }, 3000);
+}
 </script>
 
 <script src="js/mobile-menu.js"></script>

@@ -22,14 +22,14 @@ module.exports = (pool, logger) => {
         SELECT
           w.id, w.name, w.speciality,
           w.primary_suburb, w.province, w.area,
-          w.bio, w.profile_pic, w.is_available,
+          w.bio, w.profile_pic, w.is_available, w.is_verified, w.approval_status,
           COALESCE(AVG(r.overall_rating), 0) as avg_rating,
           COUNT(DISTINCT r.id) as review_count,
           COUNT(DISTINCT b.id) as completed_jobs
         FROM workers w
         LEFT JOIN reviews r ON w.id = r.worker_id
         LEFT JOIN bookings b ON w.id = b.worker_id AND b.status = 'Completed'
-        WHERE w.is_active = true AND w.approval_status = 'approved'
+        WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
       `;
 
       const params = [];
@@ -102,12 +102,18 @@ module.exports = (pool, logger) => {
 
       const result = await pool.query(query, params);
 
+      // Add is_pending flag to results
+      const workers = result.rows.map(worker => ({
+        ...worker,
+        is_pending: worker.approval_status === 'pending'
+      }));
+
       // Get total count for pagination
       let countQuery = `
         SELECT COUNT(DISTINCT w.id) as total
         FROM workers w
         LEFT JOIN reviews r ON w.id = r.worker_id
-        WHERE w.is_active = true AND w.approval_status = 'approved'
+        WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
       `;
 
       const countParams = [];
@@ -153,7 +159,7 @@ module.exports = (pool, logger) => {
             SELECT w.id
             FROM workers w
             LEFT JOIN reviews r ON w.id = r.worker_id
-            WHERE w.is_active = true AND w.approval_status = 'approved'
+            WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
             ${speciality ? `AND LOWER(w.speciality) LIKE LOWER($1)` : ''}
             ${locationFilter}
             ${available === 'true' ? 'AND w.is_available = true' : ''}
@@ -169,12 +175,12 @@ module.exports = (pool, logger) => {
 
       res.json({
         success: true,
-        workers: result.rows,
+        workers: workers,
         pagination: {
           total,
           limit: parseInt(limit),
           offset: parseInt(offset),
-          hasMore: (parseInt(offset) + result.rows.length) < total
+          hasMore: (parseInt(offset) + workers.length) < total
         }
       });
 
