@@ -677,6 +677,41 @@ async function runCertificationColumnsMigration() {
   }
 }
 
+// Auto-run migration for worker approval system
+async function runWorkerApprovalMigration() {
+  try {
+    console.log('🔄 Running worker approval system migration...');
+
+    // Add approval_status column
+    await pool.query("ALTER TABLE workers ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) DEFAULT 'approved';");
+    console.log('  ✓ Added approval_status column');
+
+    // Add approval_date column
+    await pool.query('ALTER TABLE workers ADD COLUMN IF NOT EXISTS approval_date TIMESTAMP;');
+    console.log('  ✓ Added approval_date column');
+
+    // Add approved_by column
+    await pool.query('ALTER TABLE workers ADD COLUMN IF NOT EXISTS approved_by VARCHAR(255);');
+    console.log('  ✓ Added approved_by column');
+
+    // Add rejection_reason column
+    await pool.query('ALTER TABLE workers ADD COLUMN IF NOT EXISTS rejection_reason TEXT;');
+    console.log('  ✓ Added rejection_reason column');
+
+    // Set existing workers to 'approved' status (for backwards compatibility)
+    await pool.query("UPDATE workers SET approval_status = 'approved' WHERE approval_status IS NULL;");
+    console.log('  ✓ Updated existing workers to approved status');
+
+    // Create index on approval_status for faster queries
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_workers_approval_status ON workers(approval_status);');
+    console.log('  ✓ Created index on approval_status');
+
+    console.log('✅ Worker approval system migration completed');
+  } catch (error) {
+    console.log('⚠️  Worker approval system migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for suburbs system
 async function runSuburbsMigration() {
   try {
@@ -767,6 +802,7 @@ async function startServer() {
     await runBookingAddressMigration();
     await runWorkerProfileUpdatesMigration();
     await runCertificationColumnsMigration();
+    await runWorkerApprovalMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
