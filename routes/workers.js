@@ -42,7 +42,7 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified, approval_status
+        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_pic, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified, approval_status
          FROM workers
          WHERE is_active = true AND approval_status IN ('approved', 'pending')
          ORDER BY
@@ -53,9 +53,19 @@ module.exports = (pool, logger, helpers) => {
       // Convert old local profile pic paths to default SVG
       // Add is_verified field and is_pending flag
       const workers = result.rows.map(worker => {
+        // Set image field from profile_pic
+        worker.image = worker.profile_pic;
+
+        // Convert old local profile pic paths to default SVG
         if (worker.image && worker.image.startsWith('/uploads/')) {
           worker.image = 'images/default-profile.svg';
         }
+
+        // If no image, use default
+        if (!worker.image) {
+          worker.image = 'images/default-profile.svg';
+        }
+
         // If is_verified doesn't exist in DB, derive from approval_status
         if (worker.is_verified === undefined) {
           worker.is_verified = false; // Default to false for safety

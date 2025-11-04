@@ -1720,32 +1720,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
 
       if (data.success && Array.isArray(data.certifications) && data.certifications.length > 0) {
-        // Show section and populate certifications
+        // Show section - just display "Verified" message instead of listing documents
         certificationsSection.classList.add('show');
-
-        const certificationsList = data.certifications.map(cert => {
-          const certType = cert.certification_type || 'document';
-          const certIcon = certType === 'id_document' ? '🪪' :
-                          certType === 'license' ? '📜' :
-                          certType === 'qualification' ? '🎓' : '📄';
-
-          const certName = cert.certification_name || 'Certified Document';
-          const certTypeLabel = certType === 'id_document' ? 'ID Document' :
-                               certType === 'license' ? 'Professional License' :
-                               certType === 'qualification' ? 'Qualification' : 'Document';
-
-          return `
-            <li class="certification-item">
-              <span class="certification-icon">${certIcon}</span>
-              <div>
-                <div class="certification-name">${certName}</div>
-                <div class="certification-type">${certTypeLabel}</div>
-              </div>
-            </li>
-          `;
-        }).join('');
-
-        certificationsContent.innerHTML = `<ul class="certification-list">${certificationsList}</ul>`;
+        certificationsContent.innerHTML = `
+          <p style="color: #2e7d32; font-weight: 600; margin: 0;">
+            ✓ This professional has uploaded and verified their certifications
+          </p>
+        `;
       } else {
         // Worker has no certifications uploaded
         certificationsContent.innerHTML = `<p class="no-certifications">This professional has not uploaded any certifications yet.</p>`;
