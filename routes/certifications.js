@@ -239,7 +239,7 @@ module.exports = (pool, logger) => {
       // If this is their first approved certification, mark worker as verified
       if (isVerified) {
         await pool.query(
-          'UPDATE workers SET is_verified = true, verification_date = NOW() WHERE id = $1',
+          'UPDATE workers SET is_verified = true WHERE id = $1',
           [workerId]
         );
       }
