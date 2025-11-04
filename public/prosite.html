@@ -584,6 +584,14 @@ tr.cancelled-row td {
     <div id="completionStatus" style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.9); border-radius: 8px; color: #333; display: none;">
       <p style="margin: 0; font-weight: 600;"></p>
     </div>
+
+    <!-- Submit All Changes Button -->
+    <div style="margin-top: 1.5rem; text-align: center;">
+      <button id="submitAllChangesBtn" onclick="submitAllProfileChanges()" style="background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); transition: all 0.3s ease;">
+        ✅ Submit All Changes for Review
+      </button>
+      <p style="margin-top: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.8);">Make sure all sections are complete before submitting</p>
+    </div>
   </div>
 </div>
 
@@ -2694,6 +2702,46 @@ async function loadProfileChecklist() {
 
   } catch (error) {
     console.error('Error loading profile checklist:', error);
+  }
+}
+
+// Submit all profile changes (triggered by button at bottom of checklist)
+async function submitAllProfileChanges() {
+  const submitBtn = document.getElementById('submitAllChangesBtn');
+  const originalText = submitBtn.innerHTML;
+
+  try {
+    // Disable button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Submitting...';
+
+    // Trigger the profile form submit event
+    const form = document.getElementById('workerProfileForm');
+
+    // Create and dispatch submit event
+    const submitEvent = new Event('submit', {
+      bubbles: true,
+      cancelable: true
+    });
+
+    form.dispatchEvent(submitEvent);
+
+    // Wait a bit then show confirmation
+    setTimeout(() => {
+      submitBtn.innerHTML = '✅ Submitted!';
+      setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }, 2000);
+    }, 1000);
+
+  } catch (error) {
+    console.error('Error submitting profile:', error);
+    submitBtn.innerHTML = '❌ Error - Try Again';
+    setTimeout(() => {
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    }, 2000);
   }
 }
 
