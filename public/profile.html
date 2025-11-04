@@ -1739,17 +1739,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
 
       if (data.success && Array.isArray(data.certifications) && data.certifications.length > 0) {
-        // Show section - just display "Verified" message instead of listing documents
+        // Worker has approved professional certifications - show "Certified" badge
         certificationsSection.classList.add('show');
         certificationsContent.innerHTML = `
-          <p style="color: #2e7d32; font-weight: 600; margin: 0;">
-            ✓ This professional has uploaded and verified their certifications
+          <p style="color: #1976d2; font-weight: 600; margin: 0;">
+            🎓 This professional has verified professional certifications
           </p>
         `;
+
+        // Add "Certified" badge to worker name if not already there
+        const workerNameElement = document.querySelector('.worker-name-section h1');
+        if (workerNameElement && !workerNameElement.innerHTML.includes('Certified')) {
+          const certifiedBadge = '<span class="verified-badge" style="background: #1976d2;">🎓 Certified</span>';
+          workerNameElement.innerHTML += ' ' + certifiedBadge;
+        }
       } else {
-        // Worker has no certifications uploaded
-        certificationsContent.innerHTML = `<p class="no-certifications">This professional has not uploaded any certifications yet.</p>`;
-        certificationsSection.classList.add('show');
+        // Worker has no approved certifications - hide section entirely
+        certificationsSection.style.display = 'none';
       }
     } catch (err) {
       console.error('Failed to load certifications:', err);
