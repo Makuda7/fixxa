@@ -678,8 +678,7 @@ module.exports = (pool, logger, helpers) => {
              is_active = true,
              is_verified = $1,
              approval_date = NOW(),
-             approved_by = $2,
-             verification_date = CASE WHEN $1 = true THEN NOW() ELSE verification_date END`;
+             approved_by = $2`;
 
       const params = [hasApprovedCerts, adminEmail];
       let paramIndex = 3;
