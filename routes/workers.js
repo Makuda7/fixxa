@@ -38,15 +38,20 @@ module.exports = (pool, logger, helpers) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
   const { calculateDistance } = helpers;
 
-  // Get all active workers
+  // Get all active workers (approved + pending for "Coming Soon" cards)
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        'SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified FROM workers WHERE is_active = true AND approval_status = \'approved\' ORDER BY name ASC'
+        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified, approval_status
+         FROM workers
+         WHERE is_active = true AND approval_status IN ('approved', 'pending')
+         ORDER BY
+           CASE WHEN approval_status = 'approved' THEN 0 ELSE 1 END,
+           name ASC`
       );
 
       // Convert old local profile pic paths to default SVG
-      // Add is_verified field based on approval_status (fallback if column doesn't exist)
+      // Add is_verified field and is_pending flag
       const workers = result.rows.map(worker => {
         if (worker.image && worker.image.startsWith('/uploads/')) {
           worker.image = 'images/default-profile.svg';
@@ -55,6 +60,8 @@ module.exports = (pool, logger, helpers) => {
         if (worker.is_verified === undefined) {
           worker.is_verified = false; // Default to false for safety
         }
+        // Add is_pending flag for frontend to show "Coming Soon" banner
+        worker.is_pending = worker.approval_status === 'pending';
         return worker;
       });
 

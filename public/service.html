@@ -219,6 +219,33 @@
 .worker-card .speciality { color: #666; font-size: 0.9rem; margin: 0.25rem 0; }
 .worker-card .rating { color: gold; font-size: 1.1rem; margin: 0.5rem 0; }
 .worker-card .experience { color: #888; font-size: 0.85rem; }
+
+/* Pending worker (Coming Soon) styles */
+.worker-card.pending {
+  filter: grayscale(70%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.worker-card.pending img {
+  filter: grayscale(100%);
+}
+.coming-soon-banner {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #228b22 0%, #2d5016 100%);
+  color: white;
+  padding: 1rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: center;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 .distance-badge {
   position: absolute;
   top: 20px;
@@ -589,20 +616,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const emptyStars = 5 - fullStars;
       const stars = '★'.repeat(fullStars) + '☆'.repeat(emptyStars);
       const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
-      
+
       const card = document.createElement('a');
       card.href = `profile.html?id=${worker.id}`;
-      card.className = 'worker-card';
+      card.className = worker.is_pending ? 'worker-card pending' : 'worker-card';
+
+      // For pending workers, show "Coming Soon" banner
+      const comingSoonBanner = worker.is_pending ?
+        `<div class="coming-soon-banner">${worker.speciality || 'Professional'} Coming Soon in ${worker.primary_suburb || worker.area || 'Your Area'}</div>` : '';
+
       card.innerHTML = `
-        ${!worker.is_available ? 
+        ${comingSoonBanner}
+        ${!worker.is_available && !worker.is_pending ?
           `<div class="unavailable-badge">Currently Unavailable</div>` : ''}
         <img src="${worker.profile_pic || worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
         <h3>${worker.name} ${verifiedBadge}</h3>
         <p class="speciality">${worker.speciality || 'General Services'}</p>
-        <p class="rating">${stars} ${rating.toFixed(1)} (${worker.review_count || 0} reviews)</p>
-        <p class="experience">${worker.completed_jobs || 0} completed jobs</p>
-        ${worker.area ? `<p class="experience">${worker.area}</p>` : ''}
-        ${worker.hourly_rate ? `<p class="experience">R${worker.hourly_rate}/hr</p>` : ''}
+        ${!worker.is_pending ? `<p class="rating">${stars} ${rating.toFixed(1)} (${worker.review_count || 0} reviews)</p>` : ''}
+        ${!worker.is_pending ? `<p class="experience">${worker.completed_jobs || 0} completed jobs</p>` : ''}
+        ${worker.area && !worker.is_pending ? `<p class="experience">${worker.area}</p>` : ''}
+        ${worker.hourly_rate && !worker.is_pending ? `<p class="experience">R${worker.hourly_rate}/hr</p>` : ''}
       `;
       workersGrid.appendChild(card);
     });
