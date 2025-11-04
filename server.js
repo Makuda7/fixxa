@@ -650,6 +650,33 @@ async function runWorkerProfileUpdatesMigration() {
   }
 }
 
+// Auto-run migration for certifications table columns
+async function runCertificationColumnsMigration() {
+  try {
+    console.log('🔄 Running certifications columns migration...');
+
+    // Add cloudinary_id column
+    await pool.query('ALTER TABLE certifications ADD COLUMN IF NOT EXISTS cloudinary_id VARCHAR(255);');
+    console.log('  ✓ Added cloudinary_id column');
+
+    // Add file_type column
+    await pool.query("ALTER TABLE certifications ADD COLUMN IF NOT EXISTS file_type VARCHAR(20) DEFAULT 'document';");
+    console.log('  ✓ Added file_type column');
+
+    // Add reviewed_at column
+    await pool.query('ALTER TABLE certifications ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;');
+    console.log('  ✓ Added reviewed_at column');
+
+    // Add reviewed_by_email column
+    await pool.query('ALTER TABLE certifications ADD COLUMN IF NOT EXISTS reviewed_by_email VARCHAR(255);');
+    console.log('  ✓ Added reviewed_by_email column');
+
+    console.log('✅ Certifications columns migration completed');
+  } catch (error) {
+    console.log('⚠️  Certifications columns migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for suburbs system
 async function runSuburbsMigration() {
   try {
@@ -739,6 +766,7 @@ async function startServer() {
     await runQuotesMigration();
     await runBookingAddressMigration();
     await runWorkerProfileUpdatesMigration();
+    await runCertificationColumnsMigration();
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
