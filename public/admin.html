@@ -2269,6 +2269,29 @@
               <p style="margin:0.75rem 0 0 0; font-size:0.85rem; color:#666;">
                 <strong>Current specialty from registration:</strong> ${escapeHTML(worker.speciality || 'Not provided')}
               </p>
+
+              <!-- Add New Specialty -->
+              <div style="margin-top:1rem; padding-top:1rem; border-top:2px dashed #228b22;">
+                <p style="margin:0 0 0.5rem 0; font-size:0.9rem; color:#228b22; font-weight:600;">➕ Need to add a new specialty?</p>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                  <input
+                    type="text"
+                    id="newSpecialtyInput"
+                    placeholder="e.g., Locksmith, HVAC Technician, etc."
+                    style="flex:1; padding:0.5rem; border:1px solid #228b22; border-radius:6px; font-size:0.9rem;"
+                  />
+                  <button
+                    onclick="addNewSpecialty()"
+                    class="btn btn-success"
+                    style="padding:0.5rem 1rem; font-size:0.9rem; white-space:nowrap;"
+                  >
+                    Add Specialty
+                  </button>
+                </div>
+                <p style="margin:0.5rem 0 0 0; font-size:0.8rem; color:#666;">
+                  The new specialty will be added to the list and automatically selected for this worker.
+                </p>
+              </div>
             </div>
 
             <!-- Verification Summary -->
@@ -2396,6 +2419,77 @@
         if (container) {
           container.innerHTML = '<p style="color:#dc3545; margin:0;">⚠️ Failed to load specialties. Please refresh and try again.</p>';
         }
+      }
+    }
+
+    async function addNewSpecialty() {
+      const input = document.getElementById('newSpecialtyInput');
+      const specialtyName = input?.value?.trim();
+
+      if (!specialtyName) {
+        showMessage('Please enter a specialty name', 'error');
+        return;
+      }
+
+      if (specialtyName.length < 2) {
+        showMessage('Specialty name must be at least 2 characters', 'error');
+        return;
+      }
+
+      try {
+        // Add the new specialty to the database
+        const res = await fetch('/admin/specialties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: specialtyName,
+            icon: '🔧', // Default icon
+            is_active: true
+          })
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to add specialty');
+        }
+
+        showMessage(`✅ "${specialtyName}" added successfully!`, 'success');
+
+        // Clear the input
+        input.value = '';
+
+        // Get the current worker ID from the modal
+        const modalContent = document.getElementById('workerDetailModalContent');
+        const approveBtn = document.getElementById('modalApproveBtn');
+        const workerId = approveBtn?.getAttribute('data-worker-id');
+
+        if (workerId) {
+          // Reload the specialties checkboxes
+          await loadWorkerSpecialties(workerId);
+
+          // Automatically check the newly added specialty
+          const newSpecialtyId = data.specialty.id;
+          const newCheckbox = document.querySelector(`.specialty-checkbox[value="${newSpecialtyId}"]`);
+          if (newCheckbox) {
+            newCheckbox.checked = true;
+            // Add a highlight effect
+            const label = newCheckbox.closest('label');
+            if (label) {
+              label.style.background = '#d4edda';
+              label.style.borderColor = '#28a745';
+              setTimeout(() => {
+                label.style.background = 'white';
+                label.style.borderColor = '#ddd';
+              }, 2000);
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error('Failed to add specialty:', error);
+        showMessage(error.message || 'Failed to add specialty', 'error');
       }
     }
 
