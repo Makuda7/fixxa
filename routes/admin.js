@@ -1292,6 +1292,9 @@ module.exports = (pool, logger, helpers) => {
       const workerId = req.params.id;
       const adminEmail = req.session.user.email;
 
+      // Accept custom missing items from request body (based on checkbox states)
+      const customMissingItems = req.body?.missingItems;
+
       // Get worker details
       const workerResult = await pool.query(
         `SELECT * FROM workers WHERE id = $1`,
@@ -1304,43 +1307,48 @@ module.exports = (pool, logger, helpers) => {
 
       const worker = workerResult.rows[0];
 
-      // Check what's missing from the profile
-      const missingItems = [];
+      let missingItems = [];
 
-      // Check profile picture
-      if (!worker.profile_picture) {
-        missingItems.push('Profile Picture');
-      }
+      // If admin provided custom missing items (from checkboxes), use those
+      if (customMissingItems && Array.isArray(customMissingItems) && customMissingItems.length > 0) {
+        missingItems = customMissingItems;
+      } else {
+        // Otherwise, auto-detect missing items (legacy behavior)
+        // Check profile picture
+        if (!worker.profile_picture) {
+          missingItems.push('Profile Picture');
+        }
 
-      // Check ID/Passport info
-      if (!worker.id_type || !worker.id_number) {
-        missingItems.push('ID/Passport Information');
-      }
+        // Check ID/Passport info
+        if (!worker.id_type || !worker.id_number) {
+          missingItems.push('ID/Passport Information');
+        }
 
-      // Check emergency contacts
-      if (!worker.emergency_name_1 || !worker.emergency_phone_1 ||
-          !worker.emergency_name_2 || !worker.emergency_phone_2) {
-        missingItems.push('Emergency Contact Information');
-      }
+        // Check emergency contacts
+        if (!worker.emergency_name_1 || !worker.emergency_phone_1 ||
+            !worker.emergency_name_2 || !worker.emergency_phone_2) {
+          missingItems.push('Emergency Contact Information');
+        }
 
-      // Check professional info
-      if (!worker.bio || !worker.experience || !worker.speciality) {
-        missingItems.push('Professional Information (Bio, Experience, Service Type)');
-      }
+        // Check professional info
+        if (!worker.bio || !worker.experience || !worker.speciality) {
+          missingItems.push('Professional Information (Bio, Experience, Service Type)');
+        }
 
-      // Check location/suburb info
-      if (!worker.province || !worker.primary_suburb) {
-        missingItems.push('Service Area Information (Province & Primary Suburb)');
-      }
+        // Check location/suburb info
+        if (!worker.province || !worker.primary_suburb) {
+          missingItems.push('Service Area Information (Province & Primary Suburb)');
+        }
 
-      // Check certifications/documents
-      const certResult = await pool.query(
-        'SELECT COUNT(*) FROM certifications WHERE worker_id = $1',
-        [workerId]
-      );
+        // Check certifications/documents
+        const certResult = await pool.query(
+          'SELECT COUNT(*) FROM certifications WHERE worker_id = $1',
+          [workerId]
+        );
 
-      if (parseInt(certResult.rows[0].count) === 0) {
-        missingItems.push('Certifications or Proof of Work Documents');
+        if (parseInt(certResult.rows[0].count) === 0) {
+          missingItems.push('Certifications or Proof of Work Documents');
+        }
       }
 
       if (missingItems.length === 0) {
@@ -1368,7 +1376,8 @@ module.exports = (pool, logger, helpers) => {
         workerId,
         workerEmail: worker.email,
         adminEmail,
-        missingItems
+        missingItems,
+        customRequested: !!customMissingItems
       });
 
       res.json({

@@ -2533,25 +2533,50 @@
 
     async function sendIncompleteProfileEmail(workerId) {
       try {
-        if (!confirm('Send an inspiring email to this professional to complete their profile?')) {
+        // Check which verification items are NOT checked (missing)
+        const missingItems = [];
+
+        if (!document.getElementById('check-profile-pic')?.checked) {
+          missingItems.push('Profile Picture');
+        }
+        if (!document.getElementById('check-id-info')?.checked) {
+          missingItems.push('ID/Passport Information');
+        }
+        if (!document.getElementById('check-emergency')?.checked) {
+          missingItems.push('Emergency Contact Information');
+        }
+        if (!document.getElementById('check-professional')?.checked) {
+          missingItems.push('Professional Information (Bio, Experience, Service Type)');
+        }
+        if (!document.getElementById('check-documents')?.checked) {
+          missingItems.push('Certifications or Proof of Work Documents');
+        }
+
+        // If everything is checked, don't send email
+        if (missingItems.length === 0) {
+          showMessage('All verification items are checked! Please approve the worker instead.', 'info');
+          return;
+        }
+
+        if (!confirm(`Send email requesting these missing items?\n\n${missingItems.map(item => '• ' + item).join('\n')}`)) {
           return;
         }
 
         setLoading(true);
         const res = await fetch(`/admin/send-incomplete-profile-email/${workerId}`, {
           method: 'POST',
-          credentials: 'include'
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ missingItems })
         });
 
         const data = await res.json();
         setLoading(false);
 
         if (data.success) {
-          if (data.complete) {
-            showMessage('Profile is already complete! No email sent.', 'info');
-          } else {
-            showMessage(`✅ Email sent successfully!\n\nMissing items:\n${data.missingItems.join('\n')}`, 'success');
-          }
+          showMessage(`✅ Email sent successfully!\n\nRequested items:\n${missingItems.map(item => '• ' + item).join('\n')}`, 'success');
         } else {
           showMessage(data.error || 'Failed to send email', 'error');
         }
