@@ -1865,11 +1865,12 @@
       try {
         setLoading(true);
 
-        // Prepare request body with suburb corrections if provided
+        // Prepare request body with suburb corrections and specialty IDs if provided
         const requestBody = {};
         if (suburbData.province) requestBody.province = suburbData.province;
         if (suburbData.primary_suburb) requestBody.primary_suburb = suburbData.primary_suburb;
         if (suburbData.secondary_areas) requestBody.secondary_areas = suburbData.secondary_areas;
+        if (suburbData.specialty_ids) requestBody.specialty_ids = suburbData.specialty_ids;
 
         const res = await fetch(`/admin/approve-worker/${workerId}`, {
           method: 'POST',
@@ -2259,6 +2260,17 @@
               `}
             </div>
 
+            <!-- Specialty Selection -->
+            <div style="background:#e8f5e9; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #228b22;">
+              <h4 style="margin:0 0 1rem 0; color:#228b22;">🔧 Worker Specialties <span style="font-size:0.85rem; color:#666;">(Select all that apply)</span></h4>
+              <div id="specialtyCheckboxes" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.75rem;">
+                <p style="color:#666;">Loading specialties...</p>
+              </div>
+              <p style="margin:0.75rem 0 0 0; font-size:0.85rem; color:#666;">
+                <strong>Current specialty from registration:</strong> ${escapeHTML(worker.speciality || 'Not provided')}
+              </p>
+            </div>
+
             <!-- Verification Summary -->
             <div style="background:#fff3cd; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #ffc107;">
               <h4 style="margin:0 0 1rem 0; color:#856404;">✅ Verification Summary</h4>
@@ -2294,6 +2306,9 @@
         });
 
         updateVerificationSummary();
+
+        // Load and populate specialties
+        await loadWorkerSpecialties(workerId);
 
         const modal = document.getElementById('workerDetailModal');
         console.log('Modal element:', modal);
@@ -2338,6 +2353,52 @@
       }
     }
 
+    async function loadWorkerSpecialties(workerId) {
+      try {
+        // Fetch all available specialties
+        const specialtiesRes = await fetch('/admin/specialties', { credentials: 'include' });
+        const specialtiesData = await specialtiesRes.json();
+
+        if (!specialtiesData.success) {
+          throw new Error('Failed to load specialties');
+        }
+
+        // Fetch worker's current specialties
+        const workerSpecialtiesRes = await fetch(`/admin/worker-specialties/${workerId}`, { credentials: 'include' });
+        const workerSpecialtiesData = await workerSpecialtiesRes.json();
+
+        if (!workerSpecialtiesData.success) {
+          throw new Error('Failed to load worker specialties');
+        }
+
+        const workerSpecialtyIds = workerSpecialtiesData.specialties.map(s => s.id);
+
+        // Generate checkbox HTML
+        const container = document.getElementById('specialtyCheckboxes');
+        if (container) {
+          container.innerHTML = specialtiesData.specialties
+            .filter(s => s.is_active)
+            .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+            .map(specialty => `
+              <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; padding:0.5rem; background:white; border-radius:6px; border:1px solid #ddd; transition:all 0.2s;">
+                <input type="checkbox"
+                       class="specialty-checkbox"
+                       value="${specialty.id}"
+                       ${workerSpecialtyIds.includes(specialty.id) ? 'checked' : ''}
+                       style="cursor:pointer;">
+                <span style="font-size:0.95rem;">${specialty.icon || '🔧'} ${specialty.name}</span>
+              </label>
+            `).join('');
+        }
+      } catch (error) {
+        console.error('Failed to load specialties:', error);
+        const container = document.getElementById('specialtyCheckboxes');
+        if (container) {
+          container.innerHTML = '<p style="color:#dc3545; margin:0;">⚠️ Failed to load specialties. Please refresh and try again.</p>';
+        }
+      }
+    }
+
     function closeWorkerDetailModal() {
       document.getElementById('workerDetailModal').classList.remove('show');
     }
@@ -2353,14 +2414,23 @@
         ? secondary_areas_input.split(',').map(s => s.trim()).filter(s => s)
         : [];
 
-      // Validate required field
+      // Collect selected specialty IDs
+      const specialtyCheckboxes = document.querySelectorAll('.specialty-checkbox:checked');
+      const specialty_ids = Array.from(specialtyCheckboxes).map(cb => parseInt(cb.value));
+
+      // Validate required fields
       if (!primary_suburb) {
         showMessage('Primary suburb is required', 'error');
         return;
       }
 
+      if (specialty_ids.length === 0) {
+        showMessage('Please select at least one specialty for this professional', 'error');
+        return;
+      }
+
       closeWorkerDetailModal();
-      await approveWorker(workerId, { province, primary_suburb, secondary_areas });
+      await approveWorker(workerId, { province, primary_suburb, secondary_areas, specialty_ids });
     }
 
     // ========== END PENDING WORKERS FUNCTIONS ==========
