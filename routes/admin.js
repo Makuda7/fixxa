@@ -641,7 +641,7 @@ module.exports = (pool, logger, helpers) => {
   router.post('/approve-worker/:id', requireAuth, adminOnly, async (req, res) => {
     try {
       const { id } = req.params;
-      const { province, primary_suburb, secondary_areas } = req.body;
+      const { province, primary_suburb, secondary_areas, specialty_ids } = req.body;
       const adminEmail = req.session.user.email;
 
       console.log('=== APPROVE WORKER REQUEST ===');
@@ -707,6 +707,25 @@ module.exports = (pool, logger, helpers) => {
 
       // Update worker status with corrected suburb data
       await pool.query(updateQuery, params);
+
+      // Update worker specialties if provided
+      if (specialty_ids && Array.isArray(specialty_ids) && specialty_ids.length > 0) {
+        // Delete existing specialties for this worker
+        await pool.query('DELETE FROM worker_specialties WHERE worker_id = $1', [id]);
+
+        // Insert new specialties
+        for (const specialtyId of specialty_ids) {
+          await pool.query(
+            'INSERT INTO worker_specialties (worker_id, specialty_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [id, specialtyId]
+          );
+        }
+
+        logger.info('Worker specialties updated', {
+          workerId: id,
+          specialtyCount: specialty_ids.length
+        });
+      }
 
       // Add suburb to suburbs table for dynamic dropdown
       if (primary_suburb && province) {
@@ -1481,6 +1500,129 @@ module.exports = (pool, logger, helpers) => {
       console.error('Delete certifications error:', error);
       logger.error('Failed to delete certifications', { error: error.message, workerId: req.params.workerId });
       res.status(500).json({ success: false, error: 'Failed to delete certifications' });
+    }
+  });
+
+  // Get all specialties
+  router.get('/specialties', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT id, name, description, icon, is_active, display_order
+        FROM specialties
+        ORDER BY display_order ASC, name ASC
+      `);
+
+      res.json({ success: true, specialties: result.rows });
+    } catch (error) {
+      logger.error('Failed to fetch specialties', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch specialties' });
+    }
+  });
+
+  // Get worker's current specialties
+  router.get('/worker-specialties/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+
+      const result = await pool.query(`
+        SELECT s.id, s.name, s.icon
+        FROM specialties s
+        JOIN worker_specialties ws ON s.id = ws.specialty_id
+        WHERE ws.worker_id = $1
+        ORDER BY s.name ASC
+      `, [workerId]);
+
+      res.json({ success: true, specialties: result.rows });
+    } catch (error) {
+      logger.error('Failed to fetch worker specialties', { error: error.message, workerId: req.params.workerId });
+      res.status(500).json({ success: false, error: 'Failed to fetch worker specialties' });
+    }
+  });
+
+  // Add new specialty
+  router.post('/specialties', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { name, description, icon } = req.body;
+
+      if (!name || !name.trim()) {
+        return res.status(400).json({ success: false, error: 'Specialty name is required' });
+      }
+
+      const result = await pool.query(`
+        INSERT INTO specialties (name, description, icon, is_active, display_order)
+        VALUES ($1, $2, $3, true, 100)
+        RETURNING id, name, description, icon, is_active, display_order
+      `, [name.trim(), description || null, icon || '🔧']);
+
+      logger.info('New specialty added', { specialtyId: result.rows[0].id, name: name.trim(), adminEmail: req.session.user.email });
+      res.json({ success: true, specialty: result.rows[0] });
+    } catch (error) {
+      if (error.code === '23505') { // Unique violation
+        return res.status(400).json({ success: false, error: 'A specialty with this name already exists' });
+      }
+      logger.error('Failed to add specialty', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to add specialty' });
+    }
+  });
+
+  // Update specialty
+  router.put('/specialties/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description, icon, is_active } = req.body;
+
+      const result = await pool.query(`
+        UPDATE specialties
+        SET name = COALESCE($1, name),
+            description = COALESCE($2, description),
+            icon = COALESCE($3, icon),
+            is_active = COALESCE($4, is_active),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $5
+        RETURNING id, name, description, icon, is_active, display_order
+      `, [name, description, icon, is_active, id]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Specialty not found' });
+      }
+
+      logger.info('Specialty updated', { specialtyId: id, adminEmail: req.session.user.email });
+      res.json({ success: true, specialty: result.rows[0] });
+    } catch (error) {
+      logger.error('Failed to update specialty', { error: error.message, specialtyId: req.params.id });
+      res.status(500).json({ success: false, error: 'Failed to update specialty' });
+    }
+  });
+
+  // Delete specialty (only if no workers are using it)
+  router.delete('/specialties/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Check if any workers are using this specialty
+      const usageCheck = await pool.query(
+        'SELECT COUNT(*) FROM worker_specialties WHERE specialty_id = $1',
+        [id]
+      );
+
+      if (parseInt(usageCheck.rows[0].count) > 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot delete specialty that is assigned to workers. Remove it from all workers first.'
+        });
+      }
+
+      const result = await pool.query('DELETE FROM specialties WHERE id = $1 RETURNING name', [id]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Specialty not found' });
+      }
+
+      logger.info('Specialty deleted', { specialtyId: id, name: result.rows[0].name, adminEmail: req.session.user.email });
+      res.json({ success: true, message: 'Specialty deleted successfully' });
+    } catch (error) {
+      logger.error('Failed to delete specialty', { error: error.message, specialtyId: req.params.id });
+      res.status(500).json({ success: false, error: 'Failed to delete specialty' });
     }
   });
 

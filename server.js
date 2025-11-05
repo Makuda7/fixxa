@@ -840,6 +840,11 @@ async function startServer() {
     await runCertificationColumnsMigration();
     await runWorkerApprovalMigration();
     await activatePendingWorkers();
+
+    // Worker specialties migration
+    const { runWorkerSpecialtiesMigration } = require('./migrations/worker_specialties');
+    await runWorkerSpecialtiesMigration(pool, logger);
+
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler

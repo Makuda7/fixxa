@@ -25,19 +25,30 @@ module.exports = (pool, logger) => {
           w.bio, w.profile_pic, w.is_available, w.is_verified, w.approval_status,
           COALESCE(AVG(r.overall_rating), 0) as avg_rating,
           COUNT(DISTINCT r.id) as review_count,
-          COUNT(DISTINCT b.id) as completed_jobs
+          COUNT(DISTINCT b.id) as completed_jobs,
+          STRING_AGG(DISTINCT s.name, ', ' ORDER BY s.name) as specialties
         FROM workers w
         LEFT JOIN reviews r ON w.id = r.worker_id
         LEFT JOIN bookings b ON w.id = b.worker_id AND b.status = 'Completed'
+        LEFT JOIN worker_specialties ws ON w.id = ws.worker_id
+        LEFT JOIN specialties s ON ws.specialty_id = s.id
         WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
       `;
 
       const params = [];
       let paramCount = 1;
 
-      // Filter by speciality
+      // Filter by speciality (search in new specialties system OR legacy speciality field)
       if (speciality) {
-        query += ` AND LOWER(w.speciality) LIKE LOWER($${paramCount})`;
+        query += ` AND (
+          EXISTS (
+            SELECT 1 FROM worker_specialties ws2
+            JOIN specialties s2 ON ws2.specialty_id = s2.id
+            WHERE ws2.worker_id = w.id
+            AND LOWER(s2.name) LIKE LOWER($${paramCount})
+          )
+          OR LOWER(w.speciality) LIKE LOWER($${paramCount})
+        )`;
         params.push(`%${speciality}%`);
         paramCount++;
       }
