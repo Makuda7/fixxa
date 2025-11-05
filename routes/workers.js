@@ -597,7 +597,7 @@ module.exports = (pool, logger, helpers) => {
       const result = await pool.query(
         `SELECT profile_picture, id_type, id_number, id_verified,
                 emergency_name_1, emergency_phone_1,
-                bio, experience, area, speciality,
+                bio, experience, area, province, speciality,
                 approval_status, is_verified
          FROM workers WHERE id = $1`,
         [workerId]
@@ -667,7 +667,7 @@ module.exports = (pool, logger, helpers) => {
         {
           id: 'service_area',
           label: 'Set Service Area (Province)',
-          completed: !!worker.area,
+          completed: !!(worker.province || worker.area),
           required: true,
           icon: '📍',
           action: 'Complete registration form'
