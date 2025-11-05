@@ -2281,7 +2281,7 @@
                     style="flex:1; padding:0.5rem; border:1px solid #228b22; border-radius:6px; font-size:0.9rem;"
                   />
                   <button
-                    onclick="addNewSpecialty()"
+                    id="addNewSpecialtyBtn"
                     class="btn btn-success"
                     style="padding:0.5rem 1rem; font-size:0.9rem; white-space:nowrap;"
                   >
@@ -2332,6 +2332,12 @@
 
         // Load and populate specialties
         await loadWorkerSpecialties(workerId);
+
+        // Add event listener for "Add New Specialty" button
+        const addNewSpecialtyBtn = document.getElementById('addNewSpecialtyBtn');
+        if (addNewSpecialtyBtn) {
+          addNewSpecialtyBtn.addEventListener('click', addNewSpecialty);
+        }
 
         const modal = document.getElementById('workerDetailModal');
         console.log('Modal element:', modal);
