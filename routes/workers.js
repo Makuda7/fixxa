@@ -42,7 +42,7 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_pic, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified, approval_status
+        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_picture, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified, approval_status
          FROM workers
          WHERE is_active = true AND approval_status = 'approved'
          ORDER BY name ASC`
@@ -51,8 +51,8 @@ module.exports = (pool, logger, helpers) => {
       // Convert old local profile pic paths to default SVG
       // Add is_verified field and is_pending flag
       const workers = result.rows.map(worker => {
-        // Set image field from profile_pic
-        worker.image = worker.profile_pic;
+        // Set image field from profile_picture (from prosite)
+        worker.image = worker.profile_picture;
 
         // Convert old local profile pic paths to default SVG
         if (worker.image && worker.image.startsWith('/uploads/')) {
@@ -96,7 +96,7 @@ module.exports = (pool, logger, helpers) => {
 
       const result = await pool.query(`
         SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas,
-               bio, experience, rating, profile_pic as image,
+               bio, experience, rating, profile_picture as image,
                availability_schedule, is_available, latitude, longitude, service_radius, is_verified,
                rate_type, rate_amount
         FROM workers

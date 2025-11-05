@@ -22,7 +22,7 @@ module.exports = (pool, logger) => {
         SELECT
           w.id, w.name, w.speciality,
           w.primary_suburb, w.province, w.area,
-          w.bio, w.profile_pic, w.is_available, w.is_verified, w.approval_status,
+          w.bio, w.profile_picture, w.is_available, w.is_verified, w.approval_status,
           COALESCE(AVG(r.overall_rating), 0) as avg_rating,
           COUNT(DISTINCT r.id) as review_count,
           COUNT(DISTINCT b.id) as completed_jobs,

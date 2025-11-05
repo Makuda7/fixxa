@@ -9,7 +9,7 @@ module.exports = (pool, logger, helpers) => {
   // Get all workers (admin)
   router.get('/workers', requireAuth, adminOnly, async (req, res) => {
     try {
-      const result = await pool.query('SELECT id, name, email, speciality, area, bio, experience, rating, profile_pic as image, availability_schedule, is_available, latitude, longitude, service_radius, is_active FROM workers ORDER BY name ASC');
+      const result = await pool.query('SELECT id, name, email, speciality, area, bio, experience, rating, profile_picture as image, availability_schedule, is_available, latitude, longitude, service_radius, is_active FROM workers ORDER BY name ASC');
       res.json(result.rows);
     } catch (err) {
       logger.error('Failed to fetch workers', { error: err.message });
