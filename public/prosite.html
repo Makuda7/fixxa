@@ -3480,6 +3480,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const data = await res.json();
       console.log('Profile save response:', data); // Debug log
+      console.log('Province submitted:', province);
+      console.log('Province returned:', data.worker?.province);
 
       if (data.success) {
         showProfileMessage('Profile updated successfully! Your changes are now visible to clients.', 'success');
@@ -3488,11 +3490,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Just ensure the form values match what was saved (in case server modified them)
         if (data.worker) {
           // Only update if server returned different values (for safety)
+          // Use the submitted values as fallback to prevent form clearing
           document.getElementById('workerName').value = data.worker.name || name;
           document.getElementById('workerPhone').value = data.worker.phone || phone;
           document.getElementById('speciality').value = data.worker.speciality || speciality;
           document.getElementById('workerCity').value = data.worker.city || city;
-          document.getElementById('province').value = data.worker.province || province;
+
+          // Province: Use saved value, fallback to what user just submitted
+          if (data.worker.province) {
+            document.getElementById('province').value = data.worker.province;
+          } else if (province) {
+            document.getElementById('province').value = province;
+          }
+
           document.getElementById('primarySuburb').value = data.worker.primary_suburb || primary_suburb;
           document.getElementById('secondaryAreas').value = data.worker.secondary_areas ? data.worker.secondary_areas.join(', ') : secondary_areas_input;
           document.getElementById('workerAddress').value = data.worker.address || address;
