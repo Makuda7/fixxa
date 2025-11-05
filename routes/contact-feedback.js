@@ -4,6 +4,63 @@ const router = express.Router();
 module.exports = (pool, logger, sendEmail, emailTemplates) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
 
+  // General contact form (no auth required)
+  router.post('/contact', async (req, res) => {
+    try {
+      const { name, email, phone, subject, message } = req.body;
+
+      if (!name || !email || !subject || !message || !message.trim()) {
+        return res.status(400).json({ success: false, error: 'All required fields must be filled' });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ success: false, error: 'Invalid email address' });
+      }
+
+      // Save to database (optional - create a contact_messages table if needed)
+      // For now, just send email to admin
+
+      // Send email notification to admin
+      const adminEmails = (process.env.ADMIN_EMAILS || 'support@fixxa.co.za').split(',').map(e => e.trim()).filter(e => e);
+      const adminEmail = adminEmails[0];
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #228b22;">New Contact Form Submission</h1>
+          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Contact Details</h3>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+          </div>
+          <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Subject: ${subject}</h3>
+            <p style="white-space: pre-wrap;">${message}</p>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            Submitted: ${new Date().toLocaleString()}
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            Please respond to ${email} as soon as possible.
+          </p>
+        </div>
+      `;
+
+      sendEmail(adminEmail, `Contact Form: ${subject} - ${name}`, emailHtml, logger).catch(err =>
+        logger.error('Failed to send contact form email', { error: err.message })
+      );
+
+      logger.info('Contact form submitted', { name, email, subject });
+      res.json({ success: true, message: 'Message sent successfully' });
+
+    } catch (error) {
+      logger.error('Contact form error', { error: error.message });
+      console.error('Contact form error:', error);
+      res.status(500).json({ success: false, error: 'Failed to send message' });
+    }
+  });
+
   // Worker contacts admin
   router.post('/worker/contact-admin', requireAuth, workerOnly, async (req, res) => {
     try {

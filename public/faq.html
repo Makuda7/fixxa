@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-48NETTXMR5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-48NETTXMR5');
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FAQ | Fixxa</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicons/favicon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicons/favicon-512x512.png">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* FAQ container */
+  .container {
+    max-width: 900px;
+    margin: 2rem auto 4rem;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 3rem 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  h1 {
+    color: #228b22;
+    font-weight: 700;
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .intro {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 3rem;
+  }
+
+  .faq-categories {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+  }
+
+  .category-btn {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #228b22;
+    background: white;
+    color: #228b22;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .category-btn:hover,
+  .category-btn.active {
+    background: #228b22;
+    color: white;
+  }
+
+  .faq-section {
+    margin-bottom: 2rem;
+  }
+
+  .faq-section h2 {
+    color: #228b22;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid #228b22;
+  }
+
+  .faq-item {
+    background: #f6f3f0;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .faq-item:hover {
+    border-color: #228b22;
+  }
+
+  .faq-question {
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.3s ease;
+  }
+
+  .faq-question:hover {
+    background: rgba(34, 139, 34, 0.1);
+  }
+
+  .faq-question::after {
+    content: '+';
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #228b22;
+    transition: transform 0.3s ease;
+  }
+
+  .faq-item.open .faq-question::after {
+    content: '−';
+    transform: rotate(180deg);
+  }
+
+  .faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 1.5rem;
+  }
+
+  .faq-item.open .faq-answer {
+    max-height: 500px;
+    padding: 0 1.5rem 1.25rem 1.5rem;
+  }
+
+  .faq-answer p {
+    color: #555;
+    line-height: 1.8;
+    margin-bottom: 0.75rem;
+  }
+
+  .faq-answer ul {
+    margin-left: 1.5rem;
+    color: #555;
+    line-height: 1.8;
+  }
+
+  .faq-answer li {
+    margin-bottom: 0.5rem;
+  }
+
+  .contact-cta {
+    background: linear-gradient(135deg, #228b22 0%, #1a6b1a 100%);
+    color: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    text-align: center;
+    margin-top: 3rem;
+  }
+
+  .contact-cta h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .contact-cta p {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+  }
+
+  .contact-cta a {
+    display: inline-block;
+    background: white;
+    color: #228b22;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .contact-cta a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: linear-gradient(to right, forestgreen 0%, rgba(34, 139, 34, 0.7) 30%, rgba(34, 139, 34, 0.3) 60%, white 85%);
+    border-bottom: 1px solid #ddd;
+  }
+  .header .logo img { max-width: 120px; border-radius: 12px; }
+  .nav-links { display: flex; align-items: center; gap: 1rem; }
+  .nav-links a { text-decoration: none; color: #333; }
+  .nav-links a:hover { color: forestgreen; }
+
+  /* User menu */
+  .user-menu { display: none; position: relative; }
+  .user-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0.5rem 1rem; }
+  .user-btn:hover { color: forestgreen; }
+  .user-dropdown { display: none; position: absolute; right: 0; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 150px; z-index: 10; }
+  .user-dropdown a { display: block; padding: 8px; text-decoration: none; color: #333; }
+  .user-dropdown a:hover { background: #f0f0f0; }
+  .user-menu.show .user-dropdown { display: block; }
+
+  /* Inbox Icon in Header */
+  .inbox-icon-link {
+    position: relative;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    border: 2px solid transparent;
+  }
+  .inbox-icon-link:hover {
+    background: white;
+    border-color: forestgreen;
+    transform: scale(1.1);
+  }
+  .inbox-icon-link.show {
+    display: flex;
+  }
+  .inbox-icon {
+    font-size: 20px;
+    color: #333;
+  }
+  .inbox-notification-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #dc3545;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid white;
+    display: none;
+    animation: pulse 2s infinite;
+  }
+  .inbox-notification-dot.show {
+    display: block;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    h1 { font-size: 2rem; }
+    .category-btn { font-size: 0.9rem; padding: 0.6rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <a href="Index.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo" /></a>
+  </div>
+  <nav class="nav-links">
+    <a href="Index.html">Find Service</a>
+    <a href="aboutus.html">About us</a>
+    <a href="join.html">Join Our Team</a>
+
+    <!-- Login link -->
+    <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <!-- Inbox Icon (visible when logged in) -->
+    <a href="messages.html" class="inbox-icon-link" id="inboxIconLink" title="Messages">
+      <span class="inbox-icon">✉️</span>
+      <span class="inbox-notification-dot" id="inboxNotificationDot"></span>
+    </a>
+
+    <!-- User menu -->
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="messages.html">Messages</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="container">
+  <h1>Frequently Asked Questions</h1>
+  <p class="intro">Find answers to common questions about Fixxa. Can't find what you're looking for? <a href="contact.html" style="color: #228b22; font-weight: 600;">Contact us</a>.</p>
+
+  <div class="faq-categories">
+    <button class="category-btn active" data-category="all">All Questions</button>
+    <button class="category-btn" data-category="customers">For Customers</button>
+    <button class="category-btn" data-category="professionals">For Professionals</button>
+    <button class="category-btn" data-category="payments">Payments</button>
+    <button class="category-btn" data-category="safety">Safety</button>
+  </div>
+
+  <!-- For Customers -->
+  <div class="faq-section" data-category="customers">
+    <h2>For Customers</h2>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I find a professional on Fixxa?</div>
+      <div class="faq-answer">
+        <p>Finding a professional is easy! Simply:</p>
+        <ul>
+          <li>Visit our homepage and use the search form</li>
+          <li>Select the service type you need (e.g., Plumber, Electrician)</li>
+          <li>Choose your province or location</li>
+          <li>Filter by availability (weekdays, weekends, or both)</li>
+          <li>Click "Search" to see available professionals</li>
+          <li>Browse profiles, read reviews, and contact the professional directly</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Do I need to create an account to find professionals?</div>
+      <div class="faq-answer">
+        <p>No, you can browse and search for professionals without an account. However, creating a free account allows you to:</p>
+        <ul>
+          <li>Message professionals directly through our platform</li>
+          <li>Leave reviews and ratings</li>
+          <li>Save your favorite professionals</li>
+          <li>Track your service history</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What does "Verified" mean?</div>
+      <div class="faq-answer">
+        <p>A "Verified" badge means the professional has completed our verification process by submitting and getting approval for required documents such as ID, proof of address, and other necessary documentation. This helps ensure you're connecting with legitimate professionals.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What does "Coming Soon" mean?</div>
+      <div class="faq-answer">
+        <p>"Coming Soon" professionals are newly registered workers who are currently under review by our admin team. Their profiles are visible so you can see who's joining Fixxa, but they cannot take bookings until they're fully verified and approved.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I contact a professional?</div>
+      <div class="faq-answer">
+        <p>You can contact professionals in several ways:</p>
+        <ul>
+          <li>Click their profile to view contact details (phone, email, WhatsApp)</li>
+          <li>Use our built-in messaging system (requires account)</li>
+          <li>Call or WhatsApp them directly using the provided contact information</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I leave a review?</div>
+      <div class="faq-answer">
+        <p>After receiving a service, you can leave a review by:</p>
+        <ul>
+          <li>Logging into your account</li>
+          <li>Visiting the professional's profile</li>
+          <li>Clicking the "Leave a Review" button</li>
+          <li>Rating the service and writing your feedback</li>
+        </ul>
+        <p>Reviews help other customers make informed decisions and help professionals improve their services.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- For Professionals -->
+  <div class="faq-section" data-category="professionals">
+    <h2>For Professionals</h2>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I register as a professional?</div>
+      <div class="faq-answer">
+        <p>Registration is simple and free:</p>
+        <ul>
+          <li>Click "Join as a Professional" on any page</li>
+          <li>Fill out the registration form with your details</li>
+          <li>Upload required documents (ID, proof of address)</li>
+          <li>Wait for admin verification (usually 24-48 hours)</li>
+          <li>Once approved, your profile goes live!</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Does Fixxa charge commission on jobs?</div>
+      <div class="faq-answer">
+        <p>No! Fixxa does not take any commission from your earnings. We believe in fair pay for fair work. You negotiate prices directly with customers and keep 100% of what you earn.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What documents do I need to register?</div>
+      <div class="faq-answer">
+        <p>To complete your registration, you'll need:</p>
+        <ul>
+          <li>Valid South African ID or passport</li>
+          <li>Proof of address (utility bill, bank statement, etc.)</li>
+          <li>Professional certifications (optional, but recommended)</li>
+          <li>Profile photo</li>
+          <li>Work experience details</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How long does verification take?</div>
+      <div class="faq-answer">
+        <p>Verification typically takes 24-48 hours. During this time, our admin team reviews your documents and profile information. You'll receive an email once your profile is approved. Your profile will show as "Coming Soon" while under review.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I update my profile after registration?</div>
+      <div class="faq-answer">
+        <p>Yes! Once registered, you can log in anytime to:</p>
+        <ul>
+          <li>Update your bio and service description</li>
+          <li>Change your availability status</li>
+          <li>Add new skills or specializations</li>
+          <li>Upload additional photos of your work</li>
+          <li>Update your rates and service areas</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I get more customers?</div>
+      <div class="faq-answer">
+        <p>Here are some tips to attract more customers:</p>
+        <ul>
+          <li>Complete your profile with detailed information</li>
+          <li>Upload high-quality photos of your work</li>
+          <li>Keep your availability status up to date</li>
+          <li>Respond quickly to customer inquiries</li>
+          <li>Encourage satisfied customers to leave reviews</li>
+          <li>Share your Fixxa profile link on social media</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payments -->
+  <div class="faq-section" data-category="payments">
+    <h2>Payments & Pricing</h2>
+
+    <div class="faq-item">
+      <div class="faq-question">How does payment work on Fixxa?</div>
+      <div class="faq-answer">
+        <p>Fixxa is a connection platform - we don't handle payments. Professionals and customers arrange payment terms directly. This means:</p>
+        <ul>
+          <li>You negotiate the price directly with the professional</li>
+          <li>You pay the professional directly (cash, bank transfer, etc.)</li>
+          <li>No payment processing fees or commissions</li>
+          <li>Full flexibility in payment terms and methods</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Are there any fees to use Fixxa?</div>
+      <div class="faq-answer">
+        <p>Fixxa is completely free for customers to use. For professionals, there are no commission fees or charges - you keep 100% of your earnings. Registration and profile creation are also free.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I know if a price is fair?</div>
+      <div class="faq-answer">
+        <p>To ensure you're getting a fair price:</p>
+        <ul>
+          <li>Compare rates from multiple professionals on Fixxa</li>
+          <li>Read reviews to see what others paid for similar services</li>
+          <li>Ask for a detailed quote before work begins</li>
+          <li>Check if the professional's rate is hourly or per job</li>
+          <li>Don't hesitate to negotiate or ask questions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safety & Security -->
+  <div class="faq-section" data-category="safety">
+    <h2>Safety & Security</h2>
+
+    <div class="faq-item">
+      <div class="faq-question">Is it safe to hire professionals through Fixxa?</div>
+      <div class="faq-answer">
+        <p>We take safety seriously. All verified professionals have gone through our verification process. However, we recommend you:</p>
+        <ul>
+          <li>Check the professional's verification badge</li>
+          <li>Read reviews from other customers</li>
+          <li>Communicate clearly about the work needed</li>
+          <li>Get a written quote before work begins</li>
+          <li>Trust your instincts - if something feels off, find another professional</li>
+        </ul>
+        <p>See our <a href="safety.html" style="color: #228b22; font-weight: 600;">Safety Guidelines</a> for more tips.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">What if I have a problem with a professional?</div>
+      <div class="faq-answer">
+        <p>If you experience any issues:</p>
+        <ul>
+          <li>Try to resolve the issue directly with the professional first</li>
+          <li>Document the problem with photos or messages if possible</li>
+          <li>Contact our support team at support@fixxa.co.za</li>
+          <li>Leave an honest review to warn other users</li>
+          <li>Report serious misconduct so we can take action</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How does Fixxa protect my personal information?</div>
+      <div class="faq-answer">
+        <p>We take data privacy seriously. Your personal information is protected through:</p>
+        <ul>
+          <li>Secure, encrypted connections (HTTPS)</li>
+          <li>Strict data protection policies</li>
+          <li>Limited sharing of personal details</li>
+          <li>Compliance with privacy regulations</li>
+        </ul>
+        <p>Read our full <a href="privacy.html" style="color: #228b22; font-weight: 600;">Privacy Policy</a> for details.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-cta">
+    <h3>Still have questions?</h3>
+    <p>Our support team is here to help you.</p>
+    <a href="contact.html">Contact Us</a>
+  </div>
+</main>
+
+<footer class="footer">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="contact.html">Contact Us</a>
+    <a href="faq.html">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="/register">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+<script>
+async function checkLogin() {
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+
+    const loginLink = document.getElementById('loginLink');
+    const userMenu = document.getElementById('userMenu');
+    const userBtn = document.getElementById('userBtn');
+
+    if (data.authenticated) {
+      loginLink.style.display = 'none';
+      userMenu.style.display = 'inline-block';
+      userBtn.textContent = data.user.name + ' ▼';
+
+      const inboxIcon = document.getElementById('inboxIconLink');
+      if (inboxIcon) {
+        inboxIcon.classList.add('show');
+      }
+    } else {
+      loginLink.style.display = 'inline-block';
+      userMenu.style.display = 'none';
+
+      const inboxIcon = document.getElementById('inboxIconLink');
+      if (inboxIcon) {
+        inboxIcon.classList.remove('show');
+      }
+    }
+  } catch (err) {
+    console.error('Login check failed', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkLogin();
+
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+
+  if (userBtn) {
+    userBtn.addEventListener('click', () => {
+      userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      const res = await fetch('/logout', { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) location.reload();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (userBtn && !userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+
+  // FAQ accordion functionality
+  const faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(item => {
+    const question = item.querySelector('.faq-question');
+    question.addEventListener('click', () => {
+      item.classList.toggle('open');
+    });
+  });
+
+  // Category filter functionality
+  const categoryBtns = document.querySelectorAll('.category-btn');
+  const faqSections = document.querySelectorAll('.faq-section');
+
+  categoryBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const category = btn.dataset.category;
+
+      // Update active button
+      categoryBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Show/hide sections
+      faqSections.forEach(section => {
+        if (category === 'all') {
+          section.style.display = 'block';
+        } else {
+          section.style.display = section.dataset.category === category ? 'block' : 'none';
+        }
+      });
+    });
+  });
+
+  // Load unread message count
+  async function loadUnreadMessageCount() {
+    try {
+      const res = await fetch('/messages/client/unread-count', { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.success && data.unreadCount > 0) {
+        const inboxDot = document.getElementById('inboxNotificationDot');
+        if (inboxDot) {
+          inboxDot.classList.add('show');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load unread message count:', err);
+    }
+  }
+
+  loadUnreadMessageCount();
+  setInterval(loadUnreadMessageCount, 30000);
+});
+</script>
+
+</body>
+</html>

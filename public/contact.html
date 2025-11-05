@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-48NETTXMR5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-48NETTXMR5');
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contact Us | Fixxa</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicons/favicon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicons/favicon-512x512.png">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Contact Us container */
+  .container {
+    max-width: 900px;
+    margin: 2rem auto 4rem;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 3rem 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  h1 {
+    color: #228b22;
+    font-weight: 700;
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .intro {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 3rem;
+  }
+
+  .contact-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .contact-card {
+    background: #f6f3f0;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+  .contact-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(34, 139, 34, 0.2);
+    border-color: #228b22;
+  }
+
+  .contact-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .contact-card h3 {
+    color: #228b22;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .contact-card p {
+    color: #555;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .contact-link {
+    display: inline-block;
+    color: #228b22;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #228b22;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin-top: 0.5rem;
+  }
+
+  .contact-link:hover {
+    background: #228b22;
+    color: white;
+    transform: scale(1.05);
+  }
+
+  .contact-form-section {
+    background: #f6f3f0;
+    padding: 2.5rem;
+    border-radius: 12px;
+    margin-top: 3rem;
+  }
+
+  .contact-form-section h2 {
+    color: #228b22;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #228b22;
+  }
+
+  .form-group textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  .submit-btn {
+    background: #228b22;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+  }
+
+  .submit-btn:hover {
+    background: #1a6b1a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(34, 139, 34, 0.3);
+  }
+
+  .submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  .error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: linear-gradient(to right, forestgreen 0%, rgba(34, 139, 34, 0.7) 30%, rgba(34, 139, 34, 0.3) 60%, white 85%);
+    border-bottom: 1px solid #ddd;
+  }
+  .header .logo img { max-width: 120px; border-radius: 12px; }
+  .nav-links { display: flex; align-items: center; gap: 1rem; }
+  .nav-links a { text-decoration: none; color: #333; }
+  .nav-links a:hover { color: forestgreen; }
+
+  /* User menu */
+  .user-menu { display: none; position: relative; }
+  .user-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0.5rem 1rem; }
+  .user-btn:hover { color: forestgreen; }
+  .user-dropdown { display: none; position: absolute; right: 0; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 150px; z-index: 10; }
+  .user-dropdown a { display: block; padding: 8px; text-decoration: none; color: #333; }
+  .user-dropdown a:hover { background: #f0f0f0; }
+  .user-menu.show .user-dropdown { display: block; }
+
+  /* Inbox Icon in Header */
+  .inbox-icon-link {
+    position: relative;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    border: 2px solid transparent;
+  }
+  .inbox-icon-link:hover {
+    background: white;
+    border-color: forestgreen;
+    transform: scale(1.1);
+  }
+  .inbox-icon-link.show {
+    display: flex;
+  }
+  .inbox-icon {
+    font-size: 20px;
+    color: #333;
+  }
+  .inbox-notification-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #dc3545;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid white;
+    display: none;
+    animation: pulse 2s infinite;
+  }
+  .inbox-notification-dot.show {
+    display: block;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    h1 { font-size: 2rem; }
+    .contact-methods { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <a href="Index.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo" /></a>
+  </div>
+  <nav class="nav-links">
+    <a href="Index.html">Find Service</a>
+    <a href="aboutus.html">About us</a>
+    <a href="join.html">Join Our Team</a>
+
+    <!-- Login link -->
+    <a href="login.html" id="loginLink">Log in / Register</a>
+
+    <!-- Inbox Icon (visible when logged in) -->
+    <a href="messages.html" class="inbox-icon-link" id="inboxIconLink" title="Messages">
+      <span class="inbox-icon">✉️</span>
+      <span class="inbox-notification-dot" id="inboxNotificationDot"></span>
+    </a>
+
+    <!-- User menu -->
+    <div class="user-menu" id="userMenu">
+      <button class="user-btn" id="userBtn">User ▼</button>
+      <div class="user-dropdown" id="userDropdown">
+        <a href="settings.html">Settings</a>
+        <a href="clientProfile.html">Profile</a>
+        <a href="messages.html">Messages</a>
+        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="container">
+  <h1>Contact Us</h1>
+  <p class="intro">Have questions? We're here to help! Reach out to us through any of the methods below.</p>
+
+  <div class="contact-methods">
+    <div class="contact-card">
+      <div class="contact-icon">📧</div>
+      <h3>Email Us</h3>
+      <p>Send us an email and we'll get back to you within 24 hours.</p>
+      <a href="mailto:support@fixxa.co.za" class="contact-link">support@fixxa.co.za</a>
+    </div>
+
+    <div class="contact-card">
+      <div class="contact-icon">📱</div>
+      <h3>Call Us</h3>
+      <p>Speak with our support team Monday to Friday, 8am - 5pm.</p>
+      <a href="tel:+27123456789" class="contact-link">+27 12 345 6789</a>
+    </div>
+
+    <div class="contact-card">
+      <div class="contact-icon">💬</div>
+      <h3>WhatsApp</h3>
+      <p>Message us on WhatsApp for quick support and updates.</p>
+      <a href="https://wa.me/27123456789" target="_blank" class="contact-link">Chat on WhatsApp</a>
+    </div>
+  </div>
+
+  <div class="contact-form-section">
+    <h2>Send us a Message</h2>
+    <div class="success-message" id="successMessage">Thank you for contacting us! We'll get back to you soon.</div>
+    <div class="error-message" id="errorMessage">Something went wrong. Please try again or email us directly.</div>
+
+    <form id="contactForm">
+      <div class="form-group">
+        <label for="name">Your Name *</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Your Email *</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number (Optional)</label>
+        <input type="tel" id="phone" name="phone">
+      </div>
+
+      <div class="form-group">
+        <label for="subject">Subject *</label>
+        <select id="subject" name="subject" required>
+          <option value="">Select a topic</option>
+          <option value="general">General Inquiry</option>
+          <option value="technical">Technical Support</option>
+          <option value="billing">Billing Question</option>
+          <option value="professional">Professional Account</option>
+          <option value="complaint">Complaint</option>
+          <option value="feedback">Feedback</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="message">Message *</label>
+        <textarea id="message" name="message" required></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn">Send Message</button>
+    </form>
+  </div>
+</main>
+
+<footer class="footer">
+  <div>
+    <h4>Fixxa</h4>
+    <a href="aboutus.html">About Us</a>
+    <a href="contact.html">Contact Us</a>
+    <a href="faq.html">FAQ</a>
+    <a href="#">Feedback</a>
+  </div>
+  <div>
+    <h4>Customer</h4>
+    <a href="terms.html">Terms & Conditions</a>
+    <a href="safety.html">Safety & Security</a>
+    <a href="privacy.html">Privacy Policy</a>
+  </div>
+  <div>
+    <h4>Professionals</h4>
+    <a href="/register">Join as a Professional</a>
+    <a href="#">Refer a Professional</a>
+  </div>
+</footer>
+
+<script>
+async function checkLogin() {
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+
+    const loginLink = document.getElementById('loginLink');
+    const userMenu = document.getElementById('userMenu');
+    const userBtn = document.getElementById('userBtn');
+
+    if (data.authenticated) {
+      loginLink.style.display = 'none';
+      userMenu.style.display = 'inline-block';
+      userBtn.textContent = data.user.name + ' ▼';
+
+      // Show inbox icon for logged-in clients
+      const inboxIcon = document.getElementById('inboxIconLink');
+      if (inboxIcon) {
+        inboxIcon.classList.add('show');
+      }
+    } else {
+      loginLink.style.display = 'inline-block';
+      userMenu.style.display = 'none';
+
+      // Hide inbox icon for logged-out users
+      const inboxIcon = document.getElementById('inboxIconLink');
+      if (inboxIcon) {
+        inboxIcon.classList.remove('show');
+      }
+    }
+  } catch (err) {
+    console.error('Login check failed', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkLogin();
+
+  const userBtn = document.getElementById('userBtn');
+  const userDropdown = document.getElementById('userDropdown');
+
+  if (userBtn) {
+    userBtn.addEventListener('click', () => {
+      userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+  }
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      const res = await fetch('/logout', { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) location.reload();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+
+  // Contact form submission
+  const contactForm = document.getElementById('contactForm');
+  const successMessage = document.getElementById('successMessage');
+  const errorMessage = document.getElementById('errorMessage');
+
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitBtn = contactForm.querySelector('.submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    const formData = {
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value,
+      subject: document.getElementById('subject').value,
+      message: document.getElementById('message').value
+    };
+
+    try {
+      const response = await fetch('/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        successMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+        contactForm.reset();
+
+        setTimeout(() => {
+          successMessage.style.display = 'none';
+        }, 5000);
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      errorMessage.style.display = 'block';
+      successMessage.style.display = 'none';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Message';
+    }
+  });
+
+  // Load unread message count
+  async function loadUnreadMessageCount() {
+    try {
+      const res = await fetch('/messages/client/unread-count', { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.success && data.unreadCount > 0) {
+        const inboxDot = document.getElementById('inboxNotificationDot');
+        if (inboxDot) {
+          inboxDot.classList.add('show');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load unread message count:', err);
+    }
+  }
+
+  loadUnreadMessageCount();
+  setInterval(loadUnreadMessageCount, 30000);
+});
+</script>
+
+</body>
+</html>
