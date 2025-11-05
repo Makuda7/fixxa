@@ -170,6 +170,13 @@ app.use(session({
   }
 }));
 
+// Simple redirect routes for easy sharing
+app.get('/register', (req, res) => res.redirect('/register.html'));
+app.get('/signup', (req, res) => res.redirect('/register.html'));
+app.get('/join', (req, res) => res.redirect('/join.html'));
+app.get('/login', (req, res) => res.redirect('/login.html'));
+app.get('/signin', (req, res) => res.redirect('/login.html'));
+
 // Static files
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
