@@ -1530,11 +1530,14 @@
 
       grid.innerHTML = '';
       appState.professionals.forEach(pro => {
-        const statusClass = pro.is_active ? 'available' : 'unavailable';
+        // Worker is truly "live" to clients if: is_active = true AND approval_status = 'approved'
+        const isLiveToClients = pro.is_active && (pro.approval_status === 'approved' || pro.approval_status === 'pending');
+        const statusClass = isLiveToClients ? 'available' : 'unavailable';
         const statusText = pro.is_active ? 'Active' : 'Inactive';
-        const cardClass = pro.is_active ? '' : 'unavailable';
+        const cardClass = isLiveToClients ? '' : 'unavailable';
         const verifiedBadge = pro.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
-        const comingSoonBadge = !pro.is_active ? '<div style="position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">Coming Soon</div>' : '';
+        // Show "Coming Soon" if not live to clients (either not activated OR missing required approval status)
+        const comingSoonBadge = !isLiveToClients ? '<div style="position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">Coming Soon</div>' : '';
 
         grid.innerHTML += `
           <div class="worker-card ${cardClass}" data-action="show-worker-detail" data-worker-id="${pro.id}" style="position: relative;">

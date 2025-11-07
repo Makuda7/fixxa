@@ -218,6 +218,8 @@ module.exports = (pool, logger, helpers) => {
           w.speciality,
           w.area,
           w.is_active,
+          w.approval_status,
+          w.is_verified,
           w.created_at,
           COUNT(DISTINCT b.id) as total_bookings,
           COUNT(DISTINCT CASE WHEN b.status = 'Completed' THEN b.id END) as completed_bookings,
