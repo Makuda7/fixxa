@@ -524,12 +524,15 @@ module.exports = (pool, logger, helpers) => {
           w.experience,
           w.area,
           w.approval_status,
+          w.verification_status,
           w.created_at,
+          w.last_completion_email_sent,
           COUNT(c.id) as cert_count,
           COUNT(CASE WHEN c.status = 'approved' THEN 1 END) as approved_cert_count
         FROM workers w
         LEFT JOIN certifications c ON w.id = c.worker_id
         WHERE w.approval_status = 'pending'
+          AND w.verification_status = 'verified'
         GROUP BY w.id
         ORDER BY w.created_at ASC
       `);
@@ -1372,6 +1375,12 @@ module.exports = (pool, logger, helpers) => {
         });
       });
 
+      // Update last_completion_email_sent timestamp
+      await pool.query(
+        `UPDATE workers SET last_completion_email_sent = CURRENT_TIMESTAMP WHERE id = $1`,
+        [workerId]
+      );
+
       logger.info('Incomplete profile email sent by admin', {
         workerId,
         workerEmail: worker.email,
@@ -1388,6 +1397,77 @@ module.exports = (pool, logger, helpers) => {
     } catch (error) {
       logger.error('Failed to send incomplete profile email', { error: error.message });
       res.status(500).json({ success: false, error: 'Failed to send email' });
+    }
+  });
+
+  // Save verification checkbox states and specialties
+  router.post('/save-verification/:id', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const workerId = req.params.id;
+      const {
+        verified_profile_pic,
+        verified_id_info,
+        verified_emergency,
+        verified_professional,
+        verified_documents,
+        specialty_ids
+      } = req.body;
+
+      console.log('=== SAVE VERIFICATION ===');
+      console.log('Worker ID:', workerId);
+      console.log('Specialty IDs received:', specialty_ids);
+      console.log('Is array:', Array.isArray(specialty_ids));
+      console.log('Length:', specialty_ids ? specialty_ids.length : 0);
+
+      await pool.query(
+        `UPDATE workers
+         SET verified_profile_pic = $1,
+             verified_id_info = $2,
+             verified_emergency = $3,
+             verified_professional = $4,
+             verified_documents = $5,
+             last_verification_update = CURRENT_TIMESTAMP
+         WHERE id = $6`,
+        [
+          verified_profile_pic || false,
+          verified_id_info || false,
+          verified_emergency || false,
+          verified_professional || false,
+          verified_documents || false,
+          workerId
+        ]
+      );
+
+      // Update worker specialties if provided
+      if (specialty_ids && Array.isArray(specialty_ids)) {
+        console.log('Deleting existing specialties for worker', workerId);
+        // Delete existing specialties for this worker
+        await pool.query('DELETE FROM worker_specialties WHERE worker_id = $1', [workerId]);
+
+        console.log('Inserting new specialties:', specialty_ids);
+        // Insert new specialties
+        for (const specialtyId of specialty_ids) {
+          await pool.query(
+            'INSERT INTO worker_specialties (worker_id, specialty_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [workerId, specialtyId]
+          );
+        }
+        console.log('Specialties saved successfully');
+      } else {
+        console.log('No specialties to save or invalid format');
+      }
+
+      logger.info('Verification states and specialties saved', {
+        workerId,
+        adminEmail: req.session.user.email,
+        states: { verified_profile_pic, verified_id_info, verified_emergency, verified_professional, verified_documents },
+        specialtyCount: specialty_ids ? specialty_ids.length : 0
+      });
+
+      res.json({ success: true, message: 'Verification states saved' });
+    } catch (error) {
+      logger.error('Failed to save verification states', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to save verification states' });
     }
   });
 
