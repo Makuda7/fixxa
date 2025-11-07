@@ -339,7 +339,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // If email verification is required, show message and don't redirect
         if (data.requiresVerification) {
-          messageDiv.innerHTML += '<div class="message info">Please check your email to verify your account before logging in.</div>';
+          messageDiv.innerHTML += `
+            <div class="message info">
+              <strong>📧 Verification Email Sent!</strong><br><br>
+              Please check your email inbox for a verification link to activate your account.<br><br>
+              <strong>Important:</strong><br>
+              • Check your spam/junk folder if you don't see the email<br>
+              • The email should arrive within a few minutes<br>
+              • You must verify your email before your account can be reviewed<br><br>
+              If you haven't received the email after 10 minutes, please contact us at
+              <a href="mailto:support@fixxa.co.za" style="color: #228b22;">support@fixxa.co.za</a>
+            </div>
+          `;
           form.reset();
           // Don't redirect - user needs to verify email first
         } else {
