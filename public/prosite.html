@@ -3258,6 +3258,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.location.href = '/Index.html';
       return;
     }
+
+    // Check if email is verified
+    if(!authData.emailVerified){
+      alert('You must verify your email address before accessing your dashboard.\n\nPlease check your email inbox (and spam folder) for the verification link.\n\nIf you need help, contact support@fixxa.co.za');
+      await fetch('/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/login.html';
+      return;
+    }
+
     workerId = authData.worker.id;
     console.log('Authenticated as worker ID:', workerId);
   } catch(e){

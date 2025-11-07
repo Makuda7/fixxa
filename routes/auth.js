@@ -518,11 +518,33 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
     }
   });
 
-  router.get('/worker/check-auth', (req, res) => {
+  router.get('/worker/check-auth', async (req, res) => {
     if (req.session?.user?.id && req.session.user.type === 'professional') {
-      res.json({ authenticated: true, worker: req.session.user });
+      try {
+        // Check verification status from database
+        const result = await pool.query(
+          'SELECT id, email_verified, verification_status FROM workers WHERE id = $1',
+          [req.session.user.id]
+        );
+
+        if (result.rows.length > 0) {
+          const worker = result.rows[0];
+          const isVerified = worker.email_verified || worker.verification_status === 'verified';
+
+          res.json({
+            authenticated: true,
+            worker: req.session.user,
+            emailVerified: isVerified
+          });
+        } else {
+          res.json({ authenticated: true, worker: req.session.user, emailVerified: false });
+        }
+      } catch (err) {
+        logger.error('Worker check-auth error', { error: err.message });
+        res.json({ authenticated: true, worker: req.session.user, emailVerified: false });
+      }
     } else {
-      res.json({ authenticated: false, worker: null });
+      res.json({ authenticated: false, worker: null, emailVerified: false });
     }
   });
 
