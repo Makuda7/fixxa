@@ -1817,19 +1817,28 @@
       }
 
       container.innerHTML = appState.pendingWorkers.map(worker => `
-        <div class="worker-card">
+        <div class="worker-card" style="${worker.verification_status !== 'verified' ? 'opacity: 0.7; border-left: 4px solid #ff9800;' : 'border-left: 4px solid #228b22;'}">
           <div class="worker-header">
             <div class="worker-info">
               <h4 style="color:#228b22; cursor:pointer; text-decoration:underline;" data-action="open-verification-modal" data-worker-id="${worker.id}">
-                ${escapeHTML(worker.name)} 📋
+                ${worker.verification_status === 'verified' ? '✅ ' : '⚠️ '}${escapeHTML(worker.name)} 📋
               </h4>
-              <p>${escapeHTML(worker.email)} ${worker.phone ? '• ' + escapeHTML(worker.phone) : ''}</p>
+              <p>${escapeHTML(worker.email)} ${worker.phone ? '• ' + escapeHTML(worker.phone) : ''}
+                ${worker.verification_status !== 'verified' ? '<span style="color:#ff9800; font-weight:bold;"> • Email Not Verified</span>' : ''}
+              </p>
               <p><strong>Speciality:</strong> ${escapeHTML(worker.speciality)}</p>
               ${worker.address ? `<p><strong>Location:</strong> ${escapeHTML(worker.address)}, ${escapeHTML(worker.city || '')}</p>` : ''}
             </div>
             <div style="text-align:right;">
               <p style="font-size:0.85rem; color:#666;">Applied: ${new Date(worker.created_at).toLocaleDateString()}</p>
               ${worker.cert_count > 0 ? `<p style="font-size:0.85rem; color:#666;">${worker.approved_cert_count}/${worker.cert_count} certs approved</p>` : ''}
+              <p style="font-size:0.85rem; color:#666;">
+                <strong>Last Email:</strong>
+                ${worker.last_completion_email_sent
+                  ? `<span style="color:#228b22;">${new Date(worker.last_completion_email_sent).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>`
+                  : '<span style="color:#999;">Never</span>'
+                }
+              </p>
             </div>
           </div>
           ${worker.bio ? `<p style="color:#666; margin-bottom:1rem;">${escapeHTML(worker.bio)}</p>` : ''}
@@ -2104,6 +2113,12 @@
                   <p style="margin:0.25rem 0;"><strong>Speciality:</strong> ${escapeHTML(worker.speciality || 'Not provided')}</p>
                   <p style="margin:0.25rem 0;"><strong>City:</strong> ${escapeHTML(worker.city || 'Not provided')}</p>
                   <p style="margin:0.25rem 0;"><strong>Registered:</strong> ${new Date(worker.created_at).toLocaleDateString()}</p>
+                  <p style="margin:0.25rem 0;"><strong>Last Completion Email:</strong>
+                    ${worker.last_completion_email_sent
+                      ? `<span style="color:#228b22;">${new Date(worker.last_completion_email_sent).toLocaleString()}</span>`
+                      : '<span style="color:#999;">Never sent</span>'
+                    }
+                  </p>
                 </div>
               </div>
             </div>
@@ -2306,6 +2321,9 @@
             <!-- Action Buttons -->
             <div style="display:flex; gap:0.75rem; justify-content:flex-end; flex-wrap:wrap;">
               <button class="btn btn-secondary" data-action="close-worker-detail-modal">Close</button>
+              <button class="btn" style="background:#6c757d; color:white;" data-action="save-verification" data-worker-id="${workerId}" id="saveVerificationBtn">
+                💾 Save Verification
+              </button>
               <button class="btn" style="background:#2196F3; color:white;" data-action="send-incomplete-email" data-worker-id="${workerId}">
                 📧 Send Completion Email
               </button>
@@ -2319,12 +2337,22 @@
           </div>
         `;
 
-        // Add event listeners to checkboxes to update summary
+        // Load saved verification states and set checkboxes
+        document.getElementById('check-profile-pic').checked = worker.verified_profile_pic || false;
+        document.getElementById('check-id-info').checked = worker.verified_id_info || false;
+        document.getElementById('check-emergency').checked = worker.verified_emergency || false;
+        document.getElementById('check-professional').checked = worker.verified_professional || false;
+        document.getElementById('check-documents').checked = worker.verified_documents || false;
+
+        // Add event listeners to checkboxes to update summary and auto-save
         const checkboxes = ['check-profile-pic', 'check-id-info', 'check-emergency', 'check-professional', 'check-documents'];
         checkboxes.forEach(id => {
           const checkbox = document.getElementById(id);
           if (checkbox) {
-            checkbox.addEventListener('change', updateVerificationSummary);
+            checkbox.addEventListener('change', () => {
+              updateVerificationSummary();
+              saveVerificationStates(workerId);
+            });
           }
         });
 
@@ -2555,7 +2583,9 @@
           missingItems.push('Professional Information (Bio, Experience, Service Type)');
         }
         if (!document.getElementById('check-documents')?.checked) {
-          missingItems.push('Certifications or Proof of Work Documents');
+          missingItems.push('Proof of Residence');
+          missingItems.push('Certified copy of ID or Passport');
+          missingItems.push('Relevant Certifications');
         }
 
         // If everything is checked, don't send email
@@ -2590,6 +2620,62 @@
         console.error('Send email error:', err);
         setLoading(false);
         showMessage('Failed to send email', 'error');
+      }
+    }
+
+    async function saveVerificationStates(workerId, showMessage = false) {
+      try {
+        // Collect verification checkboxes
+        const verificationStates = {
+          verified_profile_pic: document.getElementById('check-profile-pic')?.checked || false,
+          verified_id_info: document.getElementById('check-id-info')?.checked || false,
+          verified_emergency: document.getElementById('check-emergency')?.checked || false,
+          verified_professional: document.getElementById('check-professional')?.checked || false,
+          verified_documents: document.getElementById('check-documents')?.checked || false
+        };
+
+        // Collect selected specialty IDs
+        const specialtyCheckboxes = document.querySelectorAll('.specialty-checkbox:checked');
+        const specialty_ids = Array.from(specialtyCheckboxes).map(cb => parseInt(cb.value));
+
+        // Add specialties to the data being sent
+        verificationStates.specialty_ids = specialty_ids;
+
+        console.log('Saving verification for worker:', workerId);
+        console.log('Selected specialty IDs:', specialty_ids);
+        console.log('Full data being sent:', verificationStates);
+
+        const res = await fetch(`/admin/save-verification/${workerId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(verificationStates)
+        });
+
+        const responseData = await res.json();
+        console.log('Save response:', responseData);
+
+        if (showMessage && res.ok) {
+          // Reload specialties to show updated state
+          await loadWorkerSpecialties(workerId);
+
+          // Show success message when manually clicked
+          const btn = document.getElementById('saveVerificationBtn');
+          const originalText = btn.innerHTML;
+          btn.innerHTML = '✅ Saved!';
+          btn.style.background = '#28a745';
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = '#6c757d';
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('Save verification states error:', err);
+        if (showMessage) {
+          window.showMessage('Failed to save verification states', 'error');
+        }
       }
     }
 
@@ -2905,6 +2991,10 @@
           case 'send-incomplete-email':
             const emailWorkerId = parseInt(target.getAttribute('data-worker-id'));
             sendIncompleteProfileEmail(emailWorkerId);
+            break;
+          case 'save-verification':
+            const saveWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            saveVerificationStates(saveWorkerId, true);
             break;
 
           // Support and suggestion actions

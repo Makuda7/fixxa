@@ -532,9 +532,10 @@ module.exports = (pool, logger, helpers) => {
         FROM workers w
         LEFT JOIN certifications c ON w.id = c.worker_id
         WHERE w.approval_status = 'pending'
-          AND w.verification_status = 'verified'
         GROUP BY w.id
-        ORDER BY w.created_at ASC
+        ORDER BY
+          CASE WHEN w.verification_status = 'verified' THEN 0 ELSE 1 END,
+          w.created_at ASC
       `);
 
       res.json({

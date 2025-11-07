@@ -183,6 +183,36 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
         logger.error('Failed to send welcome email', { error: emailError.message });
       }
 
+      // Send admin notification for professional verifications
+      if (userType === 'professional') {
+        try {
+          const adminEmail = process.env.ADMIN_EMAIL || 'support@fixxa.co.za';
+          const adminNotificationHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #228b22;">New Professional Email Verified ✅</h1>
+              <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Professional Details</h3>
+                <p><strong>Name:</strong> ${user.name}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Verified:</strong> ${new Date().toLocaleString()}</p>
+              </div>
+              <p style="margin-top: 20px;">
+                This professional has verified their email and is now ready for review in your admin dashboard.
+              </p>
+              <p>
+                <a href="https://www.fixxa.co.za/admin.html"
+                   style="display: inline-block; background: #228b22; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 10px;">
+                  Review Application
+                </a>
+              </p>
+            </div>
+          `;
+          await sendEmail(adminEmail, `New Professional Verified: ${user.name}`, adminNotificationHtml, logger);
+        } catch (emailError) {
+          logger.error('Failed to send admin notification email', { error: emailError.message });
+        }
+      }
+
       res.send(`
         <html><body style="font-family: Arial; text-align: center; padding: 50px;">
           <h1 style="color: forestgreen;">Email Verified!</h1>
