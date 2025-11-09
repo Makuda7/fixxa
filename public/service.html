@@ -277,6 +277,10 @@
   font-weight: 600;
   white-space: nowrap;
 }
+.certified-badge {
+  background: #1976d2;
+  margin-left: 4px;
+}
 .share-button {
   position: absolute;
   bottom: 15px;
@@ -670,6 +674,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const emptyStars = 5 - fullStars;
       const stars = '★'.repeat(fullStars) + '☆'.repeat(emptyStars);
       const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
+      const certifiedBadge = (worker.approved_cert_count && worker.approved_cert_count > 0) ?
+        '<span class="verified-badge certified-badge">🎓 Certified</span>' : '';
 
       const card = document.createElement('a');
       card.href = `profile.html?id=${worker.id}`;
@@ -684,7 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${!worker.is_available && !worker.is_pending ?
           `<div class="unavailable-badge">Currently Unavailable</div>` : ''}
         <img src="${worker.profile_picture || worker.profile_pic || worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
-        <h3>${worker.name} ${verifiedBadge}</h3>
+        <h3>${worker.name} ${verifiedBadge} ${certifiedBadge}</h3>
         <p class="speciality">${worker.speciality || 'General Services'}</p>
         ${!worker.is_pending ? `<p class="rating">${stars} ${rating.toFixed(1)} (${worker.review_count || 0} reviews)</p>` : ''}
         ${!worker.is_pending ? `<p class="experience">${worker.completed_jobs || 0} completed jobs</p>` : ''}
