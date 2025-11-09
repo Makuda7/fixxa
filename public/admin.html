@@ -2764,6 +2764,24 @@
           verificationStates.experience = experienceTextarea.value.trim();
         }
 
+        // Collect edited location information (province, primary suburb, secondary areas)
+        const provinceSelect = document.getElementById('edit-province');
+        const primarySuburbInput = document.getElementById('edit-primary-suburb');
+        const secondaryAreasInput = document.getElementById('edit-secondary-areas');
+
+        if (provinceSelect && provinceSelect.value) {
+          verificationStates.province = provinceSelect.value;
+        }
+        if (primarySuburbInput && primarySuburbInput.value.trim()) {
+          verificationStates.primary_suburb = primarySuburbInput.value.trim();
+        }
+        if (secondaryAreasInput) {
+          const secondaryAreasValue = secondaryAreasInput.value.trim();
+          if (secondaryAreasValue) {
+            verificationStates.secondary_areas = secondaryAreasValue.split(',').map(s => s.trim()).filter(s => s);
+          }
+        }
+
         console.log('Saving verification for worker:', workerId);
         console.log('Selected specialty IDs:', specialty_ids);
         console.log('Full data being sent:', verificationStates);

@@ -1437,7 +1437,10 @@ module.exports = (pool, logger, helpers) => {
         verified_documents,
         specialty_ids,
         bio,
-        experience
+        experience,
+        province,
+        primary_suburb,
+        secondary_areas
       } = req.body;
 
       console.log('=== SAVE VERIFICATION ===');
@@ -1445,6 +1448,9 @@ module.exports = (pool, logger, helpers) => {
       console.log('Specialty IDs received:', specialty_ids);
       console.log('Bio provided:', bio !== undefined ? 'Yes' : 'No');
       console.log('Experience provided:', experience !== undefined ? 'Yes' : 'No');
+      console.log('Province provided:', province !== undefined ? 'Yes' : 'No');
+      console.log('Primary suburb provided:', primary_suburb !== undefined ? 'Yes' : 'No');
+      console.log('Secondary areas provided:', secondary_areas !== undefined ? 'Yes' : 'No');
 
       // Build dynamic UPDATE query
       let updateQuery = `UPDATE workers
@@ -1476,6 +1482,27 @@ module.exports = (pool, logger, helpers) => {
       if (experience !== undefined && experience !== null) {
         updateQuery += `, experience = $${paramIndex}`;
         params.push(experience.trim());
+        paramIndex++;
+      }
+
+      // Add province if provided
+      if (province !== undefined && province !== null && province !== '') {
+        updateQuery += `, province = $${paramIndex}`;
+        params.push(province.trim());
+        paramIndex++;
+      }
+
+      // Add primary_suburb if provided
+      if (primary_suburb !== undefined && primary_suburb !== null && primary_suburb !== '') {
+        updateQuery += `, primary_suburb = $${paramIndex}`;
+        params.push(primary_suburb.trim());
+        paramIndex++;
+      }
+
+      // Add secondary_areas if provided
+      if (secondary_areas !== undefined && secondary_areas !== null) {
+        updateQuery += `, secondary_areas = $${paramIndex}`;
+        params.push(secondary_areas);
         paramIndex++;
       }
 
