@@ -1885,12 +1885,14 @@
       try {
         setLoading(true);
 
-        // Prepare request body with suburb corrections and specialty IDs if provided
+        // Prepare request body with suburb corrections, specialty IDs, bio and experience if provided
         const requestBody = {};
         if (suburbData.province) requestBody.province = suburbData.province;
         if (suburbData.primary_suburb) requestBody.primary_suburb = suburbData.primary_suburb;
         if (suburbData.secondary_areas) requestBody.secondary_areas = suburbData.secondary_areas;
         if (suburbData.specialty_ids) requestBody.specialty_ids = suburbData.specialty_ids;
+        if (suburbData.bio !== undefined) requestBody.bio = suburbData.bio;
+        if (suburbData.experience !== undefined) requestBody.experience = suburbData.experience;
 
         const res = await fetch(`/admin/approve-worker/${workerId}`, {
           method: 'POST',
@@ -2246,25 +2248,25 @@
             </div>
 
             <!-- Professional Details -->
-            <div style="background:#fff; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border:1px solid #ddd;">
-              <h4 style="margin:0 0 1rem 0; color:#228b22;">💼 Professional Details</h4>
-              ${worker.bio ? `
+            <div style="background:#e8f5e9; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; border-left:4px solid #228b22;">
+              <h4 style="margin:0 0 1rem 0; color:#228b22;">💼 Professional Details <span style="font-size:0.85rem; color:#666;">(Editable - Fix spelling/offensive content before approval)</span></h4>
+              <div style="background:#fff; padding:1rem; border-radius:6px; margin-bottom:1rem;">
                 <div style="margin-bottom:1rem;">
-                  <p style="margin:0 0 0.5rem 0; font-weight:600;">Bio:</p>
-                  <p style="margin:0; color:#666; font-size:0.9rem;">${escapeHTML(worker.bio)}</p>
+                  <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Bio:</label>
+                  <textarea id="edit-bio" rows="4" style="width:100%; padding:0.75rem; border:1px solid #ccc; border-radius:6px; font-family:inherit; resize:vertical;">${escapeHTML(worker.bio || '')}</textarea>
+                  <small style="color:#666; display:block; margin-top:0.25rem;">Check for spelling errors, inappropriate language, or offensive content</small>
                 </div>
-              ` : '<p style="color:#dc3545;">⚠️ No bio provided</p>'}
-              ${worker.experience ? `
                 <div style="margin-bottom:1rem;">
-                  <p style="margin:0 0 0.5rem 0; font-weight:600;">Experience:</p>
-                  <p style="margin:0; color:#666; font-size:0.9rem;">${escapeHTML(worker.experience)}</p>
+                  <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Experience:</label>
+                  <textarea id="edit-experience" rows="3" style="width:100%; padding:0.75rem; border:1px solid #ccc; border-radius:6px; font-family:inherit; resize:vertical;">${escapeHTML(worker.experience || '')}</textarea>
+                  <small style="color:#666; display:block; margin-top:0.25rem;">Verify experience claims are reasonable</small>
                 </div>
-              ` : '<p style="color:#dc3545;">⚠️ No experience provided</p>'}
+              </div>
               ${worker.area ? `<p style="margin:0.25rem 0;"><strong>Service Area:</strong> ${escapeHTML(worker.area)}</p>` : ''}
               ${worker.service_radius ? `<p style="margin:0.25rem 0;"><strong>Service Radius:</strong> ${worker.service_radius} km</p>` : ''}
               <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin-top:1rem;">
                 <input type="checkbox" id="check-professional" style="width:20px; height:20px; cursor:pointer;">
-                <span style="font-weight:600;">Bio and experience information is adequate</span>
+                <span style="font-weight:600;">Bio and experience information is appropriate and adequate</span>
               </label>
             </div>
 
@@ -2637,6 +2639,10 @@
       const primary_suburb = document.getElementById('edit-primary-suburb')?.value?.trim();
       const secondary_areas_input = document.getElementById('edit-secondary-areas')?.value?.trim();
 
+      // Collect edited bio and experience
+      const bio = document.getElementById('edit-bio')?.value?.trim();
+      const experience = document.getElementById('edit-experience')?.value?.trim();
+
       // Parse secondary areas
       const secondary_areas = secondary_areas_input
         ? secondary_areas_input.split(',').map(s => s.trim()).filter(s => s)
@@ -2658,7 +2664,7 @@
       }
 
       closeWorkerDetailModal();
-      await approveWorker(workerId, { province, primary_suburb, secondary_areas, specialty_ids });
+      await approveWorker(workerId, { province, primary_suburb, secondary_areas, specialty_ids, bio, experience });
     }
 
     // ========== END PENDING WORKERS FUNCTIONS ==========

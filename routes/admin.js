@@ -653,13 +653,15 @@ module.exports = (pool, logger, helpers) => {
   router.post('/approve-worker/:id', requireAuth, adminOnly, async (req, res) => {
     try {
       const { id } = req.params;
-      const { province, primary_suburb, secondary_areas, specialty_ids } = req.body;
+      const { province, primary_suburb, secondary_areas, specialty_ids, bio, experience } = req.body;
       const adminEmail = req.session.user.email;
 
       console.log('=== APPROVE WORKER REQUEST ===');
       console.log('Worker ID:', id);
       console.log('Province:', province);
       console.log('Primary Suburb:', primary_suburb);
+      console.log('Bio provided:', bio ? 'Yes' : 'No');
+      console.log('Experience provided:', experience ? 'Yes' : 'No');
       console.log('Admin Email:', adminEmail);
 
       // Get worker details for email
@@ -710,7 +712,21 @@ module.exports = (pool, logger, helpers) => {
 
       if (secondary_areas !== undefined && secondary_areas !== null) {
         updateQuery += `, secondary_areas = $${paramIndex}`;
-        params.push(secondary_areas); // Already an array
+        params.push(secondary_areas);
+        paramIndex++;
+      }
+
+      // Add bio if provided (allows admin to correct spelling/offensive content)
+      if (bio !== undefined && bio !== null) {
+        updateQuery += `, bio = $${paramIndex}`;
+        params.push(bio.trim());
+        paramIndex++;
+      }
+
+      // Add experience if provided (allows admin to correct spelling/claims)
+      if (experience !== undefined && experience !== null) {
+        updateQuery += `, experience = $${paramIndex}`;
+        params.push(experience.trim());
         paramIndex++;
       }
 
