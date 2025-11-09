@@ -2754,6 +2754,16 @@
         // Add specialties to the data being sent
         verificationStates.specialty_ids = specialty_ids;
 
+        // Collect edited bio and experience (if textareas exist)
+        const bioTextarea = document.getElementById('edit-bio');
+        const experienceTextarea = document.getElementById('edit-experience');
+        if (bioTextarea) {
+          verificationStates.bio = bioTextarea.value.trim();
+        }
+        if (experienceTextarea) {
+          verificationStates.experience = experienceTextarea.value.trim();
+        }
+
         console.log('Saving verification for worker:', workerId);
         console.log('Selected specialty IDs:', specialty_ids);
         console.log('Full data being sent:', verificationStates);

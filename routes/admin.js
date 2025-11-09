@@ -1435,33 +1435,55 @@ module.exports = (pool, logger, helpers) => {
         verified_emergency,
         verified_professional,
         verified_documents,
-        specialty_ids
+        specialty_ids,
+        bio,
+        experience
       } = req.body;
 
       console.log('=== SAVE VERIFICATION ===');
       console.log('Worker ID:', workerId);
       console.log('Specialty IDs received:', specialty_ids);
-      console.log('Is array:', Array.isArray(specialty_ids));
-      console.log('Length:', specialty_ids ? specialty_ids.length : 0);
+      console.log('Bio provided:', bio !== undefined ? 'Yes' : 'No');
+      console.log('Experience provided:', experience !== undefined ? 'Yes' : 'No');
 
-      await pool.query(
-        `UPDATE workers
+      // Build dynamic UPDATE query
+      let updateQuery = `UPDATE workers
          SET verified_profile_pic = $1,
              verified_id_info = $2,
              verified_emergency = $3,
              verified_professional = $4,
              verified_documents = $5,
-             last_verification_update = CURRENT_TIMESTAMP
-         WHERE id = $6`,
-        [
-          verified_profile_pic || false,
-          verified_id_info || false,
-          verified_emergency || false,
-          verified_professional || false,
-          verified_documents || false,
-          workerId
-        ]
-      );
+             last_verification_update = CURRENT_TIMESTAMP`;
+
+      const params = [
+        verified_profile_pic || false,
+        verified_id_info || false,
+        verified_emergency || false,
+        verified_professional || false,
+        verified_documents || false
+      ];
+
+      let paramIndex = 6;
+
+      // Add bio if provided
+      if (bio !== undefined && bio !== null) {
+        updateQuery += `, bio = $${paramIndex}`;
+        params.push(bio.trim());
+        paramIndex++;
+      }
+
+      // Add experience if provided
+      if (experience !== undefined && experience !== null) {
+        updateQuery += `, experience = $${paramIndex}`;
+        params.push(experience.trim());
+        paramIndex++;
+      }
+
+      updateQuery += ` WHERE id = $${paramIndex}`;
+      params.push(workerId);
+
+      console.log('Executing UPDATE query with', params.length, 'parameters');
+      await pool.query(updateQuery, params);
 
       // Update worker specialties if provided
       if (specialty_ids && Array.isArray(specialty_ids)) {
