@@ -1562,7 +1562,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <div class="quick-specs">
               <span class="spec-badge">📍 ${worker.primary_suburb || worker.area}${worker.province ? ', ' + worker.province : ''}</span>
-              <span class="spec-badge">⭐ ${worker.experience}</span>
+              <span class="spec-badge">⭐ ${worker.experience} years experience</span>
               <span class="spec-badge" title="Days this professional is available to work">📅 Works: ${getAvailabilityText(worker.availability_schedule)}</span>
               ${completionRate !== null && totalJobs > 0 ? `<span class="spec-badge completion-rate-badge" title="${completedJobs} completed out of ${totalJobs} total jobs">✅ ${completionRate}% completion rate</span>` : ''}
             </div>
