@@ -1971,7 +1971,7 @@
 
       try {
         setLoading(true);
-        const res = await fetch(`/certifications/${certId}`, {
+        const res = await fetch(`/admin/certifications/${certId}`, {
           method: 'DELETE',
           credentials: 'include'
         });

@@ -1636,6 +1636,68 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Delete a single certification (admin only)
+  router.delete('/certifications/:certificationId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const certificationId = req.params.certificationId;
+      const adminEmail = req.session.user.email;
+
+      // Get certification details before deleting
+      const certResult = await pool.query(
+        'SELECT worker_id, document_name, cloudinary_id, file_type FROM certifications WHERE id = $1',
+        [certificationId]
+      );
+
+      if (certResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Certification not found' });
+      }
+
+      const cert = certResult.rows[0];
+
+      // Delete from database
+      await pool.query('DELETE FROM certifications WHERE id = $1', [certificationId]);
+
+      // Delete from Cloudinary
+      if (cert.cloudinary_id) {
+        try {
+          const { cloudinary } = require('../config/cloudinary');
+          const resourceType = cert.file_type === 'image' ? 'image' : 'raw';
+          await cloudinary.uploader.destroy(cert.cloudinary_id, { resource_type: resourceType });
+          logger.info('Certification deleted from Cloudinary', {
+            certificationId,
+            cloudinaryId: cert.cloudinary_id,
+            adminEmail
+          });
+        } catch (cloudinaryError) {
+          logger.error('Failed to delete certification from Cloudinary', {
+            error: cloudinaryError.message,
+            cloudinaryId: cert.cloudinary_id
+          });
+          // Continue even if Cloudinary deletion fails
+        }
+      }
+
+      logger.info('Admin deleted single certification', {
+        adminEmail,
+        certificationId,
+        workerId: cert.worker_id,
+        documentName: cert.document_name
+      });
+
+      res.json({
+        success: true,
+        message: 'Certification deleted successfully'
+      });
+    } catch (error) {
+      console.error('Delete certification error:', error);
+      logger.error('Failed to delete certification', {
+        error: error.message,
+        certificationId: req.params.certificationId
+      });
+      res.status(500).json({ success: false, error: 'Failed to delete certification' });
+    }
+  });
+
   // Delete all broken certifications for a worker (admin only)
   router.delete('/worker/:workerId/certifications', requireAuth, adminOnly, async (req, res) => {
     try {
