@@ -3293,8 +3293,8 @@
 
           // Admin upload certification for worker
           case 'admin-upload-cert':
-            const uploadWorkerId = parseInt(target.getAttribute('data-worker-id'));
-            adminUploadCertification(uploadWorkerId);
+            const certUploadWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            adminUploadCertification(certUploadWorkerId);
             break;
         }
       });
