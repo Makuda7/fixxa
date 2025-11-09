@@ -1894,6 +1894,9 @@
         if (suburbData.bio !== undefined) requestBody.bio = suburbData.bio;
         if (suburbData.experience !== undefined) requestBody.experience = suburbData.experience;
 
+        console.log('=== APPROVE WORKER REQUEST BODY ===');
+        console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
         const res = await fetch(`/admin/approve-worker/${workerId}`, {
           method: 'POST',
           headers: {
@@ -2642,6 +2645,10 @@
       // Collect edited bio and experience
       const bio = document.getElementById('edit-bio')?.value?.trim();
       const experience = document.getElementById('edit-experience')?.value?.trim();
+
+      console.log('=== APPROVE WORKER FROM MODAL ===');
+      console.log('Bio collected:', bio);
+      console.log('Experience collected:', experience);
 
       // Parse secondary areas
       const secondary_areas = secondary_areas_input
