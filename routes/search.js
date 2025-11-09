@@ -242,5 +242,25 @@ module.exports = (pool, logger) => {
     }
   });
 
+  // Get all active specialties (public endpoint for dropdown)
+  router.get('/api/specialties', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT id, name, icon, description, display_order
+        FROM specialties
+        WHERE is_active = true
+        ORDER BY display_order ASC, name ASC
+      `);
+
+      res.json({
+        success: true,
+        specialties: result.rows
+      });
+    } catch (error) {
+      logger.error('Failed to fetch specialties', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch specialties' });
+    }
+  });
+
   return router;
 };

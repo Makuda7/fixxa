@@ -1530,14 +1530,20 @@
 
       grid.innerHTML = '';
       appState.professionals.forEach(pro => {
-        // Worker is truly "live" to clients if: is_active = true AND approval_status = 'approved'
+        // Worker is visible to clients on profile.html if: is_active = true AND approval_status = 'approved' OR 'pending'
+        // This matches the search.js query criteria (line 35)
         const isLiveToClients = pro.is_active && (pro.approval_status === 'approved' || pro.approval_status === 'pending');
         const statusClass = isLiveToClients ? 'available' : 'unavailable';
         const statusText = pro.is_active ? 'Active' : 'Inactive';
         const cardClass = isLiveToClients ? '' : 'unavailable';
         const verifiedBadge = pro.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
-        // Show "Coming Soon" badge if card is greyed out (has unavailable class)
-        const comingSoonBadge = cardClass === 'unavailable' ? '<div style="position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">Coming Soon</div>' : '';
+
+        // Show "Coming Soon" badge if:
+        // 1. NOT visible to clients (card is greyed out) OR
+        // 2. Worker has NO approved certifications (missing required documents)
+        const hasMissingDocuments = !pro.approved_cert_count || parseInt(pro.approved_cert_count) === 0;
+        const showComingSoon = !isLiveToClients || hasMissingDocuments;
+        const comingSoonBadge = showComingSoon ? '<div style="position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">Coming Soon</div>' : '';
 
         grid.innerHTML += `
           <div class="worker-card ${cardClass}" data-action="show-worker-detail" data-worker-id="${pro.id}" style="position: relative;">
@@ -1822,14 +1828,14 @@
       }
 
       container.innerHTML = appState.pendingWorkers.map(worker => `
-        <div class="worker-card" style="${worker.verification_status !== 'verified' ? 'opacity: 0.7; border-left: 4px solid #ff9800;' : 'border-left: 4px solid #228b22;'}">
+        <div class="worker-card" style="${!worker.email_verified ? 'opacity: 0.7; border-left: 4px solid #ff9800;' : 'border-left: 4px solid #228b22;'}">
           <div class="worker-header">
             <div class="worker-info">
               <h4 style="color:#228b22; cursor:pointer; text-decoration:underline;" data-action="open-verification-modal" data-worker-id="${worker.id}">
-                ${worker.verification_status === 'verified' ? '✅ ' : '⚠️ '}${escapeHTML(worker.name)} 📋
+                ${worker.email_verified ? '✅ ' : '⚠️ '}${escapeHTML(worker.name)} 📋
               </h4>
               <p>${escapeHTML(worker.email)} ${worker.phone ? '• ' + escapeHTML(worker.phone) : ''}
-                ${worker.verification_status !== 'verified' ? '<span style="color:#ff9800; font-weight:bold;"> • Email Not Verified</span>' : ''}
+                ${!worker.email_verified ? '<span style="color:#ff9800; font-weight:bold;"> • Email Not Verified</span>' : ''}
               </p>
               <p><strong>Speciality:</strong> ${escapeHTML(worker.speciality)}</p>
               ${worker.address ? `<p><strong>Location:</strong> ${escapeHTML(worker.address)}, ${escapeHTML(worker.city || '')}</p>` : ''}
@@ -2008,6 +2014,78 @@
         showMessage('Failed to delete certifications', 'error');
       } finally {
         setLoading(false);
+      }
+    }
+
+    // Admin upload certification on behalf of worker
+    async function adminUploadCertification(workerId) {
+      const fileInput = document.getElementById(`adminUploadFile-${workerId}`);
+      const statusDiv = document.getElementById(`adminUploadStatus-${workerId}`);
+
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#f8d7da';
+        statusDiv.style.color = '#721c24';
+        statusDiv.textContent = 'Please select a file to upload';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      if (file.size > maxSize) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#f8d7da';
+        statusDiv.style.color = '#721c24';
+        statusDiv.textContent = 'File is too large. Maximum size is 10MB.';
+        return;
+      }
+
+      try {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#d1ecf1';
+        statusDiv.style.color = '#0c5460';
+        statusDiv.textContent = `Uploading ${file.name}... Please wait.`;
+
+        const formData = new FormData();
+        formData.append('certification', file);
+
+        const res = await fetch(`/certifications/admin/upload-for-worker/${workerId}`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          statusDiv.style.background = '#d4edda';
+          statusDiv.style.color = '#155724';
+          statusDiv.textContent = `✅ ${file.name} uploaded successfully! The document is now pending review.`;
+
+          // Clear the file input
+          fileInput.value = '';
+
+          // Reload the worker verification modal after 1.5 seconds to show the new document
+          setTimeout(() => {
+            openWorkerVerificationModal(workerId);
+          }, 1500);
+        } else {
+          statusDiv.style.background = '#f8d7da';
+          statusDiv.style.color = '#721c24';
+          statusDiv.textContent = `❌ Upload failed: ${data.error || 'Unknown error'}`;
+
+          // If it's a virus detection error, show specific message
+          if (data.code === 'VIRUS_DETECTED') {
+            statusDiv.textContent = '⚠️ VIRUS DETECTED: File failed security scan. Please ensure the file is safe.';
+          }
+        }
+      } catch (err) {
+        console.error('Admin upload error:', err);
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#f8d7da';
+        statusDiv.style.color = '#721c24';
+        statusDiv.textContent = `❌ Upload failed: ${err.message}`;
       }
     }
 
@@ -2278,6 +2356,23 @@
                   <span style="font-weight:600;">Required documents uploaded</span>
                 </label>
               `}
+
+              <!-- Admin Upload Form (Helper for workers struggling with uploads) -->
+              <div style="background:#fff3cd; padding:1.5rem; border-radius:8px; margin-top:1.5rem; border-left:4px solid #ffc107;">
+                <h5 style="margin:0 0 0.5rem 0; color:#856404;">📤 Admin Helper: Upload Documents on Behalf of Worker</h5>
+                <p style="margin:0 0 1rem 0; font-size:0.85rem; color:#856404;">Use this if the worker is struggling to upload documents themselves. This is a temporary solution while we improve the upload process.</p>
+                <form id="adminUploadForm-${workerId}" style="display:flex; flex-direction:column; gap:1rem;">
+                  <div>
+                    <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Select Document to Upload:</label>
+                    <input type="file" id="adminUploadFile-${workerId}" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="padding:0.5rem; border:2px solid #ffc107; border-radius:6px; width:100%; font-family:inherit;">
+                    <small style="color:#666; font-size:0.85rem; display:block; margin-top:0.25rem;">Accepted: PDF, JPG, PNG, DOC, DOCX (max 10MB)</small>
+                  </div>
+                  <button type="button" class="btn" style="background:#ffc107; color:#000; font-weight:600;" data-action="admin-upload-cert" data-worker-id="${workerId}">
+                    📤 Upload Document for Worker
+                  </button>
+                  <div id="adminUploadStatus-${workerId}" style="display:none; padding:0.75rem; border-radius:6px; margin-top:0.5rem;"></div>
+                </form>
+              </div>
             </div>
 
             <!-- Specialty Selection -->
@@ -3046,6 +3141,12 @@
           case 'delete-all-worker-certs':
             const delWorkerId = target.getAttribute('data-worker-id');
             deleteAllWorkerCertifications(delWorkerId);
+            break;
+
+          // Admin upload certification for worker
+          case 'admin-upload-cert':
+            const uploadWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            adminUploadCertification(uploadWorkerId);
             break;
         }
       });

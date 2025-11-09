@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const locationBanner = document.getElementById('locationBanner');
   const enableLocationBtn = document.getElementById('enableLocationBtn');
   const locationMessage = document.getElementById('locationMessage');
-  
+
   const serviceSelect = document.getElementById('serviceSelect');
   const provinceSelect = document.getElementById('provinceSelect');
   const suburbSelect = document.getElementById('suburbSelect');
@@ -452,6 +452,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsTitle = document.getElementById('resultsTitle');
 
   let userLocation = null;
+
+  // Load specialties dynamically from database
+  async function loadSpecialties() {
+    try {
+      const res = await fetch('/api/specialties');
+      const data = await res.json();
+
+      if (data.success && data.specialties) {
+        // Clear existing options except the first one
+        serviceSelect.innerHTML = '<option value="">Service Type</option>';
+
+        // Add specialties from database
+        data.specialties
+          .filter(s => s.is_active)
+          .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+          .forEach(specialty => {
+            const option = document.createElement('option');
+            option.value = specialty.name;
+            option.textContent = `${specialty.icon || ''} ${specialty.name}`.trim();
+            serviceSelect.appendChild(option);
+          });
+      }
+    } catch (err) {
+      console.error('Failed to load specialties:', err);
+      // Keep the hardcoded options if loading fails
+    }
+  }
+
+  // Load specialties on page load
+  loadSpecialties();
 
   async function checkLogin() {
     try {
@@ -653,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${comingSoonBanner}
         ${!worker.is_available && !worker.is_pending ?
           `<div class="unavailable-badge">Currently Unavailable</div>` : ''}
-        <img src="${worker.profile_pic || worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
+        <img src="${worker.profile_picture || worker.profile_pic || worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
         <h3>${worker.name} ${verifiedBadge}</h3>
         <p class="speciality">${worker.speciality || 'General Services'}</p>
         ${!worker.is_pending ? `<p class="rating">${stars} ${rating.toFixed(1)} (${worker.review_count || 0} reviews)</p>` : ''}

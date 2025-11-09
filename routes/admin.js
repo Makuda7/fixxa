@@ -220,13 +220,18 @@ module.exports = (pool, logger, helpers) => {
           w.is_active,
           w.approval_status,
           w.is_verified,
+          w.verification_status,
+          w.email_verified,
           w.created_at,
           COUNT(DISTINCT b.id) as total_bookings,
           COUNT(DISTINCT CASE WHEN b.status = 'Completed' THEN b.id END) as completed_bookings,
-          COALESCE(AVG(r.overall_rating), 0) as rating
+          COALESCE(AVG(r.overall_rating), 0) as rating,
+          COUNT(DISTINCT c.id) as cert_count,
+          COUNT(DISTINCT CASE WHEN c.status = 'approved' THEN c.id END) as approved_cert_count
         FROM workers w
         LEFT JOIN bookings b ON w.id = b.worker_id
         LEFT JOIN reviews r ON w.id = r.worker_id
+        LEFT JOIN certifications c ON w.id = c.worker_id
         GROUP BY w.id
         ORDER BY w.created_at DESC
       `);
@@ -527,6 +532,7 @@ module.exports = (pool, logger, helpers) => {
           w.area,
           w.approval_status,
           w.verification_status,
+          w.email_verified,
           w.created_at,
           w.last_completion_email_sent,
           COUNT(c.id) as cert_count,
@@ -536,7 +542,7 @@ module.exports = (pool, logger, helpers) => {
         WHERE w.approval_status = 'pending'
         GROUP BY w.id
         ORDER BY
-          CASE WHEN w.verification_status = 'verified' THEN 0 ELSE 1 END,
+          CASE WHEN w.email_verified = true THEN 0 ELSE 1 END,
           w.created_at ASC
       `);
 

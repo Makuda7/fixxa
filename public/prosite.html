@@ -873,9 +873,22 @@ tr.cancelled-row td {
     </div>
 
     <div>
-      <label for="experience">Work Experience *</label>
-      <textarea id="experience" name="experience" rows="3" placeholder="How many years? Previous companies? Notable projects?" required></textarea>
-      <small style="color:#666; font-size:0.85rem;">Share your professional background and expertise</small>
+      <label for="experience">Years of Experience *</label>
+      <select id="experience" name="experience" required>
+        <option value="">Select experience level</option>
+        <option value="Less than 1 year">Less than 1 year</option>
+        <option value="1-2 years">1-2 years</option>
+        <option value="2-3 years">2-3 years</option>
+        <option value="3-4 years">3-4 years</option>
+        <option value="4-5 years">4-5 years</option>
+        <option value="5-6 years">5-6 years</option>
+        <option value="6-7 years">6-7 years</option>
+        <option value="7-8 years">7-8 years</option>
+        <option value="8-9 years">8-9 years</option>
+        <option value="9-10 years">9-10 years</option>
+        <option value="10+ years">10+ years</option>
+      </select>
+      <small style="color:#666; font-size:0.85rem;">Select your years of professional experience in this field</small>
     </div>
 
     <!-- Emergency Contacts Section -->
@@ -1906,38 +1919,61 @@ document.getElementById('uploadArea').addEventListener('click', () => {
 document.getElementById('certificationFile').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  
-  // Validate file size (10MB)
-  if (file.size > 10 * 1024 * 1024) {
-    showUploadStatus('File too large. Maximum size is 10MB', 'error');
+
+  console.log('File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+  // Validate file type
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  if (!allowedTypes.includes(file.type)) {
+    showUploadStatus('Invalid file type. Please upload PDF, JPG, PNG, or Word documents only.', 'error');
     e.target.value = '';
     return;
   }
-  
+
+  // Validate file size (10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    showUploadStatus('File too large. Maximum size is 10MB. Your file is ' + (file.size / (1024 * 1024)).toFixed(2) + 'MB', 'error');
+    e.target.value = '';
+    return;
+  }
+
   const formData = new FormData();
   formData.append('certification', file);
-  
-  showUploadStatus('Uploading...', 'success');
-  
+
+  showUploadStatus(`Uploading ${file.name}... Please wait, do not close this page.`, 'success');
+
   try {
+    console.log('Sending upload request...');
     const res = await fetch('/certifications/upload', {
       method: 'POST',
       credentials: 'include',
       body: formData
     });
-    
+
+    console.log('Upload response status:', res.status);
+
+    if (!res.ok) {
+      throw new Error(`Upload failed with status ${res.status}: ${res.statusText}`);
+    }
+
     const data = await res.json();
-    
+    console.log('Upload response data:', data);
+
     if (data.success) {
-      showUploadStatus('Certification uploaded successfully! Awaiting admin approval.', 'success');
+      showUploadStatus(`✅ ${file.name} uploaded successfully! The admin will review it soon.`, 'success');
       e.target.value = '';
       await loadCertifications();
     } else {
-      showUploadStatus(data.error || 'Upload failed', 'error');
+      // Check for specific error codes
+      if (data.code === 'VIRUS_DETECTED') {
+        showUploadStatus('⚠️ Security scan failed - malware detected in file. Please ensure your file is safe and try again.', 'error');
+      } else {
+        showUploadStatus('❌ Upload failed: ' + (data.error || 'Unknown error. Please try again or contact support.'), 'error');
+      }
     }
   } catch (error) {
     console.error('Upload error:', error);
-    showUploadStatus('Error uploading certification', 'error');
+    showUploadStatus('❌ Network error during upload. Please check your internet connection and try again. If the problem persists, contact support.', 'error');
   }
 });
 

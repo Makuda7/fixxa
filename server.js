@@ -845,6 +845,18 @@ async function startServer() {
     const { runWorkerSpecialtiesMigration } = require('./migrations/worker_specialties');
     await runWorkerSpecialtiesMigration(pool, logger);
 
+    // Add completion email timestamp column
+    const { addCompletionEmailTimestamp } = require('./migrations/add_completion_email_timestamp');
+    await addCompletionEmailTimestamp(pool, logger);
+
+    // Add verification checkbox columns
+    const { addVerificationCheckboxes } = require('./migrations/add_verification_checkboxes');
+    await addVerificationCheckboxes(pool, logger);
+
+    // Fix verification_status for existing verified workers
+    const { fixVerificationStatus } = require('./migrations/fix_verification_status');
+    await fixVerificationStatus(pool, logger);
+
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler

@@ -24,7 +24,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   // Register
   router.post('/register', registrationLimiter, registerValidation, async (req, res) => {
 
-    const { type, name, email, phone, city, suburb, password, speciality, acceptTerms, referralSource } = req.body;
+    const { type, name, email, phone, city, suburb, password, speciality, experience, acceptTerms, referralSource } = req.body;
 
     try {
 
@@ -64,9 +64,9 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, is_active, verification_status, approval_status, verification_token, terms_accepted, terms_accepted_at, terms_version, referral_source)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, true, 'pending', 'pending', $8, true, CURRENT_TIMESTAMP, $9, $10) RETURNING id, name, email, phone, city, speciality`,
-          [name, email, phone, city, suburb || null, hashedPassword, speciality, verificationToken, termsVersion, referralSource]
+          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, experience, is_active, verification_status, approval_status, verification_token, terms_accepted, terms_accepted_at, terms_version, referral_source)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, 'pending', 'pending', $9, true, CURRENT_TIMESTAMP, $10, $11) RETURNING id, name, email, phone, city, speciality, experience`,
+          [name, email, phone, city, suburb || null, hashedPassword, speciality, experience || null, verificationToken, termsVersion, referralSource]
         );
       } else {
         result = await pool.query(
@@ -529,12 +529,11 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
         if (result.rows.length > 0) {
           const worker = result.rows[0];
-          const isVerified = worker.email_verified || worker.verification_status === 'verified';
 
           res.json({
             authenticated: true,
             worker: req.session.user,
-            emailVerified: isVerified
+            emailVerified: worker.email_verified || false
           });
         } else {
           res.json({ authenticated: true, worker: req.session.user, emailVerified: false });

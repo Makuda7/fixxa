@@ -130,11 +130,89 @@ module.exports = (pool, logger) => {
     }
   });
 
+  // Admin: Upload certification on behalf of worker (temporary helper feature)
+  router.post('/admin/upload-for-worker/:workerId', requireAuth, adminOnly, upload.single('certification'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      const workerId = parseInt(req.params.workerId);
+      const fileName = req.file.originalname;
+      const fileType = req.file.mimetype.startsWith('image/') ? 'image' : 'document';
+
+      // STEP 1: Virus scan
+      logger.info('Admin uploading certification for worker', { workerId, fileName, adminEmail: req.session.user.email });
+      const scanResult = await scanFile(req.file);
+
+      if (!scanResult.clean) {
+        logger.warn('VIRUS DETECTED in admin certification upload', {
+          workerId,
+          fileName,
+          viruses: scanResult.foundViruses,
+          adminEmail: req.session.user.email
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: 'File failed security scan - malware detected.',
+          code: 'VIRUS_DETECTED'
+        });
+      }
+
+      // STEP 2: Upload to Cloudinary
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'fixxa/certifications',
+            resource_type: 'auto',
+            public_id: `cert-${workerId}-${Date.now()}`,
+            type: 'upload',
+            access_mode: 'public',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const cloudinaryResult = await uploadPromise;
+      const fileUrl = cloudinaryResult.secure_url;
+      const cloudinaryId = cloudinaryResult.public_id;
+
+      const result = await pool.query(
+        'INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [workerId, fileUrl, cloudinaryId, fileName, fileType, 'pending']
+      );
+
+      const certificationId = result.rows[0].id;
+
+      logger.info('Admin uploaded certification for worker', {
+        workerId,
+        certificationId,
+        cloudinaryId,
+        adminEmail: req.session.user.email
+      });
+
+      res.json({
+        success: true,
+        message: 'Certification uploaded successfully on behalf of worker',
+        certification: result.rows[0]
+      });
+    } catch (error) {
+      logger.error('Admin certification upload error', { error: error.message, workerId: req.params.workerId });
+      console.error('Admin certification upload error:', error);
+      res.status(500).json({ success: false, error: 'Failed to upload certification' });
+    }
+  });
+
   // Get worker's certifications
   router.get('/my-certifications', requireAuth, workerOnly, async (req, res) => {
     try {
       const workerId = req.session.user.id;
-      
+
       const result = await pool.query(
         'SELECT * FROM certifications WHERE worker_id = $1 ORDER BY uploaded_at DESC',
         [workerId]

@@ -179,6 +179,27 @@ button:hover { background:#228b22; }
             Examples: Plumber, Electrician, Carpenter, Painter, Gardener, Cleaner, etc.
           </small>
         </div>
+
+        <div class="input-group">
+          <label for="registerExperience">Years of Experience:</label>
+          <select id="registerExperience">
+            <option value="">Select experience level</option>
+            <option value="Less than 1 year">Less than 1 year</option>
+            <option value="1-2 years">1-2 years</option>
+            <option value="2-3 years">2-3 years</option>
+            <option value="3-4 years">3-4 years</option>
+            <option value="4-5 years">4-5 years</option>
+            <option value="5-6 years">5-6 years</option>
+            <option value="6-7 years">6-7 years</option>
+            <option value="7-8 years">7-8 years</option>
+            <option value="8-9 years">8-9 years</option>
+            <option value="9-10 years">9-10 years</option>
+            <option value="10+ years">10+ years</option>
+          </select>
+          <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+            Select your years of professional experience in this field
+          </small>
+        </div>
       </div>
 
       <!-- Legal Consent -->
@@ -281,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const professionalFields = document.getElementById('professionalFields');
   const professionalNotice = document.getElementById('professionalNotice');
   const specialityInput = document.getElementById('registerSpeciality');
+  const experienceInput = document.getElementById('registerExperience');
 
   // Show/hide professional fields, notice and toggle required attribute
   registerType.addEventListener('change', () => {
@@ -291,8 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dynamically toggle required attribute
     if (isProfessional) {
       specialityInput.setAttribute('required', 'required');
+      experienceInput.setAttribute('required', 'required');
     } else {
       specialityInput.removeAttribute('required');
+      experienceInput.removeAttribute('required');
     }
   });
 
@@ -312,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const termsAccepted = document.getElementById('acceptTerms').checked;
     const referralSource = document.getElementById('referralSource').value;
     const speciality = specialityInput.value.trim();
+    const experience = experienceInput.value;
 
     // Validation
     if (!type) return messageDiv.innerHTML = '<div class="message error">Please select account type.</div>';
@@ -320,11 +345,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!referralSource) return messageDiv.innerHTML = '<div class="message error">Please tell us how you heard about Fixxa.</div>';
     if (password !== password2) return messageDiv.innerHTML = '<div class="message error">Passwords do not match!</div>';
     if (type === 'professional' && !speciality) return messageDiv.innerHTML = '<div class="message error">Speciality is required for professionals.</div>';
+    if (type === 'professional' && !experience) return messageDiv.innerHTML = '<div class="message error">Years of experience is required for professionals.</div>';
 
     try {
       const payload = { type, name, email, phone, city, password, acceptTerms: termsAccepted, referralSource };
       if (suburb) payload.suburb = suburb;
-      if (type === 'professional') payload.speciality = speciality;
+      if (type === 'professional') {
+        payload.speciality = speciality;
+        payload.experience = experience;
+      }
 
       const res = await fetch('/register', {
         method: 'POST',
