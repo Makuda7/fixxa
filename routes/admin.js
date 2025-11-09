@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { cloudinary } = require('../config/cloudinary');
+const multer = require('multer');
+const { cloudinary, profilePicStorage } = require('../config/cloudinary');
+
+// Configure multer for profile picture uploads
+const profilePicUpload = multer({
+  storage: profilePicStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and WEBP images are allowed'));
+    }
+  }
+});
 
 module.exports = (pool, logger, helpers) => {
   const { requireAuth, adminOnly } = require('../middleware/auth');
@@ -1790,6 +1806,72 @@ module.exports = (pool, logger, helpers) => {
     } catch (error) {
       logger.error('Failed to fix worker data', { error: error.message, workerId: req.params.workerId });
       res.status(500).json({ success: false, error: 'Failed to fix worker data' });
+    }
+  });
+
+  // Upload worker profile photo (admin only)
+  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, profilePicUpload.single('profilePicture'), async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const adminEmail = req.session.user.email;
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      // Get the worker's current profile picture to delete old one
+      const workerResult = await pool.query(
+        'SELECT profile_picture FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const oldProfilePic = workerResult.rows[0].profile_picture;
+
+      // Delete old profile picture from Cloudinary if it exists
+      if (oldProfilePic && oldProfilePic.includes('cloudinary')) {
+        try {
+          const urlParts = oldProfilePic.split('/');
+          const publicIdWithExt = urlParts[urlParts.length - 1];
+          const publicId = `profile_pictures/${publicIdWithExt.split('.')[0]}`;
+          await cloudinary.uploader.destroy(publicId);
+        } catch (deleteError) {
+          logger.warn('Failed to delete old profile picture from Cloudinary', {
+            error: deleteError.message,
+            oldProfilePic
+          });
+        }
+      }
+
+      // Get the new image URL from Cloudinary
+      const imageUrl = req.file.path;
+
+      // Update worker's profile picture in database
+      await pool.query(
+        'UPDATE workers SET profile_picture = $1 WHERE id = $2',
+        [imageUrl, workerId]
+      );
+
+      logger.info('Admin uploaded worker profile photo', {
+        workerId,
+        imageUrl,
+        adminEmail
+      });
+
+      res.json({
+        success: true,
+        imageUrl,
+        message: 'Profile picture updated successfully'
+      });
+    } catch (error) {
+      logger.error('Failed to upload worker profile photo', {
+        error: error.message,
+        workerId: req.params.workerId
+      });
+      res.status(500).json({ success: false, error: 'Failed to upload profile picture' });
     }
   });
 

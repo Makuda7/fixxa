@@ -1715,6 +1715,79 @@
       }
     }
 
+    // Upload worker profile photo
+    async function uploadWorkerPhoto(workerId) {
+      const fileInput = document.getElementById('profilePictureInput');
+      const statusEl = document.getElementById('uploadStatus');
+
+      // Trigger file input click
+      fileInput.click();
+
+      // Handle file selection
+      fileInput.onchange = async () => {
+        if (!fileInput.files || fileInput.files.length === 0) {
+          return;
+        }
+
+        const file = fileInput.files[0];
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          statusEl.style.display = 'block';
+          statusEl.style.color = '#dc3545';
+          statusEl.textContent = 'Please select an image file';
+          return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          statusEl.style.display = 'block';
+          statusEl.style.color = '#dc3545';
+          statusEl.textContent = 'File size must be less than 5MB';
+          return;
+        }
+
+        try {
+          statusEl.style.display = 'block';
+          statusEl.style.color = '#666';
+          statusEl.textContent = 'Uploading...';
+
+          const formData = new FormData();
+          formData.append('profilePicture', file);
+
+          const response = await fetch(`/admin/upload-worker-photo/${workerId}`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // Update preview image
+            const previewImg = document.getElementById('workerProfilePreview');
+            previewImg.src = data.imageUrl;
+
+            statusEl.style.color = '#28a745';
+            statusEl.textContent = 'Profile picture updated successfully!';
+
+            // Refresh professionals list to show new image
+            loadProfessionals();
+
+            // Clear file input
+            fileInput.value = '';
+          } else {
+            statusEl.style.color = '#dc3545';
+            statusEl.textContent = data.error || 'Failed to upload image';
+          }
+        } catch (error) {
+          console.error('Error uploading profile photo:', error);
+          statusEl.style.color = '#dc3545';
+          statusEl.textContent = 'Error uploading image';
+        }
+      };
+    }
+
     // Switch tabs
     function switchTab(tabName, target) {
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
@@ -2891,6 +2964,35 @@
         const modalBody = document.getElementById('workerDetailBody');
         modalBody.innerHTML = `
           <div style="padding: 1.5rem;">
+            <!-- Profile Picture Upload -->
+            <div class="worker-detail-section">
+              <h4>Profile Picture</h4>
+              <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+                <div style="position: relative;">
+                  <img id="workerProfilePreview"
+                       src="${worker.image || '/images/default-profile.svg'}"
+                       alt="${worker.name}"
+                       style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #4a7c59;">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                  <input type="file"
+                         id="profilePictureInput"
+                         accept="image/*"
+                         style="display: none;">
+                  <button class="btn btn-primary"
+                          data-action="upload-worker-photo"
+                          data-worker-id="${worker.id}"
+                          style="width: 100%; margin-bottom: 0.5rem;">
+                    📷 Upload New Photo
+                  </button>
+                  <p style="font-size: 0.85rem; color: #666; margin: 0.5rem 0 0 0;">
+                    Upload a professional profile picture. Recommended: Square image, at least 400x400px.
+                  </p>
+                  <p id="uploadStatus" style="font-size: 0.85rem; margin: 0.5rem 0 0 0; display: none;"></p>
+                </div>
+              </div>
+            </div>
+
             <!-- Basic Information -->
             <div class="worker-detail-section">
               <h4>Basic Information</h4>
@@ -3105,6 +3207,11 @@
             const toggleWorkerId = parseInt(target.getAttribute('data-worker-id'));
             const isActive = target.getAttribute('data-is-active') === 'true';
             toggleProfessionalStatus(toggleWorkerId, isActive);
+            break;
+          case 'upload-worker-photo':
+            e.preventDefault();
+            const uploadWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            uploadWorkerPhoto(uploadWorkerId);
             break;
 
           // Pending worker actions
