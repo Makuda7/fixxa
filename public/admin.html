@@ -1788,6 +1788,40 @@
       };
     }
 
+    // Toggle worker verified status
+    async function toggleVerifiedStatus(workerId, currentVerified) {
+      try {
+        const newVerified = !currentVerified;
+        const action = newVerified ? 'verify' : 'remove verification from';
+
+        if (!confirm(`Are you sure you want to ${action} this worker?`)) {
+          return;
+        }
+
+        const response = await fetch(`/admin/toggle-verified/${workerId}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_verified: newVerified })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Refresh the worker detail modal to show updated status
+          fetchWorkerDetails(workerId);
+          // Refresh the professionals list
+          loadProfessionals();
+          alert(`Worker ${newVerified ? 'verified' : 'unverified'} successfully!`);
+        } else {
+          alert(`Failed to update verification: ${data.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error toggling verification:', error);
+        alert('Error updating verification status');
+      }
+    }
+
     // Switch tabs
     function switchTab(tabName, target) {
       document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
@@ -3027,7 +3061,16 @@
                 </div>
                 <div class="detail-item">
                   <div class="detail-label">Verified</div>
-                  <div class="detail-value">${worker.is_verified ? '✅ Yes' : '❌ No'}</div>
+                  <div class="detail-value">
+                    ${worker.is_verified ? '✅ Yes' : '❌ No'}
+                    <button class="btn btn-sm"
+                            data-action="toggle-verified"
+                            data-worker-id="${worker.id}"
+                            data-is-verified="${worker.is_verified}"
+                            style="margin-left: 10px; padding: 4px 12px; font-size: 0.85rem; background: ${worker.is_verified ? '#dc3545' : '#28a745'}; color: white;">
+                      ${worker.is_verified ? 'Remove Verification' : 'Mark as Verified'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3243,6 +3286,11 @@
           case 'save-verification':
             const saveWorkerId = parseInt(target.getAttribute('data-worker-id'));
             saveVerificationStates(saveWorkerId, true);
+            break;
+          case 'toggle-verified':
+            const toggleVerifyWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            const currentVerified = target.getAttribute('data-is-verified') === 'true';
+            toggleVerifiedStatus(toggleVerifyWorkerId, currentVerified);
             break;
 
           // Support and suggestion actions

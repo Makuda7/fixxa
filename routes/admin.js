@@ -1875,6 +1875,55 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Toggle worker verified status (admin only)
+  router.post('/toggle-verified/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const { is_verified } = req.body;
+      const adminEmail = req.session.user.email;
+
+      // Validate input
+      if (typeof is_verified !== 'boolean') {
+        return res.status(400).json({ success: false, error: 'is_verified must be a boolean' });
+      }
+
+      // Update worker verification status
+      const result = await pool.query(
+        'UPDATE workers SET is_verified = $1 WHERE id = $2 RETURNING id, name, is_verified',
+        [is_verified, workerId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const worker = result.rows[0];
+
+      logger.info('Admin toggled worker verification status', {
+        workerId,
+        workerName: worker.name,
+        isVerified: is_verified,
+        adminEmail
+      });
+
+      res.json({
+        success: true,
+        message: `Worker ${is_verified ? 'verified' : 'unverified'} successfully`,
+        worker: {
+          id: worker.id,
+          name: worker.name,
+          is_verified: worker.is_verified
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to toggle worker verification status', {
+        error: error.message,
+        workerId: req.params.workerId
+      });
+      res.status(500).json({ success: false, error: 'Failed to update verification status' });
+    }
+  });
+
   // Get worker's current specialties
   router.get('/worker-specialties/:workerId', requireAuth, adminOnly, async (req, res) => {
     try {
