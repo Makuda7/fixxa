@@ -1924,6 +1924,57 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Quick fix: Set specific worker as verified by name (emergency endpoint)
+  router.post('/quick-verify-worker', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerName } = req.body;
+      const adminEmail = req.session.user.email;
+
+      if (!workerName) {
+        return res.status(400).json({ success: false, error: 'Worker name is required' });
+      }
+
+      // Update worker verification status
+      const result = await pool.query(
+        `UPDATE workers
+         SET is_verified = true
+         WHERE LOWER(name) LIKE LOWER($1)
+         RETURNING id, name, is_verified, approval_status`,
+        [`%${workerName}%`]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: `No worker found with name containing "${workerName}"` });
+      }
+
+      const worker = result.rows[0];
+
+      logger.info('Admin quick-verified worker by name', {
+        workerId: worker.id,
+        workerName: worker.name,
+        searchName: workerName,
+        adminEmail
+      });
+
+      res.json({
+        success: true,
+        message: `${worker.name} has been verified successfully`,
+        worker: {
+          id: worker.id,
+          name: worker.name,
+          is_verified: worker.is_verified,
+          approval_status: worker.approval_status
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to quick-verify worker', {
+        error: error.message,
+        workerName: req.body.workerName
+      });
+      res.status(500).json({ success: false, error: 'Failed to verify worker' });
+    }
+  });
+
   // Get worker's current specialties
   router.get('/worker-specialties/:workerId', requireAuth, adminOnly, async (req, res) => {
     try {
