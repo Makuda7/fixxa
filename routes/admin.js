@@ -678,24 +678,19 @@ module.exports = (pool, logger, helpers) => {
 
       const worker = workerResult.rows[0];
 
-      // Check if worker has any approved certifications
-      const certResult = await pool.query(
-        'SELECT COUNT(*) FROM certifications WHERE worker_id = $1 AND status = $2',
-        [id, 'approved']
-      );
-
-      const hasApprovedCerts = parseInt(certResult.rows[0].count) > 0;
-
       // Build update query dynamically based on provided suburb data
+      // Always set is_verified = true when approving a worker
+      // The "Verified" badge indicates admin approval, not certifications
+      // Certifications create the separate "Certified" badge
       let updateQuery = `UPDATE workers
          SET approval_status = 'approved',
              is_active = true,
-             is_verified = $1,
+             is_verified = true,
              approval_date = NOW(),
-             approved_by = $2`;
+             approved_by = $1`;
 
-      const params = [hasApprovedCerts, adminEmail];
-      let paramIndex = 3;
+      const params = [adminEmail];
+      let paramIndex = 2;
 
       // Add suburb corrections if provided
       if (province !== undefined && province !== null) {
@@ -1741,6 +1736,60 @@ module.exports = (pool, logger, helpers) => {
     } catch (error) {
       logger.error('Failed to fetch specialties', { error: error.message });
       res.status(500).json({ success: false, error: 'Failed to fetch specialties' });
+    }
+  });
+
+  // Fix worker data (admin utility endpoint)
+  router.post('/fix-worker/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const { rating, is_verified } = req.body;
+      const adminEmail = req.session.user.email;
+
+      const fixes = [];
+      const updates = [];
+      const params = [];
+      let paramIndex = 1;
+
+      // Fix rating if provided
+      if (rating !== undefined) {
+        updates.push(`rating = $${paramIndex}`);
+        params.push(parseFloat(rating));
+        paramIndex++;
+        fixes.push(`Set rating to ${rating}`);
+      }
+
+      // Fix is_verified if provided
+      if (is_verified !== undefined) {
+        updates.push(`is_verified = $${paramIndex}`);
+        params.push(is_verified);
+        paramIndex++;
+        fixes.push(`Set is_verified to ${is_verified}`);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ success: false, error: 'No fixes specified' });
+      }
+
+      params.push(workerId);
+      const query = `UPDATE workers SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
+
+      await pool.query(query, params);
+
+      logger.info('Admin fixed worker data', {
+        workerId,
+        fixes,
+        adminEmail
+      });
+
+      res.json({
+        success: true,
+        message: `Applied fixes: ${fixes.join(', ')}`,
+        fixes
+      });
+    } catch (error) {
+      logger.error('Failed to fix worker data', { error: error.message, workerId: req.params.workerId });
+      res.status(500).json({ success: false, error: 'Failed to fix worker data' });
     }
   });
 
