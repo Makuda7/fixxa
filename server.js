@@ -104,7 +104,8 @@ const cspConfig = {
       baseUri: ["'self'"], // Restrict <base> tag to same origin
       formAction: ["'self'"], // Forms can only submit to same origin
       frameAncestors: ["'none'"], // Prevent being embedded in iframes (clickjacking protection)
-      upgradeInsecureRequests: [], // Upgrade HTTP to HTTPS automatically
+      // upgradeInsecureRequests only in production
+      ...(process.env.NODE_ENV === 'production' ? { upgradeInsecureRequests: [] } : {})
     },
   },
   crossOriginEmbedderPolicy: false, // Disabled: Required for Cloudinary to work
@@ -122,13 +123,11 @@ const cspConfig = {
 if (process.env.NODE_ENV === 'production') {
   app.use(helmet(cspConfig));
 } else {
-  // Development mode: Enable CSP but in report-only mode for testing
+  // Development mode: Disable CSP and HSTS to allow local HTTP development
   app.use(helmet({
     ...cspConfig,
-    contentSecurityPolicy: {
-      ...cspConfig.contentSecurityPolicy,
-      reportOnly: false, // Set to true to test without blocking
-    },
+    contentSecurityPolicy: false, // Disabled in development to prevent upgrade-insecure-requests
+    strictTransportSecurity: false, // Disabled in development to allow HTTP
   }));
 }
 
@@ -326,25 +325,26 @@ const isReactRoute = (req) => {
 // Serve React static files for /app path
 app.use('/app', express.static(path.join(__dirname, 'client/build')));
 
-// Serve React static assets (CSS, JS, images) directly for subdomain access
-app.use('/static', (req, res, next) => {
-  const host = req.get('host') || '';
-  const isAppSubdomain = host.startsWith('app.') || host.includes('app.fixxa');
+// Serve React static assets (CSS, JS) directly - needed when accessing /app/
+// These get requested as /static/js/... from the React build
+app.use('/static', express.static(path.join(__dirname, 'client/build/static')));
 
-  if (isAppSubdomain) {
-    express.static(path.join(__dirname, 'client/build/static'))(req, res, next);
+// Serve manifest.json and other root files from React build
+app.get('/manifest.json', (req, res, next) => {
+  const manifestPath = path.join(__dirname, 'client/build/manifest.json');
+  const fs = require('fs');
+  if (fs.existsSync(manifestPath)) {
+    res.sendFile(manifestPath);
   } else {
     next();
   }
 });
 
-// Serve React images for subdomain access
-app.use('/images', (req, res, next) => {
-  const host = req.get('host') || '';
-  const isAppSubdomain = host.startsWith('app.') || host.includes('app.fixxa');
-
-  if (isAppSubdomain) {
-    express.static(path.join(__dirname, 'client/build/images'))(req, res, next);
+app.get('/favicon.ico', (req, res, next) => {
+  const faviconPath = path.join(__dirname, 'client/build/favicon.ico');
+  const fs = require('fs');
+  if (fs.existsSync(faviconPath)) {
+    res.sendFile(faviconPath);
   } else {
     next();
   }
