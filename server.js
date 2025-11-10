@@ -313,9 +313,50 @@ io.on('connection', (socket) => {
   });
 });
 
-// Root route - serve Index.html
+// Serve React app for specific routes or subdomain
+// Check if request is for app subdomain or /app/* path
+const isReactRoute = (req) => {
+  const host = req.get('host') || '';
+  const isAppSubdomain = host.startsWith('app.') || host.includes('app.fixxa');
+  const isAppPath = req.path.startsWith('/app');
+  const isReactAPIRoute = req.path.match(/^\/(login|register|dashboard|home|service|profile)/);
+  return isAppSubdomain || isAppPath || isReactAPIRoute;
+};
+
+// Serve React static files
+app.use('/app', express.static(path.join(__dirname, 'client/build')));
+
+// Serve React app for app subdomain or /app/* paths
+app.use((req, res, next) => {
+  if (isReactRoute(req)) {
+    // If it's an API call, let it pass through to the API routes
+    if (req.path.startsWith('/api/') ||
+        req.path.startsWith('/auth/') ||
+        req.path.startsWith('/workers/') ||
+        req.path.startsWith('/bookings/') ||
+        req.path.startsWith('/reviews/') ||
+        req.path.startsWith('/certifications/') ||
+        req.path.startsWith('/messages/') ||
+        req.path.startsWith('/notifications/') ||
+        req.path.startsWith('/uploads/') ||
+        req.path.match(/\.(json|xml|txt)$/)) {
+      return next();
+    }
+
+    // Serve React index.html for React routes
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  } else {
+    next();
+  }
+});
+
+// Root route - serve Index.html for main site
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'Index.html'));
+  if (isReactRoute(req)) {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'Index.html'));
+  }
 });
 
 // Error handling middleware

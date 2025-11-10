@@ -26,3 +26,6 @@ uploads/worker-photos/*
 # IDE
 .vscode/
 .idea/
+
+# React build
+client/build/
