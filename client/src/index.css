@@ -1,3 +1,22 @@
+/* Fixxa Color Scheme */
+:root {
+  --fixxa-primary: forestgreen;
+  --fixxa-primary-dark: rgb(17, 72, 17);
+  --fixxa-secondary: rgb(147, 126, 108);
+  --fixxa-bg-light: RGB(246, 243, 240);
+  --fixxa-bg-gray: rgb(193, 179, 167);
+  --fixxa-border: rgb(147, 126, 108);
+  --fixxa-text-dark: #333;
+  --fixxa-text-light: #666;
+  --fixxa-success: #28a745;
+  --fixxa-error: #dc3545;
+  --fixxa-warning: #ffc107;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,9 +24,29 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--fixxa-bg-light);
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+a {
+  color: var(--fixxa-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--fixxa-primary-dark);
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  transform: scale(1.02);
 }

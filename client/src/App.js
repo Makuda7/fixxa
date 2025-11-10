@@ -1,34 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import Home from './pages/Home';
 import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 import './App.css';
-
-// Placeholder components (we'll build these next)
-const HomePage = () => (
-  <div style={{ padding: '2rem', textAlign: 'center' }}>
-    <h1>Welcome to Fixxa</h1>
-    <p>Find skilled professionals for any task, anytime, anywhere.</p>
-    <div style={{ marginTop: '2rem' }}>
-      <a href="/login" style={{ margin: '0 1rem' }}>Login</a>
-      <a href="/register" style={{ margin: '0 1rem' }}>Register</a>
-    </div>
-  </div>
-);
-
-const RegisterPage = () => (
-  <div style={{ padding: '2rem', textAlign: 'center' }}>
-    <h1>Register</h1>
-    <p>Registration page will be built here</p>
-  </div>
-);
-
-const DashboardPage = () => (
-  <div style={{ padding: '2rem', textAlign: 'center' }}>
-    <h1>Dashboard</h1>
-    <p>Worker dashboard will be built here</p>
-  </div>
-);
 
 const LoadingSpinner = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -56,21 +35,25 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      {/* Catch all - redirect to home */}
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+      <Footer />
+    </>
   );
 }
 
