@@ -323,8 +323,32 @@ const isReactRoute = (req) => {
   return isAppSubdomain || isAppPath || isReactAPIRoute;
 };
 
-// Serve React static files
+// Serve React static files for /app path
 app.use('/app', express.static(path.join(__dirname, 'client/build')));
+
+// Serve React static assets (CSS, JS, images) directly for subdomain access
+app.use('/static', (req, res, next) => {
+  const host = req.get('host') || '';
+  const isAppSubdomain = host.startsWith('app.') || host.includes('app.fixxa');
+
+  if (isAppSubdomain) {
+    express.static(path.join(__dirname, 'client/build/static'))(req, res, next);
+  } else {
+    next();
+  }
+});
+
+// Serve React images for subdomain access
+app.use('/images', (req, res, next) => {
+  const host = req.get('host') || '';
+  const isAppSubdomain = host.startsWith('app.') || host.includes('app.fixxa');
+
+  if (isAppSubdomain) {
+    express.static(path.join(__dirname, 'client/build/images'))(req, res, next);
+  } else {
+    next();
+  }
+});
 
 // Serve React app for app subdomain or /app/* paths
 app.use((req, res, next) => {
@@ -339,7 +363,8 @@ app.use((req, res, next) => {
         req.path.startsWith('/messages/') ||
         req.path.startsWith('/notifications/') ||
         req.path.startsWith('/uploads/') ||
-        req.path.match(/\.(json|xml|txt)$/)) {
+        req.path.startsWith('/static/') ||
+        req.path.match(/\.(json|xml|txt|js|css|png|jpg|jpeg|gif|svg|webp|ico)$/)) {
       return next();
     }
 
