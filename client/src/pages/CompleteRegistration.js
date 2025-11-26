@@ -393,13 +393,29 @@ const CompleteRegistration = () => {
 
       console.log('Submitting sanitized registration data:', sanitizedData);
 
+      // Try to stringify and catch any errors
+      let jsonBody;
+      try {
+        jsonBody = JSON.stringify(sanitizedData);
+        console.log('Successfully stringified data, length:', jsonBody.length);
+      } catch (stringifyError) {
+        console.error('JSON.stringify failed:', stringifyError);
+        console.error('Failed on data:', sanitizedData);
+        setMessage({
+          text: `Failed to prepare data: ${stringifyError.message}. Please check all fields.`,
+          type: 'error'
+        });
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/worker/complete-registration`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(sanitizedData),
+        body: jsonBody,
       });
 
       const data = await response.json();
