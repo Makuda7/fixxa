@@ -418,7 +418,28 @@ const CompleteRegistration = () => {
         body: jsonBody,
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers.get('content-type'));
+
+      // Get response text first to see what we're getting
+      const responseText = await response.text();
+      console.log('Response text:', responseText.substring(0, 500));
+
+      // Try to parse as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('Successfully parsed response:', data);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        console.error('Full response text:', responseText);
+        setMessage({
+          text: 'Server returned invalid response. Please try again or contact support.',
+          type: 'error'
+        });
+        setLoading(false);
+        return;
+      }
 
       if (data.success) {
         // Clear localStorage since registration is complete
