@@ -5,9 +5,12 @@ import ProgressBar from '../components/ProgressBar';
 import DocumentUpload from '../components/DocumentUpload';
 import './CompleteRegistration.css';
 
+// Version 2.0 - Fixed JSON serialization for form submission
 const CompleteRegistration = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+
+  console.log('CompleteRegistration v2.0 - Form submission fix active');
 
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
