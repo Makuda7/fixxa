@@ -380,12 +380,12 @@ const CompleteRegistration = () => {
         documentType: formData.documentType,
         idNumber: formData.idNumber,
         passportNumber: formData.passportNumber,
-        idDocumentUrl: formData.idDocumentUrl,
-        idDocumentCloudinaryId: formData.idDocumentCloudinaryId,
-        proofOfAddressUrl: formData.proofOfAddressUrl,
-        proofOfAddressCloudinaryId: formData.proofOfAddressCloudinaryId,
-        certificationUrls: formData.certificationUrls || [],
-        certificationCloudinaryIds: formData.certificationCloudinaryIds || [],
+        // Extract URL from uploaded file object
+        idDocumentUrl: formData.idDocument?.url || formData.idDocumentUrl,
+        // Extract URL from uploaded file object
+        proofOfAddressUrl: formData.proofOfAddress?.url || formData.proofOfAddressUrl,
+        // Extract URLs from certification file objects
+        certificationUrls: formData.certifications?.map(cert => cert?.url).filter(Boolean) || formData.certificationUrls || [],
         yearsExperience: formData.yearsExperience,
         portfolioDescription: formData.portfolioDescription,
         references: formData.references,
