@@ -365,13 +365,38 @@ const CompleteRegistration = () => {
     setMessage({ text: '', type: '' });
 
     try {
+      // Create a sanitized version of formData without File objects
+      // Only send URLs and metadata since files were already uploaded
+      const sanitizedData = {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        province: formData.province,
+        postalCode: formData.postalCode,
+        documentType: formData.documentType,
+        idNumber: formData.idNumber,
+        passportNumber: formData.passportNumber,
+        idDocumentUrl: formData.idDocumentUrl,
+        idDocumentCloudinaryId: formData.idDocumentCloudinaryId,
+        proofOfAddressUrl: formData.proofOfAddressUrl,
+        proofOfAddressCloudinaryId: formData.proofOfAddressCloudinaryId,
+        certificationUrls: formData.certificationUrls || [],
+        certificationCloudinaryIds: formData.certificationCloudinaryIds || [],
+        yearsExperience: formData.yearsExperience,
+        portfolioDescription: formData.portfolioDescription,
+        references: formData.references,
+      };
+
+      console.log('Submitting sanitized registration data:', sanitizedData);
+
       const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/worker/complete-registration`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(sanitizedData),
       });
 
       const data = await response.json();
