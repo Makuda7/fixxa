@@ -221,6 +221,12 @@ module.exports = (pool, logger) => {
       res.json({ success: true, certifications: result.rows });
     } catch (error) {
       logger.error('Get certifications error', { error: error.message });
+
+      // If certifications table doesn't exist, return empty array
+      if (error.code === '42P01') {
+        return res.json({ success: true, certifications: [] });
+      }
+
       res.status(500).json({ success: false, error: 'Failed to fetch certifications' });
     }
   });

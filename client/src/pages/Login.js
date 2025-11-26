@@ -27,10 +27,42 @@ const Login = () => {
 
     try {
       const result = await login(email, password);
+      console.log('Login result in component:', result);
+      console.log('Redirect URL:', result.redirect);
+      console.log('User:', result.user);
 
       if (result.success) {
-        // Redirect to dashboard on successful login
-        navigate('/dashboard');
+        // Use the redirect URL from the backend (handles admin, professional, client)
+        if (result.redirect) {
+          console.log('Has redirect, checking value:', result.redirect);
+          // Convert HTML routes to React routes
+          if (result.redirect === '/admin.html') {
+            console.log('Redirecting to /admin');
+            // Use window.location for admin to force full page reload with updated session
+            window.location.href = '/admin';
+          } else if (result.redirect === '/worker-dashboard') {
+            console.log('Redirecting to /worker-dashboard');
+            navigate('/worker-dashboard');
+          } else if (result.redirect === '/client-dashboard') {
+            console.log('Redirecting to /client-dashboard');
+            navigate('/client-dashboard');
+          } else {
+            console.log('Redirecting to:', result.redirect);
+            navigate(result.redirect);
+          }
+        } else {
+          console.log('No redirect in result, using fallback');
+          // Fallback based on user type
+          const userType = result.user?.type;
+          console.log('User type:', userType);
+          if (userType === 'professional') {
+            navigate('/worker-dashboard');
+          } else if (userType === 'client') {
+            navigate('/client-dashboard');
+          } else {
+            navigate('/dashboard');
+          }
+        }
       } else {
         setError(result.error || 'Login failed. Please check your credentials.');
       }

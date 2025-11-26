@@ -1,0 +1,532 @@
+.portfolio-gallery {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.portfolio-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.portfolio-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.75rem;
+  color: #333;
+}
+
+.portfolio-subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+/* Upload Zone */
+.upload-zone {
+  position: relative;
+  border: 3px dashed #ccc;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: #fafafa;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  margin-bottom: 2rem;
+}
+
+.upload-zone:hover {
+  border-color: #228b22;
+  background: #f5fdf5;
+  transform: translateY(-2px);
+}
+
+.upload-zone.dragging {
+  border-color: #228b22;
+  background: #e8f5e9;
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(34, 139, 34, 0.2);
+}
+
+.upload-zone.uploading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.upload-icon {
+  color: #228b22;
+  margin-bottom: 1.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.upload-text {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.upload-action {
+  color: #228b22;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-hint {
+  margin: 0;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-input:disabled {
+  cursor: not-allowed;
+}
+
+/* Upload Status */
+.upload-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.upload-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(34, 139, 34, 0.2);
+  border-top-color: #228b22;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.upload-status p {
+  margin: 0;
+  color: #228b22;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.upload-progress-bar {
+  width: 300px;
+  height: 8px;
+  background: rgba(34, 139, 34, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: #228b22;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+/* Portfolio Grid */
+.portfolio-grid {
+  margin-top: 2rem;
+}
+
+.grid-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #eee;
+}
+
+.grid-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.photo-item {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.photo-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.photo-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* 1:1 Aspect Ratio */
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.photo-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.photo-item:hover .photo-image {
+  transform: scale(1.05);
+}
+
+.photo-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.photo-wrapper:hover .photo-overlay {
+  opacity: 1;
+}
+
+.btn-view {
+  background: white;
+  color: #228b22;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-view:hover {
+  background: #228b22;
+  color: white;
+  transform: scale(1.05);
+}
+
+.btn-delete-photo {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.photo-item:hover .btn-delete-photo {
+  opacity: 1;
+}
+
+.btn-delete-photo:hover {
+  background: #dc3545;
+  transform: scale(1.1);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #999;
+}
+
+.empty-icon {
+  color: #ccc;
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 1.5rem;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #999;
+  font-size: 1rem;
+}
+
+/* Lightbox Modal */
+.lightbox-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lightbox-content {
+  position: relative;
+  width: 90%;
+  max-width: 1200px;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.btn-close-lightbox {
+  position: absolute;
+  top: -50px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-close-lightbox:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.btn-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-prev {
+  left: 20px;
+}
+
+.btn-next {
+  right: 20px;
+}
+
+.lightbox-image-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.lightbox-caption {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: white;
+}
+
+.lightbox-caption p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.lightbox-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn-delete-lightbox {
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-delete-lightbox:hover {
+  background: #dc3545;
+  transform: scale(1.05);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .portfolio-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .upload-zone {
+    padding: 2rem 1rem;
+  }
+
+  .upload-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .btn-nav {
+    padding: 0.75rem;
+  }
+
+  .btn-prev {
+    left: 10px;
+  }
+
+  .btn-next {
+    right: 10px;
+  }
+
+  .lightbox-content {
+    width: 95%;
+    height: 95%;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .upload-zone {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .upload-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .upload-text {
+    font-size: 1rem;
+  }
+
+  .upload-hint {
+    font-size: 0.8rem;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .upload-progress-bar {
+    width: 200px;
+  }
+
+  .btn-close-lightbox {
+    top: 10px;
+    right: 10px;
+  }
+}

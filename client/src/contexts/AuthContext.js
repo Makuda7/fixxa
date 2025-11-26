@@ -25,10 +25,15 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authAPI.checkSession();
+      console.log('Check session response:', response.data);
 
       if (response.data.authenticated) {
+        console.log('User is logged in:', response.data.user);
+        console.log('User type:', response.data.user?.type);
+        console.log('User isAdmin:', response.data.user?.isAdmin);
         setUser(response.data.user);
       } else {
+        console.log('User is not logged in');
         setUser(null);
       }
     } catch (err) {
@@ -43,15 +48,25 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authAPI.login(email, password);
+      console.log('AuthContext - Login response:', response.data);
+      console.log('AuthContext - User from response:', response.data.user);
+      console.log('AuthContext - Redirect from response:', response.data.redirect);
 
       if (response.data.success) {
+        console.log('AuthContext - Login successful, setting user:', response.data.user);
         setUser(response.data.user);
-        return { success: true };
+        console.log('AuthContext - User state updated');
+        return {
+          success: true,
+          user: response.data.user,
+          redirect: response.data.redirect
+        };
       } else {
         setError(response.data.error || 'Login failed');
         return { success: false, error: response.data.error };
       }
     } catch (err) {
+      console.error('AuthContext - Login error:', err);
       const errorMessage = err.response?.data?.error || 'Login failed. Please try again.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -96,8 +111,8 @@ export const AuthProvider = ({ children }) => {
     register,
     checkSession,
     isAuthenticated: !!user,
-    isWorker: user?.userType === 'worker',
-    isClient: user?.userType === 'client',
+    isWorker: user?.type === 'professional',
+    isClient: user?.type === 'client',
     isAdmin: user?.isAdmin === true,
   };
 

@@ -9,12 +9,22 @@ const api = axios.create({
   },
 });
 
+// Log API configuration for debugging
+console.log('API Configuration:', {
+  baseURL: process.env.REACT_APP_API_URL || '(using proxy)',
+  withCredentials: true
+});
+
 // Response interceptor for handling errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Unauthorized - redirect to login
+    // Don't redirect on 401 for check-session endpoint
+    const isCheckSession = error.config?.url?.includes('/check-session');
+
+    if (error.response?.status === 401 && !isCheckSession) {
+      // Unauthorized - redirect to login (except for check-session)
+      console.log('401 Unauthorized - redirecting to login');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -23,10 +33,10 @@ api.interceptors.response.use(
 
 // Auth API calls
 export const authAPI = {
-  checkSession: () => api.get('/auth/check-session'),
-  login: (email, password) => api.post('/auth/login', { email, password }),
-  logout: () => api.post('/auth/logout'),
-  register: (userData) => api.post('/auth/register', userData),
+  checkSession: () => api.get('/check-session'),
+  login: (email, password) => api.post('/login', { email, password }),
+  logout: () => api.post('/logout'),
+  register: (userData) => api.post('/register', userData),
 };
 
 // Worker API calls

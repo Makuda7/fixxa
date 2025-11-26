@@ -1,9 +1,25 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const { uploadLimiter, reviewLimiter } = require('../middleware/rateLimiter');
 const { moderateContent } = require('../utils/contentModeration');
 const { scanFile } = require('../utils/virusScanner');
-const { cloudinary } = require('../config/cloudinary');
+const { cloudinary, reviewPhotoStorage } = require('../config/cloudinary');
+
+// Configure multer for review photo uploads
+const reviewPhotoUpload = multer({
+  storage: reviewPhotoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and WEBP images are allowed'));
+    }
+  }
+});
 
 module.exports = (pool, logger, upload) => {
   const { requireAuth, clientOnly } = require('../middleware/auth');
@@ -692,6 +708,44 @@ module.exports = (pool, logger, upload) => {
     } catch (err) {
       logger.error('Failed to fetch pending reviews', { error: err.message });
       res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+
+  // Upload review photo
+  router.post('/upload-photo', requireAuth, clientOnly, uploadLimiter, reviewPhotoUpload.single('photo'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      logger.info('Review photo uploaded', {
+        userId: req.session.user.id,
+        filename: req.file.filename,
+        size: req.file.size
+      });
+
+      res.json({
+        success: true,
+        photo: {
+          url: req.file.path,
+          thumbnail_url: req.file.path, // Cloudinary handles thumbnails via transformations
+          cloudinary_id: req.file.filename
+        }
+      });
+    } catch (error) {
+      logger.error('Upload review photo error', { error: error.message });
+      console.error('Upload review photo error:', error);
+
+      // Clean up uploaded file if there's an error
+      if (req.file && req.file.filename) {
+        try {
+          await cloudinary.uploader.destroy(req.file.filename);
+        } catch (cleanupError) {
+          logger.error('Cloudinary cleanup error', { error: cleanupError.message });
+        }
+      }
+
+      res.status(500).json({ success: false, error: 'Failed to upload photo' });
     }
   });
 

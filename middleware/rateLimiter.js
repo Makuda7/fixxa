@@ -10,8 +10,25 @@ const globalLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  // Skip rate limiting for health checks
-  skip: (req) => req.path === '/health'
+  // Skip rate limiting for health checks and static files
+  skip: (req) => {
+    // Skip health check endpoint
+    if (req.path === '/health') return true;
+
+    // Skip static files (images, CSS, JS, fonts, etc.)
+    const staticExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico',
+                              '.css', '.js', '.woff', '.woff2', '.ttf', '.eot',
+                              '.map', '.json', '.txt', '.html'];
+    const hasStaticExtension = staticExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
+    if (hasStaticExtension) return true;
+
+    // Skip requests to static directories
+    const staticPaths = ['/images/', '/static/', '/uploads/', '/assets/', '/favicon.ico'];
+    const isStaticPath = staticPaths.some(path => req.path.startsWith(path));
+    if (isStaticPath) return true;
+
+    return false;
+  }
 });
 
 // Auth rate limiter - stricter for authentication endpoints

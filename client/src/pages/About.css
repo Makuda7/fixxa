@@ -1,0 +1,146 @@
+.about-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem 0;
+}
+
+.about-container {
+  max-width: 1100px;
+  margin: 2rem auto 4rem;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 3rem 2rem;
+  border-radius: 15px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+}
+
+.about-container h1 {
+  color: #1d7a91;
+  font-weight: 700;
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.about-container h2 {
+  color: #1d7a91;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+}
+
+.about-container p {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.about-section {
+  margin-bottom: 3rem;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.about-grid.reverse {
+  direction: ltr;
+}
+
+.about-grid img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(29, 122, 145, 0.2);
+  object-fit: cover;
+  max-height: 350px;
+}
+
+/* Team Section (if needed in future) */
+.team {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.team h2 {
+  margin-bottom: 2rem;
+}
+
+.team-members {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.member {
+  background: #f6f3f0;
+  border-radius: 12px;
+  padding: 1rem;
+  width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  cursor: default;
+}
+
+.member:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 20px rgba(29, 122, 145, 0.3);
+}
+
+.member img {
+  width: 100%;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  object-fit: cover;
+  height: 180px;
+  box-shadow: 0 4px 12px rgba(29, 122, 145, 0.25);
+}
+
+.member h3 {
+  margin: 0.5rem 0 0.25rem;
+  color: #1d7a91;
+  font-weight: 700;
+}
+
+.member p {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-members {
+    justify-content: center;
+  }
+
+  .about-container {
+    margin: 1rem;
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .about-container h1 {
+    font-size: 2rem;
+  }
+
+  .about-container h2 {
+    font-size: 1.5rem;
+  }
+
+  .about-container p {
+    font-size: 1rem;
+  }
+
+  .about-container {
+    padding: 2rem 1rem;
+  }
+}

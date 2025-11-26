@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ProfessionalCarousel from '../components/ProfessionalCarousel';
 import './Home.css';
 
 const Home = () => {
@@ -252,63 +253,26 @@ const Home = () => {
         </form>
       </section>
 
-      {/* Featured Professionals */}
-      <section className="featured">
-        <h2>{featuredTitle}</h2>
-        <div className="pro-grid">
-          {loading ? (
-            <p className="loading-text">Loading...</p>
-          ) : workers.length === 0 ? (
-            <p className="no-results">No professionals available at the moment.</p>
-          ) : (
-            workers.map((worker) => {
-              const rating = Math.round(worker.actualRating * 10) / 10;
-              const stars = worker.actualRating > 0 ? renderStars(worker.actualRating) : '☆☆☆☆☆';
-              const verifiedBadge = worker.is_verified ? (
-                <span className="verified-badge">✓ Verified</span>
-              ) : null;
-
-              const location = worker.primary_suburb && worker.province
-                ? `${worker.primary_suburb}, ${worker.province}`
-                : worker.primary_suburb || worker.area || 'Location not set';
-
-              return (
-                <a
-                  key={worker.id}
-                  href={`/profile?id=${worker.id}`}
-                  className="pro-card-link"
-                >
-                  <div className="pro-card">
-                    {worker.distance && (
-                      <div className="distance-badge">{worker.distance} km away</div>
-                    )}
-                    <img
-                      src={worker.image || '/images/default-profile.svg'}
-                      alt={worker.name}
-                    />
-                    <h3>
-                      {worker.name} {verifiedBadge}
-                    </h3>
-                    <p>{worker.speciality} • {location}</p>
-                    <p className="experience-text">
-                      {worker.experience || 'N/A'} years experience
-                    </p>
-                    {rating > 0 ? (
-                      <div className="rating-display">
-                        <span className="rating-number">{rating}</span>
-                        <span className="rating-stars">{stars}</span>
-                        <span className="review-count">({worker.reviewCount})</span>
-                      </div>
-                    ) : (
-                      <div className="no-reviews">No reviews yet</div>
-                    )}
-                  </div>
-                </a>
-              );
-            })
-          )}
-        </div>
-      </section>
+      {/* Featured Professionals - 3D Carousel */}
+      {loading ? (
+        <section className="featured">
+          <p className="loading-text">Loading...</p>
+        </section>
+      ) : workers.length === 0 ? (
+        <section className="featured">
+          <h2>{featuredTitle}</h2>
+          <p className="no-results">No professionals available at the moment.</p>
+        </section>
+      ) : (
+        <ProfessionalCarousel
+          professionals={workers.map(worker => ({
+            ...worker,
+            profile_picture: worker.image || '/images/default-profile.svg',
+            avg_rating: worker.actualRating,
+            review_count: worker.reviewCount
+          }))}
+        />
+      )}
     </div>
   );
 };

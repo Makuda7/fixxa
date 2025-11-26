@@ -1,0 +1,485 @@
+.cert-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.cert-viewer-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.cert-viewer-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cert-header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.cert-header-content h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.cert-status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cert-status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cert-status-badge.approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.cert-status-badge.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cert-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  flex-shrink: 0;
+}
+
+.cert-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* Content */
+.cert-viewer-content {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left Panel - Info */
+.cert-info-panel {
+  background: #f8fafc;
+  padding: 2rem;
+  overflow-y: auto;
+  border-right: 1px solid #e2e8f0;
+}
+
+.cert-info-section {
+  margin-bottom: 2rem;
+}
+
+.cert-info-section:last-child {
+  margin-bottom: 0;
+}
+
+.cert-info-section h3 {
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+  font-weight: 700;
+}
+
+.cert-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cert-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cert-info-item label {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cert-info-item p {
+  margin: 0;
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.rejection-reason-box {
+  background: white;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  padding: 1rem;
+  color: #991b1b;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Action Buttons */
+.cert-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cert-approve-btn,
+.cert-reject-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.cert-approve-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.cert-approve-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.cert-reject-btn {
+  background: white;
+  color: #dc2626;
+  border: 2px solid #dc2626;
+}
+
+.cert-reject-btn:hover:not(:disabled) {
+  background: #dc2626;
+  color: white;
+}
+
+.cert-approve-btn:disabled,
+.cert-reject-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Reject Form */
+.reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reject-form label {
+  font-size: 0.9rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.reject-form textarea {
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.reject-form textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.reject-form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cert-reject-submit-btn,
+.cert-reject-cancel-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.cert-reject-submit-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.cert-reject-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.cert-reject-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cert-reject-cancel-btn {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.cert-reject-cancel-btn:hover:not(:disabled) {
+  background: #cbd5e1;
+}
+
+/* Right Panel - Preview */
+.cert-preview-panel {
+  background: white;
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cert-preview-panel h3 {
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+  font-weight: 700;
+}
+
+.cert-preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* PDF Preview */
+.pdf-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.pdf-icon {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  color: #dc2626;
+}
+
+.pdf-name {
+  text-align: center;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.view-pdf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.view-pdf-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.pdf-embed {
+  flex: 1;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 500px;
+}
+
+.pdf-embed iframe {
+  border: none;
+}
+
+/* Image Preview */
+.image-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.cert-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  object-fit: contain;
+  max-height: 600px;
+}
+
+.view-full-btn {
+  display: inline-block;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.view-full-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Unsupported Preview */
+.unsupported-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px dashed #cbd5e1;
+  min-height: 400px;
+}
+
+.unsupported-icon {
+  color: #94a3b8;
+}
+
+.unsupported-preview p {
+  color: #64748b;
+  margin: 0;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .cert-viewer-content {
+    grid-template-columns: 1fr;
+  }
+
+  .cert-info-panel {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    max-height: 300px;
+  }
+
+  .cert-preview-panel {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cert-viewer-overlay {
+    padding: 0;
+  }
+
+  .cert-viewer-modal {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .cert-viewer-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .cert-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .cert-header-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .cert-info-panel,
+  .cert-preview-panel {
+    padding: 1.5rem;
+  }
+
+  .reject-form-actions {
+    flex-direction: column;
+  }
+}

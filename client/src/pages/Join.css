@@ -1,0 +1,267 @@
+.join-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem 0;
+}
+
+.join-container {
+  max-width: 1100px;
+  margin: 3rem auto;
+  padding: 2rem;
+}
+
+.join-title {
+  text-align: center;
+  color: #1d7a91;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.join-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 1.2rem;
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cards-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+}
+
+.join-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid rgb(147, 126, 108);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(147, 126, 108, 0.2);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 500px;
+}
+
+.join-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 30px rgba(29, 122, 145, 0.3);
+  border-color: #1d7a91;
+}
+
+.card-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-title {
+  color: #1d7a91;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.card-description {
+  color: #555;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  flex-grow: 1;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+
+.benefits-list li {
+  color: #666;
+  margin: 0.8rem 0;
+  padding-left: 2rem;
+  position: relative;
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.benefits-list .emoji {
+  position: absolute;
+  left: 0;
+  font-size: 1.1em;
+}
+
+.join-btn {
+  background: #1d7a91;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: auto;
+}
+
+.join-btn:hover {
+  background: #156072;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(29, 122, 145, 0.4);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.modal-icon {
+  font-size: 3rem;
+  color: #1d7a91;
+  margin-bottom: 1rem;
+}
+
+.modal-content h3 {
+  color: #1d7a91;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.modal-content p {
+  color: #666;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.email-list {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+  margin: 1.5rem 0;
+}
+
+.email-list h4 {
+  color: #1d7a91;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.email-item {
+  background: white;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  border-radius: 8px;
+  border-left: 4px solid #1d7a91;
+  text-align: left;
+}
+
+.email-item strong {
+  color: #1d7a91;
+  font-size: 1rem;
+}
+
+.email-item a {
+  color: #1d7a91;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.email-item a:hover {
+  text-decoration: underline;
+}
+
+.email-item small {
+  color: #666;
+  font-size: 0.9rem;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.close-btn {
+  background: #1d7a91;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 1rem;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.close-btn:hover {
+  background: #156072;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cards-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .join-card {
+    min-height: auto;
+    padding: 2rem 1.5rem;
+  }
+
+  .join-title {
+    font-size: 2rem;
+  }
+
+  .join-container {
+    padding: 1rem;
+  }
+
+  .modal-content {
+    margin: 5% auto;
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .join-title {
+    font-size: 1.75rem;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+  }
+
+  .card-description {
+    font-size: 1rem;
+  }
+
+  .benefits-list li {
+    font-size: 0.95rem;
+  }
+}

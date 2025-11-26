@@ -69,10 +69,25 @@ const messageImageStorage = new CloudinaryStorage({
   }
 });
 
+// Storage for review photos
+const reviewPhotoStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'fixxa/review-photos',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto' }],
+    public_id: (req, file) => {
+      const userId = req.session?.user?.id || 'unknown';
+      return `review-${userId}-${Date.now()}`;
+    }
+  }
+});
+
 module.exports = {
   cloudinary,
   profilePicStorage,
   portfolioStorage,
   certificationStorage,
-  messageImageStorage
+  messageImageStorage,
+  reviewPhotoStorage
 };

@@ -7,12 +7,13 @@ const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Fetch unread message count
-      fetchUnreadCount();
+      // TODO: Fetch unread message count when endpoint is implemented
+      // fetchUnreadCount();
     }
   }, [isAuthenticated]);
 
@@ -26,13 +27,19 @@ const Header = () => {
         setUnreadCount(data.count || 0);
       }
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      // Silently fail - endpoint may not exist yet
+      console.log('Unread count endpoint not available');
     }
   };
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
+    setShowMobileMenu(false);
+  };
+
+  const closeMobileMenu = () => {
+    setShowMobileMenu(false);
   };
 
   return (
@@ -43,17 +50,34 @@ const Header = () => {
         </Link>
       </div>
 
-      <nav className="nav-links">
-        <Link to="/">Find Service</Link>
-        <Link to="/about">About Us</Link>
-        <Link to="/join">Join Our Team</Link>
+      {/* Burger Menu Button */}
+      <button
+        className={`burger-menu ${showMobileMenu ? 'active' : ''}`}
+        onClick={() => setShowMobileMenu(!showMobileMenu)}
+        aria-label="Toggle menu"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <div className="mobile-menu-overlay" onClick={closeMobileMenu}></div>
+      )}
+
+      {/* Navigation Links - Desktop & Mobile */}
+      <nav className={`nav-links ${showMobileMenu ? 'mobile-active' : ''}`}>
+        <Link to="/" onClick={closeMobileMenu}>Find Service</Link>
+        <Link to="/about" onClick={closeMobileMenu}>About Us</Link>
+        <Link to="/join" onClick={closeMobileMenu}>Join Our Team</Link>
 
         {!isAuthenticated ? (
-          <Link to="/login" className="login-link">Log in / Register</Link>
+          <Link to="/login" className="login-link" onClick={closeMobileMenu}>Log in / Register</Link>
         ) : (
           <>
             {/* Inbox Icon */}
-            <Link to="/messages" className="inbox-icon-link" title="Messages">
+            <Link to="/messages" className="inbox-icon-link" title="Messages" onClick={closeMobileMenu}>
               <span className="inbox-icon">✉️</span>
               {unreadCount > 0 && (
                 <span className="inbox-notification-dot"></span>
@@ -69,9 +93,26 @@ const Header = () => {
                 {user?.name || 'User'} ▼
               </button>
               <div className="user-dropdown">
-                <Link to="/settings">Settings</Link>
-                <Link to="/profile">Profile</Link>
-                <Link to="/messages" style={{ position: 'relative' }}>
+                <Link to="/settings" onClick={closeMobileMenu}>Settings</Link>
+                <button
+                  onClick={() => {
+                    console.log('Profile clicked, user type:', user?.type);
+                    if (user?.type === 'professional') {
+                      // Workers use React dashboard
+                      console.log('Redirecting to: /worker-dashboard');
+                      navigate('/worker-dashboard');
+                    } else {
+                      // Clients use React dashboard
+                      console.log('Redirecting to: /client-dashboard');
+                      navigate('/client-dashboard');
+                    }
+                    closeMobileMenu();
+                  }}
+                  style={{ textAlign: 'left', width: '100%', border: 'none', background: 'none', cursor: 'pointer', padding: '8px' }}
+                >
+                  Profile
+                </button>
+                <Link to="/messages" style={{ position: 'relative' }} onClick={closeMobileMenu}>
                   Messages
                   {unreadCount > 0 && (
                     <span className="notification-badge">{unreadCount}</span>

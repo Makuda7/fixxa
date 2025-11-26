@@ -29,3 +29,10 @@ uploads/worker-photos/*
 
 # React build
 client/build/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database/*.js
+!database/migrate.js

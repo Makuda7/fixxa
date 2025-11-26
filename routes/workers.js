@@ -42,7 +42,7 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_picture, availability_schedule, is_available, latitude, longitude, service_radius, rate_type, rate_amount, is_verified, approval_status
+        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_picture, availability_schedule, is_available, latitude, longitude, service_radius, id_verified, approval_status
          FROM workers
          WHERE is_active = true AND approval_status = 'approved'
          ORDER BY name ASC`
@@ -64,10 +64,8 @@ module.exports = (pool, logger, helpers) => {
           worker.image = 'images/default-profile.svg';
         }
 
-        // If is_verified doesn't exist in DB, derive from approval_status
-        if (worker.is_verified === undefined) {
-          worker.is_verified = false; // Default to false for safety
-        }
+        // Map id_verified to is_verified for frontend compatibility
+        worker.is_verified = worker.id_verified || false;
         // Add is_pending flag for frontend to show "Coming Soon" banner
         worker.is_pending = worker.approval_status === 'pending';
         return worker;
@@ -97,7 +95,7 @@ module.exports = (pool, logger, helpers) => {
       const result = await pool.query(`
         SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas,
                bio, experience, rating, profile_picture as image,
-               availability_schedule, is_available, latitude, longitude, service_radius, is_verified,
+               availability_schedule, is_available, latitude, longitude, service_radius, id_verified as is_verified,
                rate_type, rate_amount
         FROM workers
         WHERE is_available = true AND is_active = true AND approval_status = 'approved'
@@ -553,12 +551,13 @@ module.exports = (pool, logger, helpers) => {
       const workerId = req.session.user.id;
 
       const result = await pool.query(
-        `SELECT id, name, email, phone, address, city, suburb, postal_code, speciality,
-                bio, experience, area, service_radius, approval_status, is_verified,
+        `SELECT id, name, email, phone, address, city, primary_suburb, province, postal_code, speciality,
+                bio, experience, area, service_radius, approval_status, id_verified as is_verified,
                 id_type, id_number, id_verified, id_submitted_at,
                 profile_picture, profile_picture_uploaded_at,
                 emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
-                emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2
+                emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2,
+                registration_complete
          FROM workers WHERE id = $1`,
         [workerId]
       );
@@ -567,17 +566,22 @@ module.exports = (pool, logger, helpers) => {
         return res.status(404).json({ success: false, error: 'Worker not found' });
       }
 
-      // Check if worker has any certificates uploaded
-      const certResult = await pool.query(
-        'SELECT COUNT(*) as cert_count FROM certifications WHERE worker_id = $1',
-        [workerId]
-      );
-
-      const hasCertificates = certResult.rows[0].cert_count > 0;
+      // Check if worker has any certificates uploaded (certifications table might not exist yet)
+      let hasCertificates = false;
+      try {
+        const certResult = await pool.query(
+          'SELECT COUNT(*) as cert_count FROM certifications WHERE worker_id = $1',
+          [workerId]
+        );
+        hasCertificates = certResult.rows[0].cert_count > 0;
+      } catch (certError) {
+        // Certifications table doesn't exist yet, skip this check
+        logger.error('Get certifications error', { error: certError.message });
+      }
 
       res.json({
         success: true,
-        worker: {
+        profile: {
           ...result.rows[0],
           has_certificates: hasCertificates
         }
@@ -598,7 +602,7 @@ module.exports = (pool, logger, helpers) => {
         `SELECT profile_picture, id_type, id_number, id_verified,
                 emergency_name_1, emergency_phone_1,
                 bio, experience, area, province, speciality,
-                approval_status, is_verified
+                approval_status, id_verified as is_verified
          FROM workers WHERE id = $1`,
         [workerId]
       );
@@ -1202,6 +1206,259 @@ module.exports = (pool, logger, helpers) => {
       logger.error('Get completion rate error', { error: error.message });
       console.error('Get completion rate error:', error);
       res.status(500).json({ success: false, error: 'Failed to get completion rate' });
+    }
+  });
+
+  // ==================== PORTFOLIO MANAGEMENT ====================
+
+  // Get worker's portfolio photos
+  router.get('/portfolio', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      const result = await pool.query(
+        `SELECT id, url, thumbnail_url, cloudinary_id, caption, display_order, created_at
+         FROM portfolio_photos
+         WHERE worker_id = $1
+         ORDER BY display_order ASC, created_at DESC`,
+        [workerId]
+      );
+
+      res.json({
+        success: true,
+        photos: result.rows
+      });
+    } catch (error) {
+      logger.error('Get portfolio photos error', { error: error.message });
+      console.error('Get portfolio photos error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get portfolio photos' });
+    }
+  });
+
+  // Upload portfolio photo
+  router.post('/upload-portfolio', requireAuth, workerOnly, uploadLimiter, portfolioUpload.single('photo'), async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No photo provided' });
+      }
+
+      const { caption } = req.body;
+
+      // Get the highest display_order for this worker
+      const orderResult = await pool.query(
+        'SELECT COALESCE(MAX(display_order), -1) as max_order FROM portfolio_photos WHERE worker_id = $1',
+        [workerId]
+      );
+      const displayOrder = orderResult.rows[0].max_order + 1;
+
+      // Insert portfolio photo
+      const result = await pool.query(
+        `INSERT INTO portfolio_photos (worker_id, url, thumbnail_url, cloudinary_id, caption, display_order)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, url, thumbnail_url, cloudinary_id, caption, display_order, created_at`,
+        [
+          workerId,
+          req.file.path, // Cloudinary URL
+          req.file.path, // Use same URL for thumbnail (Cloudinary can resize on-the-fly)
+          req.file.filename, // Cloudinary public_id
+          caption || null,
+          displayOrder
+        ]
+      );
+
+      logger.info('Portfolio photo uploaded', {
+        workerId,
+        photoId: result.rows[0].id,
+        cloudinaryId: req.file.filename
+      });
+
+      res.json({
+        success: true,
+        photo: result.rows[0]
+      });
+    } catch (error) {
+      logger.error('Upload portfolio photo error', { error: error.message });
+      console.error('Upload portfolio photo error:', error);
+
+      // Clean up uploaded file from Cloudinary if database insert failed
+      if (req.file && req.file.filename) {
+        try {
+          await cloudinary.uploader.destroy(req.file.filename);
+        } catch (cleanupError) {
+          logger.error('Cloudinary cleanup error', { error: cleanupError.message });
+        }
+      }
+
+      res.status(500).json({ success: false, error: 'Failed to upload portfolio photo' });
+    }
+  });
+
+  // Delete portfolio photo
+  router.delete('/portfolio/:photoId', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const { photoId } = req.params;
+
+      // Get photo details first to verify ownership and get cloudinary_id
+      const photoResult = await pool.query(
+        'SELECT id, cloudinary_id, worker_id FROM portfolio_photos WHERE id = $1',
+        [photoId]
+      );
+
+      if (photoResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Photo not found' });
+      }
+
+      const photo = photoResult.rows[0];
+
+      // Verify ownership
+      if (photo.worker_id !== workerId) {
+        return res.status(403).json({ success: false, error: 'Unauthorized to delete this photo' });
+      }
+
+      // Delete from Cloudinary
+      try {
+        await cloudinary.uploader.destroy(photo.cloudinary_id);
+        logger.info('Deleted from Cloudinary', { cloudinaryId: photo.cloudinary_id });
+      } catch (cloudinaryError) {
+        logger.error('Cloudinary delete error', { error: cloudinaryError.message });
+        // Continue with database deletion even if Cloudinary fails
+      }
+
+      // Delete from database
+      await pool.query('DELETE FROM portfolio_photos WHERE id = $1', [photoId]);
+
+      logger.info('Portfolio photo deleted', {
+        workerId,
+        photoId,
+        cloudinaryId: photo.cloudinary_id
+      });
+
+      res.json({
+        success: true,
+        message: 'Photo deleted successfully'
+      });
+    } catch (error) {
+      logger.error('Delete portfolio photo error', { error: error.message });
+      console.error('Delete portfolio photo error:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete portfolio photo' });
+    }
+  });
+
+  // Get dashboard statistics
+  router.get('/dashboard-stats', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      // Get today's bookings count
+      const todayBookingsResult = await pool.query(
+        `SELECT COUNT(*) as count
+         FROM bookings
+         WHERE worker_id = $1
+         AND booking_date >= $2
+         AND booking_date < $3
+         AND status NOT IN ('cancelled', 'declined')`,
+        [workerId, today, new Date(today.getTime() + 24 * 60 * 60 * 1000)]
+      );
+
+      // Get pending requests count
+      const pendingRequestsResult = await pool.query(
+        `SELECT COUNT(*) as count
+         FROM bookings
+         WHERE worker_id = $1 AND status = 'pending'`,
+        [workerId]
+      );
+
+      // Get yesterday's pending count for trend
+      const yesterdayPendingResult = await pool.query(
+        `SELECT COUNT(*) as count
+         FROM bookings
+         WHERE worker_id = $1
+         AND status = 'pending'
+         AND created_at < $2`,
+        [workerId, today]
+      );
+
+      // Get completed jobs and earnings (if payment system is implemented)
+      const completedJobsResult = await pool.query(
+        `SELECT COUNT(*) as count, COALESCE(SUM(price), 0) as total
+         FROM bookings
+         WHERE worker_id = $1 AND status = 'completed'`,
+        [workerId]
+      );
+
+      // Get this month's earnings for trend
+      const monthEarningsResult = await pool.query(
+        `SELECT COALESCE(SUM(price), 0) as total
+         FROM bookings
+         WHERE worker_id = $1
+         AND status = 'completed'
+         AND booking_date >= $2`,
+        [workerId, startOfMonth]
+      );
+
+      // Get last month's earnings
+      const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const lastMonthEnd = startOfMonth;
+      const lastMonthEarningsResult = await pool.query(
+        `SELECT COALESCE(SUM(price), 0) as total
+         FROM bookings
+         WHERE worker_id = $1
+         AND status = 'completed'
+         AND booking_date >= $2
+         AND booking_date < $3`,
+        [workerId, lastMonthStart, lastMonthEnd]
+      );
+
+      // Calculate completion rate
+      const totalBookingsResult = await pool.query(
+        `SELECT COUNT(*) as total
+         FROM bookings
+         WHERE worker_id = $1 AND status NOT IN ('cancelled', 'declined')`,
+        [workerId]
+      );
+
+      const todayBookings = parseInt(todayBookingsResult.rows[0].count);
+      const pendingRequests = parseInt(pendingRequestsResult.rows[0].count);
+      const yesterdayPending = parseInt(yesterdayPendingResult.rows[0].count);
+      const completedJobs = parseInt(completedJobsResult.rows[0].count);
+      const totalEarnings = parseFloat(completedJobsResult.rows[0].total);
+      const monthEarnings = parseFloat(monthEarningsResult.rows[0].total);
+      const lastMonthEarnings = parseFloat(lastMonthEarningsResult.rows[0].total);
+      const totalBookings = parseInt(totalBookingsResult.rows[0].total);
+
+      const completionRate = totalBookings > 0
+        ? Math.round((completedJobs / totalBookings) * 100)
+        : 0;
+
+      const pendingChange = pendingRequests - yesterdayPending;
+      const earningsChange = monthEarnings - lastMonthEarnings;
+
+      res.json({
+        success: true,
+        stats: {
+          todayBookings,
+          pendingRequests,
+          pendingChange,
+          totalEarnings,
+          earningsChange,
+          completedJobs,
+          totalBookings,
+          completionRate,
+          lastUpdated: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      logger.error('Dashboard stats error', { error: error.message });
+      console.error('Dashboard stats error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch dashboard statistics' });
     }
   });
 

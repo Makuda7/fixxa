@@ -1,0 +1,367 @@
+/* Profile Completion Banner */
+.profile-completion-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  position: relative;
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-completion-banner.complete {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  animation: celebratePulse 0.6s ease-in-out;
+}
+
+@keyframes celebratePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* Banner Content */
+.banner-content {
+  color: white;
+  position: relative;
+}
+
+/* Close Button */
+.btn-close-banner {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.btn-close-banner:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Header */
+.banner-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.banner-icon {
+  font-size: 2.5rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.banner-title h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.banner-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 100%);
+  border-radius: 16px;
+  transition: width 0.8s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-percentage {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #667eea;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Toggle Checklist Button */
+.btn-toggle-checklist {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.btn-toggle-checklist:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Checklist */
+.checklist {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 1.25rem;
+  animation: expandDown 0.3s ease-out;
+}
+
+@keyframes expandDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding: 0 1.25rem;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    padding: 1.25rem;
+  }
+}
+
+.checklist h4 {
+  margin: 0 0 1rem 0;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.checklist ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.checklist-item:last-child {
+  margin-bottom: 0;
+}
+
+.checklist-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(4px);
+}
+
+.checkbox {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.item-label {
+  flex: 1;
+  color: white;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.item-weight {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* Completion Message */
+.completion-message {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.completion-message p {
+  margin: 0;
+  color: white;
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .profile-completion-banner {
+    padding: 1.25rem;
+  }
+
+  .banner-header {
+    gap: 0.75rem;
+  }
+
+  .banner-icon {
+    font-size: 2rem;
+  }
+
+  .banner-title h3 {
+    font-size: 1.25rem;
+  }
+
+  .banner-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .progress-bar-container {
+    height: 28px;
+  }
+
+  .progress-percentage {
+    font-size: 0.85rem;
+  }
+
+  .btn-toggle-checklist {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.9rem;
+  }
+
+  .checklist {
+    padding: 1rem;
+  }
+
+  .checklist-item {
+    padding: 0.625rem;
+  }
+
+  .item-label {
+    font-size: 0.9rem;
+  }
+
+  .item-weight {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-completion-banner {
+    padding: 1rem;
+  }
+
+  .banner-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .banner-icon {
+    font-size: 2.5rem;
+  }
+
+  .banner-title h3 {
+    font-size: 1.1rem;
+  }
+
+  .banner-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .progress-bar-container {
+    height: 24px;
+  }
+
+  .progress-percentage {
+    font-size: 0.8rem;
+    padding-right: 0.5rem;
+  }
+
+  .checklist-item {
+    flex-wrap: wrap;
+  }
+
+  .item-weight {
+    margin-left: auto;
+  }
+
+  .completion-message p {
+    font-size: 0.9rem;
+  }
+}

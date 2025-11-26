@@ -718,6 +718,68 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
     }
   });
 
+  // Complete booking (client) - client approves completion
+  router.post('/:id/complete', requireAuth, clientOnly, async (req, res) => {
+    try {
+      const bookingId = req.params.id;
+      const userId = req.session.user.id;
+      const { rating, review_text } = req.body;
+
+      // Verify booking belongs to this client
+      const bookingCheck = await pool.query(
+        `SELECT b.*, w.name as worker_name, w.email as worker_email
+         FROM bookings b
+         JOIN workers w ON b.worker_id = w.id
+         WHERE b.id = $1 AND b.user_id = $2`,
+        [bookingId, userId]
+      );
+
+      if (bookingCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Booking not found' });
+      }
+
+      const booking = bookingCheck.rows[0];
+
+      // Update booking status to completed
+      await pool.query(
+        `UPDATE bookings
+         SET status = 'Completed', completed_at = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [bookingId]
+      );
+
+      // Create review if rating provided
+      if (rating && rating >= 1 && rating <= 5) {
+        await pool.query(
+          `INSERT INTO reviews (client_id, booking_id, worker_id, overall_rating, review_text)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [userId, bookingId, booking.worker_id, rating, review_text || '']
+        );
+      }
+
+      // Send completion email to worker
+      const completionEmail = emailTemplates.createCompletionEmail(booking, booking.worker_name, booking.worker_name);
+      sendEmail(booking.worker_email, completionEmail.subject, completionEmail.html, logger).catch(err =>
+        logger.error('Failed to send completion email to worker', { error: err.message })
+      );
+
+      if (io) {
+        io.emit('booking-updated', {
+          bookingId,
+          status: 'Completed',
+          user_id: userId
+        });
+      }
+
+      logger.info('Booking completed by client', { bookingId, userId });
+      res.json({ success: true, message: 'Job marked as completed' });
+    } catch (err) {
+      logger.error('Complete booking error', { error: err.message });
+      console.error('Complete booking error:', err);
+      res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
   // Submit service address for accepted booking (client only)
   router.post('/:id/submit-address', requireAuth, clientOnly, async (req, res) => {
     try {

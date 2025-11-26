@@ -436,21 +436,35 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
         });
       }
 
-      req.session.user = { id: user.id, name: user.name, email: user.email, type };
-
       const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(e => e);
       const isAdmin = adminEmails.includes(user.email);
 
+      req.session.user = { id: user.id, name: user.name, email: user.email, type, isAdmin };
+
+      console.log('=== LOGIN DEBUG ===');
+      console.log('ADMIN_EMAILS env var:', process.env.ADMIN_EMAILS);
+      console.log('Parsed adminEmails array:', adminEmails);
+      console.log('User email:', user.email);
+      console.log('isAdmin:', isAdmin);
+      console.log('User type:', type);
+
       let redirectUrl;
-      if (isAdmin && type === USER_TYPES.CLIENT) {
+      if (isAdmin) {
         redirectUrl = '/admin.html';
+        console.log('✅ Admin detected - redirecting to /admin.html');
       } else if (type === USER_TYPES.PROFESSIONAL) {
-        redirectUrl = '/prosite.html';
+        redirectUrl = '/worker-dashboard';
+        console.log('Professional detected - redirecting to /worker-dashboard');
       } else {
-        redirectUrl = '/clientProfile.html';
+        redirectUrl = '/client-dashboard';
+        console.log('Client detected - redirecting to /client-dashboard');
       }
 
-      logger.info('User logged in', { userId: user.id, email: user.email, type });
+      console.log('Final redirect URL:', redirectUrl);
+      console.log('Session user:', req.session.user);
+      console.log('===================');
+
+      logger.info('User logged in', { userId: user.id, email: user.email, type, isAdmin, redirectUrl });
 
       res.json({ success: true, redirect: redirectUrl, user: req.session.user });
 
@@ -492,9 +506,14 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
             profilePic = 'images/default-profile.svg';
           }
 
+          // Check if user is admin
+          const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(e => e);
+          const isAdmin = adminEmails.includes(result.rows[0].email);
+
           const userData = {
             ...result.rows[0],
             type: req.session.user.type,
+            isAdmin: isAdmin,  // Add admin flag to user data
             preferences: {
               ...(typeof result.rows[0].notification_preferences === 'object'
                   ? result.rows[0].notification_preferences
@@ -551,14 +570,14 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
   router.get('/check-session', (req, res) => {
     if (req.session?.user?.id) {
-      res.json({ 
-        loggedIn: true, 
-        user: req.session.user 
+      res.json({
+        authenticated: true,
+        user: req.session.user
       });
     } else {
-      res.json({ 
-        loggedIn: false, 
-        user: null 
+      res.json({
+        authenticated: false,
+        user: null
       });
     }
   });

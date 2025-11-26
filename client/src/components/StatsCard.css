@@ -1,0 +1,210 @@
+.stats-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card:hover::before {
+  opacity: 1;
+}
+
+.stats-card.clickable {
+  cursor: pointer;
+}
+
+.stats-card.clickable:active {
+  transform: translateY(-2px);
+}
+
+.stats-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.stats-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stats-icon.workers {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stats-icon.clients {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.stats-icon.pending {
+  background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%);
+  color: white;
+}
+
+.stats-icon.bookings {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.stats-icon.active {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+.stats-icon.completed {
+  background: linear-gradient(135deg, #5ee7df 0%, #b490ca 100%);
+  color: white;
+}
+
+.stats-icon.revenue {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+}
+
+.stats-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.stats-trend.up {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.stats-trend.down {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.stats-trend svg {
+  flex-shrink: 0;
+}
+
+.stats-content {
+  margin-bottom: 1rem;
+}
+
+.stats-value {
+  font-size: 2.5rem;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stats-title {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.stats-subtitle {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0 0;
+  font-weight: 400;
+}
+
+.stats-breakdown {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.breakdown-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.breakdown-value {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.breakdown-value.approved {
+  color: #059669;
+}
+
+.breakdown-value.pending {
+  color: #d97706;
+}
+
+.breakdown-value.rejected {
+  color: #dc2626;
+}
+
+.breakdown-value.active {
+  color: #2563eb;
+}
+
+.breakdown-value.completed {
+  color: #059669;
+}
+
+.breakdown-value.cancelled {
+  color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-card {
+    padding: 1.25rem;
+  }
+
+  .stats-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .stats-value {
+    font-size: 2rem;
+  }
+
+  .stats-title {
+    font-size: 0.9rem;
+  }
+}

@@ -15,7 +15,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'http://localhost:3000'),
+    origin: process.env.NODE_ENV === 'production'
+      ? (process.env.BASE_URL || `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`)
+      : ['http://localhost:3000', 'http://localhost:3001'],
     methods: ['GET', 'POST'],
     credentials: true
   },
@@ -132,8 +134,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.BASE_URL || `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`]
+  : ['http://localhost:3000', 'http://localhost:3001']; // Allow both backend and React dev server
+
 app.use(cors({
-  origin: process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'http://localhost:3000'),
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -162,22 +168,15 @@ app.use(session({
   saveUninitialized: false,        // Don't create session until something stored
   rolling: SESSION_ROLLING,        // Reset expiry on every request (rolling session)
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Must be false in development for localhost
     httpOnly: true,
     maxAge: SESSION_IDLE_TIMEOUT,  // 30 minutes of inactivity
     sameSite: 'lax'
+    // No domain set - allows cookies to work with proxy
   }
 }));
 
-// Simple redirect routes for easy sharing
-app.get('/register', (req, res) => res.redirect('/register.html'));
-app.get('/signup', (req, res) => res.redirect('/register.html'));
-app.get('/join', (req, res) => res.redirect('/join.html'));
-app.get('/login', (req, res) => res.redirect('/login.html'));
-app.get('/signin', (req, res) => res.redirect('/login.html'));
-
-// Static files
-app.use(express.static('public'));
+// Keep uploads accessible (before static files)
 app.use('/uploads', express.static('uploads'));
 
 // File upload configurations
@@ -261,6 +260,98 @@ const cookieConsentRoutes = require('./routes/cookieConsent')(pool, logger);
 const suburbsRoutes = require('./routes/suburbs');
 const quotesRoutes = require('./routes/quotes')(pool, logger, sendEmail, emailTemplates);
 
+// Import auth middleware
+const { requireAuth } = require('./middleware/auth');
+
+// Configure multer for general document uploads (ID, proof of address, etc.)
+const { scanFile } = require('./utils/virusScanner');
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const isImage = file.mimetype.startsWith('image/');
+    const isPDF = file.mimetype === 'application/pdf';
+
+    if (isImage || isPDF) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only images (JPEG, PNG) and PDF files are allowed'));
+    }
+  }
+});
+
+// General document upload endpoint
+app.post('/api/upload', requireAuth, documentUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    const userId = req.session.user.id;
+    const uploadType = req.body.type || 'document';
+    const fileName = req.file.originalname;
+
+    // Virus scan the file
+    logger.info('Scanning uploaded file for viruses', { userId, fileName, type: uploadType });
+    const scanResult = await scanFile(req.file);
+
+    if (!scanResult.clean) {
+      logger.warn('VIRUS DETECTED in file upload', {
+        userId,
+        fileName,
+        viruses: scanResult.foundViruses
+      });
+
+      return res.status(400).json({
+        success: false,
+        error: 'File failed security scan - malware detected. Please ensure your file is safe and try again.',
+        code: 'VIRUS_DETECTED'
+      });
+    }
+
+    logger.info('File passed virus scan', { userId, fileName, scanResult: scanResult.scanResult });
+
+    // Upload to Cloudinary
+    const uploadPromise = new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: `fixxa/${uploadType}s`,
+          resource_type: 'auto',
+          public_id: `${uploadType}-${userId}-${Date.now()}`,
+          type: 'upload',
+          access_mode: 'public',
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    const cloudinaryResult = await uploadPromise;
+    const fileUrl = cloudinaryResult.secure_url;
+    const cloudinaryId = cloudinaryResult.public_id;
+
+    logger.info('File uploaded successfully', { userId, fileName, fileUrl });
+
+    res.json({
+      success: true,
+      url: fileUrl,
+      cloudinaryId: cloudinaryId,
+      message: 'File uploaded successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error uploading file:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to upload file'
+    });
+  }
+});
+
 // Mount routes
 app.use('/', authRoutes);
 app.use('/bookings', bookingsRoutes);
@@ -269,7 +360,7 @@ app.use('/workers', workersRoutes);
 app.use('/reviews', reviewsRoutes);
 app.use('/', settingsRoutes);
 app.use('/admin', adminRoutes);
-app.use('/', completionRoutes);
+app.use('/completion', completionRoutes);
 app.use('/', workerRequestsRoutes);
 app.use('/', searchRoutes);
 app.use('/certifications', certificationsRoutes);
@@ -310,86 +401,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', (reason) => {
     console.log('Client disconnected:', socket.id, 'Reason:', reason);
   });
-});
-
-// Serve React app for specific routes or subdomain
-// Check if request is for app subdomain or /app/* path
-const isReactRoute = (req) => {
-  const host = req.get('host') || '';
-  const isAppSubdomain = host.startsWith('app.') || host.includes('app.fixxa');
-  const isAppPath = req.path.startsWith('/app');
-  const isReactAPIRoute = req.path.match(/^\/(login|register|dashboard|home|service|profile)/);
-  return isAppSubdomain || isAppPath || isReactAPIRoute;
-};
-
-// Serve React static files for /app path
-app.use('/app', express.static(path.join(__dirname, 'client/build')));
-
-// Serve React static assets (CSS, JS) directly - needed when accessing /app/
-// These get requested as /static/js/... from the React build
-app.use('/static', express.static(path.join(__dirname, 'client/build/static')));
-
-// Serve manifest.json and other root files from React build
-app.get('/manifest.json', (req, res, next) => {
-  const manifestPath = path.join(__dirname, 'client/build/manifest.json');
-  const fs = require('fs');
-  if (fs.existsSync(manifestPath)) {
-    res.sendFile(manifestPath);
-  } else {
-    next();
-  }
-});
-
-app.get('/favicon.ico', (req, res, next) => {
-  const faviconPath = path.join(__dirname, 'client/build/favicon.ico');
-  const fs = require('fs');
-  if (fs.existsSync(faviconPath)) {
-    res.sendFile(faviconPath);
-  } else {
-    next();
-  }
-});
-
-// Serve React app for app subdomain or /app/* paths
-app.use((req, res, next) => {
-  if (isReactRoute(req)) {
-    // If it's an API call, let it pass through to the API routes
-    if (req.path.startsWith('/api/') ||
-        req.path.startsWith('/auth/') ||
-        req.path.startsWith('/workers/') ||
-        req.path.startsWith('/bookings/') ||
-        req.path.startsWith('/reviews/') ||
-        req.path.startsWith('/certifications/') ||
-        req.path.startsWith('/messages/') ||
-        req.path.startsWith('/notifications/') ||
-        req.path.startsWith('/uploads/') ||
-        req.path.startsWith('/static/') ||
-        req.path.match(/\.(json|xml|txt|js|css|png|jpg|jpeg|gif|svg|webp|ico)$/)) {
-      return next();
-    }
-
-    // Serve React index.html for React routes
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  } else {
-    next();
-  }
-});
-
-// Root route - serve Index.html for main site
-app.get('/', (req, res) => {
-  if (isReactRoute(req)) {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  } else {
-    res.sendFile(path.join(__dirname, 'public', 'Index.html'));
-  }
-});
-
-// Error handling middleware
-app.use(errorHandler);
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 // Auto-run migration for notifications
@@ -923,6 +934,18 @@ async function startServer() {
     const { fixVerificationStatus } = require('./migrations/fix_verification_status');
     await fixVerificationStatus(pool, logger);
 
+    // Add registration_complete column
+    const { addRegistrationCompleteColumn } = require('./migrations/add_registration_complete');
+    await addRegistrationCompleteColumn(pool, logger);
+
+    // Add portfolio_photos table
+    const { addPortfolioPhotos } = require('./migrations/add_portfolio_photos');
+    await addPortfolioPhotos(pool, logger);
+
+    // Add review_photos table
+    const { addReviewPhotos } = require('./migrations/add_review_photos');
+    await addReviewPhotos(pool, logger);
+
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
@@ -930,6 +953,14 @@ async function startServer() {
     reminderScheduler = new ReminderScheduler(pool, logger);
     reminderScheduler.start();
     console.log('✅ Reminder scheduler started');
+
+    // Serve React app static files (after all API routes)
+    app.use(express.static('client/build'));
+
+    // Serve React app for all other routes (must be last!)
+    app.use((req, res) => {
+      res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    });
 
     // Start server
     server.listen(PORT, () => {
