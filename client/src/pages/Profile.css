@@ -51,6 +51,8 @@
   max-height: 550px;
   object-fit: cover;
   object-position: center;
+  border-radius: 0 !important;
+  display: block;
 }
 
 .main-profile-placeholder {
