@@ -666,6 +666,36 @@ const WorkerDashboard = () => {
                 </div>
 
                 <div className="form-group">
+                  <label>Service Radius (km)</label>
+                  <input
+                    type="number"
+                    name="service_radius"
+                    value={profileFormData.service_radius || ''}
+                    onChange={handleProfileInputChange}
+                    disabled={!profileEditing}
+                    placeholder="e.g., 20"
+                  />
+                  <small style={{ color: '#666', fontSize: '0.85rem' }}>
+                    How far are you willing to travel for jobs?
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>Secondary Service Areas</label>
+                  <input
+                    type="text"
+                    name="secondary_areas"
+                    value={profileFormData.secondary_areas || ''}
+                    onChange={handleProfileInputChange}
+                    disabled={!profileEditing}
+                    placeholder="e.g., Sandton, Midrand, Centurion"
+                  />
+                  <small style={{ color: '#666', fontSize: '0.85rem' }}>
+                    Other suburbs or areas you service (comma-separated)
+                  </small>
+                </div>
+
+                <div className="form-group">
                   <label>Phone</label>
                   <input
                     type="tel"
