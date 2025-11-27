@@ -101,6 +101,8 @@ const Settings = () => {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+    console.log('Profile submit clicked', profileData);
+
     try {
       const formData = new FormData();
       formData.append('name', profileData.fullName);
@@ -112,19 +114,35 @@ const Settings = () => {
         formData.append('profile_pic', profilePic);
       }
 
+      console.log('Sending profile update request...');
       const res = await fetch('/api/user/profile', {
         method: 'PUT',
         body: formData,
         credentials: 'include'
       });
 
-      const data = await res.json();
+      console.log('Response status:', res.status);
+      console.log('Response headers:', res.headers.get('content-type'));
+
+      const responseText = await res.text();
+      console.log('Response text:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('Parsed response:', data);
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        throw new Error('Server returned invalid response');
+      }
+
       if (data.success) {
         showNotification('Profile updated successfully!');
       } else {
         throw new Error(data.error || 'Failed to update profile');
       }
     } catch (error) {
+      console.error('Profile update error:', error);
       showNotification(error.message, 'error');
     }
   };
