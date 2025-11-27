@@ -566,6 +566,25 @@ async function runTermsAcceptanceMigration() {
   }
 }
 
+// Auto-run migration for complete registration fields
+async function runCompleteRegistrationMigration() {
+  try {
+    console.log('🔄 Running complete registration migration...');
+
+    // Add passport and document fields for new registration flow
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS passport_number VARCHAR(50)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_document_url VARCHAR(500)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS proof_of_address_url VARCHAR(500)`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS years_experience INTEGER`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS portfolio_description TEXT`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS registration_complete BOOLEAN DEFAULT false`);
+
+    console.log('✅ Complete registration migration completed');
+  } catch (error) {
+    console.log('⚠️  Complete registration migration skipped (may already be applied):', error.message);
+  }
+}
+
 // Auto-run migration for message images
 async function runMessageImagesMigration() {
   try {
@@ -906,6 +925,7 @@ async function startServer() {
     await runEmergencyContactsMigration();
     await runProfilePictureMigration();
     await runTermsAcceptanceMigration();
+    await runCompleteRegistrationMigration();
     await runMessageImagesMigration();
     await runVirusScanLogsMigration();
     await runReferralSourceMigration();
