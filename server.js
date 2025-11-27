@@ -579,6 +579,7 @@ async function runCompleteRegistrationMigration() {
     await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS portfolio_description TEXT`);
     await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS "references" JSONB`);
     await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS registration_complete BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS registration_submitted_at TIMESTAMP`);
 
     console.log('✅ Complete registration migration completed');
   } catch (error) {
