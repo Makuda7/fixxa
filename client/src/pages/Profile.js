@@ -294,7 +294,15 @@ const Profile = () => {
         <article className="worker-card">
           <div className="profile-main">
             <div className="profile-image-section">
-              <img src={worker.image} alt={worker.name} className="main-profile-image" />
+              {worker.image && !worker.image.includes('default-profile.svg') ? (
+                <img src={worker.image} alt={worker.name} className="main-profile-image" />
+              ) : (
+                <div className="main-profile-placeholder">
+                  <div className="placeholder-initials">
+                    {worker.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                </div>
+              )}
               <div className="image-counter">
                 📷 {gallery.length} {gallery.length === 1 ? 'photo' : 'photos'}
               </div>
