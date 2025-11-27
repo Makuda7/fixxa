@@ -409,7 +409,7 @@ const CompleteRegistration = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/worker/complete-registration`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/workers/complete-registration`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

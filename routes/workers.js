@@ -1054,6 +1054,128 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Complete registration endpoint - handles new multi-step registration form
+  router.post('/complete-registration', requireAuth, workerOnly, uploadLimiter, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      const {
+        fullName,
+        phone,
+        address,
+        city,
+        province,
+        postalCode,
+        documentType,
+        idNumber,
+        passportNumber,
+        idDocumentUrl,
+        proofOfAddressUrl,
+        certificationUrls,
+        yearsExperience,
+        portfolioDescription,
+        references
+      } = req.body;
+
+      // Validate required fields
+      if (!fullName || !phone || !address || !city || !province) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please complete all required personal information fields'
+        });
+      }
+
+      if (!idDocumentUrl) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please upload your ID document or passport'
+        });
+      }
+
+      if (!proofOfAddressUrl) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please upload proof of address'
+        });
+      }
+
+      if (!references || references.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please provide at least one reference'
+        });
+      }
+
+      // Update worker profile with all registration data
+      await pool.query(
+        `UPDATE workers
+         SET name = $1,
+             phone = $2,
+             address = $3,
+             city = $4,
+             province = $5,
+             postal_code = $6,
+             id_number = $7,
+             passport_number = $8,
+             id_document_url = $9,
+             proof_of_address_url = $10,
+             years_experience = $11,
+             portfolio_description = $12,
+             references = $13,
+             approval_status = 'pending',
+             registration_complete = true,
+             registration_submitted_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $14`,
+        [
+          fullName,
+          phone,
+          address,
+          city,
+          province,
+          postalCode,
+          documentType === 'id' ? idNumber : null,
+          documentType === 'passport' ? passportNumber : null,
+          idDocumentUrl,
+          proofOfAddressUrl,
+          yearsExperience || null,
+          portfolioDescription || null,
+          JSON.stringify(references),
+          workerId
+        ]
+      );
+
+      // Store certifications if provided
+      if (certificationUrls && certificationUrls.length > 0) {
+        for (const certUrl of certificationUrls) {
+          await pool.query(
+            `INSERT INTO certifications (worker_id, document_url, document_name, status, uploaded_at)
+             VALUES ($1, $2, $3, 'pending', NOW())`,
+            [workerId, certUrl, 'Professional Certification']
+          );
+        }
+      }
+
+      logger.info('Worker completed registration', {
+        workerId,
+        name: fullName,
+        documentType
+      });
+
+      res.json({
+        success: true,
+        message: 'Registration completed successfully! We will review your application within 7 business days.'
+      });
+    } catch (error) {
+      logger.error('Complete registration error', { error: error.message, stack: error.stack });
+      console.error('Complete registration error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to complete registration. Please try again.'
+      });
+    }
+  });
+
   // Get certifications for a specific worker (clients can view)
   router.get('/:workerId/certifications', requireAuth, async (req, res) => {
     try {
