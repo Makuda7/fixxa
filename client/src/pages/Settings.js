@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import './Settings.css';
 
 const Settings = () => {
+  console.log('Settings component loaded - v2.0');
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('profile');
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
