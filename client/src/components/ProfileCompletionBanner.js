@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ProfileCompletionBanner.css';
 
 const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onDismiss }) => {
+  const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
 
@@ -99,6 +101,23 @@ const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onD
     localStorage.removeItem('profileCompletionBannerDismissed');
   };
 
+  const handleItemClick = (itemId) => {
+    const navigationMap = {
+      'profile_picture': '/settings',
+      'bio': '/worker-dashboard?tab=profile',
+      'experience': '/worker-dashboard?tab=profile',
+      'service_radius': '/worker-dashboard?tab=profile',
+      'secondary_areas': '/worker-dashboard?tab=profile',
+      'certifications': '/worker-dashboard?tab=certifications',
+      'portfolio': '/worker-dashboard?tab=portfolio',
+    };
+
+    const route = navigationMap[itemId];
+    if (route) {
+      navigate(route);
+    }
+  };
+
   // Don't show if dismissed or if profile is complete
   if (isDismissed) {
     return null;
@@ -180,7 +199,12 @@ const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onD
             <h4>To-Do List:</h4>
             <ul>
               {missingItems.map((item) => (
-                <li key={item.id} className="checklist-item">
+                <li
+                  key={item.id}
+                  className="checklist-item clickable"
+                  onClick={() => handleItemClick(item.id)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="checkbox">☐</span>
                   <span className="item-label">{item.label}</span>
                   <span className="item-weight">{item.weight}%</span>
