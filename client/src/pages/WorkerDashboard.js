@@ -432,6 +432,7 @@ const WorkerDashboard = () => {
               profile={profile}
               certifications={certifications}
               portfolioPhotos={portfolioPhotos}
+              onTabChange={setActiveTab}
             />
 
             {/* Profile Summary Card */}

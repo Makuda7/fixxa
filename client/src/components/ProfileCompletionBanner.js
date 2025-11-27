@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ProfileCompletionBanner.css';
 
-const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onDismiss }) => {
+const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onDismiss, onTabChange }) => {
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
@@ -50,8 +50,8 @@ const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onD
       },
       {
         id: 'certifications',
-        label: 'Upload at least one certification',
-        completed: certifications && certifications.length > 0,
+        label: 'Upload at least one approved certification',
+        completed: certifications && certifications.filter(cert => cert.status === 'approved').length > 0,
         weight: 20,
       },
       {
@@ -102,19 +102,24 @@ const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onD
   };
 
   const handleItemClick = (itemId) => {
-    const navigationMap = {
-      'profile_picture': '/settings',
-      'bio': '/worker-dashboard?tab=profile',
-      'experience': '/worker-dashboard?tab=profile',
-      'service_radius': '/worker-dashboard?tab=profile',
-      'secondary_areas': '/worker-dashboard?tab=profile',
-      'certifications': '/worker-dashboard?tab=certifications',
-      'portfolio': '/worker-dashboard?tab=portfolio',
+    // Map items to either tab names (for dashboard) or routes (for navigation)
+    const tabMap = {
+      'profile_picture': 'settings', // Navigate to settings page
+      'bio': 'profile',
+      'experience': 'profile',
+      'service_radius': 'profile',
+      'secondary_areas': 'profile',
+      'certifications': 'certifications',
+      'portfolio': 'portfolio',
     };
 
-    const route = navigationMap[itemId];
-    if (route) {
-      navigate(route);
+    const tab = tabMap[itemId];
+    if (tab === 'settings') {
+      // Navigate to settings page
+      navigate('/settings');
+    } else if (tab && onTabChange) {
+      // Use callback to change tab in parent component
+      onTabChange(tab);
     }
   };
 
