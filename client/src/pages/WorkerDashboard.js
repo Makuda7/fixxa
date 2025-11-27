@@ -4,6 +4,7 @@ import { workerAPI, certificationsAPI } from '../services/api';
 import PortfolioGallery from '../components/PortfolioGallery';
 import DashboardStats from '../components/DashboardStats';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
+import Messages from '../components/Messages';
 import './WorkerDashboard.css';
 
 const WorkerDashboard = () => {
@@ -1006,17 +1007,7 @@ const WorkerDashboard = () => {
         {/* Messages Tab */}
         {activeTab === 'messages' && (
           <div className="messages-tab">
-            <section className="messages-section">
-              <h3>Messages</h3>
-              <div className="messages-container">
-                <div className="coming-soon-message">
-                  <div className="coming-soon-icon">💬</div>
-                  <h4>Messaging Coming Soon!</h4>
-                  <p>Direct messaging with clients will be available soon.</p>
-                  <p>For now, you can communicate with clients through the booking details once they book your services.</p>
-                </div>
-              </div>
-            </section>
+            <Messages />
           </div>
         )}
       </main>
