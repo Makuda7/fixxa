@@ -423,5 +423,134 @@ module.exports = (pool, logger, bcrypt, profilePicUpload, saltRounds) => {
     }
   });
 
+  // Update user profile (used by Settings page)
+  router.put('/api/user/profile', requireAuth, profilePicUpload.single('profile_pic'), async (req, res) => {
+    try {
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+      const { name, phone, address, city, postal_code } = req.body;
+
+      logger.info('Updating user profile', { userId, userType, name, phone });
+
+      // Determine which table to update based on user type
+      const table = userType === 'professional' ? 'workers' : userType === 'client' ? 'clients' : 'users';
+
+      // Build update query dynamically based on provided fields
+      const updates = [];
+      const values = [];
+      let paramCount = 1;
+
+      if (name) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(name);
+      }
+      if (phone) {
+        updates.push(`phone = $${paramCount++}`);
+        values.push(phone);
+      }
+      if (address) {
+        updates.push(`address = $${paramCount++}`);
+        values.push(address);
+      }
+      if (city) {
+        updates.push(`city = $${paramCount++}`);
+        values.push(city);
+      }
+      if (postal_code) {
+        updates.push(`postal_code = $${paramCount++}`);
+        values.push(postal_code);
+      }
+
+      // Handle profile picture upload if provided
+      if (req.file) {
+        logger.info('Processing profile picture upload', { userId, fileName: req.file.originalname });
+
+        // Virus scan
+        const scanResult = await scanFile(req.file);
+        if (!scanResult.clean) {
+          logger.warn('VIRUS DETECTED in profile picture', { userId, viruses: scanResult.foundViruses });
+          return res.status(400).json({
+            success: false,
+            error: 'File failed security scan'
+          });
+        }
+
+        // Upload to Cloudinary
+        const uploadPromise = new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'fixxa/profile-pics',
+              resource_type: 'image',
+              public_id: `profile-${userType}-${userId}-${Date.now()}`
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(req.file.buffer);
+        });
+
+        const cloudinaryResult = await uploadPromise;
+        updates.push(`profile_picture = $${paramCount++}`);
+        values.push(cloudinaryResult.secure_url);
+        updates.push(`profile_picture_cloudinary_id = $${paramCount++}`);
+        values.push(cloudinaryResult.public_id);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ success: false, error: 'No fields to update' });
+      }
+
+      // Add updated_at timestamp
+      updates.push(`updated_at = NOW()`);
+
+      // Add userId as last parameter
+      values.push(userId);
+
+      const query = `UPDATE ${table} SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+      const result = await pool.query(query, values);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      logger.info('Profile updated successfully', { userId, userType });
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        user: result.rows[0]
+      });
+    } catch (error) {
+      logger.error('Update user profile error', { error: error.message, stack: error.stack });
+      console.error('Update user profile error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update profile' });
+    }
+  });
+
+  // Get user profile (used by Settings page)
+  router.get('/api/user/profile', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+
+      const table = userType === 'professional' ? 'workers' : userType === 'client' ? 'clients' : 'users';
+      const result = await pool.query(`SELECT * FROM ${table} WHERE id = $1`, [userId]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      res.json({
+        success: true,
+        profile: result.rows[0]
+      });
+    } catch (error) {
+      logger.error('Get user profile error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to get profile' });
+    }
+  });
+
   return router;
 };
