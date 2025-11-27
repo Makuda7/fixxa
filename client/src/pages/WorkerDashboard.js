@@ -420,6 +420,12 @@ const WorkerDashboard = () => {
         >
           Reviews
         </button>
+        <button
+          className={activeTab === 'messages' ? 'active' : ''}
+          onClick={() => setActiveTab('messages')}
+        >
+          Messages
+        </button>
       </nav>
 
       {/* Main Content */}
@@ -994,6 +1000,23 @@ const WorkerDashboard = () => {
               onUpload={handlePortfolioUpload}
               onDelete={handlePortfolioDelete}
             />
+          </div>
+        )}
+
+        {/* Messages Tab */}
+        {activeTab === 'messages' && (
+          <div className="messages-tab">
+            <section className="messages-section">
+              <h3>Messages</h3>
+              <div className="messages-container">
+                <div className="coming-soon-message">
+                  <div className="coming-soon-icon">💬</div>
+                  <h4>Messaging Coming Soon!</h4>
+                  <p>Direct messaging with clients will be available soon.</p>
+                  <p>For now, you can communicate with clients through the booking details once they book your services.</p>
+                </div>
+              </div>
+            </section>
           </div>
         )}
       </main>
