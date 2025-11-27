@@ -719,6 +719,56 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // PUT /workers/profile - Update worker profile (used by Worker Dashboard Profile tab)
+  router.put('/profile', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const updates = req.body;
+
+      logger.info('Worker profile update request', { workerId, updates });
+
+      // Build dynamic update query
+      const allowedFields = ['name', 'phone', 'bio', 'experience', 'area', 'address', 'city', 'province', 'postal_code', 'speciality'];
+      const updateFields = [];
+      const values = [];
+      let paramCount = 1;
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (allowedFields.includes(key) && value !== undefined) {
+          updateFields.push(`${key} = $${paramCount++}`);
+          values.push(value);
+        }
+      }
+
+      if (updateFields.length === 0) {
+        return res.status(400).json({ success: false, error: 'No valid fields to update' });
+      }
+
+      // Add updated_at and worker ID
+      updateFields.push(`updated_at = NOW()`);
+      values.push(workerId);
+
+      const query = `UPDATE workers SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+      const result = await pool.query(query, values);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      logger.info('Worker profile updated successfully', { workerId });
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        profile: result.rows[0]
+      });
+    } catch (error) {
+      logger.error('Update worker profile error', { error: error.message, stack: error.stack });
+      console.error('Update worker profile error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update profile' });
+    }
+  });
+
   // Portfolio Routes
 
   // Upload portfolio photo
