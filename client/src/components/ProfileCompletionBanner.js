@@ -101,7 +101,15 @@ const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onD
     localStorage.removeItem('profileCompletionBannerDismissed');
   };
 
-  const handleItemClick = (itemId) => {
+  const handleItemClick = (itemId, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    console.log('ProfileCompletionBanner: Item clicked:', itemId);
+    console.log('ProfileCompletionBanner: onTabChange available:', !!onTabChange);
+
     // Map items to either tab names (for dashboard) or routes (for navigation)
     const tabMap = {
       'profile_picture': 'settings', // Navigate to settings page
@@ -114,12 +122,18 @@ const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onD
     };
 
     const tab = tabMap[itemId];
+    console.log('ProfileCompletionBanner: Mapped tab:', tab);
+
     if (tab === 'settings') {
       // Navigate to settings page
+      console.log('ProfileCompletionBanner: Navigating to settings');
       navigate('/settings');
     } else if (tab && onTabChange) {
       // Use callback to change tab in parent component
+      console.log('ProfileCompletionBanner: Changing tab to:', tab);
       onTabChange(tab);
+    } else {
+      console.log('ProfileCompletionBanner: No action taken - tab:', tab, 'onTabChange:', !!onTabChange);
     }
   };
 
@@ -207,12 +221,12 @@ const ProfileCompletionBanner = ({ profile, certifications, portfolioPhotos, onD
                 <li
                   key={item.id}
                   className="checklist-item clickable"
-                  onClick={() => handleItemClick(item.id)}
+                  onClick={(e) => handleItemClick(item.id, e)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <span className="checkbox">☐</span>
-                  <span className="item-label">{item.label}</span>
-                  <span className="item-weight">{item.weight}%</span>
+                  <span className="checkbox" style={{ pointerEvents: 'none' }}>☐</span>
+                  <span className="item-label" style={{ pointerEvents: 'none' }}>{item.label}</span>
+                  <span className="item-weight" style={{ pointerEvents: 'none' }}>{item.weight}%</span>
                 </li>
               ))}
             </ul>
