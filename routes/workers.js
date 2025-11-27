@@ -1121,7 +1121,7 @@ module.exports = (pool, logger, helpers) => {
              proof_of_address_url = $10,
              years_experience = $11,
              portfolio_description = $12,
-             references = $13,
+             "references" = $13,
              approval_status = 'pending',
              registration_complete = true,
              registration_submitted_at = NOW(),
