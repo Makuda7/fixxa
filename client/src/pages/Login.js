@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
@@ -6,24 +6,29 @@ import './Login.css';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(() => {
-    // Check for error in sessionStorage on mount
-    const savedError = sessionStorage.getItem('loginError');
-    if (savedError) {
-      sessionStorage.removeItem('loginError');
-      return savedError;
-    }
-    return '';
-  });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const errorRef = useRef(null);
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Check for persisted error on mount
+  useEffect(() => {
+    const savedError = sessionStorage.getItem('loginError');
+    if (savedError) {
+      setError(savedError);
+      sessionStorage.removeItem('loginError');
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     setError('');
 
     // Basic validation
@@ -75,31 +80,22 @@ const Login = () => {
           }
         }
       } else {
-        // Save error to sessionStorage in case page refreshes
+        // Login failed - set error immediately
         const errorMsg = result.error || 'Incorrect email or password. Please try again.';
-        sessionStorage.setItem('loginError', errorMsg);
-        // Keep loading state active briefly to prevent password manager from triggering
-        setTimeout(() => {
-          setError(errorMsg);
-          setLoading(false);
-        }, 100);
-        return; // Exit early, don't set loading to false yet
-      }
-    } catch (err) {
-      // Save error to sessionStorage in case page refreshes
-      const errorMsg = 'An error occurred. Please try again.';
-      sessionStorage.setItem('loginError', errorMsg);
-      // Keep loading state active briefly to prevent password manager from triggering
-      setTimeout(() => {
         setError(errorMsg);
         setLoading(false);
-      }, 100);
+        // Also persist to sessionStorage in case of page refresh
+        sessionStorage.setItem('loginError', errorMsg);
+      }
+    } catch (err) {
+      // Error occurred - set error immediately
+      const errorMsg = 'An error occurred. Please try again.';
+      setError(errorMsg);
+      setLoading(false);
+      // Also persist to sessionStorage in case of page refresh
+      sessionStorage.setItem('loginError', errorMsg);
       console.error('Login error:', err);
-      return; // Exit early, don't set loading to false yet
     }
-
-    // Only set loading to false on success
-    setLoading(false);
   };
 
   return (
@@ -113,14 +109,14 @@ const Login = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="error-message">
+          <div className="error-message" key={error} ref={errorRef}>
             <span className="error-icon">⚠️</span>
             {error}
           </div>
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="login-form" action="javascript:void(0);" method="post">
+        <form onSubmit={handleSubmit} className="login-form" autoComplete="off" noValidate>
           {/* Email Input */}
           <div className="form-group">
             <label htmlFor="email">Email</label>
