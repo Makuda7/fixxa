@@ -694,6 +694,14 @@ module.exports = (pool, logger, helpers) => {
 
       const worker = workerResult.rows[0];
 
+      // Check if worker has approved certifications
+      const certResult = await pool.query(
+        'SELECT COUNT(*) as count FROM certifications WHERE worker_id = $1 AND status = $2',
+        [id, 'approved']
+      );
+      const hasApprovedCerts = certResult.rows[0].count > 0;
+      console.log('Has approved certifications:', hasApprovedCerts);
+
       // Build update query dynamically based on provided suburb data
       // Always set is_verified = true when approving a worker
       // The "Verified" badge indicates admin approval, not certifications
