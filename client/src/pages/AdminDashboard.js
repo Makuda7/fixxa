@@ -519,6 +519,7 @@ const AdminDashboard = () => {
   // Worker Verification Functions
   const showWorkerVerification = async (worker) => {
     try {
+      console.log('showWorkerVerification called with worker:', worker);
       setLoading(true);
       setVerificationWorker(worker);
 
@@ -527,9 +528,10 @@ const AdminDashboard = () => {
         credentials: 'include'
       });
       const data = await response.json();
+      console.log('Worker detail response:', data);
 
       if (data.success) {
-        const workerData = data.worker;
+        const workerData = data.details;
 
         // Set verification states (from database or default to false)
         setVerificationStates({
