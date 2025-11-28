@@ -104,6 +104,9 @@ const AdminDashboard = () => {
   const [uploadingID, setUploadingID] = useState(false);
   const [idDocumentType, setIdDocumentType] = useState('id'); // 'id' or 'passport'
   const idInputRef = React.useRef(null);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfViewerUrl, setPdfViewerUrl] = useState('');
+  const [pdfViewerTitle, setPdfViewerTitle] = useState('Document Viewer');
 
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
@@ -1026,6 +1029,20 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openPdfViewer = (url) => {
+    // Extract filename from URL for better title
+    const fileName = url.split('/').pop().split('?')[0];
+    setPdfViewerTitle(`Document: ${decodeURIComponent(fileName)}`);
+    setPdfViewerUrl(url);
+    setShowPdfViewer(true);
+  };
+
+  const closePdfViewer = () => {
+    setShowPdfViewer(false);
+    setPdfViewerUrl('');
+    setPdfViewerTitle('Document Viewer');
   };
 
   const approveCertification = async (certId) => {
@@ -2791,10 +2808,12 @@ const AdminDashboard = () => {
                             ✅ {verificationWorker.id_document_type === 'passport' ? 'Passport' : 'ID'} Document Uploaded
                           </p>
                           <a
-                            href={verificationWorker.id_document_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#1976d2', textDecoration: 'underline', fontSize: '0.9rem' }}
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              openPdfViewer(verificationWorker.id_document_url);
+                            }}
+                            style={{ color: '#1976d2', textDecoration: 'underline', fontSize: '0.9rem', cursor: 'pointer' }}
                           >
                             View Document
                           </a>
@@ -3237,14 +3256,27 @@ const AdminDashboard = () => {
                               borderRadius: '4px'
                             }}>
                               <div style={{ flex: 1 }}>
-                                <a
-                                  href={cert.document_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{ color: '#4a7c59', textDecoration: 'underline', fontWeight: '500' }}
-                                >
-                                  {cert.document_name}
-                                </a>
+                                {cert.file_type === 'pdf' ? (
+                                  <a
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      openPdfViewer(cert.document_url);
+                                    }}
+                                    style={{ color: '#4a7c59', textDecoration: 'underline', fontWeight: '500', cursor: 'pointer' }}
+                                  >
+                                    {cert.document_name}
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={cert.document_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: '#4a7c59', textDecoration: 'underline', fontWeight: '500' }}
+                                  >
+                                    {cert.document_name}
+                                  </a>
+                                )}
                                 {' '}
                                 <span style={{
                                   fontSize: '0.85rem',
@@ -3462,6 +3494,119 @@ const AdminDashboard = () => {
                   Save your progress as you go, and send reminder emails for missing information.
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PDF Viewer Modal */}
+      {showPdfViewer && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            maxWidth: '95vw',
+            maxHeight: '95vh',
+            width: '1200px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderBottom: '1px solid #ddd',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#f8f9fa'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#333' }}>{pdfViewerTitle}</h3>
+              <button
+                onClick={closePdfViewer}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '2rem',
+                  cursor: 'pointer',
+                  color: '#666',
+                  lineHeight: 1,
+                  padding: 0,
+                  width: '32px',
+                  height: '32px'
+                }}
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Toolbar */}
+            <div style={{
+              padding: '1rem',
+              background: '#f5f5f5',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '0.5rem',
+              borderBottom: '1px solid #ddd'
+            }}>
+              <button
+                onClick={() => window.open(pdfViewerUrl, '_blank')}
+                className="btn"
+                style={{
+                  background: '#4a7c59',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem'
+                }}
+              >
+                📥 Download Document
+              </button>
+            </div>
+
+            {/* PDF Viewer */}
+            <div style={{
+              flex: 1,
+              background: 'white',
+              border: '1px solid #ddd',
+              overflow: 'hidden',
+              height: '75vh'
+            }}>
+              <iframe
+                src={pdfViewerUrl}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none'
+                }}
+                title={pdfViewerTitle}
+              />
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '0.75rem',
+              textAlign: 'center',
+              fontSize: '0.85rem',
+              color: '#666',
+              background: '#f8f9fa',
+              borderTop: '1px solid #ddd'
+            }}>
+              If the document doesn't display, click the Download button above to view it locally.
             </div>
           </div>
         </div>
