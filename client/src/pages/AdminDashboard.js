@@ -98,6 +98,9 @@ const AdminDashboard = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const profilePhotoInputRef = React.useRef(null);
+  const [uploadingCertification, setUploadingCertification] = useState(false);
+  const [certDocumentName, setCertDocumentName] = useState('');
+  const certificationInputRef = React.useRef(null);
 
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
@@ -797,6 +800,79 @@ const AdminDashboard = () => {
         setPhotoPreview(reader.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadCertificationForWorker = async (file) => {
+    if (!verificationWorker) {
+      showMessage('No worker selected', 'error');
+      return;
+    }
+
+    if (!certDocumentName.trim()) {
+      showMessage('Please enter a document name', 'error');
+      return;
+    }
+
+    // Validate file type - accept PDF, images, and documents
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      showMessage('Only PDF, JPG, PNG, DOC, and DOCX files are allowed', 'error');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      showMessage('File size must be less than 10MB', 'error');
+      return;
+    }
+
+    try {
+      setUploadingCertification(true);
+      const formData = new FormData();
+      formData.append('certification', file);
+      formData.append('documentName', certDocumentName.trim());
+
+      const response = await fetch(`/admin/upload-worker-certification/${verificationWorker.id}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('✅ Certification uploaded successfully!', 'success');
+        setCertDocumentName('');
+        if (certificationInputRef.current) {
+          certificationInputRef.current.value = '';
+        }
+
+        // Reload certifications to show the new one
+        const certsResponse = await fetch(`/admin/worker-certifications/${verificationWorker.id}`, {
+          credentials: 'include'
+        });
+        const certsData = await certsResponse.json();
+        if (certsData.success) {
+          setWorkerCertifications(certsData.certifications);
+        }
+      } else {
+        showMessage(data.error || 'Failed to upload certification', 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading certification:', error);
+      showMessage('Error uploading certification', 'error');
+    } finally {
+      setUploadingCertification(false);
     }
   };
 
@@ -2910,6 +2986,79 @@ const AdminDashboard = () => {
                     ) : (
                       <p style={{ margin: 0, color: '#dc3545' }}>❌ No documents uploaded yet</p>
                     )}
+
+                    {/* Admin Upload Certification */}
+                    <div style={{
+                      marginTop: '1rem',
+                      padding: '1rem',
+                      background: '#f8f9fa',
+                      borderRadius: '6px',
+                      border: '1px dashed #4a7c59'
+                    }}>
+                      <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: '#4a7c59' }}>
+                        📎 Upload Document for Worker
+                      </h5>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem', fontWeight: '500' }}>
+                            Document Name:
+                          </label>
+                          <input
+                            type="text"
+                            value={certDocumentName}
+                            onChange={(e) => setCertDocumentName(e.target.value)}
+                            placeholder="e.g., ID Copy, Proof of Residence"
+                            disabled={uploadingCertification}
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '0.9rem'
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="file"
+                            ref={certificationInputRef}
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                uploadCertificationForWorker(file);
+                              }
+                            }}
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            disabled={uploadingCertification}
+                            style={{ display: 'none' }}
+                          />
+                          <button
+                            onClick={() => {
+                              if (!certDocumentName.trim()) {
+                                showMessage('Please enter a document name first', 'error');
+                                return;
+                              }
+                              certificationInputRef.current?.click();
+                            }}
+                            disabled={uploadingCertification}
+                            className="btn"
+                            style={{
+                              background: uploadingCertification ? '#6c757d' : '#4a7c59',
+                              color: 'white',
+                              padding: '0.5rem 1rem',
+                              fontSize: '0.9rem',
+                              cursor: uploadingCertification ? 'not-allowed' : 'pointer',
+                              width: '100%'
+                            }}
+                          >
+                            {uploadingCertification ? '⏳ Uploading...' : '📤 Choose & Upload File'}
+                          </button>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>
+                          Accepted: PDF, JPG, PNG, DOC, DOCX (max 10MB)
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

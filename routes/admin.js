@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { cloudinary, profilePicStorage } = require('../config/cloudinary');
+const { cloudinary, profilePicStorage, certificationStorage } = require('../config/cloudinary');
 
 // Configure multer for profile picture uploads
 const profilePicUpload = multer({
@@ -14,6 +14,21 @@ const profilePicUpload = multer({
       return cb(null, true);
     } else {
       cb(new Error('Only JPEG, PNG, and WEBP images are allowed'));
+    }
+  }
+});
+
+// Configure multer for certification uploads
+const certificationUpload = multer({
+  storage: certificationStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only PDF, JPG, PNG, DOC, and DOCX files are allowed'));
     }
   }
 });
@@ -2332,6 +2347,94 @@ module.exports = (pool, logger, helpers) => {
       }
 
       res.status(500).json({ success: false, error: 'Failed to upload profile photo' });
+    }
+  });
+
+  // Upload certification for worker (admin helping worker)
+  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, certificationUpload.single('certification'), async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const { documentName } = req.body;
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      if (!documentName || !documentName.trim()) {
+        // Delete uploaded file from Cloudinary since no document name provided
+        if (req.file.filename) {
+          await cloudinary.uploader.destroy(req.file.filename, {
+            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
+          });
+        }
+        return res.status(400).json({ success: false, error: 'Document name is required' });
+      }
+
+      // Verify worker exists
+      const workerResult = await pool.query('SELECT id, name FROM workers WHERE id = $1', [workerId]);
+
+      if (workerResult.rows.length === 0) {
+        // Delete uploaded file from Cloudinary since worker doesn't exist
+        if (req.file.filename) {
+          await cloudinary.uploader.destroy(req.file.filename, {
+            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
+          });
+        }
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      // Determine file type for database
+      let fileType = 'document';
+      if (req.file.mimetype === 'application/pdf') {
+        fileType = 'pdf';
+      } else if (req.file.mimetype.startsWith('image/')) {
+        fileType = 'image';
+      }
+
+      // Insert certification into database
+      const insertResult = await pool.query(
+        `INSERT INTO certifications
+         (worker_id, document_name, document_url, cloudinary_id, file_type, status, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'pending', NOW())
+         RETURNING id, document_name, document_url, file_type, status, created_at`,
+        [workerId, documentName.trim(), req.file.path, req.file.filename, fileType]
+      );
+
+      logger.info('Admin uploaded certification for worker', {
+        workerId,
+        workerName: workerResult.rows[0].name,
+        adminEmail: req.session.user.email,
+        documentName: documentName.trim(),
+        cloudinaryId: req.file.filename,
+        fileType
+      });
+
+      res.json({
+        success: true,
+        message: 'Certification uploaded successfully',
+        certification: insertResult.rows[0]
+      });
+    } catch (error) {
+      logger.error('Failed to upload worker certification', {
+        error: error.message,
+        workerId: req.params.workerId
+      });
+
+      // Try to clean up uploaded file if database insert failed
+      if (req.file && req.file.filename) {
+        try {
+          await cloudinary.uploader.destroy(req.file.filename, {
+            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
+          });
+        } catch (cleanupError) {
+          logger.error('Failed to cleanup uploaded file after error', {
+            error: cleanupError.message,
+            cloudinaryId: req.file.filename
+          });
+        }
+      }
+
+      res.status(500).json({ success: false, error: 'Failed to upload certification' });
     }
   });
 
