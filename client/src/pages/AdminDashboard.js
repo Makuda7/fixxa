@@ -71,6 +71,15 @@ const AdminDashboard = () => {
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [workerDetailData, setWorkerDetailData] = useState(null);
 
+  // Worker approval form fields
+  const [editProvince, setEditProvince] = useState('');
+  const [editPrimarySuburb, setEditPrimarySuburb] = useState('');
+  const [editSecondaryAreas, setEditSecondaryAreas] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editExperience, setEditExperience] = useState('');
+  const [availableSpecialties, setAvailableSpecialties] = useState([]);
+  const [selectedSpecialties, setSelectedSpecialties] = useState([]);
+
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
     if (!user || user.isAdmin !== true) {
@@ -293,6 +302,51 @@ const AdminDashboard = () => {
     setTimeout(() => setMessage({ text: '', type: '' }), 5000);
   };
 
+  const approveWorkerWithData = async () => {
+    // Validate required fields
+    if (!editPrimarySuburb.trim()) {
+      showMessage('Primary suburb is required', 'error');
+      return;
+    }
+
+    if (selectedSpecialties.length === 0) {
+      showMessage('Please select at least one specialty', 'error');
+      return;
+    }
+
+    try {
+      const secondary_areas = editSecondaryAreas
+        ? editSecondaryAreas.split(',').map(s => s.trim()).filter(s => s)
+        : [];
+
+      const response = await fetch(`/admin/approve-worker/${selectedWorker.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          province: editProvince,
+          primary_suburb: editPrimarySuburb,
+          secondary_areas,
+          specialty_ids: selectedSpecialties,
+          bio: editBio,
+          experience: editExperience
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        showMessage(data.message || 'Worker approved successfully', 'success');
+        closeWorkerDetailModal();
+        await loadPendingWorkers();
+        await loadStats();
+      } else {
+        showMessage(data.error || 'Failed to approve worker', 'error');
+      }
+    } catch (error) {
+      console.error('Error approving worker:', error);
+      showMessage('Error approving worker', 'error');
+    }
+  };
+
   const approveWorker = async (workerId) => {
     try {
       const response = await fetch(`/admin/approve-worker/${workerId}`, {
@@ -364,6 +418,34 @@ const AdminDashboard = () => {
 
       if (data.success) {
         setWorkerDetailData(data.details);
+
+        // Populate edit fields with current data
+        setEditProvince(data.details.province || '');
+        setEditPrimarySuburb(data.details.primary_suburb || '');
+        setEditSecondaryAreas(data.details.secondary_areas?.join(', ') || '');
+        setEditBio(worker.bio || '');
+        setEditExperience(worker.experience || '');
+
+        // Fetch available specialties
+        const specialtiesRes = await fetch('/admin/specialties', {
+          credentials: 'include'
+        });
+        const specialtiesData = await specialtiesRes.json();
+
+        if (specialtiesData.success) {
+          setAvailableSpecialties(specialtiesData.specialties);
+
+          // Fetch worker's current specialties
+          const workerSpecRes = await fetch(`/admin/worker-specialties/${worker.id}`, {
+            credentials: 'include'
+          });
+          const workerSpecData = await workerSpecRes.json();
+
+          if (workerSpecData.success) {
+            setSelectedSpecialties(workerSpecData.specialties.map(s => s.id));
+          }
+        }
+
         setShowWorkerDetailModal(true);
       } else {
         showMessage(data.error || 'Failed to load worker details', 'error');
@@ -1502,8 +1584,156 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Bio */}
-              {selectedWorker.bio && (
+              {/* Editable Location Information */}
+              {selectedWorker.approval_status === 'pending' && (
+                <div style={{ marginBottom: '2rem', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                  <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                    Edit Location & Profile (Required for Approval)
+                  </h4>
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                        Province <span style={{ color: 'red' }}>*</span>
+                      </label>
+                      <select
+                        value={editProvince}
+                        onChange={(e) => setEditProvince(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        <option value="">Select Province</option>
+                        <option value="Eastern Cape">Eastern Cape</option>
+                        <option value="Free State">Free State</option>
+                        <option value="Gauteng">Gauteng</option>
+                        <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                        <option value="Limpopo">Limpopo</option>
+                        <option value="Mpumalanga">Mpumalanga</option>
+                        <option value="Northern Cape">Northern Cape</option>
+                        <option value="North West">North West</option>
+                        <option value="Western Cape">Western Cape</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                        Primary Suburb <span style={{ color: 'red' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={editPrimarySuburb}
+                        onChange={(e) => setEditPrimarySuburb(e.target.value)}
+                        placeholder="e.g., Sandton"
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                        Secondary Areas (comma separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={editSecondaryAreas}
+                        onChange={(e) => setEditSecondaryAreas(e.target.value)}
+                        placeholder="e.g., Rosebank, Parktown, Bryanston"
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                        Bio
+                      </label>
+                      <textarea
+                        value={editBio}
+                        onChange={(e) => setEditBio(e.target.value)}
+                        rows="3"
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                        Years of Experience
+                      </label>
+                      <input
+                        type="number"
+                        value={editExperience}
+                        onChange={(e) => setEditExperience(e.target.value)}
+                        placeholder="e.g., 5"
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                        Specialties <span style={{ color: 'red' }}>*</span>
+                      </label>
+                      <div style={{
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '0.5rem'
+                      }}>
+                        {availableSpecialties.map((specialty) => (
+                          <label
+                            key={specialty.id}
+                            style={{
+                              display: 'block',
+                              padding: '0.5rem',
+                              cursor: 'pointer',
+                              borderRadius: '4px',
+                              marginBottom: '0.25rem',
+                              background: selectedSpecialties.includes(specialty.id) ? '#e8f5e9' : 'white'
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSpecialties.includes(specialty.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSpecialties([...selectedSpecialties, specialty.id]);
+                                } else {
+                                  setSelectedSpecialties(selectedSpecialties.filter(id => id !== specialty.id));
+                                }
+                              }}
+                              style={{ marginRight: '0.5rem' }}
+                            />
+                            {specialty.name}
+                          </label>
+                        ))}
+                      </div>
+                      <small style={{ color: '#666', display: 'block', marginTop: '0.5rem' }}>
+                        Selected: {selectedSpecialties.length} specialties
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Bio (Read-only if not pending) */}
+              {selectedWorker.approval_status !== 'pending' && selectedWorker.bio && (
                 <div style={{ marginBottom: '2rem' }}>
                   <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
                     Bio
@@ -1512,8 +1742,8 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Experience */}
-              {selectedWorker.experience && (
+              {/* Experience (Read-only if not pending) */}
+              {selectedWorker.approval_status !== 'pending' && selectedWorker.experience && (
                 <div style={{ marginBottom: '2rem' }}>
                   <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
                     Experience
@@ -1599,10 +1829,7 @@ const AdminDashboard = () => {
                   <>
                     <button
                       className="btn btn-success"
-                      onClick={() => {
-                        closeWorkerDetailModal();
-                        approveWorker(selectedWorker.id);
-                      }}
+                      onClick={approveWorkerWithData}
                     >
                       ✅ Approve Worker
                     </button>
