@@ -3166,7 +3166,12 @@
         // Debug logging
         const action = target.getAttribute('data-action');
         if (action) {
-          console.log('Click event - action:', action, 'target:', target, 'original click:', e.target);
+          console.log('========== CLICK EVENT DETECTED ==========');
+          console.log('Action:', action);
+          console.log('Target element:', target);
+          console.log('Target HTML:', target.outerHTML.substring(0, 200));
+          console.log('Original click target:', e.target);
+          console.log('==========================================');
         }
 
         // Tab navigation
@@ -3244,8 +3249,14 @@
 
           // Worker actions
           case 'show-worker-detail':
+            console.log('show-worker-detail case triggered');
+            console.log('Click target:', e.target);
+            console.log('Is button?', e.target.tagName === 'BUTTON');
+            console.log('Closest button?', e.target.closest('button'));
+
             // Don't trigger if the actual click target was a button or if we're clicking inside a button
             if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+              console.log('Ignoring click - it was on a button');
               return;
             }
             const detailWorkerId = parseInt(target.getAttribute('data-worker-id'));
