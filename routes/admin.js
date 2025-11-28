@@ -2259,5 +2259,81 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Upload profile photo for worker (admin helping worker)
+  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, profilePicUpload.single('profilePicture'), async (req, res) => {
+    try {
+      const { workerId } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      // Get current worker photo to delete from Cloudinary if exists
+      const workerResult = await pool.query(
+        'SELECT profile_picture, cloudinary_profile_id FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      if (workerResult.rows.length === 0) {
+        // Delete uploaded file from Cloudinary since worker doesn't exist
+        if (req.file.cloudinaryId) {
+          await cloudinary.uploader.destroy(req.file.cloudinaryId);
+        }
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const oldCloudinaryId = workerResult.rows[0].cloudinary_profile_id;
+
+      // Update worker with new profile picture
+      await pool.query(
+        'UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2, updated_at = NOW() WHERE id = $3',
+        [req.file.path, req.file.filename, workerId]
+      );
+
+      // Delete old profile picture from Cloudinary if it exists
+      if (oldCloudinaryId) {
+        try {
+          await cloudinary.uploader.destroy(oldCloudinaryId);
+        } catch (deleteError) {
+          logger.warn('Failed to delete old profile picture from Cloudinary', {
+            error: deleteError.message,
+            cloudinaryId: oldCloudinaryId
+          });
+        }
+      }
+
+      logger.info('Admin uploaded profile photo for worker', {
+        workerId,
+        adminEmail: req.session.user.email,
+        cloudinaryId: req.file.filename
+      });
+
+      res.json({
+        success: true,
+        message: 'Profile photo uploaded successfully',
+        profile_picture: req.file.path
+      });
+    } catch (error) {
+      logger.error('Failed to upload worker profile photo', {
+        error: error.message,
+        workerId: req.params.workerId
+      });
+
+      // Try to clean up uploaded file if database update failed
+      if (req.file && req.file.filename) {
+        try {
+          await cloudinary.uploader.destroy(req.file.filename);
+        } catch (cleanupError) {
+          logger.error('Failed to cleanup uploaded file after error', {
+            error: cleanupError.message,
+            cloudinaryId: req.file.filename
+          });
+        }
+      }
+
+      res.status(500).json({ success: false, error: 'Failed to upload profile photo' });
+    }
+  });
+
   return router;
 };

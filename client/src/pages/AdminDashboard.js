@@ -94,6 +94,9 @@ const AdminDashboard = () => {
   const [emergencyContact1, setEmergencyContact1] = useState(null);
   const [emergencyContact2, setEmergencyContact2] = useState(null);
   const [workerCertifications, setWorkerCertifications] = useState([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const profilePhotoInputRef = React.useRef(null);
 
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
@@ -716,6 +719,81 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error approving worker:', error);
       showMessage('Error approving worker', 'error');
+    }
+  };
+
+  const uploadProfilePhotoForWorker = async (file) => {
+    if (!verificationWorker) return;
+
+    // Validate file
+    if (!file) {
+      showMessage('Please select a file', 'error');
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      showMessage('Only JPEG, PNG, and WEBP images are allowed', 'error');
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      showMessage('File size must be less than 5MB', 'error');
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+
+      const response = await fetch(`/admin/upload-worker-photo/${verificationWorker.id}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('✅ Profile photo uploaded successfully!', 'success');
+
+        // Update verification worker with new photo
+        setVerificationWorker({
+          ...verificationWorker,
+          profile_picture: data.profile_picture
+        });
+
+        // Clear preview and file input
+        setPhotoPreview(null);
+        if (profilePhotoInputRef.current) {
+          profilePhotoInputRef.current.value = '';
+        }
+
+        // Reload pending workers to show updated photo
+        await loadPendingWorkers();
+      } else {
+        showMessage(data.error || 'Failed to upload photo', 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      showMessage('Error uploading profile photo', 'error');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleProfilePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -2242,35 +2320,114 @@ const AdminDashboard = () => {
                     <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
                       1. Profile Picture Verification
                     </h4>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                      {verificationWorker.profile_picture ? (
-                        <>
-                          <img
-                            src={verificationWorker.profile_picture}
-                            alt="Profile"
-                            style={{
-                              width: '100px',
-                              height: '100px',
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: '3px solid #4a7c59'
-                            }}
-                          />
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {verificationWorker.profile_picture ? (
+                          <>
+                            <img
+                              src={verificationWorker.profile_picture}
+                              alt="Profile"
+                              style={{
+                                width: '100px',
+                                height: '100px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '3px solid #4a7c59'
+                              }}
+                            />
+                            <div>
+                              <p style={{ margin: 0, color: '#28a745', fontWeight: '600' }}>✅ Profile picture uploaded</p>
+                              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
+                                Verify that the photo is clear and professional
+                              </p>
+                            </div>
+                          </>
+                        ) : (
                           <div>
-                            <p style={{ margin: 0, color: '#28a745', fontWeight: '600' }}>✅ Profile picture uploaded</p>
+                            <p style={{ margin: 0, color: '#dc3545', fontWeight: '600' }}>❌ No profile picture</p>
                             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
-                              Verify that the photo is clear and professional
+                              Worker needs to upload a profile photo
                             </p>
                           </div>
-                        </>
-                      ) : (
-                        <div>
-                          <p style={{ margin: 0, color: '#dc3545', fontWeight: '600' }}>❌ No profile picture</p>
-                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
-                            Worker needs to upload a profile photo
-                          </p>
+                        )}
+                      </div>
+
+                      {/* Admin Upload Photo */}
+                      <div style={{
+                        width: '100%',
+                        marginTop: '1rem',
+                        padding: '1rem',
+                        background: '#e3f2fd',
+                        borderRadius: '6px',
+                        border: '1px solid #90caf9'
+                      }}>
+                        <h5 style={{ margin: '0 0 0.5rem 0', color: '#1976d2', fontSize: '0.95rem' }}>
+                          📤 Admin Upload (Help Worker Upload Photo)
+                        </h5>
+                        <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', color: '#666' }}>
+                          Upload a profile photo on behalf of this worker
+                        </p>
+
+                        <input
+                          type="file"
+                          ref={profilePhotoInputRef}
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          onChange={handleProfilePhotoChange}
+                          style={{ display: 'none' }}
+                        />
+
+                        {photoPreview && (
+                          <div style={{ marginBottom: '0.75rem' }}>
+                            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', fontWeight: '600' }}>Preview:</p>
+                            <img
+                              src={photoPreview}
+                              alt="Preview"
+                              style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '2px solid #1976d2'
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => profilePhotoInputRef.current?.click()}
+                            disabled={uploadingPhoto}
+                            style={{
+                              background: '#1976d2',
+                              color: 'white',
+                              padding: '0.5rem 1rem',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            {photoPreview ? '📷 Choose Different Photo' : '📷 Choose Photo'}
+                          </button>
+
+                          {photoPreview && (
+                            <button
+                              type="button"
+                              className="btn btn-success"
+                              onClick={() => {
+                                const file = profilePhotoInputRef.current?.files[0];
+                                if (file) uploadProfilePhotoForWorker(file);
+                              }}
+                              disabled={uploadingPhoto}
+                              style={{
+                                padding: '0.5rem 1rem',
+                                fontSize: '0.9rem'
+                              }}
+                            >
+                              {uploadingPhoto ? '⏳ Uploading...' : '✅ Upload Photo'}
+                            </button>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
