@@ -1421,11 +1421,80 @@ const AdminDashboard = () => {
 
             {/* Website Analytics Section */}
             <div className="table-section" style={{ marginTop: '2rem' }}>
-              <h3>Website Analytics</h3>
+              <h3>📊 Website Analytics</h3>
               <p style={{ color: '#666' }}>Track your website traffic and visitor behavior</p>
 
-              <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginTop: '1rem' }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: '#2d5016' }}>View Full Analytics</h4>
+              {/* Analytics Stat Cards */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem',
+                marginBottom: '1.5rem',
+                marginTop: '1rem'
+              }}>
+                {/* Visitors Today */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                    📊
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                    Check Google<br />Analytics
+                  </div>
+                </div>
+
+                {/* Visitors This Week */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                    -
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                    Visitors This Week
+                  </div>
+                </div>
+
+                {/* Page Views Today */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                    -
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                    Page Views Today
+                  </div>
+                </div>
+
+                {/* Active Users Now */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  color: 'white'
+                }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                    -
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                    Active Users Now
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <h4 style={{ margin: '0 0 1rem 0', color: '#2d5016' }}>📈 View Full Analytics</h4>
                 <p style={{ color: '#666', marginBottom: '1rem', fontSize: '0.9rem' }}>
                   Access your complete Google Analytics dashboard for detailed insights, user demographics, traffic sources, and more.
                 </p>
