@@ -598,20 +598,23 @@ const AdminDashboard = () => {
     }
   };
 
-  const saveVerificationStates = async () => {
+  const saveVerificationStates = async (overrideStates = null) => {
     if (!verificationWorker) return;
 
     try {
+      // Use override states if provided (for immediate saves after checkbox changes)
+      const statesToSave = overrideStates || verificationStates;
+
       const response = await fetch(`/admin/save-verification-states/${verificationWorker.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          verified_profile_pic: verificationStates.verified_profile_pic,
-          verified_id_info: verificationStates.verified_id_info,
-          verified_emergency: verificationStates.verified_emergency,
-          verified_professional: verificationStates.verified_professional,
-          verified_documents: verificationStates.verified_documents,
+          verified_profile_pic: statesToSave.verified_profile_pic,
+          verified_id_info: statesToSave.verified_id_info,
+          verified_emergency: statesToSave.verified_emergency,
+          verified_professional: statesToSave.verified_professional,
+          verified_documents: statesToSave.verified_documents,
           province: editProvince,
           primary_suburb: editPrimarySuburb,
           secondary_areas: editSecondaryAreas.split(',').map(s => s.trim()).filter(s => s),
@@ -624,7 +627,10 @@ const AdminDashboard = () => {
       const data = await response.json();
 
       if (data.success) {
-        showMessage('✅ Verification states saved!', 'success');
+        // Only show message when manually clicked (not on auto-save)
+        if (!overrideStates) {
+          showMessage('✅ Verification states saved!', 'success');
+        }
       } else {
         showMessage(data.error || 'Failed to save verification states', 'error');
       }
@@ -2599,11 +2605,12 @@ const AdminDashboard = () => {
                     type="checkbox"
                     checked={verificationStates.verified_profile_pic}
                     onChange={(e) => {
-                      setVerificationStates({
+                      const newStates = {
                         ...verificationStates,
                         verified_profile_pic: e.target.checked
-                      });
-                      saveVerificationStates();
+                      };
+                      setVerificationStates(newStates);
+                      saveVerificationStates(newStates);
                     }}
                     style={{
                       width: '24px',
@@ -2742,11 +2749,12 @@ const AdminDashboard = () => {
                     type="checkbox"
                     checked={verificationStates.verified_id_info}
                     onChange={(e) => {
-                      setVerificationStates({
+                      const newStates = {
                         ...verificationStates,
                         verified_id_info: e.target.checked
-                      });
-                      saveVerificationStates();
+                      };
+                      setVerificationStates(newStates);
+                      saveVerificationStates(newStates);
                     }}
                     style={{
                       width: '24px',
@@ -2879,11 +2887,12 @@ const AdminDashboard = () => {
                     type="checkbox"
                     checked={verificationStates.verified_emergency}
                     onChange={(e) => {
-                      setVerificationStates({
+                      const newStates = {
                         ...verificationStates,
                         verified_emergency: e.target.checked
-                      });
-                      saveVerificationStates();
+                      };
+                      setVerificationStates(newStates);
+                      saveVerificationStates(newStates);
                     }}
                     style={{
                       width: '24px',
@@ -2936,11 +2945,12 @@ const AdminDashboard = () => {
                     type="checkbox"
                     checked={verificationStates.verified_professional}
                     onChange={(e) => {
-                      setVerificationStates({
+                      const newStates = {
                         ...verificationStates,
                         verified_professional: e.target.checked
-                      });
-                      saveVerificationStates();
+                      };
+                      setVerificationStates(newStates);
+                      saveVerificationStates(newStates);
                     }}
                     style={{
                       width: '24px',
@@ -3172,11 +3182,12 @@ const AdminDashboard = () => {
                     type="checkbox"
                     checked={verificationStates.verified_documents}
                     onChange={(e) => {
-                      setVerificationStates({
+                      const newStates = {
                         ...verificationStates,
                         verified_documents: e.target.checked
-                      });
-                      saveVerificationStates();
+                      };
+                      setVerificationStates(newStates);
+                      saveVerificationStates(newStates);
                     }}
                     style={{
                       width: '24px',
