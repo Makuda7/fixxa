@@ -3163,6 +3163,12 @@
         const target = e.target.closest('[data-action], [data-tab], [data-filter]');
         if (!target) return;
 
+        // Debug logging
+        const action = target.getAttribute('data-action');
+        if (action) {
+          console.log('Click event - action:', action, 'target:', target, 'original click:', e.target);
+        }
+
         // Tab navigation
         if (target.hasAttribute('data-tab')) {
           const tabName = target.getAttribute('data-tab');
@@ -3238,11 +3244,12 @@
 
           // Worker actions
           case 'show-worker-detail':
-            // Don't trigger if clicking on a button inside the card
-            if (e.target.closest('button') && e.target.closest('button') !== target) {
+            // Don't trigger if the actual click target was a button or if we're clicking inside a button
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
               return;
             }
             const detailWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            console.log('Showing worker detail for ID:', detailWorkerId);
             showWorkerDetail(detailWorkerId);
             break;
           case 'toggle-professional':
@@ -3271,11 +3278,17 @@
             openRejectWorkerModal(rejectModalWorkerId);
             break;
           case 'approve-worker-modal':
+            e.preventDefault();
+            e.stopPropagation();
             const approveModalWorkerId = parseInt(target.getAttribute('data-worker-id'));
+            console.log('Approving worker from modal, ID:', approveModalWorkerId);
             approveWorkerFromModal(approveModalWorkerId);
             break;
           case 'reject-worker-modal':
+            e.preventDefault();
+            e.stopPropagation();
             const rejectWorkerModalId = parseInt(target.getAttribute('data-worker-id'));
+            console.log('Opening reject modal for worker ID:', rejectWorkerModalId);
             closeWorkerDetailModal();
             openRejectWorkerModal(rejectWorkerModalId);
             break;
