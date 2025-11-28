@@ -2438,5 +2438,103 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Upload ID/Passport document for worker (admin helping worker)
+  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, certificationUpload.single('idDocument'), async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const { documentType } = req.body; // 'id' or 'passport'
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      if (!documentType || !['id', 'passport'].includes(documentType)) {
+        // Delete uploaded file from Cloudinary since invalid document type
+        if (req.file.filename) {
+          await cloudinary.uploader.destroy(req.file.filename, {
+            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
+          });
+        }
+        return res.status(400).json({ success: false, error: 'Valid document type is required (id or passport)' });
+      }
+
+      // Verify worker exists
+      const workerResult = await pool.query('SELECT id, name, cloudinary_id_document_id FROM workers WHERE id = $1', [workerId]);
+
+      if (workerResult.rows.length === 0) {
+        // Delete uploaded file from Cloudinary since worker doesn't exist
+        if (req.file.filename) {
+          await cloudinary.uploader.destroy(req.file.filename, {
+            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
+          });
+        }
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const oldCloudinaryId = workerResult.rows[0].cloudinary_id_document_id;
+
+      // Update worker with ID/Passport document
+      await pool.query(
+        `UPDATE workers
+         SET id_document_url = $1,
+             id_document_type = $2,
+             cloudinary_id_document_id = $3,
+             updated_at = NOW()
+         WHERE id = $4`,
+        [req.file.path, documentType, req.file.filename, workerId]
+      );
+
+      // Delete old ID document from Cloudinary if it exists
+      if (oldCloudinaryId) {
+        try {
+          await cloudinary.uploader.destroy(oldCloudinaryId, {
+            resource_type: 'raw' // ID documents are stored as raw files
+          });
+        } catch (deleteError) {
+          logger.warn('Failed to delete old ID document from Cloudinary', {
+            error: deleteError.message,
+            cloudinaryId: oldCloudinaryId
+          });
+        }
+      }
+
+      logger.info('Admin uploaded ID/Passport document for worker', {
+        workerId,
+        workerName: workerResult.rows[0].name,
+        adminEmail: req.session.user.email,
+        documentType,
+        cloudinaryId: req.file.filename
+      });
+
+      res.json({
+        success: true,
+        message: `${documentType === 'passport' ? 'Passport' : 'ID'} document uploaded successfully`,
+        id_document_url: req.file.path,
+        id_document_type: documentType
+      });
+    } catch (error) {
+      logger.error('Failed to upload worker ID document', {
+        error: error.message,
+        workerId: req.params.workerId
+      });
+
+      // Try to clean up uploaded file if database update failed
+      if (req.file && req.file.filename) {
+        try {
+          await cloudinary.uploader.destroy(req.file.filename, {
+            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
+          });
+        } catch (cleanupError) {
+          logger.error('Failed to cleanup uploaded file after error', {
+            error: cleanupError.message,
+            cloudinaryId: req.file.filename
+          });
+        }
+      }
+
+      res.status(500).json({ success: false, error: 'Failed to upload ID document' });
+    }
+  });
+
   return router;
 };

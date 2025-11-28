@@ -101,6 +101,9 @@ const AdminDashboard = () => {
   const [uploadingCertification, setUploadingCertification] = useState(false);
   const [certDocumentName, setCertDocumentName] = useState('');
   const certificationInputRef = React.useRef(null);
+  const [uploadingID, setUploadingID] = useState(false);
+  const [idDocumentType, setIdDocumentType] = useState('id'); // 'id' or 'passport'
+  const idInputRef = React.useRef(null);
 
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
@@ -873,6 +876,75 @@ const AdminDashboard = () => {
       showMessage('Error uploading certification', 'error');
     } finally {
       setUploadingCertification(false);
+    }
+  };
+
+  const uploadIDForWorker = async (file) => {
+    if (!verificationWorker) {
+      showMessage('No worker selected', 'error');
+      return;
+    }
+
+    if (!idDocumentType) {
+      showMessage('Please select document type (ID or Passport)', 'error');
+      return;
+    }
+
+    // Validate file type - accept PDF and images
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      showMessage('Only PDF, JPG, and PNG files are allowed', 'error');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      showMessage('File size must be less than 10MB', 'error');
+      return;
+    }
+
+    try {
+      setUploadingID(true);
+      const formData = new FormData();
+      formData.append('idDocument', file);
+      formData.append('documentType', idDocumentType);
+
+      const response = await fetch(`/admin/upload-worker-id/${verificationWorker.id}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage(`✅ ${idDocumentType === 'id' ? 'ID' : 'Passport'} uploaded successfully!`, 'success');
+
+        // Update the verification worker with the new ID document info
+        setVerificationWorker({
+          ...verificationWorker,
+          id_document_url: data.id_document_url,
+          id_document_type: data.id_document_type
+        });
+
+        if (idInputRef.current) {
+          idInputRef.current.value = '';
+        }
+      } else {
+        showMessage(data.error || 'Failed to upload ID document', 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading ID document:', error);
+      showMessage('Error uploading ID document', 'error');
+    } finally {
+      setUploadingID(false);
     }
   };
 
@@ -2623,6 +2695,98 @@ const AdminDashboard = () => {
                       <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', fontStyle: 'italic' }}>
                         Verify that ID or Passport information is provided
                       </p>
+
+                      {/* Display uploaded ID document if exists */}
+                      {verificationWorker.id_document_url && (
+                        <div style={{
+                          marginTop: '1rem',
+                          padding: '0.75rem',
+                          background: '#e8f5e9',
+                          borderRadius: '4px',
+                          border: '1px solid #4caf50'
+                        }}>
+                          <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#2e7d32' }}>
+                            ✅ {verificationWorker.id_document_type === 'passport' ? 'Passport' : 'ID'} Document Uploaded
+                          </p>
+                          <a
+                            href={verificationWorker.id_document_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#1976d2', textDecoration: 'underline', fontSize: '0.9rem' }}
+                          >
+                            View Document
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Admin Upload ID/Passport */}
+                      <div style={{
+                        marginTop: '1rem',
+                        padding: '1rem',
+                        background: '#f8f9fa',
+                        borderRadius: '6px',
+                        border: '1px dashed #4a7c59'
+                      }}>
+                        <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: '#4a7c59' }}>
+                          📎 Upload ID/Passport for Worker
+                        </h5>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem', fontWeight: '500' }}>
+                              Document Type:
+                            </label>
+                            <select
+                              value={idDocumentType}
+                              onChange={(e) => setIdDocumentType(e.target.value)}
+                              disabled={uploadingID}
+                              style={{
+                                width: '100%',
+                                padding: '0.5rem',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                fontSize: '0.9rem',
+                                background: 'white'
+                              }}
+                            >
+                              <option value="id">ID Document</option>
+                              <option value="passport">Passport</option>
+                            </select>
+                          </div>
+                          <div>
+                            <input
+                              type="file"
+                              ref={idInputRef}
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  uploadIDForWorker(file);
+                                }
+                              }}
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              disabled={uploadingID}
+                              style={{ display: 'none' }}
+                            />
+                            <button
+                              onClick={() => idInputRef.current?.click()}
+                              disabled={uploadingID}
+                              className="btn"
+                              style={{
+                                background: uploadingID ? '#6c757d' : '#4a7c59',
+                                color: 'white',
+                                padding: '0.5rem 1rem',
+                                fontSize: '0.9rem',
+                                cursor: uploadingID ? 'not-allowed' : 'pointer',
+                                width: '100%'
+                              }}
+                            >
+                              {uploadingID ? '⏳ Uploading...' : '📤 Choose & Upload File'}
+                            </button>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>
+                            Accepted: PDF, JPG, PNG (max 10MB)
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
