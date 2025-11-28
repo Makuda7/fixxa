@@ -297,7 +297,9 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(`/admin/approve-worker/${workerId}`, {
         method: 'POST',
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({})
       });
       const data = await response.json();
       if (data.success) {
