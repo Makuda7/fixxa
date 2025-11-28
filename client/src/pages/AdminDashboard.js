@@ -70,6 +70,7 @@ const AdminDashboard = () => {
   const [showWorkerDetailModal, setShowWorkerDetailModal] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [workerDetailData, setWorkerDetailData] = useState(null);
+  const [workerChangeHistory, setWorkerChangeHistory] = useState([]);
 
   // Worker approval form fields
   const [editProvince, setEditProvince] = useState('');
@@ -436,6 +437,7 @@ const AdminDashboard = () => {
 
       if (data.success) {
         setWorkerDetailData(data.details);
+        setWorkerChangeHistory(data.changeHistory || []);
 
         // Populate edit fields with current data
         setEditProvince(data.details.province || '');
@@ -480,6 +482,7 @@ const AdminDashboard = () => {
     setShowWorkerDetailModal(false);
     setSelectedWorker(null);
     setWorkerDetailData(null);
+    setWorkerChangeHistory([]);
     setNewSpecialtyName('');
   };
 
@@ -1679,7 +1682,14 @@ const AdminDashboard = () => {
                         </div>
                       </div>
 
-                      <div className="cert-actions">
+                      <div className="cert-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <button
+                          className="btn btn-info btn-small"
+                          onClick={() => showWorkerDetail(worker)}
+                          style={{ gridColumn: '1 / -1' }}
+                        >
+                          📋 View Details
+                        </button>
                         <button
                           className="btn btn-secondary btn-small"
                           onClick={() => toggleProfessional(worker.id)}
@@ -2207,6 +2217,70 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Change History */}
+              {workerChangeHistory.length > 0 && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                    Profile Change History
+                  </h4>
+                  <div style={{
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    padding: '1rem'
+                  }}>
+                    {workerChangeHistory.map((change, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          padding: '0.75rem',
+                          marginBottom: '0.75rem',
+                          background: '#f8f9fa',
+                          borderRadius: '6px',
+                          borderLeft: '3px solid #4a7c59'
+                        }}
+                      >
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          <strong style={{ color: '#4a7c59' }}>{change.field_changed}</strong>
+                          <span style={{ color: '#999', fontSize: '0.85rem', marginLeft: '0.5rem' }}>
+                            {new Date(change.changed_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.5rem', alignItems: 'center' }}>
+                          <div style={{
+                            padding: '0.5rem',
+                            background: '#f8d7da',
+                            borderRadius: '4px',
+                            fontSize: '0.9rem',
+                            wordBreak: 'break-word'
+                          }}>
+                            <div style={{ fontSize: '0.75rem', color: '#721c24', marginBottom: '0.25rem' }}>Old:</div>
+                            <div>{change.old_value || '(empty)'}</div>
+                          </div>
+                          <div style={{ color: '#4a7c59', fontWeight: 'bold' }}>→</div>
+                          <div style={{
+                            padding: '0.5rem',
+                            background: '#d4edda',
+                            borderRadius: '4px',
+                            fontSize: '0.9rem',
+                            wordBreak: 'break-word'
+                          }}>
+                            <div style={{ fontSize: '0.75rem', color: '#155724', marginBottom: '0.25rem' }}>New:</div>
+                            <div>{change.new_value || '(empty)'}</div>
+                          </div>
+                        </div>
+                        {change.changed_by && (
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>
+                            Changed by: {change.changed_by}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Certifications */}
               <div style={{ marginBottom: '2rem' }}>
