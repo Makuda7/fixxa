@@ -79,6 +79,7 @@ const AdminDashboard = () => {
   const [editExperience, setEditExperience] = useState('');
   const [availableSpecialties, setAvailableSpecialties] = useState([]);
   const [selectedSpecialties, setSelectedSpecialties] = useState([]);
+  const [newSpecialtyName, setNewSpecialtyName] = useState('');
 
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
@@ -462,6 +463,43 @@ const AdminDashboard = () => {
     setShowWorkerDetailModal(false);
     setSelectedWorker(null);
     setWorkerDetailData(null);
+    setNewSpecialtyName('');
+  };
+
+  const addNewSpecialty = async () => {
+    if (!newSpecialtyName.trim()) {
+      showMessage('Please enter a specialty name', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('/admin/specialties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: newSpecialtyName.trim() })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage(`✅ "${newSpecialtyName}" added successfully!`, 'success');
+
+        // Add to available specialties list
+        setAvailableSpecialties([...availableSpecialties, data.specialty]);
+
+        // Automatically select the new specialty
+        setSelectedSpecialties([...selectedSpecialties, data.specialty.id]);
+
+        // Clear input
+        setNewSpecialtyName('');
+      } else {
+        showMessage(data.error || 'Failed to add specialty', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding specialty:', error);
+      showMessage('Failed to add specialty', 'error');
+    }
   };
 
   const approveCertification = async (certId) => {
@@ -1689,6 +1727,59 @@ const AdminDashboard = () => {
                       <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
                         Specialties <span style={{ color: 'red' }}>*</span>
                       </label>
+
+                      {/* Add New Specialty Input */}
+                      <div style={{
+                        marginBottom: '1rem',
+                        padding: '0.75rem',
+                        background: '#e3f2fd',
+                        borderRadius: '4px',
+                        border: '1px solid #2196F3'
+                      }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: '#1976d2' }}>
+                          Add New Specialty
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <input
+                            type="text"
+                            value={newSpecialtyName}
+                            onChange={(e) => setNewSpecialtyName(e.target.value)}
+                            placeholder="e.g., Solar Panel Installation"
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem',
+                              border: '1px solid #90caf9',
+                              borderRadius: '4px'
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addNewSpecialty();
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={addNewSpecialty}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              background: '#2196F3',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontWeight: '600'
+                            }}
+                          >
+                            ➕ Add
+                          </button>
+                        </div>
+                        <small style={{ color: '#1565c0', display: 'block', marginTop: '0.5rem' }}>
+                          If the worker's specialty isn't listed, add it here and it will be automatically selected
+                        </small>
+                      </div>
+
+                      {/* Specialty Checkboxes */}
                       <div style={{
                         maxHeight: '200px',
                         overflowY: 'auto',
@@ -1696,36 +1787,43 @@ const AdminDashboard = () => {
                         borderRadius: '4px',
                         padding: '0.5rem'
                       }}>
-                        {availableSpecialties.map((specialty) => (
-                          <label
-                            key={specialty.id}
-                            style={{
-                              display: 'block',
-                              padding: '0.5rem',
-                              cursor: 'pointer',
-                              borderRadius: '4px',
-                              marginBottom: '0.25rem',
-                              background: selectedSpecialties.includes(specialty.id) ? '#e8f5e9' : 'white'
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedSpecialties.includes(specialty.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedSpecialties([...selectedSpecialties, specialty.id]);
-                                } else {
-                                  setSelectedSpecialties(selectedSpecialties.filter(id => id !== specialty.id));
-                                }
+                        {availableSpecialties.length === 0 ? (
+                          <p style={{ textAlign: 'center', color: '#999', padding: '1rem' }}>
+                            Loading specialties...
+                          </p>
+                        ) : (
+                          availableSpecialties.map((specialty) => (
+                            <label
+                              key={specialty.id}
+                              style={{
+                                display: 'block',
+                                padding: '0.5rem',
+                                cursor: 'pointer',
+                                borderRadius: '4px',
+                                marginBottom: '0.25rem',
+                                background: selectedSpecialties.includes(specialty.id) ? '#e8f5e9' : 'white',
+                                border: selectedSpecialties.includes(specialty.id) ? '1px solid #4caf50' : '1px solid transparent'
                               }}
-                              style={{ marginRight: '0.5rem' }}
-                            />
-                            {specialty.name}
-                          </label>
-                        ))}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedSpecialties.includes(specialty.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedSpecialties([...selectedSpecialties, specialty.id]);
+                                  } else {
+                                    setSelectedSpecialties(selectedSpecialties.filter(id => id !== specialty.id));
+                                  }
+                                }}
+                                style={{ marginRight: '0.5rem' }}
+                              />
+                              {specialty.name}
+                            </label>
+                          ))
+                        )}
                       </div>
-                      <small style={{ color: '#666', display: 'block', marginTop: '0.5rem' }}>
-                        Selected: {selectedSpecialties.length} specialties
+                      <small style={{ color: '#666', display: 'block', marginTop: '0.5rem', fontWeight: '600' }}>
+                        ✓ Selected: {selectedSpecialties.length} {selectedSpecialties.length === 1 ? 'specialty' : 'specialties'}
                       </small>
                     </div>
                   </div>
