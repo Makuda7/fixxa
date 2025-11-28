@@ -1738,13 +1738,43 @@ module.exports = (pool, logger, helpers) => {
     try {
       const { workerId } = req.params;
 
-      // Delete all certifications for this worker
+      // Get all certifications for this worker before deleting (need cloudinary IDs)
+      const certsResult = await pool.query(
+        'SELECT id, document_name, cloudinary_id, file_type FROM certifications WHERE worker_id = $1',
+        [workerId]
+      );
+
+      const certs = certsResult.rows;
+
+      // Delete all certifications from database
       const result = await pool.query(
         'DELETE FROM certifications WHERE worker_id = $1 RETURNING id, document_name',
         [workerId]
       );
 
-      logger.info('Admin deleted broken certifications', {
+      // Delete from Cloudinary
+      for (const cert of certs) {
+        if (cert.cloudinary_id) {
+          try {
+            const resourceType = cert.file_type === 'image' ? 'image' : 'raw';
+            await cloudinary.uploader.destroy(cert.cloudinary_id, { resource_type: resourceType });
+            logger.info('Certification deleted from Cloudinary', {
+              certificationId: cert.id,
+              cloudinaryId: cert.cloudinary_id,
+              adminEmail: req.session.user.email
+            });
+          } catch (cloudinaryError) {
+            logger.error('Failed to delete certification from Cloudinary', {
+              error: cloudinaryError.message,
+              cloudinaryId: cert.cloudinary_id,
+              certificationId: cert.id
+            });
+            // Continue even if Cloudinary deletion fails
+          }
+        }
+      }
+
+      logger.info('Admin deleted all worker certifications', {
         adminEmail: req.session.user.email,
         workerId,
         deletedCount: result.rowCount,

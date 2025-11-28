@@ -948,6 +948,80 @@ const AdminDashboard = () => {
     }
   };
 
+  const deleteCertification = async (certId) => {
+    if (!window.confirm('Delete this certification? The worker will need to re-upload it.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/admin/certifications/${certId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('Certification deleted. Worker can now re-upload.', 'success');
+
+        // Reload certifications for the verification worker
+        if (verificationWorker) {
+          const certsResponse = await fetch(`/admin/worker-certifications/${verificationWorker.id}`, {
+            credentials: 'include'
+          });
+          const certsData = await certsResponse.json();
+          if (certsData.success) {
+            setWorkerCertifications(certsData.certifications);
+          }
+        }
+      } else {
+        showMessage(data.error || 'Failed to delete certification', 'error');
+      }
+    } catch (error) {
+      console.error('Delete certification error:', error);
+      showMessage('Failed to delete certification', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAllWorkerCertifications = async (workerId) => {
+    if (!window.confirm('Delete ALL certifications for this worker? They will need to re-upload everything. This cannot be undone!')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/admin/worker/${workerId}/certifications`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage(data.message + ' - Worker can now re-upload.', 'success');
+
+        // Reload certifications
+        const certsResponse = await fetch(`/admin/worker-certifications/${workerId}`, {
+          credentials: 'include'
+        });
+        const certsData = await certsResponse.json();
+        if (certsData.success) {
+          setWorkerCertifications(certsData.certifications);
+        }
+      } else {
+        showMessage(data.error || 'Failed to delete certifications', 'error');
+      }
+    } catch (error) {
+      console.error('Delete all certifications error:', error);
+      showMessage('Failed to delete certifications', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const approveCertification = async (certId) => {
     if (!window.confirm('Approve this certification? The professional will receive a verified badge.')) return;
 
@@ -3121,28 +3195,70 @@ const AdminDashboard = () => {
 
                     {workerCertifications.length > 0 ? (
                       <div>
-                        <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#28a745' }}>
-                          ✅ {workerCertifications.length} Document(s) Uploaded:
-                        </p>
-                        <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                          <p style={{ margin: 0, fontWeight: '600', color: '#28a745' }}>
+                            ✅ {workerCertifications.length} Document(s) Uploaded:
+                          </p>
+                          <button
+                            onClick={() => deleteAllWorkerCertifications(verificationWorker.id)}
+                            className="btn"
+                            style={{
+                              background: '#dc3545',
+                              color: 'white',
+                              padding: '0.25rem 0.75rem',
+                              fontSize: '0.8rem',
+                              border: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🗑️ Delete All
+                          </button>
+                        </div>
+                        <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem', listStyle: 'none' }}>
                           {workerCertifications.map(cert => (
-                            <li key={cert.id} style={{ marginBottom: '0.25rem' }}>
-                              <a
-                                href={cert.document_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: '#4a7c59', textDecoration: 'underline' }}
+                            <li key={cert.id} style={{
+                              marginBottom: '0.5rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.5rem',
+                              background: '#f8f9fa',
+                              borderRadius: '4px'
+                            }}>
+                              <div style={{ flex: 1 }}>
+                                <a
+                                  href={cert.document_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: '#4a7c59', textDecoration: 'underline', fontWeight: '500' }}
+                                >
+                                  {cert.document_name}
+                                </a>
+                                {' '}
+                                <span style={{
+                                  fontSize: '0.85rem',
+                                  color: cert.status === 'approved' ? '#28a745' :
+                                         cert.status === 'rejected' ? '#dc3545' : '#ffc107'
+                                }}>
+                                  ({cert.status})
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => deleteCertification(cert.id)}
+                                className="btn"
+                                style={{
+                                  background: '#dc3545',
+                                  color: 'white',
+                                  padding: '0.25rem 0.5rem',
+                                  fontSize: '0.75rem',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  minWidth: '60px'
+                                }}
+                                title="Delete this certification"
                               >
-                                {cert.document_name}
-                              </a>
-                              {' '}
-                              <span style={{
-                                fontSize: '0.85rem',
-                                color: cert.status === 'approved' ? '#28a745' :
-                                       cert.status === 'rejected' ? '#dc3545' : '#ffc107'
-                              }}>
-                                ({cert.status})
-                              </span>
+                                🗑️ Delete
+                              </button>
                             </li>
                           ))}
                         </ul>
