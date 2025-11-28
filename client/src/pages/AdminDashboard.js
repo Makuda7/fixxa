@@ -128,6 +128,19 @@ const AdminDashboard = () => {
     if (activeTab === 'settings') loadSettings();
   }, [activeTab, profileUpdatesFilter, certFilter, supportFilter, suggestionsFilter]);
 
+  // Auto-refresh stats and bookings every 30 seconds
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      if (!loading && activeTab === 'dashboard') {
+        loadStats();
+        loadRecentBookings();
+        loadBadgeCounts();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [loading, activeTab]);
+
   const loadDashboardData = async () => {
     setLoading(true);
     try {
