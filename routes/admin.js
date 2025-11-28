@@ -21,6 +21,7 @@ const profilePicUpload = multer({
 module.exports = (pool, logger, helpers) => {
   const { requireAuth, adminOnly } = require('../middleware/auth');
   const { formatTimeAgo } = helpers;
+  const { sendEmail } = require('../utils/email');
 
   // Get all workers (admin)
   router.get('/workers', requireAuth, adminOnly, async (req, res) => {
@@ -2087,6 +2088,174 @@ module.exports = (pool, logger, helpers) => {
     } catch (error) {
       logger.error('Failed to delete specialty', { error: error.message, specialtyId: req.params.id });
       res.status(500).json({ success: false, error: 'Failed to delete specialty' });
+    }
+  });
+
+  // Get worker certifications for verification modal
+  router.get('/worker-certifications/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+
+      const result = await pool.query(
+        `SELECT id, document_name, document_url, cloudinary_id, file_type, status, created_at
+         FROM certifications
+         WHERE worker_id = $1
+         ORDER BY created_at DESC`,
+        [workerId]
+      );
+
+      logger.info('Fetched worker certifications', { workerId, count: result.rows.length, adminEmail: req.session.user.email });
+      res.json({ success: true, certifications: result.rows });
+    } catch (error) {
+      logger.error('Failed to fetch worker certifications', { error: error.message, workerId: req.params.workerId });
+      res.status(500).json({ success: false, error: 'Failed to fetch certifications' });
+    }
+  });
+
+  // Save verification states for a worker
+  router.post('/save-verification-states/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const {
+        verified_profile_pic,
+        verified_id_info,
+        verified_emergency,
+        verified_professional,
+        verified_documents,
+        province,
+        primary_suburb,
+        secondary_areas,
+        bio,
+        experience,
+        specialty_ids
+      } = req.body;
+
+      // Update verification states and editable fields
+      const result = await pool.query(
+        `UPDATE workers
+         SET verified_profile_pic = $1,
+             verified_id_info = $2,
+             verified_emergency = $3,
+             verified_professional = $4,
+             verified_documents = $5,
+             province = $6,
+             primary_suburb = $7,
+             secondary_areas = $8,
+             bio = $9,
+             experience = $10,
+             updated_at = NOW()
+         WHERE id = $11
+         RETURNING id`,
+        [
+          verified_profile_pic,
+          verified_id_info,
+          verified_emergency,
+          verified_professional,
+          verified_documents,
+          province,
+          primary_suburb,
+          secondary_areas,
+          bio,
+          experience,
+          workerId
+        ]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      // Update worker specialties if provided
+      if (specialty_ids && Array.isArray(specialty_ids)) {
+        // Delete existing specialties
+        await pool.query('DELETE FROM worker_specialties WHERE worker_id = $1', [workerId]);
+
+        // Insert new specialties
+        if (specialty_ids.length > 0) {
+          const values = specialty_ids.map((specId, idx) =>
+            `($1, $${idx + 2})`
+          ).join(', ');
+
+          await pool.query(
+            `INSERT INTO worker_specialties (worker_id, specialty_id) VALUES ${values}`,
+            [workerId, ...specialty_ids]
+          );
+        }
+      }
+
+      logger.info('Verification states saved', {
+        workerId,
+        verificationStates: {
+          verified_profile_pic,
+          verified_id_info,
+          verified_emergency,
+          verified_professional,
+          verified_documents
+        },
+        adminEmail: req.session.user.email
+      });
+
+      res.json({ success: true, message: 'Verification states saved successfully' });
+    } catch (error) {
+      logger.error('Failed to save verification states', { error: error.message, workerId: req.params.workerId });
+      res.status(500).json({ success: false, error: 'Failed to save verification states' });
+    }
+  });
+
+  // Send incomplete profile email to worker
+  router.post('/send-incomplete-email/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const { missingItems } = req.body;
+
+      // Get worker details
+      const workerResult = await pool.query(
+        'SELECT name, email FROM workers WHERE id = $1',
+        [workerId]
+      );
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const worker = workerResult.rows[0];
+
+      // Send email
+      const emailHtml = `
+        <h2>Complete Your Fixxa Profile</h2>
+        <p>Hi ${worker.name},</p>
+        <p>We're reviewing your application, but we need some additional information to complete your verification:</p>
+        <ul>
+          ${missingItems.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+        <p>Please log in to your Fixxa account and complete these items as soon as possible.</p>
+        <p>If you have any questions, please contact our support team.</p>
+        <p>Best regards,<br>The Fixxa Team</p>
+      `;
+
+      await sendEmail(
+        worker.email,
+        'Complete Your Fixxa Profile',
+        emailHtml
+      );
+
+      // Update last_completion_email_sent timestamp
+      await pool.query(
+        'UPDATE workers SET last_completion_email_sent = NOW() WHERE id = $1',
+        [workerId]
+      );
+
+      logger.info('Incomplete profile email sent', {
+        workerId,
+        workerEmail: worker.email,
+        missingItems,
+        adminEmail: req.session.user.email
+      });
+
+      res.json({ success: true, message: 'Email sent successfully' });
+    } catch (error) {
+      logger.error('Failed to send incomplete profile email', { error: error.message, workerId: req.params.workerId });
+      res.status(500).json({ success: false, error: 'Failed to send email' });
     }
   });
 

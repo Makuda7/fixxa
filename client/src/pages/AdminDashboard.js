@@ -81,6 +81,20 @@ const AdminDashboard = () => {
   const [selectedSpecialties, setSelectedSpecialties] = useState([]);
   const [newSpecialtyName, setNewSpecialtyName] = useState('');
 
+  // Worker Verification Modal
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationWorker, setVerificationWorker] = useState(null);
+  const [verificationStates, setVerificationStates] = useState({
+    verified_profile_pic: false,
+    verified_id_info: false,
+    verified_emergency: false,
+    verified_professional: false,
+    verified_documents: false
+  });
+  const [emergencyContact1, setEmergencyContact1] = useState(null);
+  const [emergencyContact2, setEmergencyContact2] = useState(null);
+  const [workerCertifications, setWorkerCertifications] = useState([]);
+
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
     if (!user || user.isAdmin !== true) {
@@ -499,6 +513,207 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error adding specialty:', error);
       showMessage('Failed to add specialty', 'error');
+    }
+  };
+
+  // Worker Verification Functions
+  const showWorkerVerification = async (worker) => {
+    try {
+      setLoading(true);
+      setVerificationWorker(worker);
+
+      // Load worker's full details including verification states
+      const response = await fetch(`/admin/worker-detail/${worker.id}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        const workerData = data.worker;
+
+        // Set verification states (from database or default to false)
+        setVerificationStates({
+          verified_profile_pic: workerData.verified_profile_pic || false,
+          verified_id_info: workerData.verified_id_info || false,
+          verified_emergency: workerData.verified_emergency || false,
+          verified_professional: workerData.verified_professional || false,
+          verified_documents: workerData.verified_documents || false
+        });
+
+        // Set emergency contacts
+        setEmergencyContact1(workerData.emergency_contact_1 || null);
+        setEmergencyContact2(workerData.emergency_contact_2 || null);
+
+        // Set editable fields
+        setEditProvince(workerData.province || '');
+        setEditPrimarySuburb(workerData.primary_suburb || '');
+        setEditSecondaryAreas(workerData.secondary_areas ? workerData.secondary_areas.join(', ') : '');
+        setEditBio(workerData.bio || '');
+        setEditExperience(workerData.experience || '');
+
+        // Load worker's certifications
+        const certResponse = await fetch(`/admin/worker-certifications/${worker.id}`, {
+          credentials: 'include'
+        });
+        const certData = await certResponse.json();
+        setWorkerCertifications(certData.certifications || []);
+
+        // Load available specialties
+        const specResponse = await fetch('/admin/specialties', {
+          credentials: 'include'
+        });
+        const specData = await specResponse.json();
+        setAvailableSpecialties(specData.specialties || []);
+
+        // Load worker's current specialties
+        const workerSpecResponse = await fetch(`/admin/worker-specialties/${worker.id}`, {
+          credentials: 'include'
+        });
+        const workerSpecData = await workerSpecResponse.json();
+        setSelectedSpecialties(workerSpecData.specialty_ids || []);
+
+        setShowVerificationModal(true);
+      } else {
+        showMessage(data.error || 'Failed to load worker details', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading worker verification:', error);
+      showMessage('Error loading worker details', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveVerificationStates = async () => {
+    if (!verificationWorker) return;
+
+    try {
+      const response = await fetch(`/admin/save-verification-states/${verificationWorker.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          verified_profile_pic: verificationStates.verified_profile_pic,
+          verified_id_info: verificationStates.verified_id_info,
+          verified_emergency: verificationStates.verified_emergency,
+          verified_professional: verificationStates.verified_professional,
+          verified_documents: verificationStates.verified_documents,
+          province: editProvince,
+          primary_suburb: editPrimarySuburb,
+          secondary_areas: editSecondaryAreas.split(',').map(s => s.trim()).filter(s => s),
+          bio: editBio,
+          experience: editExperience,
+          specialty_ids: selectedSpecialties
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('✅ Verification states saved!', 'success');
+      } else {
+        showMessage(data.error || 'Failed to save verification states', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving verification states:', error);
+      showMessage('Error saving verification states', 'error');
+    }
+  };
+
+  const sendIncompleteProfileEmail = async () => {
+    if (!verificationWorker) return;
+
+    // Build list of missing items based on unchecked verification states
+    const missingItems = [];
+    if (!verificationStates.verified_profile_pic) missingItems.push('Profile Picture');
+    if (!verificationStates.verified_id_info) missingItems.push('ID/Passport Information');
+    if (!verificationStates.verified_emergency) missingItems.push('Emergency Contact Information');
+    if (!verificationStates.verified_professional) missingItems.push('Professional Information (Bio, Experience)');
+    if (!verificationStates.verified_documents) missingItems.push('Proof of Residence, Certified ID, Certifications');
+
+    if (missingItems.length === 0) {
+      showMessage('All verification items are checked. No email needed.', 'info');
+      return;
+    }
+
+    const confirmMsg = `Send email to ${verificationWorker.name} requesting:\n\n${missingItems.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\nContinue?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const response = await fetch(`/admin/send-incomplete-email/${verificationWorker.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ missingItems })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage(`✅ Email sent requesting: ${missingItems.join(', ')}`, 'success');
+        await loadPendingWorkers(); // Refresh to show updated timestamp
+      } else {
+        showMessage(data.error || 'Failed to send email', 'error');
+      }
+    } catch (error) {
+      console.error('Error sending incomplete profile email:', error);
+      showMessage('Error sending email', 'error');
+    }
+  };
+
+  const approveWorkerFromVerification = async () => {
+    if (!verificationWorker) return;
+
+    // Check that all verification checkboxes are checked
+    const allChecked = Object.values(verificationStates).every(v => v === true);
+    if (!allChecked) {
+      showMessage('❌ All 5 verification steps must be completed before approval', 'error');
+      return;
+    }
+
+    // Validate required fields
+    if (!editPrimarySuburb.trim()) {
+      showMessage('Primary suburb is required', 'error');
+      return;
+    }
+
+    if (selectedSpecialties.length === 0) {
+      showMessage('Please select at least one specialty', 'error');
+      return;
+    }
+
+    try {
+      const secondary_areas = editSecondaryAreas
+        ? editSecondaryAreas.split(',').map(s => s.trim()).filter(s => s)
+        : [];
+
+      const response = await fetch(`/admin/approve-worker/${verificationWorker.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          province: editProvince,
+          primary_suburb: editPrimarySuburb,
+          secondary_areas,
+          specialty_ids: selectedSpecialties,
+          bio: editBio,
+          experience: editExperience
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage(data.message || 'Worker approved successfully', 'success');
+        setShowVerificationModal(false);
+        await loadPendingWorkers();
+        await loadStats();
+      } else {
+        showMessage(data.error || 'Failed to approve worker', 'error');
+      }
+    } catch (error) {
+      console.error('Error approving worker:', error);
+      showMessage('Error approving worker', 'error');
     }
   };
 
@@ -960,14 +1175,16 @@ const AdminDashboard = () => {
                   {pendingWorkers.map(worker => (
                     <div
                       key={worker.id}
-                      className="worker-card clickable"
-                      onClick={() => showWorkerDetail(worker)}
-                      style={{ cursor: 'pointer' }}
+                      className="worker-card"
+                      style={{
+                        border: worker.email_verified ? '2px solid #28a745' : '2px solid #ffc107',
+                        opacity: worker.email_verified ? 1 : 0.9
+                      }}
                     >
                       <div className="worker-header">
                         <div className="worker-info">
                           <h4>
-                            {worker.email_verified ? '✓ ' : '⚠️ '}
+                            {worker.email_verified ? '✅ ' : '⚠️ '}
                             {worker.name}
                             {!worker.email_verified && (
                               <span style={{ color: '#ff9800', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
@@ -990,6 +1207,11 @@ const AdminDashboard = () => {
                               {worker.approved_cert_count}/{worker.cert_count} certs approved
                             </p>
                           )}
+                          {worker.last_completion_email_sent && (
+                            <p style={{ fontSize: '0.85rem', color: '#ffc107' }}>
+                              Last Email: {formatDate(worker.last_completion_email_sent)}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -1000,24 +1222,25 @@ const AdminDashboard = () => {
                         </div>
                       )}
 
-                      <div className="cert-actions">
+                      <div className="cert-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button
-                          className="btn btn-success"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            approveWorker(worker.id);
+                          className="btn"
+                          style={{
+                            background: '#17a2b8',
+                            color: 'white',
+                            flex: 1,
+                            minWidth: '120px'
                           }}
+                          onClick={() => showWorkerVerification(worker)}
                         >
-                          Approve
+                          📋 Review Details
                         </button>
                         <button
                           className="btn btn-danger"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openRejectModal(worker.id);
-                          }}
+                          onClick={() => openRejectModal(worker.id)}
+                          style={{ flex: '0 0 auto' }}
                         >
-                          Reject
+                          ❌ Reject
                         </button>
                       </div>
                     </div>
@@ -1943,6 +2166,601 @@ const AdminDashboard = () => {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Worker Verification Modal */}
+      {showVerificationModal && verificationWorker && (
+        <div className="modal show">
+          <div className="modal-content" style={{ maxWidth: '900px' }}>
+            <div className="modal-header">
+              <h3>Worker Verification - {verificationWorker.name}</h3>
+              <button className="modal-close" onClick={() => setShowVerificationModal(false)}>×</button>
+            </div>
+            <div className="modal-body" style={{ padding: '1.5rem', maxHeight: '75vh', overflowY: 'auto' }}>
+
+              {/* Progress Tracker */}
+              <div style={{
+                background: 'linear-gradient(135deg, #4a7c59 0%, #357a48 100%)',
+                color: 'white',
+                padding: '1rem',
+                borderRadius: '8px',
+                marginBottom: '2rem',
+                textAlign: 'center'
+              }}>
+                <h4 style={{ margin: 0, fontSize: '1.2rem' }}>
+                  {Object.values(verificationStates).filter(v => v).length} of 5 Verification Steps Completed
+                </h4>
+                <div style={{
+                  width: '100%',
+                  height: '10px',
+                  background: 'rgba(255,255,255,0.3)',
+                  borderRadius: '5px',
+                  marginTop: '0.5rem',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${(Object.values(verificationStates).filter(v => v).length / 5) * 100}%`,
+                    height: '100%',
+                    background: 'white',
+                    transition: 'width 0.3s ease'
+                  }}></div>
+                </div>
+              </div>
+
+              {/* Step 1: Profile Picture Verification */}
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                border: `2px solid ${verificationStates.verified_profile_pic ? '#28a745' : '#ddd'}`,
+                borderRadius: '8px',
+                background: verificationStates.verified_profile_pic ? '#f0f9f4' : 'white'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={verificationStates.verified_profile_pic}
+                    onChange={(e) => {
+                      setVerificationStates({
+                        ...verificationStates,
+                        verified_profile_pic: e.target.checked
+                      });
+                      saveVerificationStates();
+                    }}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      marginTop: '0.25rem',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                      1. Profile Picture Verification
+                    </h4>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      {verificationWorker.profile_picture ? (
+                        <>
+                          <img
+                            src={verificationWorker.profile_picture}
+                            alt="Profile"
+                            style={{
+                              width: '100px',
+                              height: '100px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '3px solid #4a7c59'
+                            }}
+                          />
+                          <div>
+                            <p style={{ margin: 0, color: '#28a745', fontWeight: '600' }}>✅ Profile picture uploaded</p>
+                            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
+                              Verify that the photo is clear and professional
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <p style={{ margin: 0, color: '#dc3545', fontWeight: '600' }}>❌ No profile picture</p>
+                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
+                            Worker needs to upload a profile photo
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2: ID/Passport Information */}
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                border: `2px solid ${verificationStates.verified_id_info ? '#28a745' : '#ddd'}`,
+                borderRadius: '8px',
+                background: verificationStates.verified_id_info ? '#f0f9f4' : 'white'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={verificationStates.verified_id_info}
+                    onChange={(e) => {
+                      setVerificationStates({
+                        ...verificationStates,
+                        verified_id_info: e.target.checked
+                      });
+                      saveVerificationStates();
+                    }}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      marginTop: '0.25rem',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                      2. ID/Passport Information
+                    </h4>
+                    <div style={{ fontSize: '0.95rem', color: '#666' }}>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>ID Number:</strong> {verificationWorker.id_number || '❌ Not provided'}
+                      </p>
+                      <p style={{ margin: '0.25rem 0' }}>
+                        <strong>Passport Number:</strong> {verificationWorker.passport_number || '❌ Not provided'}
+                      </p>
+                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                        Verify that ID or Passport information is provided
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3: Emergency Contacts */}
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                border: `2px solid ${verificationStates.verified_emergency ? '#28a745' : '#ddd'}`,
+                borderRadius: '8px',
+                background: verificationStates.verified_emergency ? '#f0f9f4' : 'white'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={verificationStates.verified_emergency}
+                    onChange={(e) => {
+                      setVerificationStates({
+                        ...verificationStates,
+                        verified_emergency: e.target.checked
+                      });
+                      saveVerificationStates();
+                    }}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      marginTop: '0.25rem',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                      3. Emergency Contact Information
+                    </h4>
+                    <div style={{ fontSize: '0.95rem', color: '#666' }}>
+                      {emergencyContact1 ? (
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <p style={{ margin: '0.25rem 0', fontWeight: '600', color: '#28a745' }}>✅ Emergency Contact 1:</p>
+                          <p style={{ margin: '0.25rem 0' }}><strong>Name:</strong> {emergencyContact1.name}</p>
+                          <p style={{ margin: '0.25rem 0' }}><strong>Phone:</strong> {emergencyContact1.phone}</p>
+                          <p style={{ margin: '0.25rem 0' }}><strong>Relationship:</strong> {emergencyContact1.relationship}</p>
+                        </div>
+                      ) : (
+                        <p style={{ margin: '0.25rem 0', color: '#dc3545' }}>❌ Emergency Contact 1 not provided</p>
+                      )}
+
+                      {emergencyContact2 ? (
+                        <div>
+                          <p style={{ margin: '0.25rem 0', fontWeight: '600', color: '#28a745' }}>✅ Emergency Contact 2:</p>
+                          <p style={{ margin: '0.25rem 0' }}><strong>Name:</strong> {emergencyContact2.name}</p>
+                          <p style={{ margin: '0.25rem 0' }}><strong>Phone:</strong> {emergencyContact2.phone}</p>
+                          <p style={{ margin: '0.25rem 0' }}><strong>Relationship:</strong> {emergencyContact2.relationship}</p>
+                        </div>
+                      ) : (
+                        <p style={{ margin: '0.25rem 0', color: '#ffc107' }}>⚠️ Emergency Contact 2 not provided (optional)</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4: Professional Details */}
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                border: `2px solid ${verificationStates.verified_professional ? '#28a745' : '#ddd'}`,
+                borderRadius: '8px',
+                background: verificationStates.verified_professional ? '#f0f9f4' : 'white'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={verificationStates.verified_professional}
+                    onChange={(e) => {
+                      setVerificationStates({
+                        ...verificationStates,
+                        verified_professional: e.target.checked
+                      });
+                      saveVerificationStates();
+                    }}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      marginTop: '0.25rem',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                      4. Professional Information (Edit Before Approval)
+                    </h4>
+                    <div style={{ marginTop: '1rem' }}>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                          Bio
+                        </label>
+                        <textarea
+                          value={editBio}
+                          onChange={(e) => setEditBio(e.target.value)}
+                          placeholder="Professional bio..."
+                          style={{
+                            width: '100%',
+                            minHeight: '80px',
+                            padding: '0.5rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontFamily: 'inherit'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                          Years of Experience
+                        </label>
+                        <input
+                          type="text"
+                          value={editExperience}
+                          onChange={(e) => setEditExperience(e.target.value)}
+                          placeholder="e.g., 5 years"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                          Province <span style={{ color: 'red' }}>*</span>
+                        </label>
+                        <select
+                          value={editProvince}
+                          onChange={(e) => setEditProvince(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          <option value="">Select Province</option>
+                          <option value="Eastern Cape">Eastern Cape</option>
+                          <option value="Free State">Free State</option>
+                          <option value="Gauteng">Gauteng</option>
+                          <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                          <option value="Limpopo">Limpopo</option>
+                          <option value="Mpumalanga">Mpumalanga</option>
+                          <option value="Northern Cape">Northern Cape</option>
+                          <option value="North West">North West</option>
+                          <option value="Western Cape">Western Cape</option>
+                        </select>
+                      </div>
+
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                          Primary Suburb <span style={{ color: 'red' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={editPrimarySuburb}
+                          onChange={(e) => setEditPrimarySuburb(e.target.value)}
+                          placeholder="e.g., Sandton"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                          Secondary Areas (comma separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={editSecondaryAreas}
+                          onChange={(e) => setEditSecondaryAreas(e.target.value)}
+                          placeholder="e.g., Rosebank, Midrand, Fourways"
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </div>
+
+                      {/* Specialties Section */}
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                          Specialties <span style={{ color: 'red' }}>*</span>
+                          {selectedSpecialties.length > 0 && (
+                            <span style={{ color: '#28a745', fontSize: '0.9rem', marginLeft: '0.5rem' }}>
+                              ({selectedSpecialties.length} selected)
+                            </span>
+                          )}
+                        </label>
+
+                        {/* Add New Specialty */}
+                        <div style={{
+                          background: '#e3f2fd',
+                          padding: '1rem',
+                          borderRadius: '6px',
+                          marginBottom: '1rem',
+                          border: '1px solid #90caf9'
+                        }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <input
+                              type="text"
+                              value={newSpecialtyName}
+                              onChange={(e) => setNewSpecialtyName(e.target.value)}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addNewSpecialty();
+                                }
+                              }}
+                              placeholder="Add new specialty (e.g., Solar Panel Installation)"
+                              style={{
+                                flex: 1,
+                                padding: '0.5rem',
+                                border: '1px solid #42a5f5',
+                                borderRadius: '4px'
+                              }}
+                            />
+                            <button
+                              onClick={addNewSpecialty}
+                              className="btn btn-primary"
+                              style={{
+                                padding: '0.5rem 1rem',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              ➕ Add
+                            </button>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>
+                            Can't find the right specialty? Add a new one here.
+                          </p>
+                        </div>
+
+                        {availableSpecialties.length === 0 ? (
+                          <p style={{ color: '#666', fontStyle: 'italic' }}>Loading specialties...</p>
+                        ) : (
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                            gap: '0.5rem',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            padding: '0.5rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px'
+                          }}>
+                            {availableSpecialties.map(spec => (
+                              <label
+                                key={spec.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  padding: '0.5rem',
+                                  background: selectedSpecialties.includes(spec.id) ? '#d4edda' : 'white',
+                                  border: selectedSpecialties.includes(spec.id) ? '2px solid #28a745' : '1px solid #ddd',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSpecialties.includes(spec.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedSpecialties([...selectedSpecialties, spec.id]);
+                                    } else {
+                                      setSelectedSpecialties(selectedSpecialties.filter(id => id !== spec.id));
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer' }}
+                                />
+                                <span style={{ fontSize: '0.9rem' }}>{spec.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 5: Documents/Certifications */}
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                border: `2px solid ${verificationStates.verified_documents ? '#28a745' : '#ddd'}`,
+                borderRadius: '8px',
+                background: verificationStates.verified_documents ? '#f0f9f4' : 'white'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={verificationStates.verified_documents}
+                    onChange={(e) => {
+                      setVerificationStates({
+                        ...verificationStates,
+                        verified_documents: e.target.checked
+                      });
+                      saveVerificationStates();
+                    }}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      marginTop: '0.25rem',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#333' }}>
+                      5. Documents & Certifications
+                    </h4>
+                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#666' }}>
+                      Required: Proof of Residence, Certified ID Copy, Relevant Certifications
+                    </p>
+
+                    {workerCertifications.length > 0 ? (
+                      <div>
+                        <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#28a745' }}>
+                          ✅ {workerCertifications.length} Document(s) Uploaded:
+                        </p>
+                        <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+                          {workerCertifications.map(cert => (
+                            <li key={cert.id} style={{ marginBottom: '0.25rem' }}>
+                              <a
+                                href={cert.document_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#4a7c59', textDecoration: 'underline' }}
+                              >
+                                {cert.document_name}
+                              </a>
+                              {' '}
+                              <span style={{
+                                fontSize: '0.85rem',
+                                color: cert.status === 'approved' ? '#28a745' :
+                                       cert.status === 'rejected' ? '#dc3545' : '#ffc107'
+                              }}>
+                                ({cert.status})
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, color: '#dc3545' }}>❌ No documents uploaded yet</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                background: '#f8f9fa',
+                borderRadius: '8px',
+                display: 'flex',
+                gap: '1rem',
+                flexWrap: 'wrap'
+              }}>
+                <button
+                  onClick={saveVerificationStates}
+                  className="btn"
+                  style={{
+                    background: '#17a2b8',
+                    color: 'white',
+                    flex: 1,
+                    minWidth: '150px'
+                  }}
+                >
+                  💾 Save Progress
+                </button>
+
+                <button
+                  onClick={sendIncompleteProfileEmail}
+                  className="btn"
+                  style={{
+                    background: '#ffc107',
+                    color: '#333',
+                    flex: 1,
+                    minWidth: '150px'
+                  }}
+                >
+                  📧 Send Reminder Email
+                </button>
+
+                <button
+                  onClick={approveWorkerFromVerification}
+                  disabled={!Object.values(verificationStates).every(v => v === true)}
+                  className="btn btn-success"
+                  style={{
+                    flex: 1,
+                    minWidth: '150px',
+                    opacity: Object.values(verificationStates).every(v => v === true) ? 1 : 0.5,
+                    cursor: Object.values(verificationStates).every(v => v === true) ? 'pointer' : 'not-allowed'
+                  }}
+                  title={!Object.values(verificationStates).every(v => v === true) ? 'Complete all 5 verification steps first' : 'Approve worker'}
+                >
+                  ✅ Approve Worker
+                </button>
+
+                <button
+                  onClick={() => setShowVerificationModal(false)}
+                  className="btn"
+                  style={{
+                    background: '#6c757d',
+                    color: 'white',
+                    flex: 1,
+                    minWidth: '150px'
+                  }}
+                >
+                  ✖️ Close
+                </button>
+              </div>
+
+              {/* Helper Text */}
+              {!Object.values(verificationStates).every(v => v === true) && (
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '1rem',
+                  background: '#fff3cd',
+                  border: '1px solid #ffc107',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  color: '#856404'
+                }}>
+                  ⚠️ <strong>Note:</strong> All 5 verification steps must be checked before you can approve this worker.
+                  Save your progress as you go, and send reminder emails for missing information.
+                </div>
+              )}
             </div>
           </div>
         </div>
