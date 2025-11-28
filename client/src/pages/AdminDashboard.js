@@ -2877,13 +2877,41 @@ const AdminDashboard = () => {
                 </button>
 
                 <button
+                  onClick={async () => {
+                    await toggleVerified(verificationWorker.id);
+                    // Reload worker details to show updated verified status
+                    const response = await fetch(`/admin/worker-detail/${verificationWorker.id}`, {
+                      credentials: 'include'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                      setVerificationWorker({
+                        ...verificationWorker,
+                        is_verified: data.details.is_verified
+                      });
+                    }
+                  }}
+                  className="btn"
+                  style={{
+                    background: verificationWorker?.is_verified ? '#dc3545' : '#28a745',
+                    color: 'white',
+                    flex: 1,
+                    minWidth: '150px'
+                  }}
+                >
+                  {verificationWorker?.is_verified ? '❌ Remove Verified Badge' : '✅ Add Verified Badge'}
+                </button>
+
+                <button
                   onClick={approveWorkerFromVerification}
                   disabled={!Object.values(verificationStates).every(v => v === true)}
-                  className="btn btn-success"
+                  className="btn"
                   style={{
                     flex: 1,
                     minWidth: '150px',
-                    opacity: Object.values(verificationStates).every(v => v === true) ? 1 : 0.5,
+                    background: Object.values(verificationStates).every(v => v === true) ? '#4a7c59' : '#ccc',
+                    color: 'white',
+                    opacity: Object.values(verificationStates).every(v => v === true) ? 1 : 0.7,
                     cursor: Object.values(verificationStates).every(v => v === true) ? 'pointer' : 'not-allowed'
                   }}
                   title={!Object.values(verificationStates).every(v => v === true) ? 'Complete all 5 verification steps first' : 'Approve worker'}
