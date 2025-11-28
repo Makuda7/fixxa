@@ -15,6 +15,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setError('');
 
     // Basic validation
@@ -32,6 +33,8 @@ const Login = () => {
       console.log('User:', result.user);
 
       if (result.success) {
+        // Clear error on success
+        setError('');
         // Use the redirect URL from the backend (handles admin, professional, client)
         if (result.redirect) {
           console.log('Has redirect, checking value:', result.redirect);
@@ -64,14 +67,25 @@ const Login = () => {
           }
         }
       } else {
-        setError(result.error || 'Login failed. Please check your credentials.');
+        // Keep loading state active briefly to prevent password manager from triggering
+        setTimeout(() => {
+          setError(result.error || 'Incorrect email or password. Please try again.');
+          setLoading(false);
+        }, 100);
+        return; // Exit early, don't set loading to false yet
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      // Keep loading state active briefly to prevent password manager from triggering
+      setTimeout(() => {
+        setError('An error occurred. Please try again.');
+        setLoading(false);
+      }, 100);
       console.error('Login error:', err);
-    } finally {
-      setLoading(false);
+      return; // Exit early, don't set loading to false yet
     }
+
+    // Only set loading to false on success
+    setLoading(false);
   };
 
   return (
