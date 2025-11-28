@@ -69,6 +69,7 @@ const AdminDashboard = () => {
   const [currentRejectingWorkerId, setCurrentRejectingWorkerId] = useState(null);
   const [showWorkerDetailModal, setShowWorkerDetailModal] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState(null);
+  const [workerDetailData, setWorkerDetailData] = useState(null);
 
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
@@ -346,6 +347,37 @@ const AdminDashboard = () => {
       console.error('Error rejecting worker:', error);
       showMessage('Error rejecting worker', 'error');
     }
+  };
+
+  const showWorkerDetail = async (worker) => {
+    try {
+      setLoading(true);
+      setSelectedWorker(worker);
+
+      // Fetch detailed worker info
+      const response = await fetch(`/admin/worker-detail/${worker.id}`, {
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setWorkerDetailData(data.details);
+        setShowWorkerDetailModal(true);
+      } else {
+        showMessage(data.error || 'Failed to load worker details', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading worker details:', error);
+      showMessage('Error loading worker details', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const closeWorkerDetailModal = () => {
+    setShowWorkerDetailModal(false);
+    setSelectedWorker(null);
+    setWorkerDetailData(null);
   };
 
   const approveCertification = async (certId) => {
@@ -804,7 +836,12 @@ const AdminDashboard = () => {
               ) : (
                 <div className="worker-grid">
                   {pendingWorkers.map(worker => (
-                    <div key={worker.id} className="worker-card">
+                    <div
+                      key={worker.id}
+                      className="worker-card clickable"
+                      onClick={() => showWorkerDetail(worker)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className="worker-header">
                         <div className="worker-info">
                           <h4>
@@ -844,13 +881,19 @@ const AdminDashboard = () => {
                       <div className="cert-actions">
                         <button
                           className="btn btn-success"
-                          onClick={() => approveWorker(worker.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            approveWorker(worker.id);
+                          }}
                         >
                           Approve
                         </button>
                         <button
                           className="btn btn-danger"
-                          onClick={() => openRejectModal(worker.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openRejectModal(worker.id);
+                          }}
                         >
                           Reject
                         </button>
@@ -1409,6 +1452,169 @@ const AdminDashboard = () => {
                 >
                   Reject Application
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Worker Detail Modal */}
+      {showWorkerDetailModal && selectedWorker && workerDetailData && (
+        <div className="modal show">
+          <div className="modal-content" style={{ maxWidth: '800px' }}>
+            <div className="modal-header">
+              <h3>{selectedWorker.name} - Details</h3>
+              <button className="modal-close" onClick={closeWorkerDetailModal}>×</button>
+            </div>
+            <div className="modal-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
+              {/* Basic Information */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                  Basic Information
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                  <div>
+                    <strong>Worker ID:</strong> {selectedWorker.id}
+                  </div>
+                  <div>
+                    <strong>Email:</strong> {selectedWorker.email}
+                  </div>
+                  <div>
+                    <strong>Phone:</strong> {workerDetailData.phone || 'N/A'}
+                  </div>
+                  <div>
+                    <strong>Speciality:</strong> {selectedWorker.speciality}
+                  </div>
+                  <div>
+                    <strong>Service Area:</strong> {selectedWorker.area || 'N/A'}
+                  </div>
+                  <div>
+                    <strong>Joined:</strong> {new Date(workerDetailData.created_at).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <strong>Email Verified:</strong> {selectedWorker.email_verified ? '✅ Yes' : '❌ No'}
+                  </div>
+                  <div>
+                    <strong>Approval Status:</strong> {selectedWorker.approval_status || 'pending'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio */}
+              {selectedWorker.bio && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                    Bio
+                  </h4>
+                  <p style={{ color: '#666', lineHeight: '1.6' }}>{selectedWorker.bio}</p>
+                </div>
+              )}
+
+              {/* Experience */}
+              {selectedWorker.experience && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                    Experience
+                  </h4>
+                  <p style={{ color: '#666' }}>
+                    {selectedWorker.experience} years
+                  </p>
+                </div>
+              )}
+
+              {/* Address Information */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                  Address Information
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <strong>Street Address:</strong> {workerDetailData.address || 'N/A'}
+                  </div>
+                  <div>
+                    <strong>City:</strong> {workerDetailData.city || 'N/A'}
+                  </div>
+                  <div>
+                    <strong>Postal Code:</strong> {workerDetailData.postal_code || 'N/A'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Statistics */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                  Performance Statistics
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '1.5rem', color: '#2d5016', fontWeight: 'bold' }}>
+                      {selectedWorker.total_bookings || 0}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Total Bookings</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.5rem', color: '#4a7c59', fontWeight: 'bold' }}>
+                      {selectedWorker.completed_bookings || 0}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Completed</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.5rem', color: '#f39c12', fontWeight: 'bold' }}>
+                      {selectedWorker.rating ? parseFloat(selectedWorker.rating).toFixed(2) + ' ⭐' : 'N/A'}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Rating</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+                      {selectedWorker.total_bookings > 0
+                        ? Math.round((selectedWorker.completed_bookings / selectedWorker.total_bookings) * 100) + '%'
+                        : 'N/A'}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Completion Rate</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Certifications */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{ marginBottom: '1rem', borderBottom: '2px solid #4a7c59', paddingBottom: '0.5rem' }}>
+                  Certifications
+                </h4>
+                <p style={{ color: '#666' }}>
+                  {selectedWorker.approved_cert_count || 0} approved / {selectedWorker.cert_count || 0} total
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid #e0e0e0' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={closeWorkerDetailModal}
+                >
+                  Close
+                </button>
+                {selectedWorker.approval_status === 'pending' && (
+                  <>
+                    <button
+                      className="btn btn-success"
+                      onClick={() => {
+                        closeWorkerDetailModal();
+                        approveWorker(selectedWorker.id);
+                      }}
+                    >
+                      ✅ Approve Worker
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => {
+                        closeWorkerDetailModal();
+                        openRejectModal(selectedWorker.id);
+                      }}
+                    >
+                      ❌ Reject Application
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
