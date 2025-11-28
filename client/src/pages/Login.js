@@ -6,7 +6,15 @@ import './Login.css';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    // Check for error in sessionStorage on mount
+    const savedError = sessionStorage.getItem('loginError');
+    if (savedError) {
+      sessionStorage.removeItem('loginError');
+      return savedError;
+    }
+    return '';
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -67,17 +75,23 @@ const Login = () => {
           }
         }
       } else {
+        // Save error to sessionStorage in case page refreshes
+        const errorMsg = result.error || 'Incorrect email or password. Please try again.';
+        sessionStorage.setItem('loginError', errorMsg);
         // Keep loading state active briefly to prevent password manager from triggering
         setTimeout(() => {
-          setError(result.error || 'Incorrect email or password. Please try again.');
+          setError(errorMsg);
           setLoading(false);
         }, 100);
         return; // Exit early, don't set loading to false yet
       }
     } catch (err) {
+      // Save error to sessionStorage in case page refreshes
+      const errorMsg = 'An error occurred. Please try again.';
+      sessionStorage.setItem('loginError', errorMsg);
       // Keep loading state active briefly to prevent password manager from triggering
       setTimeout(() => {
-        setError('An error occurred. Please try again.');
+        setError(errorMsg);
         setLoading(false);
       }, 100);
       console.error('Login error:', err);
@@ -106,7 +120,7 @@ const Login = () => {
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="login-form">
+        <form onSubmit={handleSubmit} className="login-form" action="javascript:void(0);" method="post">
           {/* Email Input */}
           <div className="form-group">
             <label htmlFor="email">Email</label>
