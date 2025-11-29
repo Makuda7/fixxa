@@ -300,7 +300,19 @@ const AdminDashboard = () => {
       const response = await fetch('/admin/professionals', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
-        setProfessionals(data.professionals);
+        // Map backend data to frontend format and calculate completion rate
+        const mappedProfessionals = data.professionals.map(prof => ({
+          ...prof,
+          availability: prof.is_active ? 'available' : 'unavailable',
+          total_jobs: prof.total_bookings || 0,
+          completed_jobs: prof.completed_bookings || 0,
+          completion_rate: prof.total_bookings > 0
+            ? Math.round((prof.completed_bookings / prof.total_bookings) * 100)
+            : 0,
+          avg_rating: prof.rating ? parseFloat(prof.rating).toFixed(1) : '0.0',
+          review_count: 0 // Will be calculated from reviews if needed
+        }));
+        setProfessionals(mappedProfessionals);
       }
     } catch (error) {
       console.error('Error loading professionals:', error);
@@ -1582,48 +1594,64 @@ const AdminDashboard = () => {
                 <div className="no-data">No pending applications</div>
               ) : (
                 <div className="worker-grid">
-                  {pendingWorkers.map(worker => (
-                    <div
-                      key={worker.id}
-                      className="worker-card"
-                      style={{
-                        border: worker.email_verified ? '2px solid #28a745' : '2px solid #ffc107',
-                        opacity: worker.email_verified ? 1 : 0.9
-                      }}
-                    >
-                      <div className="worker-header">
-                        <div className="worker-info">
-                          <h4>
-                            {worker.email_verified ? '✅ ' : '⚠️ '}
-                            {worker.name}
-                            {!worker.email_verified && (
-                              <span style={{ color: '#ff9800', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
-                                Email Not Verified
-                              </span>
-                            )}
-                          </h4>
-                          <p>{worker.email} {worker.phone && `• ${worker.phone}`}</p>
-                          <p><strong>Speciality:</strong> {worker.speciality}</p>
-                          {worker.address && (
-                            <p><strong>Location:</strong> {worker.address}, {worker.city}</p>
-                          )}
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <p style={{ fontSize: '0.85rem', color: '#666' }}>
-                            Applied: {formatDate(worker.created_at)}
-                          </p>
-                          {worker.cert_count > 0 && (
-                            <p style={{ fontSize: '0.85rem', color: '#666' }}>
-                              {worker.approved_cert_count}/{worker.cert_count} certs approved
-                            </p>
-                          )}
+                  {pendingWorkers.map(worker => {
+                    // Color coding based on email verification status
+                    const emailStatusColor = worker.email_verified ? '#28a745' : '#dc3545';
+                    const emailStatusBg = worker.email_verified ? '#d4edda' : '#f8d7da';
+                    const emailStatusText = worker.email_verified ? 'Email Verified' : 'Email Not Verified';
+                    const emailStatusIcon = worker.email_verified ? '✅' : '❌';
+
+                    return (
+                      <div
+                        key={worker.id}
+                        className="worker-card"
+                        style={{
+                          border: `2px solid ${emailStatusColor}`,
+                          borderLeft: `6px solid ${emailStatusColor}`,
+                          boxShadow: worker.email_verified ? '0 2px 8px rgba(40, 167, 69, 0.1)' : '0 2px 8px rgba(220, 53, 69, 0.1)'
+                        }}
+                      >
+                        {/* Email Verification Status Banner */}
+                        <div style={{
+                          background: emailStatusBg,
+                          color: emailStatusColor,
+                          padding: '0.5rem 0.75rem',
+                          marginBottom: '0.75rem',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}>
+                          <span>{emailStatusIcon} {emailStatusText}</span>
                           {worker.last_completion_email_sent && (
-                            <p style={{ fontSize: '0.85rem', color: '#ffc107' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>
                               Last Email: {formatDate(worker.last_completion_email_sent)}
-                            </p>
+                            </span>
                           )}
                         </div>
-                      </div>
+
+                        <div className="worker-header">
+                          <div className="worker-info">
+                            <h4>{worker.name}</h4>
+                            <p>{worker.email} {worker.phone && `• ${worker.phone}`}</p>
+                            <p><strong>Speciality:</strong> {worker.speciality}</p>
+                            {worker.address && (
+                              <p><strong>Location:</strong> {worker.address}, {worker.city}</p>
+                            )}
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                              Applied: {formatDate(worker.created_at)}
+                            </p>
+                            {worker.cert_count > 0 && (
+                              <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                                {worker.approved_cert_count}/{worker.cert_count} certs approved
+                              </p>
+                            )}
+                          </div>
+                        </div>
 
                       {worker.bio && (
                         <div style={{ margin: '1rem 0', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
@@ -1654,7 +1682,8 @@ const AdminDashboard = () => {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1696,42 +1725,157 @@ const AdminDashboard = () => {
               <div className="no-data">No profile updates found</div>
             ) : (
               <div style={{ marginTop: '1rem' }}>
-                {profileUpdates.map(update => (
-                  <div key={update.id} className="card" style={{ marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                      <div>
-                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#2d5016' }}>{update.worker_name}</h4>
-                        <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                          {update.worker_email} • {formatDate(update.changed_at)}
-                        </p>
+                {profileUpdates.map(update => {
+                  // Determine update type and color scheme
+                  let updateType = 'info';
+                  let borderColor = '#17a2b8'; // Blue for info
+                  let bgColor = '#d1ecf1';
+                  let icon = 'ℹ️';
+
+                  const field = update.field_name?.toLowerCase() || '';
+
+                  // Categorize by field name
+                  if (field.includes('verified') || field.includes('approval') || field.includes('status')) {
+                    updateType = 'verification';
+                    borderColor = '#28a745'; // Green for verification
+                    bgColor = '#d4edda';
+                    icon = '✅';
+                  } else if (field.includes('bio') || field.includes('experience') || field.includes('specialty') || field.includes('area')) {
+                    updateType = 'profile';
+                    borderColor = '#ffc107'; // Yellow for profile changes
+                    bgColor = '#fff3cd';
+                    icon = '📝';
+                  } else if (field.includes('document') || field.includes('certification') || field.includes('photo') || field.includes('picture')) {
+                    updateType = 'document';
+                    borderColor = '#6f42c1'; // Purple for documents
+                    bgColor = '#e2d9f3';
+                    icon = '📄';
+                  }
+
+                  return (
+                    <div
+                      key={update.id}
+                      className="card"
+                      style={{
+                        marginBottom: '1rem',
+                        borderLeft: `5px solid ${borderColor}`,
+                        boxShadow: `0 2px 8px rgba(0,0,0,0.08)`
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.25rem' }}>{icon}</span>
+                            <h4 style={{ margin: 0, color: '#2d5016' }}>{update.worker_name}</h4>
+                          </div>
+                          <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
+                            {update.worker_email} • {formatDate(update.changed_at)}
+                          </p>
+                        </div>
+                        <span className={`status-badge status-${update.review_status || 'pending'}`}>
+                          {update.review_status || 'Pending'}
+                        </span>
                       </div>
-                      <span className={`status-badge status-${update.review_status || 'pending'}`}>
-                        {update.review_status || 'Pending'}
-                      </span>
-                    </div>
-                    <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px' }}>
-                      <p style={{ margin: '0 0 0.5rem 0' }}><strong>Field:</strong> {update.field_name}</p>
-                      <p style={{ margin: '0.5rem 0' }}><strong>Old Value:</strong> {update.old_value || 'None'}</p>
-                      <p style={{ margin: '0.5rem 0 0 0' }}><strong>New Value:</strong> {update.new_value}</p>
-                    </div>
-                    {update.review_status === 'pending' && (
-                      <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                        <button
-                          className="btn btn-success"
-                          onClick={() => reviewProfileUpdate(update.id, 'approved')}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => reviewProfileUpdate(update.id, 'rejected')}
-                        >
-                          Reject
-                        </button>
+
+                      {/* Field Type Badge */}
+                      <div style={{
+                        display: 'inline-block',
+                        background: bgColor,
+                        color: borderColor,
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        marginBottom: '0.75rem',
+                        textTransform: 'uppercase'
+                      }}>
+                        {update.field_name}
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Side-by-side comparison */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '1rem',
+                        marginBottom: '1rem'
+                      }}>
+                        {/* Old Value */}
+                        <div style={{
+                          background: '#f8f9fa',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: '2px solid #dee2e6'
+                        }}>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: '#6c757d',
+                            marginBottom: '0.5rem',
+                            textTransform: 'uppercase',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}>
+                            <span>❌</span> Old Value
+                          </div>
+                          <div style={{
+                            fontSize: '0.9rem',
+                            color: '#495057',
+                            wordBreak: 'break-word'
+                          }}>
+                            {update.old_value || <em style={{ color: '#adb5bd' }}>None</em>}
+                          </div>
+                        </div>
+
+                        {/* New Value */}
+                        <div style={{
+                          background: '#d4edda',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: '2px solid #28a745'
+                        }}>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: '#155724',
+                            marginBottom: '0.5rem',
+                            textTransform: 'uppercase',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}>
+                            <span>✅</span> New Value
+                          </div>
+                          <div style={{
+                            fontSize: '0.9rem',
+                            color: '#155724',
+                            fontWeight: 500,
+                            wordBreak: 'break-word'
+                          }}>
+                            {update.new_value}
+                          </div>
+                        </div>
+                      </div>
+
+                      {update.review_status === 'pending' && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn btn-success"
+                            onClick={() => reviewProfileUpdate(update.id, 'approved')}
+                          >
+                            ✅ Approve Change
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => reviewProfileUpdate(update.id, 'rejected')}
+                          >
+                            ❌ Reject Change
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1979,6 +2123,11 @@ const AdminDashboard = () => {
                     <div
                       key={worker.id}
                       className={`worker-card ${worker.availability === 'unavailable' ? 'unavailable' : ''}`}
+                      style={{
+                        opacity: worker.availability === 'unavailable' ? 0.6 : 1,
+                        filter: worker.availability === 'unavailable' ? 'grayscale(30%)' : 'none',
+                        transition: 'all 0.3s ease'
+                      }}
                     >
                       <div className="worker-header">
                         <div className="worker-info">
@@ -2004,10 +2153,54 @@ const AdminDashboard = () => {
                           <div className="worker-stat-label">Rating</div>
                         </div>
                         <div className="worker-stat">
-                          <div className="worker-stat-number">{worker.review_count || 0}</div>
-                          <div className="worker-stat-label">Reviews</div>
+                          <div className="worker-stat-number">
+                            {worker.completion_rate}%
+                          </div>
+                          <div className="worker-stat-label">Completed</div>
                         </div>
                       </div>
+
+                      {/* Completion Rate Progress Bar */}
+                      {worker.total_jobs > 0 && (
+                        <div style={{ margin: '0.75rem 0 0.5rem 0' }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '0.25rem',
+                            fontSize: '0.75rem',
+                            color: '#666'
+                          }}>
+                            <span>Completion Rate</span>
+                            <span style={{
+                              fontWeight: 600,
+                              color: worker.completion_rate >= 80 ? '#28a745' :
+                                     worker.completion_rate >= 60 ? '#ffc107' : '#dc3545'
+                            }}>
+                              {worker.completed_jobs}/{worker.total_jobs} jobs
+                            </span>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '8px',
+                            background: '#e9ecef',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
+                          }}>
+                            <div style={{
+                              width: `${worker.completion_rate}%`,
+                              height: '100%',
+                              background: worker.completion_rate >= 80
+                                ? 'linear-gradient(90deg, #28a745 0%, #20c997 100%)'
+                                : worker.completion_rate >= 60
+                                ? 'linear-gradient(90deg, #ffc107 0%, #fd7e14 100%)'
+                                : 'linear-gradient(90deg, #dc3545 0%, #c82333 100%)',
+                              borderRadius: '4px',
+                              transition: 'width 0.3s ease'
+                            }} />
+                          </div>
+                        </div>
+                      )}
 
                       <div className="cert-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         <button
@@ -3580,6 +3773,153 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Footer Navigation */}
+      <footer style={{
+        marginTop: '3rem',
+        padding: '2rem 1rem',
+        background: 'linear-gradient(135deg, #2d5016 0%, #4a7c59 100%)',
+        borderRadius: '12px',
+        color: 'white'
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '2rem',
+            marginBottom: '2rem'
+          }}>
+            {/* Platform Links */}
+            <div>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600 }}>Platform</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <a href="/" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  🏠 Home
+                </a>
+                <a href="/about" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  ℹ️ About Us
+                </a>
+                <a href="/service" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  🔧 Services
+                </a>
+                <a href="/contact" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  📧 Contact
+                </a>
+              </div>
+            </div>
+
+            {/* Support Links */}
+            <div>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600 }}>Support</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <a href="/support" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  🆘 Help Center
+                </a>
+                <a href="/faq" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  ❓ FAQ
+                </a>
+                <a href="/safety" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  🛡️ Safety
+                </a>
+              </div>
+            </div>
+
+            {/* Legal Links */}
+            <div>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600 }}>Legal</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <a href="/privacy" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  🔒 Privacy Policy
+                </a>
+                <a href="/terms" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                  📜 Terms of Service
+                </a>
+              </div>
+            </div>
+
+            {/* Admin Links */}
+            <div>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600 }}>Admin Tools</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <button
+                  onClick={() => setActiveTab('dashboard')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.9)',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    padding: 0
+                  }}
+                >
+                  📊 Dashboard
+                </button>
+                <button
+                  onClick={() => setActiveTab('pending-workers')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.9)',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    padding: 0
+                  }}
+                >
+                  ⏳ Pending Workers
+                </button>
+                <button
+                  onClick={() => setActiveTab('workers')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.9)',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    padding: 0
+                  }}
+                >
+                  👷 Professionals
+                </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.9)',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    padding: 0
+                  }}
+                >
+                  ⚙️ Settings
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div style={{
+            borderTop: '1px solid rgba(255,255,255,0.2)',
+            paddingTop: '1rem',
+            textAlign: 'center',
+            fontSize: '0.85rem',
+            color: 'rgba(255,255,255,0.8)'
+          }}>
+            © {new Date().getFullYear()} Fixxa. All rights reserved. | Admin Dashboard
+          </div>
+        </div>
+      </footer>
 
       {/* PDF Viewer Modal */}
       {showPdfViewer && (
