@@ -266,11 +266,12 @@
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
   background: #f0f0f0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0;
 }
 
 .no-chat-messages {
@@ -282,8 +283,8 @@
 .message-date-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0;
+  margin-bottom: 0.5rem;
 }
 
 .date-divider {
@@ -304,14 +305,20 @@
 
 .chat-message {
   max-width: 75%;
+  width: fit-content;
+  min-width: 100px;
   padding: 0.75rem 1rem;
+  padding-bottom: 1.5rem;
   border-radius: 12px;
   font-size: 0.95rem;
   word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   position: relative;
+  margin-bottom: 0.5rem;
 }
 
 .chat-message.sent {
@@ -329,7 +336,12 @@
 
 .chat-message-content {
   color: #333;
-  line-height: 1.4;
+  line-height: 1.5;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  max-width: 100%;
 }
 
 .chat-image-container {
@@ -357,16 +369,20 @@
   color: #999;
   text-align: right;
   margin-top: 0.25rem;
+  align-self: flex-end;
+  padding-right: 1.5rem;
+  white-space: nowrap;
 }
 
 .message-status {
   position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
+  bottom: 0.4rem;
+  right: 0.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0.7;
+  pointer-events: none;
 }
 
 .chat-input-form {
@@ -398,6 +414,7 @@
   background: #1d7a91;
   color: white;
   border: none;
+  border-radius: 20px;
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;
@@ -411,6 +428,24 @@
 .send-btn:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+/* Custom scrollbar for chat messages */
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #e0e0e0;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #1d7a91;
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #156072;
 }
 
 /* Responsive */
