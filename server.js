@@ -983,6 +983,48 @@ async function startServer() {
     reminderScheduler.start();
     console.log('✅ Reminder scheduler started');
 
+    // TEMPORARY: Direct migration endpoint (not in router, so it works!)
+    // Visit this URL once to run the migration: /api/run-migration-now
+    // DELETE THIS AFTER RUNNING ONCE
+    app.get('/api/run-migration-now', async (req, res) => {
+      try {
+        const results = [];
+
+        // Add column
+        await pool.query(`ALTER TABLE certifications ADD COLUMN IF NOT EXISTS document_type VARCHAR(50) DEFAULT 'certification';`);
+        results.push('✓ Added document_type column');
+
+        // Update verification documents
+        const updateResult = await pool.query(`
+          UPDATE certifications SET document_type = 'verification_document'
+          WHERE document_type = 'certification'
+            AND (LOWER(document_name) LIKE '%id%' OR LOWER(document_name) LIKE '%proof%'
+             OR LOWER(document_name) LIKE '%residence%' OR LOWER(document_name) LIKE '%address%'
+             OR LOWER(document_name) LIKE '%passport%' OR LOWER(document_name) LIKE '%identity%'
+             OR LOWER(document_name) LIKE '%verification%');
+        `);
+        results.push(`✓ Updated ${updateResult.rowCount} verification documents`);
+
+        // Create index
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_certifications_document_type ON certifications(document_type);`);
+        results.push('✓ Created index');
+
+        // Check Worker 4
+        const worker4 = await pool.query(`SELECT id, document_name, document_type, status FROM certifications WHERE worker_id = 4;`);
+        const worker4Approved = await pool.query(`SELECT COUNT(*) as count FROM certifications WHERE worker_id = 4 AND status = 'approved' AND document_type = 'certification';`);
+
+        res.json({
+          success: true,
+          message: 'Migration completed!',
+          results,
+          worker4_certs: worker4.rows,
+          worker4_approved_professional_certs: worker4Approved.rows[0].count
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
     // Serve React app static files (after all API routes)
     app.use(express.static('client/build'));
 
