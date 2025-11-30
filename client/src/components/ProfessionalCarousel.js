@@ -92,10 +92,10 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
                       className="card-image"
                     />
                     {pro.is_verified && (
-                      <span className="verified-badge">✓ Verified</span>
+                      <span className="verified-badge">Verified</span>
                     )}
                     {pro.approved_cert_count > 0 && (
-                      <span className="certified-badge">🎓 Certified</span>
+                      <span className="certified-badge">Certified</span>
                     )}
                   </div>
 

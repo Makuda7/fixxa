@@ -114,26 +114,45 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: var(--fixxa-success);
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.verified-badge::before {
+  content: '✓';
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 .certified-badge {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: var(--fixxa-info);
+  background: linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%);
   color: white;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(111, 66, 193, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.certified-badge::before {
+  content: '🎓';
+  font-size: 0.9rem;
 }
 
 .card-content {

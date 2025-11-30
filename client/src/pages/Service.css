@@ -264,18 +264,34 @@
 }
 
 .verified-badge {
-  display: inline-block;
-  background: #28a745;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
+  padding: 5px 12px;
+  border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 600;
   margin-left: 0.25rem;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.verified-badge::before {
+  content: '✓';
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 .certified-badge {
-  background: #007bff;
+  background: linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%);
+  box-shadow: 0 2px 4px rgba(111, 66, 193, 0.2);
+}
+
+.certified-badge::before {
+  content: '🎓';
+  font-size: 0.9rem;
 }
 
 .worker-card p {

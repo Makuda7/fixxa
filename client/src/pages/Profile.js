@@ -286,7 +286,20 @@ const Profile = () => {
   const reviewCount = reviews.length;
 
   const verifiedBadge = worker.is_verified || worker.id_verified;
-  const isCertified = certifications.length > 0;
+
+  // Filter out ID and proof of residence documents - only count actual professional certifications
+  const professionalCerts = certifications.filter(cert => {
+    const name = (cert.document_name || cert.certification_name || '').toLowerCase();
+    // Exclude common ID and verification documents
+    return !name.includes('id document') &&
+           !name.includes('proof of residence') &&
+           !name.includes('identity') &&
+           !name.includes('id copy') &&
+           !name.includes('proof of address') &&
+           !name.includes('residence proof');
+  });
+
+  const isCertified = professionalCerts.length > 0;
 
   return (
     <div className="profile-page">
@@ -327,8 +340,8 @@ const Profile = () => {
               <div className="worker-name-section">
                 <h1>
                   {worker.name}
-                  {verifiedBadge && <span className="verified-badge">✓ Verified</span>}
-                  {isCertified && <span className="verified-badge certified-badge">🎓 Certified</span>}
+                  {verifiedBadge && <span className="verified-badge">Verified</span>}
+                  {isCertified && <span className="verified-badge certified-badge">Certified</span>}
                 </h1>
                 <p className="worker-speciality">{worker.speciality}</p>
               </div>

@@ -42,7 +42,7 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_picture, availability_schedule, is_available, latitude, longitude, service_radius, id_verified, approval_status
+        `SELECT id, name, email, speciality, area, primary_suburb, province, secondary_areas, bio, experience, rating, profile_picture, availability_schedule, is_available, latitude, longitude, service_radius, id_verified, approval_status, rate_type, rate_amount
          FROM workers
          WHERE is_active = true AND approval_status = 'approved'
          ORDER BY name ASC`
