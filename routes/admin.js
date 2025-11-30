@@ -2566,5 +2566,72 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // TEMPORARY: Manual migration endpoint for document_type column
+  // Visit /admin/run-document-type-migration to execute
+  // DELETE THIS AFTER RUNNING ONCE
+  router.get('/run-document-type-migration', async (req, res) => {
+    try {
+      const results = [];
+
+      // Step 1: Add column
+      await pool.query(`
+        ALTER TABLE certifications
+        ADD COLUMN IF NOT EXISTS document_type VARCHAR(50) DEFAULT 'certification';
+      `);
+      results.push('✓ Added document_type column (or already exists)');
+
+      // Step 2: Update verification documents
+      const updateResult = await pool.query(`
+        UPDATE certifications
+        SET document_type = 'verification_document'
+        WHERE document_type = 'certification'
+          AND (LOWER(document_name) LIKE '%id%'
+           OR LOWER(document_name) LIKE '%proof%'
+           OR LOWER(document_name) LIKE '%residence%'
+           OR LOWER(document_name) LIKE '%address%'
+           OR LOWER(document_name) LIKE '%passport%'
+           OR LOWER(document_name) LIKE '%identity%'
+           OR LOWER(document_name) LIKE '%verification%');
+      `);
+      results.push(`✓ Updated ${updateResult.rowCount} verification documents`);
+
+      // Step 3: Create index
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_certifications_document_type
+        ON certifications(document_type);
+      `);
+      results.push('✓ Created index on document_type');
+
+      // Step 4: Check Worker 4
+      const worker4 = await pool.query(`
+        SELECT id, document_name, document_type, status
+        FROM certifications
+        WHERE worker_id = 4;
+      `);
+      results.push(`\nWorker 4 has ${worker4.rows.length} total certifications:`);
+      worker4.rows.forEach(row => {
+        results.push(`  - ${row.document_name}: ${row.document_type} (${row.status})`);
+      });
+
+      const worker4Approved = await pool.query(`
+        SELECT COUNT(*) as count
+        FROM certifications
+        WHERE worker_id = 4 AND status = 'approved' AND document_type = 'certification';
+      `);
+      results.push(`\nWorker 4 approved professional certs: ${worker4Approved.rows[0].count}`);
+
+      res.json({
+        success: true,
+        message: 'Migration completed successfully!',
+        results: results
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
   return router;
 };
