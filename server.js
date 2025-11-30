@@ -1043,6 +1043,22 @@ async function startServer() {
       }
     });
 
+    // TEMPORARY: Set Worker 4 as verified
+    // Visit: /verify-worker4-12345
+    app.get('/verify-worker4-12345', async (req, res) => {
+      try {
+        await pool.query(`UPDATE workers SET id_verified = true, is_verified = true WHERE id = 4;`);
+        const check = await pool.query(`SELECT id, name, id_verified, is_verified FROM workers WHERE id = 4;`);
+        res.json({
+          success: true,
+          message: 'Worker 4 is now verified',
+          worker: check.rows[0]
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
     // Serve React app static files (after all API routes)
     app.use(express.static('client/build'));
 
