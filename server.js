@@ -1025,6 +1025,24 @@ async function startServer() {
       }
     });
 
+    // TEMPORARY: Fix PaymentNotification to be verification_document
+    // Visit: /fix-payment-doc-12345
+    app.get('/fix-payment-doc-12345', async (req, res) => {
+      try {
+        await pool.query(`UPDATE certifications SET document_type = 'verification_document' WHERE id = 11;`);
+        const check = await pool.query(`SELECT id, document_name, document_type, status FROM certifications WHERE worker_id = 4;`);
+        const count = await pool.query(`SELECT COUNT(*) as count FROM certifications WHERE worker_id = 4 AND status = 'approved' AND document_type = 'certification';`);
+        res.json({
+          success: true,
+          message: 'Updated PaymentNotification-6.pdf to verification_document',
+          worker4_certs: check.rows,
+          worker4_approved_certs: count.rows[0].count
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
     // Serve React app static files (after all API routes)
     app.use(express.static('client/build'));
 
