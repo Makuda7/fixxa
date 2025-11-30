@@ -984,9 +984,9 @@ async function startServer() {
     console.log('✅ Reminder scheduler started');
 
     // TEMPORARY: Direct migration endpoint (not in router, so it works!)
-    // Visit this URL once to run the migration: /api/run-migration-now
+    // Visit this URL once to run the migration: /fix-db-now-12345
     // DELETE THIS AFTER RUNNING ONCE
-    app.get('/api/run-migration-now', async (req, res) => {
+    app.get('/fix-db-now-12345', async (req, res) => {
       try {
         const results = [];
 
