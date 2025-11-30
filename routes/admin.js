@@ -2421,11 +2421,11 @@ module.exports = (pool, logger, helpers) => {
         fileType = 'image';
       }
 
-      // Insert certification into database
+      // Insert certification into database (mark as professional certification, not verification doc)
       const insertResult = await pool.query(
         `INSERT INTO certifications
-         (worker_id, document_name, document_url, cloudinary_id, file_type, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, 'pending', NOW())
+         (worker_id, document_name, document_url, cloudinary_id, file_type, document_type, status, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'certification', 'pending', NOW())
          RETURNING id, document_name, document_url, file_type, status, created_at`,
         [workerId, documentName.trim(), req.file.path, req.file.filename, fileType]
       );

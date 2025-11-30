@@ -81,8 +81,8 @@ module.exports = (pool, logger) => {
       const cloudinaryId = cloudinaryResult.public_id;
 
       const result = await pool.query(
-        'INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-        [workerId, fileUrl, cloudinaryId, fileName, fileType, 'pending']
+        'INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status, document_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        [workerId, fileUrl, cloudinaryId, fileName, fileType, 'pending', 'certification']
       );
 
       const certificationId = result.rows[0].id;
@@ -183,8 +183,8 @@ module.exports = (pool, logger) => {
       const cloudinaryId = cloudinaryResult.public_id;
 
       const result = await pool.query(
-        'INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-        [workerId, fileUrl, cloudinaryId, fileName, fileType, 'pending']
+        'INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status, document_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        [workerId, fileUrl, cloudinaryId, fileName, fileType, 'pending', 'certification']
       );
 
       const certificationId = result.rows[0].id;

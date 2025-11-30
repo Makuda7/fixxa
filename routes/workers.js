@@ -1199,8 +1199,8 @@ module.exports = (pool, logger, helpers) => {
       if (certificationUrls && certificationUrls.length > 0) {
         for (const certUrl of certificationUrls) {
           await pool.query(
-            `INSERT INTO certifications (worker_id, document_url, document_name, status, uploaded_at)
-             VALUES ($1, $2, $3, 'pending', NOW())`,
+            `INSERT INTO certifications (worker_id, document_url, document_name, status, document_type, uploaded_at)
+             VALUES ($1, $2, $3, 'pending', 'certification', NOW())`,
             [workerId, certUrl, 'Professional Certification']
           );
         }
@@ -1242,20 +1242,14 @@ module.exports = (pool, logger, helpers) => {
       }
 
       // Fetch APPROVED professional certifications only for this worker
-      // Exclude ID and proof of residence documents (verification docs, not professional certs)
+      // Only return documents where document_type = 'certification' (not verification documents)
       const result = await pool.query(
         `SELECT id, document_name as certification_name,
                 'document' as certification_type, uploaded_at
          FROM certifications
          WHERE worker_id = $1
            AND status = 'approved'
-           AND LOWER(document_name) NOT LIKE '%id%'
-           AND LOWER(document_name) NOT LIKE '%proof%'
-           AND LOWER(document_name) NOT LIKE '%residence%'
-           AND LOWER(document_name) NOT LIKE '%address%'
-           AND LOWER(document_name) NOT LIKE '%passport%'
-           AND LOWER(document_name) NOT LIKE '%identity%'
-           AND LOWER(document_name) NOT LIKE '%verification%'
+           AND document_type = 'certification'
          ORDER BY uploaded_at DESC`,
         [workerId]
       );

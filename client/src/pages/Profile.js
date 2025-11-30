@@ -287,20 +287,9 @@ const Profile = () => {
 
   const verifiedBadge = worker.is_verified || worker.id_verified;
 
-  // Filter out ID and proof of residence documents - only count actual professional certifications
-  const professionalCerts = certifications.filter(cert => {
-    const name = (cert.document_name || cert.certification_name || '').toLowerCase();
-    // Exclude common ID and verification documents (match backend filtering)
-    return !name.includes('id') &&
-           !name.includes('proof') &&
-           !name.includes('residence') &&
-           !name.includes('address') &&
-           !name.includes('passport') &&
-           !name.includes('identity') &&
-           !name.includes('verification');
-  });
-
-  const isCertified = professionalCerts.length > 0;
+  // Backend already filters by document_type='certification', so we can trust the data
+  // Only approved professional certifications are returned (not ID/verification docs)
+  const isCertified = certifications.length > 0;
 
   return (
     <div className="profile-page">
