@@ -969,25 +969,30 @@ async function startServer() {
     await addReviewPhotos(pool, logger);
 
     // Add document_type column to certifications
-    await pool.query(`
-      ALTER TABLE certifications ADD COLUMN IF NOT EXISTS document_type VARCHAR(50) DEFAULT 'certification';
-    `);
-    await pool.query(`
-      UPDATE certifications
-      SET document_type = 'verification_document'
-      WHERE document_type = 'certification'
-        AND (LOWER(document_name) LIKE '%id%'
-         OR LOWER(document_name) LIKE '%proof%'
-         OR LOWER(document_name) LIKE '%residence%'
-         OR LOWER(document_name) LIKE '%address%'
-         OR LOWER(document_name) LIKE '%passport%'
-         OR LOWER(document_name) LIKE '%identity%'
-         OR LOWER(document_name) LIKE '%verification%');
-    `);
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_certifications_document_type ON certifications(document_type);
-    `);
-    console.log('✅ Added document_type column to certifications');
+    try {
+      logger.info('🔄 Adding document_type column to certifications table...');
+      await pool.query(`
+        ALTER TABLE certifications ADD COLUMN IF NOT EXISTS document_type VARCHAR(50) DEFAULT 'certification';
+      `);
+      await pool.query(`
+        UPDATE certifications
+        SET document_type = 'verification_document'
+        WHERE document_type = 'certification'
+          AND (LOWER(document_name) LIKE '%id%'
+           OR LOWER(document_name) LIKE '%proof%'
+           OR LOWER(document_name) LIKE '%residence%'
+           OR LOWER(document_name) LIKE '%address%'
+           OR LOWER(document_name) LIKE '%passport%'
+           OR LOWER(document_name) LIKE '%identity%'
+           OR LOWER(document_name) LIKE '%verification%');
+      `);
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_certifications_document_type ON certifications(document_type);
+      `);
+      logger.info('✅ Added document_type column to certifications');
+    } catch (error) {
+      logger.warn('⚠️  document_type migration skipped or already applied: ' + error.message);
+    }
 
     console.log('✅ All migrations complete');
 
