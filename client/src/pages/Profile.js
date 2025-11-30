@@ -321,7 +321,7 @@ const Profile = () => {
               {verifiedBadge && (
                 <div className="profile-verified-sticker" title="Identity Verified">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="11" fill="#28a745" stroke="white" strokeWidth="2"/>
+                    <circle cx="12" cy="12" r="11" fill="#007bff" stroke="white" strokeWidth="2"/>
                     <path d="M7 12L10.5 15.5L17 9" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
