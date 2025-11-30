@@ -968,32 +968,9 @@ async function startServer() {
     const { addReviewPhotos } = require('./migrations/add_review_photos');
     await addReviewPhotos(pool, logger);
 
-    // Add document_type column to certifications
-    console.log('🔄 Adding document_type column to certifications table...');
-    try {
-      await pool.query(`
-        ALTER TABLE certifications ADD COLUMN IF NOT EXISTS document_type VARCHAR(50) DEFAULT 'certification';
-      `);
-      const updateResult = await pool.query(`
-        UPDATE certifications
-        SET document_type = 'verification_document'
-        WHERE document_type = 'certification'
-          AND (LOWER(document_name) LIKE '%id%'
-           OR LOWER(document_name) LIKE '%proof%'
-           OR LOWER(document_name) LIKE '%residence%'
-           OR LOWER(document_name) LIKE '%address%'
-           OR LOWER(document_name) LIKE '%passport%'
-           OR LOWER(document_name) LIKE '%identity%'
-           OR LOWER(document_name) LIKE '%verification%');
-      `);
-      console.log(`  ✓ Updated ${updateResult.rowCount} verification documents`);
-      await pool.query(`
-        CREATE INDEX IF NOT EXISTS idx_certifications_document_type ON certifications(document_type);
-      `);
-      console.log('✅ document_type column migration completed');
-    } catch (error) {
-      console.log('⚠️  document_type migration skipped or already applied: ' + error.message);
-    }
+    // Add document_type column to certifications table
+    const { addDocumentType } = require('./migrations/add_document_type');
+    await addDocumentType(pool, logger);
 
     console.log('✅ All migrations complete');
 
