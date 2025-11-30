@@ -316,6 +316,26 @@ const Profile = () => {
                   </div>
                 </div>
               )}
+
+              {/* Professional Badges as Stickers */}
+              {verifiedBadge && (
+                <div className="profile-verified-sticker" title="Identity Verified">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="11" fill="#28a745" stroke="white" strokeWidth="2"/>
+                    <path d="M7 12L10.5 15.5L17 9" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              )}
+
+              {isCertified && (
+                <div className="profile-certified-sticker" title="Professionally Certified">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="11" fill="#6f42c1" stroke="white" strokeWidth="2"/>
+                    <text x="12" y="17" fontSize="14" fill="white" textAnchor="middle" fontWeight="bold">🎓</text>
+                  </svg>
+                </div>
+              )}
+
               <div className="image-counter">
                 📷 {gallery.length} {gallery.length === 1 ? 'photo' : 'photos'}
               </div>
@@ -338,11 +358,7 @@ const Profile = () => {
               </div>
 
               <div className="worker-name-section">
-                <h1>
-                  {worker.name}
-                  {verifiedBadge && <span className="verified-badge">Verified</span>}
-                  {isCertified && <span className="verified-badge certified-badge">Certified</span>}
-                </h1>
+                <h1>{worker.name}</h1>
                 <p className="worker-speciality">{worker.speciality}</p>
               </div>
 

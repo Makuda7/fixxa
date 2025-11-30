@@ -92,6 +92,56 @@
   gap: 6px;
 }
 
+/* Professional Verification Stickers */
+.profile-verified-sticker {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: white;
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  animation: fadeInScale 0.4s ease-out;
+  cursor: help;
+}
+
+.profile-certified-sticker {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: white;
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  animation: fadeInScale 0.4s ease-out 0.2s backwards;
+  cursor: help;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.profile-verified-sticker:hover,
+.profile-certified-sticker:hover {
+  transform: scale(1.15);
+  transition: transform 0.2s ease;
+}
+
 .profile-details {
   padding: 1.5rem;
   display: flex;

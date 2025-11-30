@@ -1241,13 +1241,20 @@ module.exports = (pool, logger, helpers) => {
         });
       }
 
-      // Fetch APPROVED certifications only for this worker
-      // Only show professional certifications that have been approved by admin
+      // Fetch APPROVED professional certifications only for this worker
+      // Exclude ID and proof of residence documents (verification docs, not professional certs)
       const result = await pool.query(
         `SELECT id, document_name as certification_name,
                 'document' as certification_type, uploaded_at
          FROM certifications
-         WHERE worker_id = $1 AND status = 'approved'
+         WHERE worker_id = $1
+           AND status = 'approved'
+           AND LOWER(document_name) NOT LIKE '%id document%'
+           AND LOWER(document_name) NOT LIKE '%proof of residence%'
+           AND LOWER(document_name) NOT LIKE '%identity%'
+           AND LOWER(document_name) NOT LIKE '%id copy%'
+           AND LOWER(document_name) NOT LIKE '%proof of address%'
+           AND LOWER(document_name) NOT LIKE '%residence proof%'
          ORDER BY uploaded_at DESC`,
         [workerId]
       );
