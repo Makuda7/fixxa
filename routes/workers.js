@@ -1249,12 +1249,13 @@ module.exports = (pool, logger, helpers) => {
          FROM certifications
          WHERE worker_id = $1
            AND status = 'approved'
-           AND LOWER(document_name) NOT LIKE '%id document%'
-           AND LOWER(document_name) NOT LIKE '%proof of residence%'
+           AND LOWER(document_name) NOT LIKE '%id%'
+           AND LOWER(document_name) NOT LIKE '%proof%'
+           AND LOWER(document_name) NOT LIKE '%residence%'
+           AND LOWER(document_name) NOT LIKE '%address%'
+           AND LOWER(document_name) NOT LIKE '%passport%'
            AND LOWER(document_name) NOT LIKE '%identity%'
-           AND LOWER(document_name) NOT LIKE '%id copy%'
-           AND LOWER(document_name) NOT LIKE '%proof of address%'
-           AND LOWER(document_name) NOT LIKE '%residence proof%'
+           AND LOWER(document_name) NOT LIKE '%verification%'
          ORDER BY uploaded_at DESC`,
         [workerId]
       );

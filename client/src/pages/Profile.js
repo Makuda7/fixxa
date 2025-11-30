@@ -290,13 +290,14 @@ const Profile = () => {
   // Filter out ID and proof of residence documents - only count actual professional certifications
   const professionalCerts = certifications.filter(cert => {
     const name = (cert.document_name || cert.certification_name || '').toLowerCase();
-    // Exclude common ID and verification documents
-    return !name.includes('id document') &&
-           !name.includes('proof of residence') &&
+    // Exclude common ID and verification documents (match backend filtering)
+    return !name.includes('id') &&
+           !name.includes('proof') &&
+           !name.includes('residence') &&
+           !name.includes('address') &&
+           !name.includes('passport') &&
            !name.includes('identity') &&
-           !name.includes('id copy') &&
-           !name.includes('proof of address') &&
-           !name.includes('residence proof');
+           !name.includes('verification');
   });
 
   const isCertified = professionalCerts.length > 0;
