@@ -968,9 +968,12 @@ async function startServer() {
     const { addReviewPhotos } = require('./migrations/add_review_photos');
     await addReviewPhotos(pool, logger);
 
+    console.log('DEBUG: About to load document_type migration...');
     // Add document_type column to certifications table
     const { addDocumentType } = require('./migrations/add_document_type');
+    console.log('DEBUG: Loaded document_type migration, about to execute...');
     await addDocumentType(pool, logger);
+    console.log('DEBUG: Finished document_type migration');
 
     console.log('✅ All migrations complete');
 
