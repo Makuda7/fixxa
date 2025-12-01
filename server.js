@@ -1075,6 +1075,7 @@ async function startServer() {
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Database: ${process.env.DB_NAME}`);
       console.log(`URL: ${serverUrl}`);
+      console.log(`Build: ${new Date().toISOString()}`);
       console.log('===========================================');
 
       logger.info('Server started successfully', { port: PORT, url: serverUrl });
