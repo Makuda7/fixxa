@@ -19,7 +19,7 @@ const Header = () => {
 
   const fetchUnreadCount = async () => {
     try {
-      const response = await fetch('/messages/unread-count', {
+      const response = await fetch('/api/messages/unread-count', {
         credentials: 'include'
       });
       if (response.ok) {

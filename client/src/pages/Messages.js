@@ -74,7 +74,7 @@ const Messages = () => {
   const loadMessages = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`/messages?limit=${limit}&page=${page}`, {
+      const res = await fetch(`/api/messages?limit=${limit}&page=${page}`, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -121,7 +121,7 @@ const Messages = () => {
 
   const loadUnreadCounts = async () => {
     try {
-      const res = await fetch('/messages/client/unread-count', {
+      const res = await fetch('/api/messages/client/unread-count', {
         credentials: 'include'
       });
       const data = await res.json();
@@ -138,7 +138,7 @@ const Messages = () => {
 
   const markAllAsRead = async (professionalId) => {
     try {
-      await fetch('/messages/client/mark-all-read', {
+      await fetch('/api/messages/client/mark-all-read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ professionalId }),
@@ -163,7 +163,7 @@ const Messages = () => {
     markAllAsRead(conv.professionalId);
 
     try {
-      const res = await fetch(`/messages?professionalId=${conv.professionalId}`, {
+      const res = await fetch(`/api/messages?professionalId=${conv.professionalId}`, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -211,7 +211,7 @@ const Messages = () => {
         imageUrl: selectedImage?.url || null
       };
 
-      const res = await fetch('/messages', {
+      const res = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -245,7 +245,7 @@ const Messages = () => {
     if (!window.confirm('Delete this conversation?')) return;
 
     try {
-      const res = await fetch(`/messages/${messageId}`, {
+      const res = await fetch(`/api/messages/${messageId}`, {
         method: 'DELETE',
         credentials: 'include'
       });

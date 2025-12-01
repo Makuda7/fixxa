@@ -41,7 +41,7 @@ const ChatImageUpload = ({ onImageSelected, onImageRemove, disabled = false }) =
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch('/messages/upload-image', {
+      const response = await fetch('/api/messages/upload-image', {
         method: 'POST',
         body: formData,
         credentials: 'include'

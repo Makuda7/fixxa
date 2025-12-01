@@ -183,7 +183,7 @@
 }
 
 /* Messages List */
-.messages-list {
+.worker-messages-list {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;

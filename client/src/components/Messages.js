@@ -17,7 +17,7 @@ const Messages = () => {
   const fetchConversations = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/messages/worker', {
+      const res = await fetch('/api/messages/worker', {
         credentials: 'include'
       });
       const data = await res.json();
@@ -69,7 +69,7 @@ const Messages = () => {
 
     if (unreadMessages.length > 0) {
       try {
-        await fetch('/messages/mark-read', {
+        await fetch('/api/messages/mark-read', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -99,7 +99,7 @@ const Messages = () => {
     setError(null);
 
     try {
-      const res = await fetch('/messages/worker/reply', {
+      const res = await fetch('/api/messages/worker/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -219,7 +219,7 @@ const Messages = () => {
               </div>
             </div>
 
-            <div className="messages-list">
+            <div className="worker-messages-list">
               {messages.map((msg, index) => (
                 <div
                   key={index}

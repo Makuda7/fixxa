@@ -355,7 +355,7 @@ app.post('/api/upload', requireAuth, documentUpload.single('file'), async (req, 
 // Mount routes
 app.use('/', authRoutes);
 app.use('/bookings', bookingsRoutes);
-app.use('/messages', messagesRoutes);
+app.use('/api/messages', messagesRoutes);
 app.use('/workers', workersRoutes);
 app.use('/reviews', reviewsRoutes);
 app.use('/', settingsRoutes);

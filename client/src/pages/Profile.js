@@ -166,7 +166,7 @@ const Profile = () => {
     }
 
     try {
-      const res = await fetch('/messages/contact', {
+      const res = await fetch('/api/messages/contact', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
