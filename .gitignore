@@ -28,7 +28,7 @@ uploads/worker-photos/*
 .idea/
 
 # React build
-client/build/
+# client/build/  # Committing for Railway deployment
 
 # Database files
 *.db
