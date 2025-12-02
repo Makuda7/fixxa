@@ -1059,6 +1059,30 @@ async function startServer() {
       }
     });
 
+    // TEMPORARY: Verify Clement and Nkululeko
+    // Visit: /verify-clement-nkululeko-12345
+    app.get('/verify-clement-nkululeko-12345', async (req, res) => {
+      try {
+        // Find them
+        const workers = await pool.query(`SELECT id, name, email, is_verified, id_verified FROM workers WHERE name ILIKE '%clement%' OR name ILIKE '%nkululeko%';`);
+
+        // Verify them
+        await pool.query(`UPDATE workers SET id_verified = true, is_verified = true WHERE name ILIKE '%clement%' OR name ILIKE '%nkululeko%';`);
+
+        // Check result
+        const verified = await pool.query(`SELECT id, name, email, is_verified, id_verified FROM workers WHERE name ILIKE '%clement%' OR name ILIKE '%nkululeko%';`);
+
+        res.json({
+          success: true,
+          message: 'Clement and Nkululeko are now verified',
+          before: workers.rows,
+          after: verified.rows
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
     // Serve React app static files (after all API routes)
     app.use(express.static('client/build'));
 
