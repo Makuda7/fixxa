@@ -261,6 +261,11 @@ const JobHistory = () => {
                   </button>
                 </>
               )}
+              {selectedBooking.status === 'completed' && (
+                <button className="btn-warning" onClick={handleReschedule}>
+                  Book Again
+                </button>
+              )}
               <button className="btn-secondary" onClick={handleCloseModal}>
                 Close
               </button>
