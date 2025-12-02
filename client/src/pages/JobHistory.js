@@ -154,6 +154,40 @@ const JobHistory = () => {
                   Created {formatDate(booking.created_at)}
                 </span>
               </div>
+
+              {/* Action Buttons */}
+              <div className="booking-actions">
+                <button
+                  className="btn-secondary"
+                  onClick={() => window.location.href = `/booking/${booking.id}`}
+                >
+                  View Details
+                </button>
+                {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                  <>
+                    <button
+                      className="btn-warning"
+                      onClick={() => {
+                        // Navigate back to dashboard to handle reschedule
+                        window.location.href = '/client-dashboard';
+                      }}
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      className="btn-danger"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to cancel this booking?')) {
+                          // Navigate back to dashboard to handle cancellation
+                          window.location.href = '/client-dashboard';
+                        }
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>
