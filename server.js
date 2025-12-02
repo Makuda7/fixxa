@@ -1100,9 +1100,12 @@ async function startServer() {
     // Serve React app for all other routes (must be last!)
     app.use((req, res) => {
       // Always serve fresh HTML - never cache
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      // Add build timestamp to force revalidation
+      res.setHeader('X-Build-Time', new Date().toISOString());
       res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
     });
 
