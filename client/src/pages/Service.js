@@ -417,31 +417,50 @@ const Service = () => {
                       className="worker-card"
                       style={{ opacity: isPending ? 0.6 : 1 }}
                     >
-                      <img
-                        src={worker.profile_picture || '/images/default-profile.svg'}
-                        alt={worker.name}
-                      />
-                      <h3>
-                        {worker.name} {verifiedBadge} {certifiedBadge}
-                      </h3>
-                      <p>{worker.speciality} • {location}</p>
-                      {distance && sortBy === 'distance' && (
-                        <p className="distance-text">
-                          📍 {distance.toFixed(1)} km away
+                      <div className="worker-card-image-wrapper">
+                        <img
+                          src={worker.profile_picture || '/images/default-profile.svg'}
+                          alt={worker.name}
+                        />
+                        {verifiedBadge && (
+                          <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
+                            {verifiedBadge}
+                          </div>
+                        )}
+                        {certifiedBadge && (
+                          <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                            {certifiedBadge}
+                          </div>
+                        )}
+                      </div>
+                      <div className="worker-card-content">
+                        <h3>{worker.name}</h3>
+                        <p style={{ color: 'var(--fixxa-primary)', fontWeight: 600, fontSize: '1rem', margin: '0 0 0.5rem 0' }}>
+                          {worker.speciality}
                         </p>
-                      )}
-                      <p className="experience-text">
-                        {worker.experience || 'N/A'} years experience
-                      </p>
-                      {rating > 0 ? (
-                        <div className="rating-display">
-                          <span className="rating-number">{rating.toFixed(1)}</span>
-                          <span className="rating-stars">{stars}</span>
-                          <span className="review-count">({worker.review_count || 0})</span>
-                        </div>
-                      ) : (
-                        <div className="no-reviews">No reviews yet</div>
-                      )}
+                        <p style={{ color: 'var(--fixxa-text-light)', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>
+                          {location}
+                        </p>
+                        {distance && sortBy === 'distance' && (
+                          <p className="distance-text">
+                            📍 {distance.toFixed(1)} km away
+                          </p>
+                        )}
+                        <p className="experience-text" style={{ color: 'var(--fixxa-text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                          {worker.experience || 'N/A'} years experience
+                        </p>
+                        {rating > 0 ? (
+                          <div className="rating-display" style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--fixxa-border-light)' }}>
+                            <span className="rating-number">{rating.toFixed(1)}</span>
+                            <span className="rating-stars">{stars}</span>
+                            <span className="review-count">({worker.review_count || 0})</span>
+                          </div>
+                        ) : (
+                          <div className="no-reviews" style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--fixxa-border-light)' }}>
+                            No reviews yet
+                          </div>
+                        )}
+                      </div>
                     </Link>
                     {!isPending && (
                       <button
