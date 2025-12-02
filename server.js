@@ -1104,9 +1104,19 @@ async function startServer() {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       res.setHeader('Surrogate-Control', 'no-store');
-      // Add build timestamp to force revalidation
-      res.setHeader('X-Build-Time', new Date().toISOString());
-      res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+
+      // Read the HTML file and inject version parameter
+      const fs = require('fs');
+      const htmlPath = path.join(__dirname, 'client/build', 'index.html');
+      let html = fs.readFileSync(htmlPath, 'utf8');
+
+      // Add cache-busting version to all static assets
+      const version = Date.now();
+      html = html.replace(/src="\/static\//g, `src="/static/`)
+                 .replace(/href="\/static\//g, `href="/static/`)
+                 .replace(/(src|href)="(\/static\/[^"]+)"/g, `$1="$2?v=${version}"`);
+
+      res.send(html);
     });
 
     // Start server
