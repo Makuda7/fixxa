@@ -358,7 +358,7 @@ const Messages = () => {
         <p>View and manage your conversations with professionals</p>
       </section>
 
-      <div className="messages-container">
+      <div className="messages-page-container">
         <div className="messages-controls">
           <input
             type="text"
