@@ -137,8 +137,26 @@ const JobHistory = () => {
           </div>
         ) : (
           <div className="bookings-grid">
-          {bookings.map((booking) => (
-            <div key={booking.id} className={`booking-card booking-${booking.status}`}>
+          {bookings.map((booking) => {
+            // Inline border color as backup for cache issues
+            const getBorderColor = (status) => {
+              switch(status) {
+                case 'pending': return '#fbbf24';
+                case 'confirmed': return '#3b82f6';
+                case 'completed': return '#10b981';
+                case 'cancelled': return '#ef4444';
+                case 'declined': return '#ef4444';
+                case 'in_progress': return '#3b82f6';
+                default: return 'transparent';
+              }
+            };
+
+            return (
+            <div
+              key={booking.id}
+              className={`booking-card booking-${booking.status}`}
+              style={{ borderLeft: `6px solid ${getBorderColor(booking.status)}` }}
+            >
               <div className="booking-header">
                 <div className="booking-title">
                   <h4>{booking.service_type || 'Service Booking'}</h4>
@@ -189,7 +207,8 @@ const JobHistory = () => {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
       </div>
