@@ -1084,10 +1084,25 @@ async function startServer() {
     });
 
     // Serve React app static files (after all API routes)
-    app.use(express.static('client/build'));
+    // Cache static assets (JS, CSS) for 1 year, but not HTML
+    app.use(express.static('client/build', {
+      maxAge: '1y',
+      setHeaders: (res, filePath) => {
+        // Don't cache HTML files
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
+      }
+    }));
 
     // Serve React app for all other routes (must be last!)
     app.use((req, res) => {
+      // Always serve fresh HTML - never cache
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
     });
 
