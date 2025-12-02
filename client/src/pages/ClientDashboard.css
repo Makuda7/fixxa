@@ -830,6 +830,28 @@
   border-top: 1px solid #e0e0e0;
 }
 
+/* Job History Section */
+.job-history-section {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  scroll-margin-top: 2rem;
+}
+
+.job-history-section h3 {
+  margin: 0 0 0.5rem 0;
+  color: forestgreen;
+  font-size: 1.5rem;
+}
+
+.section-subtitle {
+  margin: 0 0 1.5rem 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
 /* Edit Review Modal */
 .modal-large {
   max-width: 700px;
