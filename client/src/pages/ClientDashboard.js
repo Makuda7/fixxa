@@ -586,10 +586,10 @@ const ClientDashboard = () => {
           <h3>Settings</h3>
         </Link>
 
-        <a href="#job-history" className="tile">
+        <Link to="/job-history" className="tile">
           <span className="tile-icon">📋</span>
           <h3>Job History</h3>
-        </a>
+        </Link>
 
         <div className="tile tile-disabled">
           <span className="tile-icon">⭐</span>
@@ -673,7 +673,7 @@ const ClientDashboard = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3>Recent Bookings</h3>
           {bookings.length > 3 && (
-            <Link to="#job-history" style={{ color: 'var(--fixxa-primary)', textDecoration: 'none', fontWeight: 600 }}>
+            <Link to="/job-history" style={{ color: 'var(--fixxa-primary)', textDecoration: 'none', fontWeight: 600 }}>
               View All ({bookings.length})
             </Link>
           )}
@@ -845,85 +845,6 @@ const ClientDashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Job History Section - All Bookings */}
-      <div id="job-history" className="job-history-section">
-        <h3>Job History</h3>
-        <p className="section-subtitle">
-          View all your past and current bookings
-        </p>
-        {bookings.length === 0 ? (
-          <div className="empty-state">
-            <p>No job history yet.</p>
-          </div>
-        ) : (
-          <div className="bookings-list">
-            {bookings.map((booking) => (
-              <div key={booking.id} className="booking-card">
-                <div className="booking-header">
-                  <div className="booking-title">
-                    <h4>{booking.service_type || 'Service Booking'}</h4>
-                    <p className="worker-name">with {booking.worker_name}</p>
-                  </div>
-                  <span className={`status-badge ${getStatusBadgeClass(booking.status)}`}>
-                    {booking.status?.replace('_', ' ')}
-                  </span>
-                </div>
-
-                <div className="booking-details">
-                  <div className="detail-row">
-                    <span className="label">Date:</span>
-                    <span className="value">{formatDate(booking.booking_date)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Time:</span>
-                    <span className="value">{formatTime(booking.booking_time)}</span>
-                  </div>
-                  {booking.booking_amount && (
-                    <div className="detail-row">
-                      <span className="label">Amount:</span>
-                      <span className="value">R {booking.booking_amount}</span>
-                    </div>
-                  )}
-                  {booking.description && (
-                    <div className="detail-row">
-                      <span className="label">Description:</span>
-                      <span className="value">{booking.description}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Booking Actions */}
-                <div className="booking-actions">
-                  <button
-                    className="btn-secondary"
-                    onClick={() => handleOpenBookingDetails(booking)}
-                  >
-                    View Details
-                  </button>
-
-                  {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                    <>
-                      <button
-                        className="btn-warning"
-                        onClick={() => handleOpenRescheduleModal(booking)}
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        className="btn-danger"
-                        onClick={() => handleOpenCancelModal(booking)}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Approval Modal */}
       {showApprovalModal && selectedRequest && (

@@ -23,6 +23,7 @@ import Contact from './pages/Contact';
 import FAQ from './pages/FAQ';
 import Messages from './pages/Messages';
 import Settings from './pages/Settings';
+import JobHistory from './pages/JobHistory';
 import Support from './pages/Support';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -116,6 +117,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/job-history"
+          element={
+            <ProtectedRoute>
+              <JobHistory />
             </ProtectedRoute>
           }
         />
