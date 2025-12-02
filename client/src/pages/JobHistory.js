@@ -140,13 +140,15 @@ const JobHistory = () => {
           {bookings.map((booking) => {
             // Inline border color as backup for cache issues
             const getBorderColor = (status) => {
-              switch(status) {
+              if (!status) return 'transparent';
+              switch(status.toLowerCase()) {
                 case 'pending': return '#fbbf24';
                 case 'confirmed': return '#3b82f6';
                 case 'completed': return '#10b981';
                 case 'cancelled': return '#ef4444';
                 case 'declined': return '#ef4444';
                 case 'in_progress': return '#3b82f6';
+                case 'in progress': return '#3b82f6';
                 default: return 'transparent';
               }
             };
