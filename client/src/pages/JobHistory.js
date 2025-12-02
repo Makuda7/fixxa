@@ -20,10 +20,20 @@ const JobHistory = () => {
       const response = await api.get('/bookings', {
         withCredentials: true
       });
-      setBookings(response.data || []);
+      // Ensure bookings is always an array
+      const bookingsData = response.data;
+      if (Array.isArray(bookingsData)) {
+        setBookings(bookingsData);
+      } else if (bookingsData && Array.isArray(bookingsData.bookings)) {
+        setBookings(bookingsData.bookings);
+      } else {
+        console.warn('Unexpected bookings data format:', bookingsData);
+        setBookings([]);
+      }
     } catch (err) {
       console.error('Error fetching bookings:', err);
       setError('Failed to load job history');
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -83,7 +93,7 @@ const JobHistory = () => {
         <div className="error-message">{error}</div>
       )}
 
-      {bookings.length === 0 ? (
+      {!Array.isArray(bookings) || bookings.length === 0 ? (
         <div className="empty-state">
           <p>No job history yet.</p>
           <Link to="/service" className="btn-primary">
