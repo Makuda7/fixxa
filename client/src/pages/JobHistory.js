@@ -138,7 +138,7 @@ const JobHistory = () => {
         ) : (
           <div className="bookings-grid">
           {bookings.map((booking) => (
-            <div key={booking.id} className="booking-card">
+            <div key={booking.id} className={`booking-card booking-${booking.status}`}>
               <div className="booking-header">
                 <div className="booking-title">
                   <h4>{booking.service_type || 'Service Booking'}</h4>

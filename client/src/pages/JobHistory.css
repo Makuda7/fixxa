@@ -232,20 +232,28 @@
 }
 
 /* Status-specific border colors */
-.booking-card:has(.status-pending) {
+.booking-card.booking-pending {
   border-left-color: #fbbf24;
 }
 
-.booking-card:has(.status-confirmed) {
+.booking-card.booking-confirmed {
   border-left-color: #3b82f6;
 }
 
-.booking-card:has(.status-completed) {
+.booking-card.booking-completed {
   border-left-color: #10b981;
 }
 
-.booking-card:has(.status-cancelled) {
+.booking-card.booking-cancelled {
   border-left-color: #ef4444;
+}
+
+.booking-card.booking-declined {
+  border-left-color: #ef4444;
+}
+
+.booking-card.booking-in_progress {
+  border-left-color: #3b82f6;
 }
 
 /* Booking Actions */
