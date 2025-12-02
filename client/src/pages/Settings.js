@@ -351,7 +351,9 @@ const Settings = () => {
       {/* Main Settings Content */}
       <main className="settings-main">
         <div className="breadcrumb">
-          <Link to="/dashboard">← Back to Dashboard</Link>
+          <Link to={user?.type === 'worker' ? '/worker-dashboard' : '/client-dashboard'}>
+            ← Back to Dashboard
+          </Link>
         </div>
 
         <div className="page-header">
