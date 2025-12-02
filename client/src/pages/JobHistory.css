@@ -1,3 +1,9 @@
+/*
+ * JobHistory Page Styles
+ * Updated: 2025-12-02 16:50:00
+ * Features: Color-coded booking cards, responsive grid, modal dialogs
+ * Cache-busting ID: v2.0.1
+ */
 .job-history-page {
   min-height: 100vh;
   background: #f6f3f0;
