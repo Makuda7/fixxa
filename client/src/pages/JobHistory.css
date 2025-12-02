@@ -122,6 +122,22 @@
   }
 }
 
+/* V2 class to bypass cache */
+.fixxa-booking-card-v2 {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border-left: 6px solid transparent;
+}
+
+.fixxa-booking-card-v2:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Legacy class kept for backwards compatibility */
 .booking-card {
   background: white;
   border-radius: 12px;

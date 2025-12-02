@@ -704,7 +704,7 @@ const ClientDashboard = () => {
               return (
               <div
                 key={booking.id}
-                className={`booking-card booking-${booking.status}`}
+                className={`fixxa-booking-card-v2 booking-${booking.status}`}
                 style={{ borderLeft: `6px solid ${getBorderColor(booking.status)}` }}
               >
                 <div className="booking-header">
