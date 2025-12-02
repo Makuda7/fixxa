@@ -9,6 +9,8 @@ const JobHistory = () => {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [error, setError] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -66,6 +68,28 @@ const JobHistory = () => {
         return 'status-cancelled';
       default:
         return '';
+    }
+  };
+
+  const handleViewDetails = (booking) => {
+    setSelectedBooking(booking);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedBooking(null);
+  };
+
+  const handleReschedule = () => {
+    handleCloseModal();
+    window.location.href = '/client-dashboard';
+  };
+
+  const handleCancel = async () => {
+    if (window.confirm('Are you sure you want to cancel this booking?')) {
+      handleCloseModal();
+      window.location.href = '/client-dashboard';
     }
   };
 
@@ -159,40 +183,91 @@ const JobHistory = () => {
               <div className="booking-actions">
                 <button
                   className="btn-secondary"
-                  onClick={() => window.location.href = `/booking/${booking.id}`}
+                  onClick={() => handleViewDetails(booking)}
                 >
                   View Details
                 </button>
-                {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                  <>
-                    <button
-                      className="btn-warning"
-                      onClick={() => {
-                        // Navigate back to dashboard to handle reschedule
-                        window.location.href = '/client-dashboard';
-                      }}
-                    >
-                      Reschedule
-                    </button>
-                    <button
-                      className="btn-danger"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to cancel this booking?')) {
-                          // Navigate back to dashboard to handle cancellation
-                          window.location.href = '/client-dashboard';
-                        }
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           ))}
         </div>
       )}
       </div>
+
+      {/* Booking Details Modal */}
+      {showModal && selectedBooking && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Booking Details</h2>
+              <button className="modal-close" onClick={handleCloseModal}>×</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="modal-status">
+                <span className={`status-badge ${getStatusBadgeClass(selectedBooking.status)}`}>
+                  {selectedBooking.status?.replace('_', ' ')}
+                </span>
+              </div>
+
+              <div className="modal-details">
+                <div className="modal-detail-row">
+                  <span className="modal-label">Service:</span>
+                  <span className="modal-value">{selectedBooking.service_type || 'Service Booking'}</span>
+                </div>
+                <div className="modal-detail-row">
+                  <span className="modal-label">Professional:</span>
+                  <span className="modal-value">{selectedBooking.worker_name}</span>
+                </div>
+                <div className="modal-detail-row">
+                  <span className="modal-label">Date:</span>
+                  <span className="modal-value">{formatDate(selectedBooking.booking_date)}</span>
+                </div>
+                <div className="modal-detail-row">
+                  <span className="modal-label">Time:</span>
+                  <span className="modal-value">{formatTime(selectedBooking.booking_time)}</span>
+                </div>
+                {selectedBooking.booking_amount && (
+                  <div className="modal-detail-row">
+                    <span className="modal-label">Amount:</span>
+                    <span className="modal-value">R {selectedBooking.booking_amount}</span>
+                  </div>
+                )}
+                {selectedBooking.description && (
+                  <div className="modal-detail-row description">
+                    <span className="modal-label">Description:</span>
+                    <span className="modal-value">{selectedBooking.description}</span>
+                  </div>
+                )}
+                <div className="modal-detail-row">
+                  <span className="modal-label">Booking ID:</span>
+                  <span className="modal-value">{selectedBooking.id}</span>
+                </div>
+                <div className="modal-detail-row">
+                  <span className="modal-label">Created:</span>
+                  <span className="modal-value">{formatDate(selectedBooking.created_at)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              {(selectedBooking.status === 'pending' || selectedBooking.status === 'confirmed') && (
+                <>
+                  <button className="btn-warning" onClick={handleReschedule}>
+                    Reschedule
+                  </button>
+                  <button className="btn-danger" onClick={handleCancel}>
+                    Cancel Booking
+                  </button>
+                </>
+              )}
+              <button className="btn-secondary" onClick={handleCloseModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
