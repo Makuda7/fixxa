@@ -73,10 +73,16 @@ const JobHistory = () => {
     return (
       <div className="job-history-page">
         <div className="page-header">
-          <Link to="/client-dashboard" className="back-link">← Back to Dashboard</Link>
-          <h1>Job History</h1>
+          <div className="page-header-content">
+            <Link to="/client-dashboard" className="back-link">
+              <span>←</span> Back to Dashboard
+            </Link>
+            <h1>Job History</h1>
+          </div>
         </div>
-        <div className="loading-container">Loading...</div>
+        <div className="page-content">
+          <div className="loading-container">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -84,24 +90,29 @@ const JobHistory = () => {
   return (
     <div className="job-history-page">
       <div className="page-header">
-        <Link to="/client-dashboard" className="back-link">← Back to Dashboard</Link>
-        <h1>Job History</h1>
-        <p className="page-subtitle">View all your past and current bookings</p>
+        <div className="page-header-content">
+          <Link to="/client-dashboard" className="back-link">
+            <span>←</span> Back to Dashboard
+          </Link>
+          <h1>Job History</h1>
+          <p className="page-subtitle">View all your past and current bookings</p>
+        </div>
       </div>
 
-      {error && (
-        <div className="error-message">{error}</div>
-      )}
+      <div className="page-content">
+        {error && (
+          <div className="error-message">{error}</div>
+        )}
 
-      {!Array.isArray(bookings) || bookings.length === 0 ? (
-        <div className="empty-state">
-          <p>No job history yet.</p>
-          <Link to="/service" className="btn-primary">
-            Find a Professional
-          </Link>
-        </div>
-      ) : (
-        <div className="bookings-grid">
+        {!Array.isArray(bookings) || bookings.length === 0 ? (
+          <div className="empty-state">
+            <p>No job history yet.</p>
+            <Link to="/service" className="btn-primary">
+              Find a Professional
+            </Link>
+          </div>
+        ) : (
+          <div className="bookings-grid">
           {bookings.map((booking) => (
             <div key={booking.id} className="booking-card">
               <div className="booking-header">
@@ -147,6 +158,7 @@ const JobHistory = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };
