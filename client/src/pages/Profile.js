@@ -18,6 +18,7 @@ const Profile = () => {
 
   const [showContactForm, setShowContactForm] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [showQuoteRequestForm, setShowQuoteRequestForm] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [showAllReviewsModal, setShowAllReviewsModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -27,6 +28,7 @@ const Profile = () => {
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState('');
   const [bookingNote, setBookingNote] = useState('');
+  const [quoteRequestDetails, setQuoteRequestDetails] = useState('');
   const [submitMessage, setSubmitMessage] = useState('');
 
   const workerId = parseInt(searchParams.get('id'), 10);
@@ -185,6 +187,43 @@ const Profile = () => {
     } catch (err) {
       console.error(err);
       alert('An error occurred while sending your message');
+    }
+  };
+
+  const handleQuoteRequest = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!quoteRequestDetails.trim()) {
+      alert('Please describe what you need a quote for');
+      return;
+    }
+
+    try {
+      const message = `📋 Quote Request:\n\n${quoteRequestDetails.trim()}\n\n(This is a request for a quote. Please provide pricing details when you respond.)`;
+
+      const res = await fetch('/api/messages/contact', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workerId: worker.id, message })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSubmitMessage('Quote request sent successfully! The professional will respond with pricing details.');
+        setQuoteRequestDetails('');
+        setShowContactForm(false);
+        setTimeout(() => setSubmitMessage(''), 5000);
+      } else {
+        alert(data.error || 'Failed to send quote request');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while sending your quote request');
     }
   };
 
@@ -448,24 +487,69 @@ const Profile = () => {
         {submitMessage && <div className="submit-message">{submitMessage}</div>}
 
         <div className="forms-container">
-          <form
-            id="contact-form-container"
-            className={`form-container ${showContactForm ? 'show' : ''}`}
-            onSubmit={handleContactSubmit}
-          >
-            <h4>📧 Send a Message</h4>
-            <div>
-              <label htmlFor="visitor-message">Your Message</label>
-              <textarea
-                id="visitor-message"
-                placeholder="Tell the professional what you need help with..."
-                value={contactMessage}
-                onChange={(e) => setContactMessage(e.target.value)}
-                required
-              />
+          {showContactForm && (
+            <div id="contact-form-container" className="form-container show">
+              <div className="contact-tabs">
+                <button
+                  type="button"
+                  className={`tab-btn ${!showQuoteRequestForm ? 'active' : ''}`}
+                  onClick={() => setShowQuoteRequestForm(false)}
+                >
+                  📧 Send Message
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${showQuoteRequestForm ? 'active' : ''}`}
+                  onClick={() => setShowQuoteRequestForm(true)}
+                >
+                  💰 Request Quote
+                </button>
+              </div>
+
+              {!showQuoteRequestForm ? (
+                <form onSubmit={handleContactSubmit}>
+                  <div>
+                    <label htmlFor="visitor-message">Your Message</label>
+                    <textarea
+                      id="visitor-message"
+                      placeholder="Tell the professional what you need help with..."
+                      value={contactMessage}
+                      onChange={(e) => setContactMessage(e.target.value)}
+                      required
+                      rows="5"
+                    />
+                  </div>
+                  <button type="submit" className="btn-primary">📤 Send Message</button>
+                </form>
+              ) : (
+                <form onSubmit={handleQuoteRequest}>
+                  <div className="quote-request-info">
+                    <p>
+                      <strong>💡 Tip:</strong> Be specific about what you need. Include details like:
+                    </p>
+                    <ul>
+                      <li>What work needs to be done</li>
+                      <li>Size/scope of the project</li>
+                      <li>Any materials you've already purchased</li>
+                      <li>Your timeline or deadline</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <label htmlFor="quote-details">Project Details</label>
+                    <textarea
+                      id="quote-details"
+                      placeholder="Describe your project in detail so the professional can provide an accurate quote..."
+                      value={quoteRequestDetails}
+                      onChange={(e) => setQuoteRequestDetails(e.target.value)}
+                      required
+                      rows="6"
+                    />
+                  </div>
+                  <button type="submit" className="btn-primary">💰 Request Quote</button>
+                </form>
+              )}
             </div>
-            <button type="submit" className="btn-primary">📤 Send Message</button>
-          </form>
+          )}
 
           <form
             id="booking-form-container"
