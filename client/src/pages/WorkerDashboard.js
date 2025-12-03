@@ -53,6 +53,7 @@ const WorkerDashboard = () => {
         fetchProfile(),
         fetchCertifications(),
         fetchBookings(),
+        fetchBookingRequests(), // NEW: Fetch booking requests
         fetchReviews(),
       ]);
     } catch (err) {
@@ -102,13 +103,8 @@ const WorkerDashboard = () => {
         const allBookings = response.data.bookings || [];
         setBookings(allBookings);
 
-        // Separate pending requests
-        const pending = allBookings.filter((b) => b.status === 'pending');
-        setBookingRequests(pending);
-
         // Calculate stats
         const totalBookings = allBookings.length;
-        const pendingRequests = pending.length;
         const completedJobs = allBookings.filter(
           (b) => b.status === 'completed'
         ).length;
@@ -116,12 +112,30 @@ const WorkerDashboard = () => {
         setStats((prev) => ({
           ...prev,
           totalBookings,
-          pendingRequests,
           completedJobs,
         }));
       }
     } catch (err) {
       console.error('Error fetching bookings:', err);
+    }
+  };
+
+  // NEW: Fetch booking requests separately (new bookings, reschedules, cancellations)
+  const fetchBookingRequests = async () => {
+    try {
+      const response = await workerAPI.getBookingRequests();
+      if (response.data.success) {
+        const requests = response.data.requests || [];
+        setBookingRequests(requests);
+
+        // Update pending requests count in stats
+        setStats((prev) => ({
+          ...prev,
+          pendingRequests: requests.length,
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching booking requests:', err);
     }
   };
 
@@ -265,18 +279,42 @@ const WorkerDashboard = () => {
     }
   };
 
-  const handleBookingAction = async (bookingId, action) => {
-    const status = action === 'approve' ? 'confirmed' : 'declined';
+  // Handle NEW booking approval/decline
+  const handleNewBookingResponse = async (bookingId, action, declineReason = null) => {
     try {
-      const response = await workerAPI.updateBookingStatus(bookingId, status);
+      const response = await workerAPI.respondToNewBooking(bookingId, action, declineReason);
       if (response.data.success) {
         alert(`Booking ${action === 'approve' ? 'approved' : 'declined'}!`);
-        fetchBookings();
+        await Promise.all([fetchBookings(), fetchBookingRequests()]);
+      } else {
+        alert(response.data.error || 'Failed to respond to booking');
       }
     } catch (err) {
-      console.error('Error updating booking:', err);
-      alert('Failed to update booking');
+      console.error('Error responding to booking:', err);
+      alert(err.response?.data?.error || 'Failed to respond to booking');
     }
+  };
+
+  // Handle reschedule/cancellation request approval/rejection
+  const handleRequestResponse = async (requestId, action) => {
+    try {
+      const response = await workerAPI.respondToRequest(requestId, action);
+      if (response.data.success) {
+        alert(`Request ${action === 'approve' ? 'approved' : 'rejected'}!`);
+        await Promise.all([fetchBookings(), fetchBookingRequests()]);
+      } else {
+        alert(response.data.error || 'Failed to respond to request');
+      }
+    } catch (err) {
+      console.error('Error responding to request:', err);
+      alert(err.response?.data?.error || 'Failed to respond to request');
+    }
+  };
+
+  // Legacy handler - kept for backwards compatibility
+  const handleBookingAction = async (bookingId, action) => {
+    // This is now a wrapper that calls the appropriate handler
+    await handleNewBookingResponse(bookingId, action);
   };
 
   const handleAvailabilityToggle = async () => {
@@ -500,47 +538,175 @@ const WorkerDashboard = () => {
               <DashboardStats />
             </section>
 
-            {/* Pending Booking Requests */}
+            {/* Client Requests (New Bookings, Reschedules, Cancellations) */}
             {bookingRequests.length > 0 && (
               <section className="requests-section">
-                <h3>Pending Booking Requests ({bookingRequests.length})</h3>
+                <h3>Client Requests ({bookingRequests.length})</h3>
                 <div className="requests-list">
-                  {bookingRequests.map((booking) => (
-                    <div key={booking.id} className="request-card">
-                      <div className="request-header">
-                        <h4>{booking.client_name}</h4>
-                        <span className="status-badge status-pending">
-                          Pending
-                        </span>
-                      </div>
-                      <p>
-                        <strong>Date:</strong>{' '}
-                        {new Date(booking.booking_date).toLocaleDateString()}
-                      </p>
-                      <p>
-                        <strong>Time:</strong> {booking.booking_time}
-                      </p>
-                      {booking.note && (
+                  {bookingRequests.map((request) => {
+                    const isNewBooking = request.request_type === 'new_booking';
+                    const isReschedule = request.request_type === 'reschedule' || request.request_type === 'pending-reschedule';
+                    const isCancellation = request.request_type === 'cancellation';
+
+                    // Parse reschedule data if needed
+                    let rescheduleData = {};
+                    if (isReschedule && request.completion_notes) {
+                      try {
+                        rescheduleData = typeof request.completion_notes === 'string'
+                          ? JSON.parse(request.completion_notes)
+                          : request.completion_notes;
+                      } catch (e) {
+                        console.error('Failed to parse reschedule data', e);
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={request.id}
+                        className={`request-card ${
+                          isNewBooking ? 'new-booking' : isCancellation ? 'cancellation' : 'reschedule'
+                        }`}
+                        style={{
+                          borderLeft: isNewBooking
+                            ? '4px solid #28a745'
+                            : isCancellation
+                            ? '4px solid #dc3545'
+                            : '4px solid #17a2b8',
+                        }}
+                      >
+                        <div className="request-header">
+                          <h4>
+                            {isNewBooking && '🆕 New Booking Request'}
+                            {isReschedule && '📅 Reschedule Request'}
+                            {isCancellation && '❌ Cancellation Request'}
+                          </h4>
+                        </div>
                         <p>
-                          <strong>Note:</strong> {booking.note}
+                          <strong>Client:</strong> {request.client_name}
                         </p>
-                      )}
-                      <div className="request-actions">
-                        <button
-                          className="btn-approve"
-                          onClick={() => handleBookingAction(booking.id, 'approve')}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          className="btn-decline"
-                          onClick={() => handleBookingAction(booking.id, 'decline')}
-                        >
-                          Decline
-                        </button>
+                        <p>
+                          <strong>Email:</strong> {request.client_email}
+                        </p>
+                        <p>
+                          <strong>Service:</strong> {request.service || 'Service'}
+                        </p>
+
+                        {/* NEW BOOKING - Show requested date/time */}
+                        {isNewBooking && (
+                          <>
+                            <p>
+                              <strong>Requested Date:</strong>{' '}
+                              {new Date(request.booking_date).toLocaleDateString()}
+                            </p>
+                            <p>
+                              <strong>Requested Time:</strong> {request.booking_time}
+                            </p>
+                            {request.note && (
+                              <p>
+                                <strong>Client Note:</strong> <em>{request.note}</em>
+                              </p>
+                            )}
+                          </>
+                        )}
+
+                        {/* RESCHEDULE REQUEST - Show current and requested date/time */}
+                        {isReschedule && (
+                          <>
+                            <p>
+                              <strong>Current Booking:</strong>{' '}
+                              {new Date(request.booking_date).toLocaleDateString()} at{' '}
+                              {request.booking_time}
+                            </p>
+                            <div
+                              style={{
+                                background: '#e7f3ff',
+                                padding: '0.5rem',
+                                borderRadius: '4px',
+                                margin: '0.5rem 0',
+                              }}
+                            >
+                              <strong>Requested New Date/Time:</strong>
+                              <br />
+                              {rescheduleData.newDate
+                                ? new Date(rescheduleData.newDate).toLocaleDateString()
+                                : 'N/A'}{' '}
+                              at {rescheduleData.newTime || 'N/A'}
+                            </div>
+                            {rescheduleData.reason && (
+                              <p>
+                                <strong>Reason:</strong> {rescheduleData.reason}
+                              </p>
+                            )}
+                          </>
+                        )}
+
+                        {/* CANCELLATION REQUEST - Show cancellation reason */}
+                        {isCancellation && (
+                          <>
+                            <p>
+                              <strong>Booking Details:</strong>{' '}
+                              {new Date(request.booking_date).toLocaleDateString()} at{' '}
+                              {request.booking_time}
+                            </p>
+                            <div
+                              style={{
+                                background: '#ffe7e7',
+                                padding: '0.5rem',
+                                borderRadius: '4px',
+                                margin: '0.5rem 0',
+                              }}
+                            >
+                              <strong>Cancellation Reason:</strong>{' '}
+                              {request.cancellation_reason || 'Not specified'}
+                            </div>
+                          </>
+                        )}
+
+                        <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
+                          {isNewBooking ? 'Received' : 'Requested'}:{' '}
+                          {new Date(request.created_at).toLocaleString()}
+                        </p>
+
+                        <div className="request-actions">
+                          {isNewBooking ? (
+                            <>
+                              <button
+                                className="btn-approve"
+                                onClick={() =>
+                                  handleNewBookingResponse(request.booking_id, 'approve')
+                                }
+                              >
+                                ✓ Approve Booking
+                              </button>
+                              <button
+                                className="btn-decline"
+                                onClick={() =>
+                                  handleNewBookingResponse(request.booking_id, 'decline')
+                                }
+                              >
+                                ✕ Decline Booking
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                className="btn-approve"
+                                onClick={() => handleRequestResponse(request.id, 'approve')}
+                              >
+                                {isCancellation ? '✓ Approve Cancellation' : '✓ Approve Reschedule'}
+                              </button>
+                              <button
+                                className="btn-decline"
+                                onClick={() => handleRequestResponse(request.id, 'reject')}
+                              >
+                                ✕ Decline Request
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}

@@ -53,6 +53,24 @@ export const workerAPI = {
   getEarnings: () => api.get('/workers/earnings'),
   getServiceAreas: () => api.get('/workers/service-areas'),
   updateServiceAreas: (areas) => api.put('/workers/service-areas', { areas }),
+
+  // Booking Requests
+  getBookingRequests: () => api.get('/worker/booking-requests'),
+  respondToNewBooking: (bookingId, action, declineReason) =>
+    api.post(`/worker/booking/${bookingId}/respond`, { action, declineReason }),
+  respondToRequest: (requestId, action) =>
+    api.post(`/worker/booking-requests/${requestId}/respond`, { action }),
+
+  // Quotes
+  sendQuote: (quoteData) => api.post('/quotes/send', quoteData),
+  getBookingQuotes: (bookingId) => api.get(`/quotes/booking/${bookingId}`),
+
+  // Completion Requests
+  submitCompletionRequest: (formData) =>
+    api.post('/worker/completion-request', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  getCompletionRequests: () => api.get('/worker/completion-requests'),
 };
 
 // Certifications API calls
