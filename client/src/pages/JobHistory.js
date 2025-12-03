@@ -26,6 +26,9 @@ const JobHistory = () => {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Quote management state
+  const [quotes, setQuotes] = useState({});
+
   useEffect(() => {
     fetchBookings();
   }, []);
@@ -38,14 +41,21 @@ const JobHistory = () => {
       });
       // Ensure bookings is always an array
       const bookingsData = response.data;
+      let bookingsArray = [];
+
       if (Array.isArray(bookingsData)) {
-        setBookings(bookingsData);
+        bookingsArray = bookingsData;
       } else if (bookingsData && Array.isArray(bookingsData.bookings)) {
-        setBookings(bookingsData.bookings);
+        bookingsArray = bookingsData.bookings;
       } else {
         console.warn('Unexpected bookings data format:', bookingsData);
-        setBookings([]);
+        bookingsArray = [];
       }
+
+      setBookings(bookingsArray);
+
+      // Fetch quotes for all bookings
+      await fetchQuotesForBookings(bookingsArray);
     } catch (err) {
       console.error('Error fetching bookings:', err);
       setError('Failed to load job history');
@@ -53,6 +63,27 @@ const JobHistory = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchQuotesForBookings = async (bookingsArray) => {
+    const quotesData = {};
+
+    for (const booking of bookingsArray) {
+      try {
+        const response = await api.get(`/quotes/booking/${booking.id}`, {
+          withCredentials: true
+        });
+
+        if (response.data.success && response.data.quote) {
+          quotesData[booking.id] = response.data.quote;
+        }
+      } catch (err) {
+        console.error(`Error fetching quote for booking ${booking.id}:`, err);
+        // Continue with other bookings even if one fails
+      }
+    }
+
+    setQuotes(quotesData);
   };
 
   const formatDate = (dateString) => {
@@ -180,6 +211,61 @@ const JobHistory = () => {
     }
   };
 
+  const handleAcceptQuote = async (quoteId, bookingId) => {
+    if (!window.confirm('Accept this quote? The job will be confirmed.')) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await api.post(`/quotes/${quoteId}/accept`, {}, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        showToast('Quote accepted! Booking confirmed.', 'success');
+        await fetchBookings();
+      } else {
+        showToast(response.data.error || 'Failed to accept quote', 'error');
+      }
+    } catch (err) {
+      console.error('Error accepting quote:', err);
+      showToast(err.response?.data?.error || 'Failed to accept quote', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRejectQuote = async (quoteId, bookingId) => {
+    const reason = window.prompt('Please provide a reason for declining this quote (optional):');
+
+    // User clicked cancel
+    if (reason === null) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await api.post(`/quotes/${quoteId}/reject`, {
+        reason: reason || 'No reason provided'
+      }, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        showToast('Quote declined', 'success');
+        await fetchBookings();
+      } else {
+        showToast(response.data.error || 'Failed to decline quote', 'error');
+      }
+    } catch (err) {
+      console.error('Error rejecting quote:', err);
+      showToast(err.response?.data?.error || 'Failed to decline quote', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="job-history-page">
@@ -279,6 +365,131 @@ const JobHistory = () => {
                 )}
               </div>
 
+              {/* Quote Display */}
+              {quotes[booking.id] && (
+                <div style={{
+                  background: quotes[booking.id].status === 'pending' ? '#e3f2fd' :
+                             quotes[booking.id].status === 'accepted' ? '#d4edda' : '#f8d7da',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  margin: '1rem 0',
+                  borderLeft: `4px solid ${
+                    quotes[booking.id].status === 'pending' ? '#2196F3' :
+                    quotes[booking.id].status === 'accepted' ? '#28a745' : '#dc3545'
+                  }`
+                }}>
+                  <h4 style={{
+                    margin: '0 0 0.75rem 0',
+                    color: quotes[booking.id].status === 'pending' ? '#0d47a1' :
+                           quotes[booking.id].status === 'accepted' ? '#155724' : '#721c24',
+                    fontSize: '1rem',
+                    fontWeight: 600
+                  }}>
+                    💰 Quote {quotes[booking.id].status === 'accepted' ? 'Accepted' :
+                               quotes[booking.id].status === 'rejected' ? 'Declined' : 'Received'}
+                  </h4>
+
+                  {quotes[booking.id].line_items && Array.isArray(quotes[booking.id].line_items) && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      {quotes[booking.id].line_items.map((item, index) => (
+                        <div key={index} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginBottom: '0.3rem',
+                          fontSize: '0.9rem'
+                        }}>
+                          <span>{item.description}</span>
+                          <span style={{ fontWeight: 600 }}>R {parseFloat(item.amount).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    paddingTop: '0.5rem',
+                    marginTop: '0.5rem',
+                    borderTop: `2px solid ${
+                      quotes[booking.id].status === 'pending' ? '#2196F3' :
+                      quotes[booking.id].status === 'accepted' ? '#28a745' : '#dc3545'
+                    }`,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold'
+                  }}>
+                    <span>Total:</span>
+                    <span>R {parseFloat(quotes[booking.id].total_amount).toFixed(2)}</span>
+                  </div>
+
+                  {quotes[booking.id].payment_methods && quotes[booking.id].payment_methods.length > 0 && (
+                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem' }}>
+                      <strong>Payment:</strong> {quotes[booking.id].payment_methods.join(', ').toUpperCase()}
+                    </p>
+                  )}
+
+                  {quotes[booking.id].notes && (
+                    <p style={{
+                      margin: '0.5rem 0 0 0',
+                      fontSize: '0.85rem',
+                      fontStyle: 'italic',
+                      opacity: 0.9
+                    }}>
+                      "{quotes[booking.id].notes}"
+                    </p>
+                  )}
+
+                  {quotes[booking.id].status === 'pending' && quotes[booking.id].valid_until && (
+                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', opacity: 0.8 }}>
+                      Valid until: {formatDate(quotes[booking.id].valid_until)}
+                    </p>
+                  )}
+
+                  {/* Quote Action Buttons */}
+                  {quotes[booking.id].status === 'pending' && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      marginTop: '1rem'
+                    }}>
+                      <button
+                        style={{
+                          flex: 1,
+                          background: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.65rem 1rem',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                          cursor: submitting ? 'not-allowed' : 'pointer',
+                          opacity: submitting ? 0.6 : 1
+                        }}
+                        onClick={() => handleAcceptQuote(quotes[booking.id].id, booking.id)}
+                        disabled={submitting}
+                      >
+                        ✅ Accept Quote
+                      </button>
+                      <button
+                        style={{
+                          flex: 1,
+                          background: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.65rem 1rem',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                          cursor: submitting ? 'not-allowed' : 'pointer',
+                          opacity: submitting ? 0.6 : 1
+                        }}
+                        onClick={() => handleRejectQuote(quotes[booking.id].id, booking.id)}
+                        disabled={submitting}
+                      >
+                        ❌ Decline Quote
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="booking-footer">
                 <span className="booking-id">ID: {booking.id}</span>
                 <span className="booking-created">
@@ -359,7 +570,9 @@ const JobHistory = () => {
             </div>
 
             <div className="modal-footer">
-              {(selectedBooking.status?.toLowerCase() === 'pending' || selectedBooking.status?.toLowerCase() === 'confirmed') && (
+              {/* Only show reschedule/cancel if no pending quote */}
+              {(selectedBooking.status?.toLowerCase() === 'pending' || selectedBooking.status?.toLowerCase() === 'confirmed') &&
+               (!quotes[selectedBooking.id] || quotes[selectedBooking.id].status !== 'pending') && (
                 <>
                   <button className="btn-warning" onClick={() => handleOpenRescheduleModal(selectedBooking)}>
                     Reschedule
