@@ -6,31 +6,29 @@ import './Header.css';
 const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      // TODO: Fetch unread message count when endpoint is implemented
-      // fetchUnreadCount();
-    }
-  }, [isAuthenticated]);
+    const fetchUnreadCount = async () => {
+      if (!isAuthenticated) return;
 
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await fetch('/api/messages/unread-count', {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadCount(data.count || 0);
+      try {
+        const response = await fetch('/api/messages/unread-count', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadCount(data.count || 0);
+        }
+      } catch (error) {
+        // Silently fail - endpoint may not exist yet
+        console.log('Unread count endpoint not available');
       }
-    } catch (error) {
-      // Silently fail - endpoint may not exist yet
-      console.log('Unread count endpoint not available');
-    }
-  };
+    };
+
+    fetchUnreadCount();
+  }, [isAuthenticated]);
 
   const handleLogout = async () => {
     await logout();
@@ -66,66 +64,94 @@ const Header = () => {
         <div className="mobile-menu-overlay" onClick={closeMobileMenu}></div>
       )}
 
-      {/* Navigation Links - Desktop & Mobile */}
-      <nav className={`nav-links ${showMobileMenu ? 'mobile-active' : ''}`}>
-        <Link to="/" onClick={closeMobileMenu}>Find Service</Link>
-        <Link to="/about" onClick={closeMobileMenu}>About Us</Link>
-        <Link to="/join" onClick={closeMobileMenu}>Join Our Team</Link>
+      {/* Desktop Navigation Links */}
+      <nav className="nav-links desktop-nav">
+        <Link to="/">Find Service</Link>
+        <Link to="/about">About Us</Link>
+        <Link to="/join">Join Our Team</Link>
 
         {!isAuthenticated ? (
-          <Link to="/login" className="login-link" onClick={closeMobileMenu}>Log in / Register</Link>
+          <Link to="/login" className="login-link">Log in / Register</Link>
         ) : (
           <>
-            {/* Inbox Icon */}
-            <Link to="/messages" className="inbox-icon-link" title="Messages" onClick={closeMobileMenu}>
+            {/* Messages Icon */}
+            <Link to="/messages" className="inbox-icon-link" title="Messages">
               <span className="inbox-icon">✉️</span>
               {unreadCount > 0 && (
                 <span className="inbox-notification-dot"></span>
               )}
             </Link>
-
-            {/* User Menu */}
-            <div className={`user-menu ${showUserMenu ? 'show' : ''}`}>
-              <button
-                className="user-btn"
-                onClick={() => setShowUserMenu(!showUserMenu)}
-              >
-                {user?.name || 'User'} ▼
-              </button>
-              <div className="user-dropdown">
-                <Link to="/settings" onClick={closeMobileMenu}>Settings</Link>
-                <button
-                  onClick={() => {
-                    console.log('Profile clicked, user type:', user?.type);
-                    if (user?.type === 'professional') {
-                      // Workers use React dashboard
-                      console.log('Redirecting to: /worker-dashboard');
-                      navigate('/worker-dashboard');
-                    } else {
-                      // Clients use React dashboard
-                      console.log('Redirecting to: /client-dashboard');
-                      navigate('/client-dashboard');
-                    }
-                    closeMobileMenu();
-                  }}
-                  style={{ textAlign: 'left', width: '100%', border: 'none', background: 'none', cursor: 'pointer', padding: '8px' }}
-                >
-                  Profile
-                </button>
-                <Link to="/messages" style={{ position: 'relative' }} onClick={closeMobileMenu}>
-                  Messages
-                  {unreadCount > 0 && (
-                    <span className="notification-badge">{unreadCount}</span>
-                  )}
-                </Link>
-                <button onClick={handleLogout} style={{ color: 'red', textAlign: 'left', width: '100%', border: 'none', background: 'none', cursor: 'pointer', padding: '8px' }}>
-                  Log out
-                </button>
-              </div>
-            </div>
           </>
         )}
       </nav>
+
+      {/* Mobile Burger Menu */}
+      <div className={`mobile-menu ${showMobileMenu ? 'mobile-active' : ''}`}>
+        <div className="mobile-menu-header">
+          {isAuthenticated && (
+            <div className="mobile-user-greeting">
+              <div className="user-avatar">
+                {(user?.name || 'User').charAt(0).toUpperCase()}
+              </div>
+              <div className="user-info">
+                <span className="user-name">{user?.name || 'User'}</span>
+                <span className="user-type">{user?.type === 'professional' ? 'Professional' : 'Client'}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mobile-menu-links">
+          <Link to="/" onClick={closeMobileMenu}>
+            <span className="menu-icon">🏠</span>
+            Find Service
+          </Link>
+          <Link to="/about" onClick={closeMobileMenu}>
+            <span className="menu-icon">ℹ️</span>
+            About Us
+          </Link>
+          <Link to="/join" onClick={closeMobileMenu}>
+            <span className="menu-icon">👷</span>
+            Join Our Team
+          </Link>
+
+          {isAuthenticated ? (
+            <>
+              <div className="menu-divider"></div>
+              <Link to="/messages" onClick={closeMobileMenu}>
+                <span className="menu-icon">✉️</span>
+                Messages
+                {unreadCount > 0 && (
+                  <span className="menu-notification-badge">{unreadCount}</span>
+                )}
+              </Link>
+              <Link
+                to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'}
+                onClick={closeMobileMenu}
+              >
+                <span className="menu-icon">👤</span>
+                Profile
+              </Link>
+              <Link to="/settings" onClick={closeMobileMenu}>
+                <span className="menu-icon">⚙️</span>
+                Settings
+              </Link>
+              <div className="menu-divider"></div>
+              <button className="menu-logout-btn" onClick={handleLogout}>
+                <span className="menu-icon">🚪</span>
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="menu-divider"></div>
+              <Link to="/login" className="menu-login-btn" onClick={closeMobileMenu}>
+                Log in / Register
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
     </header>
   );
 };

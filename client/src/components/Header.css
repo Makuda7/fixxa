@@ -16,16 +16,18 @@
   border-radius: 12px;
 }
 
-.nav-links {
+/* Desktop Navigation */
+.nav-links.desktop-nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .nav-links a {
   text-decoration: none;
   color: #333;
   font-weight: 500;
+  font-size: 1rem;
   transition: color 0.2s;
 }
 
@@ -39,6 +41,7 @@
   color: white !important;
   border-radius: 6px;
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .login-link:hover {
@@ -46,54 +49,162 @@
   color: white !important;
 }
 
-/* User menu */
-.user-menu {
+/* Mobile Menu Container */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 320px;
+  max-width: 85%;
+  height: 100vh;
+  background: white;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1050;
+  overflow-y: auto;
+  display: none;
+}
+
+.mobile-menu.mobile-active {
+  right: 0;
+  display: block;
+}
+
+/* Mobile Menu Header */
+.mobile-menu-header {
+  padding: 2rem 1.5rem 1.5rem;
+  background: linear-gradient(135deg, var(--fixxa-primary) 0%, #1e7a1e 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-user-greeting {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: white;
+  color: var(--fixxa-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.user-name {
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.user-type {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+/* Mobile Menu Links */
+.mobile-menu-links {
+  padding: 1rem 0;
+}
+
+.mobile-menu-links a,
+.mobile-menu-links button {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  text-decoration: none;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
   position: relative;
 }
 
-.user-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 0.5rem 1rem;
-  color: #333;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.user-btn:hover {
+.mobile-menu-links a:hover,
+.mobile-menu-links button:hover {
+  background: rgba(34, 139, 34, 0.05);
   color: var(--fixxa-primary);
 }
 
-.user-dropdown {
-  display: none;
+.mobile-menu-links a:active,
+.mobile-menu-links button:active {
+  background: rgba(34, 139, 34, 0.1);
+}
+
+.menu-icon {
+  font-size: 1.25rem;
+  width: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Menu Divider */
+.menu-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+  margin: 0.5rem 1rem;
+}
+
+/* Menu Notification Badge */
+.menu-notification-badge {
   position: absolute;
-  right: 0;
-  top: 100%;
-  margin-top: 0.5rem;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-width: 150px;
-  z-index: 10;
+  right: 1.5rem;
+  background: #dc3545;
+  color: white;
+  border-radius: 12px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
 }
 
-.user-dropdown a {
-  display: block;
-  padding: 8px 16px;
-  text-decoration: none;
-  color: #333;
-  transition: background 0.2s;
+/* Logout Button */
+.menu-logout-btn {
+  color: #dc3545 !important;
 }
 
-.user-dropdown a:hover {
-  background: #f0f0f0;
+.menu-logout-btn:hover {
+  background: rgba(220, 53, 69, 0.05) !important;
+  color: #c82333 !important;
 }
 
-.user-menu.show .user-dropdown {
-  display: block;
+/* Login Button in Menu */
+.menu-login-btn {
+  margin: 0.5rem 1.5rem;
+  padding: 0.75rem 1.5rem !important;
+  background: var(--fixxa-primary);
+  color: white !important;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  justify-content: center;
+}
+
+.menu-login-btn:hover {
+  background: var(--fixxa-primary-dark) !important;
+  color: white !important;
 }
 
 /* Notification Badge */
@@ -165,36 +276,42 @@
 
 /* Burger Menu Button */
 .burger-menu {
-  display: none;
+  display: flex;
   flex-direction: column;
   justify-content: space-around;
-  width: 30px;
-  height: 25px;
+  width: 32px;
+  height: 26px;
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
   z-index: 1100;
+  transition: transform 0.2s ease;
+}
+
+.burger-menu:hover {
+  transform: scale(1.05);
 }
 
 .burger-menu span {
   width: 100%;
   height: 3px;
-  background: var(--fixxa-text-dark);
-  border-radius: 2px;
-  transition: all 0.3s ease;
+  background: #333;
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .burger-menu.active span:nth-child(1) {
-  transform: rotate(45deg) translateY(10px);
+  transform: rotate(45deg) translate(8px, 8px);
 }
 
 .burger-menu.active span:nth-child(2) {
   opacity: 0;
+  transform: translateX(20px);
 }
 
 .burger-menu.active span:nth-child(3) {
-  transform: rotate(-45deg) translateY(-10px);
+  transform: rotate(-45deg) translate(8px, -8px);
 }
 
 /* Mobile Menu Overlay */
@@ -211,88 +328,9 @@
 
 /* Mobile Responsive */
 @media (max-width: 1024px) {
-  /* Show burger menu button */
-  .burger-menu {
-    display: flex;
-  }
-
-  /* Show overlay when menu is active */
-  .mobile-menu-overlay {
-    display: block;
-  }
-
-  /* Hide desktop nav by default */
-  .nav-links {
-    position: fixed;
-    top: 0;
-    right: -100%;
-    width: 300px;
-    max-width: 80%;
-    height: 100vh;
-    background: white;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 5rem 2rem 2rem 2rem;
-    gap: 1.5rem;
-    transition: right 0.3s ease;
-    z-index: 1050;
-    overflow-y: auto;
-    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Show nav when mobile-active */
-  .nav-links.mobile-active {
-    right: 0;
-  }
-
-  /* Style all nav links for mobile */
-  .nav-links > a {
-    width: 100%;
-    padding: 0.75rem 0;
-    font-size: 1rem;
-  }
-
-  /* Login button full width on mobile */
-  .login-link {
-    width: 100%;
-    text-align: center;
-    margin-top: 1rem;
-  }
-
-  /* User menu adjustments */
-  .user-menu {
-    width: 100%;
-  }
-
-  .user-btn {
-    width: 100%;
-    text-align: left;
-    padding: 0.75rem 0;
-    font-size: 1rem;
-  }
-
-  .user-dropdown {
-    position: static;
-    width: 100%;
-    border: none;
-    box-shadow: none;
-    margin-top: 0.5rem;
-    padding-left: 1rem;
-  }
-
-  .user-menu.show .user-dropdown {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  /* Inbox icon on mobile */
-  .inbox-icon-link {
-    width: 100%;
-    justify-content: flex-start;
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin-top: 1rem;
+  /* Hide desktop navigation on mobile */
+  .nav-links.desktop-nav {
+    display: none;
   }
 }
 
