@@ -53,10 +53,30 @@ const ChatImageUpload = ({ onImageSelected, onImageRemove, disabled = false }) =
         throw new Error(data.error || 'Failed to upload image');
       }
 
+      // Handle different response formats
+      let imageUrl;
+      let thumbnailUrl;
+
+      if (data.image && data.image.url) {
+        // Format: { success: true, image: { url: '...', thumbnail_url: '...' } }
+        imageUrl = data.image.url;
+        thumbnailUrl = data.image.thumbnail_url || data.image.url;
+      } else if (data.imageUrl) {
+        // Format: { success: true, imageUrl: '...' }
+        imageUrl = data.imageUrl;
+        thumbnailUrl = data.thumbnailUrl || data.imageUrl;
+      } else if (data.url) {
+        // Format: { success: true, url: '...' }
+        imageUrl = data.url;
+        thumbnailUrl = data.thumbnail_url || data.url;
+      } else {
+        throw new Error('Invalid response from server - missing image URL');
+      }
+
       // Notify parent component
       onImageSelected({
-        url: data.image.url,
-        thumbnailUrl: data.image.thumbnail_url || data.image.url,
+        url: imageUrl,
+        thumbnailUrl: thumbnailUrl,
         file: file
       });
     } catch (err) {
