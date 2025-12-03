@@ -243,6 +243,11 @@
   box-shadow: 0 3px 10px rgba(34, 139, 34, 0.2);
 }
 
+.thread-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .message-thread-header h3 {
   margin: 0;
   font-size: 1.25rem;
@@ -262,6 +267,34 @@
 .thread-header-email::before {
   content: '✉️';
   font-size: 0.9rem;
+}
+
+/* Send Quote Button */
+.send-quote-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.send-quote-btn:hover {
+  background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+}
+
+.send-quote-btn:active {
+  transform: translateY(0);
 }
 
 /* Messages List */
@@ -555,6 +588,14 @@
 
   .message-thread-header {
     padding: 1.25rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .send-quote-btn {
+    width: 100%;
+    order: 3;
+    margin-top: 0.75rem;
+    justify-content: center;
   }
 
   .worker-messages-list {

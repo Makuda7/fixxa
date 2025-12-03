@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import QuoteModal from './QuoteModal';
 import './Messages.css';
 
 const Messages = () => {
@@ -9,6 +10,10 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+
+  // Quote modal state
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [quoteBookingData, setQuoteBookingData] = useState(null);
 
   useEffect(() => {
     fetchConversations();
@@ -155,6 +160,33 @@ const Messages = () => {
     return date.toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' });
   };
 
+  // Quote modal handlers
+  const handleOpenQuoteModal = () => {
+    if (!selectedClient) return;
+
+    // Create a booking object from the client conversation
+    const bookingData = {
+      id: null, // This will be filled by the backend when quote is sent
+      client_name: selectedClient.clientName,
+      client_email: selectedClient.clientEmail,
+      clientId: selectedClient.clientId,
+    };
+
+    setQuoteBookingData(bookingData);
+    setShowQuoteModal(true);
+  };
+
+  const handleCloseQuoteModal = () => {
+    setShowQuoteModal(false);
+    setQuoteBookingData(null);
+  };
+
+  const handleQuoteSuccess = () => {
+    // Optionally send a message notifying the client
+    // For now, just close the modal
+    alert('Quote sent successfully! The client will receive a notification.');
+  };
+
   if (loading) {
     return (
       <div className="messages-container">
@@ -213,10 +245,17 @@ const Messages = () => {
               <div className="thread-header-avatar">
                 {selectedClient.clientName.charAt(0).toUpperCase()}
               </div>
-              <div>
+              <div className="thread-header-info">
                 <h3>{selectedClient.clientName}</h3>
                 <p className="thread-header-email">{selectedClient.clientEmail}</p>
               </div>
+              <button
+                className="send-quote-btn"
+                onClick={handleOpenQuoteModal}
+                title="Send a quote to this client"
+              >
+                💰 Send Quote
+              </button>
             </div>
 
             <div className="worker-messages-list">
@@ -262,6 +301,15 @@ const Messages = () => {
           </div>
         )}
       </div>
+
+      {/* Quote Modal */}
+      {showQuoteModal && quoteBookingData && (
+        <QuoteModal
+          booking={quoteBookingData}
+          onClose={handleCloseQuoteModal}
+          onSuccess={handleQuoteSuccess}
+        />
+      )}
     </div>
   );
 };
