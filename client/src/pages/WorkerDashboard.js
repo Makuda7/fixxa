@@ -110,6 +110,61 @@ const WorkerDashboard = () => {
     return cleanup;
   }, [socket]);
 
+  // Auto-refresh system for pending items
+  useEffect(() => {
+    let idleTime = 0;
+    let refreshInterval;
+
+    // Track user activity
+    const resetIdleTime = () => {
+      idleTime = 0;
+    };
+
+    // Add event listeners for user activity
+    window.addEventListener('mousemove', resetIdleTime);
+    window.addEventListener('keypress', resetIdleTime);
+    window.addEventListener('click', resetIdleTime);
+    window.addEventListener('scroll', resetIdleTime);
+
+    // Increment idle time every minute
+    const idleInterval = setInterval(() => {
+      idleTime++;
+    }, 60000); // 1 minute
+
+    // Auto-refresh every 30 seconds if user is active and there are pending items
+    refreshInterval = setInterval(async () => {
+      if (idleTime < 10) { // Only refresh if user has been active in last 10 minutes
+        try {
+          // Check if there are pending booking requests or bookings
+          const hasPendingRequests = bookingRequests.some(
+            req => req.status === 'pending'
+          );
+          const hasPendingBookings = bookings.some(
+            booking => booking.status === 'pending' || booking.status === 'confirmed'
+          );
+
+          if (hasPendingRequests || hasPendingBookings) {
+            console.log('Auto-refreshing pending items...');
+            await fetchBookingRequests();
+            await fetchBookings();
+          }
+        } catch (error) {
+          console.error('Auto-refresh error:', error);
+        }
+      }
+    }, 30000); // 30 seconds
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('mousemove', resetIdleTime);
+      window.removeEventListener('keypress', resetIdleTime);
+      window.removeEventListener('click', resetIdleTime);
+      window.removeEventListener('scroll', resetIdleTime);
+      clearInterval(idleInterval);
+      clearInterval(refreshInterval);
+    };
+  }, [bookingRequests, bookings]);
+
   const fetchProfile = async () => {
     try {
       const response = await workerAPI.getProfile();
