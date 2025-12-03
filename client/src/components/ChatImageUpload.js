@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
+import ImageUploadGuidelines from './ImageUploadGuidelines';
 import './ChatImageUpload.css';
 
 const ChatImageUpload = ({ onImageSelected, onImageRemove, disabled = false }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [showGuidelines, setShowGuidelines] = useState(false);
   const fileInputRef = useRef(null);
 
   const maxSize = 5 * 1024 * 1024; // 5MB
@@ -102,8 +104,27 @@ const ChatImageUpload = ({ onImageSelected, onImageRemove, disabled = false }) =
 
   const handleClick = () => {
     if (!disabled && !uploading && !previewImage) {
-      fileInputRef.current?.click();
+      // Check if user has already seen guidelines this session
+      const guidelinesSeen = sessionStorage.getItem('imageGuidelinesSeen');
+
+      if (!guidelinesSeen) {
+        setShowGuidelines(true);
+      } else {
+        fileInputRef.current?.click();
+      }
     }
+  };
+
+  const handleAcceptGuidelines = () => {
+    // Mark guidelines as seen for this session
+    sessionStorage.setItem('imageGuidelinesSeen', 'true');
+    setShowGuidelines(false);
+    // Trigger file input
+    fileInputRef.current?.click();
+  };
+
+  const handleCancelGuidelines = () => {
+    setShowGuidelines(false);
   };
 
   return (
@@ -163,6 +184,14 @@ const ChatImageUpload = ({ onImageSelected, onImageRemove, disabled = false }) =
           </svg>
           <span>{error}</span>
         </div>
+      )}
+
+      {/* Image Upload Guidelines Modal */}
+      {showGuidelines && (
+        <ImageUploadGuidelines
+          onAccept={handleAcceptGuidelines}
+          onCancel={handleCancelGuidelines}
+        />
       )}
     </div>
   );

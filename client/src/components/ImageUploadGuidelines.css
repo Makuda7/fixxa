@@ -1,0 +1,268 @@
+.guidelines-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.guidelines-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.guidelines-header {
+  background: linear-gradient(135deg, var(--fixxa-primary, #228B22) 0%, #1e7a1e 100%);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+  border-radius: 16px 16px 0 0;
+}
+
+.guidelines-icon {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.guidelines-header h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.guidelines-content {
+  padding: 2rem;
+}
+
+.guidelines-intro {
+  font-size: 1.05rem;
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.guidelines-section {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.guidelines-section:last-of-type {
+  border-bottom: none;
+}
+
+.guidelines-section h3 {
+  font-size: 1.15rem;
+  color: #333;
+  margin: 0 0 0.75rem 0;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.guidelines-section ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.guidelines-section li {
+  margin-bottom: 0.65rem;
+  color: #555;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.guidelines-section li:last-child {
+  margin-bottom: 0;
+}
+
+.nested-list {
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+  list-style-type: circle;
+}
+
+.nested-list li {
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.guidelines-section strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.guidelines-agreement {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.guidelines-agreement p {
+  margin: 0;
+  color: #856404;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.guidelines-agreement a {
+  color: #0066cc;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.guidelines-agreement a:hover {
+  color: #004499;
+}
+
+.guidelines-actions {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  background: #f8f9fa;
+  border-radius: 0 0 16px 16px;
+}
+
+.guidelines-actions button {
+  padding: 0.85rem 1.75rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.btn-cancel:hover {
+  background: #e0e0e0;
+  color: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-accept {
+  background: var(--fixxa-primary, #228B22);
+  color: white;
+  min-width: 200px;
+}
+
+.btn-accept:hover {
+  background: #1e7a1e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 139, 34, 0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .guidelines-modal {
+    max-height: 90vh;
+    border-radius: 12px;
+  }
+
+  .guidelines-header {
+    padding: 1.5rem;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .guidelines-icon {
+    font-size: 2.5rem;
+  }
+
+  .guidelines-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .guidelines-content {
+    padding: 1.5rem;
+  }
+
+  .guidelines-intro {
+    font-size: 1rem;
+  }
+
+  .guidelines-section h3 {
+    font-size: 1.05rem;
+  }
+
+  .guidelines-section li {
+    font-size: 0.9rem;
+  }
+
+  .guidelines-actions {
+    flex-direction: column-reverse;
+    padding: 1.25rem;
+  }
+
+  .guidelines-actions button {
+    width: 100%;
+  }
+
+  .btn-accept {
+    min-width: auto;
+  }
+}
+
+/* Scrollbar styling */
+.guidelines-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.guidelines-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0 16px 16px 0;
+}
+
+.guidelines-modal::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.guidelines-modal::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
