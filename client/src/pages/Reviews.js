@@ -6,9 +6,15 @@ import './Reviews.css';
 
 const Reviews = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('statistics');
   const [pendingReviews, setPendingReviews] = useState([]);
   const [myReviews, setMyReviews] = useState([]);
+  const [statistics, setStatistics] = useState({
+    totalReviews: 0,
+    averageRating: 0,
+    pendingCount: 0,
+    thisMonthCount: 0
+  });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -68,7 +74,12 @@ const Reviews = () => {
   const fetchPendingReviews = async () => {
     try {
       const response = await api.get('/reviews/pending-reviews');
-      setPendingReviews(response.data.pendingReviews || []);
+      const pending = response.data.pendingReviews || [];
+      setPendingReviews(pending);
+      setStatistics(prev => ({
+        ...prev,
+        pendingCount: pending.length
+      }));
     } catch (err) {
       console.error('Failed to fetch pending reviews:', err);
       showToast('Failed to load pending reviews', 'error');
@@ -78,7 +89,28 @@ const Reviews = () => {
   const fetchMyReviews = async () => {
     try {
       const response = await api.get('/reviews/client');
-      setMyReviews(response.data.reviews || []);
+      const reviews = response.data.reviews || [];
+      setMyReviews(reviews);
+
+      // Calculate statistics
+      const totalReviews = reviews.length;
+      const averageRating = reviews.length > 0
+        ? (reviews.reduce((sum, r) => sum + (r.overall_rating || 0), 0) / reviews.length).toFixed(1)
+        : 0;
+
+      const now = new Date();
+      const thisMonthReviews = reviews.filter(r => {
+        const reviewDate = new Date(r.created_at);
+        return reviewDate.getMonth() === now.getMonth() &&
+               reviewDate.getFullYear() === now.getFullYear();
+      });
+
+      setStatistics(prev => ({
+        ...prev,
+        totalReviews,
+        averageRating,
+        thisMonthCount: thisMonthReviews.length
+      }));
     } catch (err) {
       console.error('Failed to fetch my reviews:', err);
       showToast('Failed to load your reviews', 'error');
@@ -634,6 +666,12 @@ const Reviews = () => {
 
       <div className="reviews-tabs">
         <button
+          className={`tab ${activeTab === 'statistics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('statistics')}
+        >
+          📊 Statistics
+        </button>
+        <button
           className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
           onClick={() => setActiveTab('pending')}
         >
@@ -658,6 +696,70 @@ const Reviews = () => {
           <div className="loading-state">
             <div className="spinner"></div>
             <p>Loading reviews...</p>
+          </div>
+        ) : activeTab === 'statistics' ? (
+          <div className="statistics-dashboard">
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">📝</div>
+                <div className="stat-content">
+                  <div className="stat-value">{statistics.totalReviews}</div>
+                  <div className="stat-label">Total Reviews</div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">⭐</div>
+                <div className="stat-content">
+                  <div className="stat-value">{statistics.averageRating || '0.0'}</div>
+                  <div className="stat-label">Average Rating</div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">⏳</div>
+                <div className="stat-content">
+                  <div className="stat-value">{statistics.pendingCount}</div>
+                  <div className="stat-label">Pending Reviews</div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">📅</div>
+                <div className="stat-content">
+                  <div className="stat-value">{statistics.thisMonthCount}</div>
+                  <div className="stat-label">This Month</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="impact-message">
+              <div className="impact-icon">💡</div>
+              <div className="impact-content">
+                <h3>Your Reviews Make a Difference!</h3>
+                <p>
+                  {statistics.totalReviews === 0 ? (
+                    "Start leaving reviews to help other clients find reliable professionals and help workers improve their services."
+                  ) : statistics.totalReviews === 1 ? (
+                    "Great start! Your review helps other clients make informed decisions and supports quality service providers."
+                  ) : statistics.totalReviews < 5 ? (
+                    `You've written ${statistics.totalReviews} reviews! Your feedback helps build trust in our community and guides others toward quality services.`
+                  ) : statistics.totalReviews < 10 ? (
+                    `Amazing! With ${statistics.totalReviews} reviews, you're an active community member helping others make informed choices and encouraging professional excellence.`
+                  ) : (
+                    `Incredible! You've contributed ${statistics.totalReviews} reviews! You're a valued member of our community, helping maintain high service standards and guiding countless clients.`
+                  )}
+                </p>
+                {statistics.pendingCount > 0 && (
+                  <button
+                    className="btn-primary-impact"
+                    onClick={() => setActiveTab('pending')}
+                  >
+                    Review {statistics.pendingCount} Pending Job{statistics.pendingCount !== 1 ? 's' : ''}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         ) : activeTab === 'pending' ? (
           <div className="pending-reviews">
