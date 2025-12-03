@@ -12,6 +12,20 @@ const JobHistory = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Reschedule modal state
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+
+  // Cancel modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+
+  // Submitting state
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
   useEffect(() => {
     fetchBookings();
   }, []);
@@ -76,20 +90,93 @@ const JobHistory = () => {
     setShowModal(true);
   };
 
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedBooking(null);
   };
 
-  const handleReschedule = () => {
-    handleCloseModal();
-    window.location.href = '/client-dashboard';
+  const handleCloseAllModals = () => {
+    setShowModal(false);
+    setShowRescheduleModal(false);
+    setShowCancelModal(false);
+    setSelectedBooking(null);
+    setCancelReason('');
+    setRescheduleDate('');
+    setRescheduleTime('');
+    setRescheduleReason('');
   };
 
-  const handleCancel = async () => {
-    if (window.confirm('Are you sure you want to cancel this booking?')) {
-      handleCloseModal();
-      window.location.href = '/client-dashboard';
+  const handleOpenRescheduleModal = (booking) => {
+    setShowModal(false);
+    setSelectedBooking(booking);
+    setRescheduleDate('');
+    setRescheduleTime('');
+    setRescheduleReason('');
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleBooking = async () => {
+    if (!rescheduleDate || !rescheduleTime) {
+      showToast('Please select a date and time', 'error');
+      return;
+    }
+
+    if (!rescheduleReason.trim()) {
+      showToast('Please provide a reason for rescheduling', 'error');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await api.put(`/bookings/${selectedBooking.id}/reschedule`, {
+        newDate: rescheduleDate,
+        newTime: rescheduleTime,
+        reason: rescheduleReason
+      });
+
+      showToast('Reschedule request submitted successfully!', 'success');
+      handleCloseAllModals();
+      fetchBookings();
+    } catch (err) {
+      console.error('Error rescheduling booking:', err);
+      showToast(err.response?.data?.error || 'Failed to reschedule booking', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenCancelModal = (booking) => {
+    setShowModal(false);
+    setSelectedBooking(booking);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const handleCancelBooking = async () => {
+    if (!cancelReason.trim()) {
+      showToast('Please provide a cancellation reason', 'error');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await api.put(`/bookings/${selectedBooking.id}/cancel`, {
+        cancelReason
+      });
+
+      showToast('Booking cancelled successfully', 'success');
+      handleCloseAllModals();
+      fetchBookings();
+    } catch (err) {
+      console.error('Error cancelling booking:', err);
+      showToast(err.response?.data?.error || 'Failed to cancel booking', 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -274,16 +361,16 @@ const JobHistory = () => {
             <div className="modal-footer">
               {(selectedBooking.status?.toLowerCase() === 'pending' || selectedBooking.status?.toLowerCase() === 'confirmed') && (
                 <>
-                  <button className="btn-warning" onClick={handleReschedule}>
+                  <button className="btn-warning" onClick={() => handleOpenRescheduleModal(selectedBooking)}>
                     Reschedule
                   </button>
-                  <button className="btn-danger" onClick={handleCancel}>
+                  <button className="btn-danger" onClick={() => handleOpenCancelModal(selectedBooking)}>
                     Cancel Booking
                   </button>
                 </>
               )}
               {selectedBooking.status?.toLowerCase() === 'completed' && (
-                <button className="btn-warning" onClick={handleReschedule}>
+                <button className="btn-warning" onClick={() => window.location.href = '/service'}>
                   Book Again
                 </button>
               )}
@@ -292,6 +379,215 @@ const JobHistory = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Cancel Booking Modal */}
+      {showCancelModal && selectedBooking && (
+        <div className="modal-overlay" onClick={handleCloseAllModals}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Cancel Booking</h2>
+              <button className="modal-close" onClick={handleCloseAllModals}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="cancel-warning">
+                <p><strong>Are you sure you want to cancel this booking?</strong></p>
+                <p className="warning-text">Service: {selectedBooking.service_type}</p>
+                <p className="warning-text">Professional: {selectedBooking.worker_name}</p>
+                <p className="warning-text">Date: {formatDate(selectedBooking.booking_date)}</p>
+              </div>
+
+              <div className="refund-policy-notice" style={{
+                background: '#fff3cd',
+                border: '1px solid #ffc107',
+                borderRadius: '8px',
+                padding: '1rem',
+                margin: '1rem 0'
+              }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#856404' }}>Cancellation & Refund Policy</h4>
+                <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.9rem', color: '#856404' }}>
+                  <li>Free cancellation up to 48 hours before booking</li>
+                  <li>Cancellations within 48 hours may incur a fee</li>
+                  <li>No refunds for same-day cancellations</li>
+                  <li>Refunds are processed within 5-7 business days</li>
+                </ul>
+              </div>
+
+              <div className="feedback-section">
+                <h4>Reason for Cancellation</h4>
+                <textarea
+                  className="feedback-textarea"
+                  placeholder="Please explain why you need to cancel..."
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  rows={4}
+                  disabled={submitting}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '1rem',
+                    resize: 'vertical'
+                  }}
+                />
+                <p className="feedback-hint" style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
+                  Your cancellation will be processed immediately
+                </p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-secondary"
+                onClick={handleCloseAllModals}
+                disabled={submitting}
+              >
+                Keep Booking
+              </button>
+              <button
+                className="btn-danger"
+                onClick={handleCancelBooking}
+                disabled={submitting || !cancelReason.trim()}
+              >
+                {submitting ? 'Submitting...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Booking Modal */}
+      {showRescheduleModal && selectedBooking && (
+        <div className="modal-overlay" onClick={handleCloseAllModals}>
+          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Reschedule Booking</h2>
+              <button className="modal-close" onClick={handleCloseAllModals}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="reschedule-info" style={{
+                background: '#f8f9fa',
+                padding: '1rem',
+                borderRadius: '8px',
+                marginBottom: '1.5rem'
+              }}>
+                <p><strong>Current Schedule:</strong></p>
+                <p>Date: {formatDate(selectedBooking.booking_date)}</p>
+                <p>Time: {formatTime(selectedBooking.booking_time)}</p>
+              </div>
+
+              <div className="reschedule-policy-notice" style={{
+                background: '#e3f2fd',
+                border: '1px solid #2196f3',
+                borderRadius: '8px',
+                padding: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#0d47a1' }}>Reschedule Policy</h4>
+                <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.9rem', color: '#0d47a1' }}>
+                  <li>Free rescheduling up to 24 hours before booking</li>
+                  <li>Professional must approve new date/time</li>
+                  <li>You'll receive confirmation within 24 hours</li>
+                  <li>Multiple reschedules may require additional fees</li>
+                </ul>
+              </div>
+
+              <div className="form-group">
+                <label>New Date *</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  disabled={submitting}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '1rem',
+                    marginTop: '0.5rem'
+                  }}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label>New Time *</label>
+                <input
+                  type="time"
+                  value={rescheduleTime}
+                  onChange={(e) => setRescheduleTime(e.target.value)}
+                  disabled={submitting}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '1rem',
+                    marginTop: '0.5rem'
+                  }}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label>Reason for Rescheduling *</label>
+                <textarea
+                  placeholder="Please explain why you need to reschedule..."
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  rows={4}
+                  disabled={submitting}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '1rem',
+                    resize: 'vertical',
+                    marginTop: '0.5rem'
+                  }}
+                />
+                <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
+                  The professional will review your request
+                </p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-secondary"
+                onClick={handleCloseAllModals}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-warning"
+                onClick={handleRescheduleBooking}
+                disabled={submitting || !rescheduleDate || !rescheduleTime || !rescheduleReason.trim()}
+              >
+                {submitting ? 'Submitting...' : 'Request Reschedule'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: '2rem',
+          right: '2rem',
+          background: toast.type === 'error' ? '#ef4444' : '#10b981',
+          color: 'white',
+          padding: '1rem 1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          zIndex: 10000,
+          animation: 'slideIn 0.3s ease'
+        }}>
+          {toast.message}
         </div>
       )}
     </div>
