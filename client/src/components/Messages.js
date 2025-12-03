@@ -196,7 +196,7 @@ const Messages = () => {
   }
 
   return (
-    <div className="messages-container">
+    <div className={`messages-container ${selectedClient ? 'chat-selected' : ''}`}>
       {/* Conversations List */}
       <div className="conversations-list">
         <h3>Conversations</h3>
@@ -242,6 +242,13 @@ const Messages = () => {
         {selectedClient ? (
           <>
             <div className="message-thread-header">
+              <button
+                className="back-to-conversations"
+                onClick={() => setSelectedClient(null)}
+                title="Back to conversations"
+              >
+                ←
+              </button>
               <div className="thread-header-avatar">
                 {selectedClient.clientName.charAt(0).toUpperCase()}
               </div>

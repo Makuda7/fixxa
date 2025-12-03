@@ -13,6 +13,15 @@
   border: 1px solid #e8e8e8;
 }
 
+/* Hide conversation list when a chat is selected */
+.messages-container.chat-selected {
+  grid-template-columns: 1fr;
+}
+
+.messages-container.chat-selected .conversations-list {
+  display: none;
+}
+
 .messages-loading {
   grid-column: 1 / -1;
   display: flex;
@@ -227,6 +236,30 @@
   border-bottom: 1px solid #e8e8e8;
   background: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.back-to-conversations {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  border: none;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chat-selected .back-to-conversations {
+  display: flex;
+}
+
+.back-to-conversations:hover {
+  background: #e0e0e0;
+  transform: scale(1.05);
 }
 
 .thread-header-avatar {
