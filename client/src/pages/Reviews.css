@@ -650,6 +650,234 @@ textarea.over-limit:focus {
   color: #333;
 }
 
+/* Photo Upload Section */
+.photo-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.photo-hint {
+  color: #6c757d;
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.upload-dropzone {
+  border: 2px dashed #ced4da;
+  border-radius: 8px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.upload-dropzone:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.upload-dropzone p {
+  margin: 0.5rem 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.upload-hint {
+  color: #6c757d;
+  font-size: 0.85rem !important;
+  font-weight: 400 !important;
+}
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.photo-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.photo-preview-item:hover {
+  border-color: #667eea;
+  transform: scale(1.02);
+}
+
+.photo-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.photo-preview-item.uploading {
+  border-color: #667eea;
+}
+
+.photo-preview-item.uploading img {
+  opacity: 0.6;
+}
+
+.photo-remove-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.photo-remove-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.photo-upload-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: #667eea;
+  transition: width 0.3s ease;
+}
+
+.btn-add-photo {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #667eea;
+  border: 2px dashed #667eea;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.btn-add-photo:hover:not(:disabled) {
+  background: #f8f9ff;
+  border-color: #764ba2;
+  color: #764ba2;
+}
+
+.btn-add-photo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.photo-safety-note {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: #856404;
+  line-height: 1.5;
+}
+
+.photo-safety-note strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* Photo Viewer Modal */
+.photo-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.photo-viewer-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-viewer-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.photo-viewer-close {
+  position: absolute;
+  top: -3rem;
+  right: 0;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.photo-viewer-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
 @media (max-width: 768px) {
   .reviews-page {
     padding: 1rem;
@@ -697,5 +925,24 @@ textarea.over-limit:focus {
   .toast {
     min-width: auto;
     max-width: none;
+  }
+
+  .upload-dropzone {
+    padding: 2rem 1rem;
+  }
+
+  .photo-preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .photo-viewer-overlay {
+    padding: 1rem;
+  }
+
+  .photo-viewer-close {
+    top: -2.5rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.75rem;
   }
 }

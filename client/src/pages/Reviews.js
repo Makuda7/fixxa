@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import ReviewPhotoGuidelines from '../components/ReviewPhotoGuidelines';
 import './Reviews.css';
 
 const Reviews = () => {
@@ -13,9 +14,18 @@ const Reviews = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPhotoGuidelines, setShowPhotoGuidelines] = useState(false);
+  const [showPhotoViewer, setShowPhotoViewer] = useState(false);
+  const [viewerPhoto, setViewerPhoto] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedReview, setSelectedReview] = useState(null);
   const [toasts, setToasts] = useState([]);
+
+  // Photo upload state
+  const [uploadedPhotos, setUploadedPhotos] = useState([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState([]);
+  const fileInputRef = useRef(null);
+  const editPhotoInputRef = useRef(null);
 
   // Review form state
   const [formData, setFormData] = useState({
@@ -28,7 +38,10 @@ const Reviews = () => {
   });
   const [hoveredRating, setHoveredRating] = useState({});
 
-  const maxChars = 500;
+  const maxChars = 1000;
+  const maxPhotos = 5;
+  const maxPhotoSize = 5 * 1024 * 1024; // 5MB
+  const allowedPhotoTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
   useEffect(() => {
     fetchData();
@@ -82,6 +95,173 @@ const Reviews = () => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
+  // Photo Upload Functions
+  const handlePhotoClick = () => {
+    const guidelinesSeen = sessionStorage.getItem('reviewPhotoGuidelinesSeen');
+    if (!guidelinesSeen) {
+      setShowPhotoGuidelines(true);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleAcceptGuidelines = () => {
+    sessionStorage.setItem('reviewPhotoGuidelinesSeen', 'true');
+    setShowPhotoGuidelines(false);
+    fileInputRef.current?.click();
+  };
+
+  const handleCancelGuidelines = () => {
+    setShowPhotoGuidelines(false);
+  };
+
+  const handleFileSelection = async (e) => {
+    const files = Array.from(e.target.files);
+
+    if (uploadedPhotos.length + files.length > maxPhotos) {
+      showToast(`Maximum ${maxPhotos} photos allowed per review`, 'error');
+      return;
+    }
+
+    for (const file of files) {
+      if (!allowedPhotoTypes.includes(file.type)) {
+        showToast(`${file.name}: Only JPEG, PNG, and WEBP images are allowed`, 'error');
+        continue;
+      }
+
+      if (file.size > maxPhotoSize) {
+        showToast(`${file.name}: File size must be less than 5MB`, 'error');
+        continue;
+      }
+
+      await uploadPhoto(file);
+    }
+
+    // Reset file input
+    e.target.value = '';
+  };
+
+  const uploadPhoto = async (file) => {
+    const photoId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    // Add to uploading list with preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setUploadingPhotos((prev) => [
+        ...prev,
+        { id: photoId, preview: e.target.result, progress: 0 }
+      ]);
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await api.post('/reviews/upload-photo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadingPhotos((prev) =>
+            prev.map((p) => (p.id === photoId ? { ...p, progress } : p))
+          );
+        }
+      });
+
+      if (response.data.success) {
+        // Move from uploading to uploaded
+        setUploadingPhotos((prev) => prev.filter((p) => p.id !== photoId));
+        setUploadedPhotos((prev) => [...prev, response.data.url]);
+        showToast('Photo uploaded successfully', 'success');
+      } else {
+        throw new Error(response.data.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      setUploadingPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      showToast(`Failed to upload ${file.name}`, 'error');
+    }
+  };
+
+  const removePhoto = (photoUrl) => {
+    setUploadedPhotos((prev) => prev.filter((url) => url !== photoUrl));
+  };
+
+  const handleViewPhoto = (photoUrl) => {
+    setViewerPhoto(photoUrl);
+    setShowPhotoViewer(true);
+  };
+
+  const handleClosePhotoViewer = () => {
+    setShowPhotoViewer(false);
+    setViewerPhoto(null);
+  };
+
+  const handleEditPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (uploadedPhotos.length >= maxPhotos) {
+      showToast(`Maximum ${maxPhotos} photos allowed`, 'error');
+      return;
+    }
+
+    if (!allowedPhotoTypes.includes(file.type)) {
+      showToast('Only JPEG, PNG, and WEBP images are allowed', 'error');
+      return;
+    }
+
+    if (file.size > maxPhotoSize) {
+      showToast('File size must be less than 5MB', 'error');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await api.post(`/reviews/${selectedReview.id}/upload-photo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.success) {
+        setUploadedPhotos(response.data.allPhotos);
+        showToast('Photo added successfully', 'success');
+      } else {
+        throw new Error(response.data.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      showToast('Failed to upload photo', 'error');
+    }
+
+    e.target.value = '';
+  };
+
+  const handleRemoveEditPhoto = async (photoUrl) => {
+    if (!selectedReview) return;
+
+    try {
+      const response = await api.delete(`/reviews/${selectedReview.id}/photos`, {
+        data: { photoUrl }
+      });
+
+      if (response.data.success) {
+        setUploadedPhotos(response.data.photos);
+        showToast('Photo removed', 'success');
+      } else {
+        throw new Error(response.data.error || 'Failed to remove photo');
+      }
+    } catch (error) {
+      console.error('Remove photo error:', error);
+      showToast('Failed to remove photo', 'error');
+    }
+  };
+
   const handleWriteReview = (booking) => {
     setSelectedBooking(booking);
     setFormData({
@@ -92,6 +272,8 @@ const Reviews = () => {
       value_rating: 0,
       review_text: ''
     });
+    setUploadedPhotos([]);
+    setUploadingPhotos([]);
     setShowReviewModal(true);
   };
 
@@ -105,6 +287,8 @@ const Reviews = () => {
       value_rating: review.value_rating || 0,
       review_text: review.review_text || ''
     });
+    setUploadedPhotos(review.photos || []);
+    setUploadingPhotos([]);
     setShowEditModal(true);
   };
 
@@ -136,11 +320,13 @@ const Reviews = () => {
       await api.post('/reviews/client', {
         booking_id: selectedBooking.booking_id,
         worker_id: selectedBooking.worker_id,
-        ...formData
+        ...formData,
+        photos: uploadedPhotos
       });
 
       showToast('Review submitted successfully!', 'success');
       setShowReviewModal(false);
+      setUploadedPhotos([]);
       await fetchData();
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Failed to submit review';
@@ -342,6 +528,76 @@ const Reviews = () => {
             {isOverLimit && (
               <span className="error-text">({Math.abs(charsRemaining)} over limit)</span>
             )}
+          </div>
+        </div>
+
+        {/* Photo Upload Section */}
+        <div className="form-section photo-section">
+          <label className="form-label">
+            Photos (Optional)
+            <span className="photo-hint"> - Show before/after or completed work</span>
+          </label>
+
+          <input
+            ref={isEdit ? editPhotoInputRef : fileInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={isEdit ? handleEditPhotoUpload : handleFileSelection}
+            style={{ display: 'none' }}
+            multiple={!isEdit}
+          />
+
+          {uploadedPhotos.length === 0 && uploadingPhotos.length === 0 && (
+            <div className="upload-dropzone" onClick={isEdit ? () => editPhotoInputRef.current?.click() : handlePhotoClick}>
+              <div className="upload-icon">📷</div>
+              <p>Click to upload photos</p>
+              <p className="upload-hint">Max {maxPhotos} photos, 5MB each (JPEG, PNG, WEBP)</p>
+            </div>
+          )}
+
+          {(uploadedPhotos.length > 0 || uploadingPhotos.length > 0) && (
+            <div className="photo-preview-grid">
+              {uploadedPhotos.map((photoUrl, index) => (
+                <div key={index} className="photo-preview-item">
+                  <img src={photoUrl} alt={`Review ${index + 1}`} onClick={() => handleViewPhoto(photoUrl)} />
+                  <button
+                    type="button"
+                    className="photo-remove-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      isEdit ? handleRemoveEditPhoto(photoUrl) : removePhoto(photoUrl);
+                    }}
+                    title="Remove photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {uploadingPhotos.map((photo) => (
+                <div key={photo.id} className="photo-preview-item uploading">
+                  <img src={photo.preview} alt="Uploading..." />
+                  <div className="photo-upload-progress">
+                    <div className="progress-bar" style={{ width: `${photo.progress}%` }}></div>
+                    <span>{photo.progress}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {uploadedPhotos.length > 0 && uploadedPhotos.length < maxPhotos && (
+            <button
+              type="button"
+              className="btn-add-photo"
+              onClick={isEdit ? () => editPhotoInputRef.current?.click() : handlePhotoClick}
+              disabled={submitting}
+            >
+              + Add Another Photo ({uploadedPhotos.length}/{maxPhotos})
+            </button>
+          )}
+
+          <div className="photo-safety-note">
+            <strong>⚠️ Privacy reminder:</strong> Only upload photos of work areas. Avoid personal documents, faces, addresses, and valuables.
           </div>
         </div>
 
@@ -577,6 +833,30 @@ const Reviews = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Guidelines Modal */}
+      {showPhotoGuidelines && (
+        <ReviewPhotoGuidelines
+          onAccept={handleAcceptGuidelines}
+          onCancel={() => setShowPhotoGuidelines(false)}
+        />
+      )}
+
+      {/* Photo Viewer Modal */}
+      {showPhotoViewer && (
+        <div className="photo-viewer-overlay" onClick={() => setShowPhotoViewer(false)}>
+          <div className="photo-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="photo-viewer-close"
+              onClick={() => setShowPhotoViewer(false)}
+              aria-label="Close photo viewer"
+            >
+              ×
+            </button>
+            <img src={showPhotoViewer} alt="Review photo" />
           </div>
         </div>
       )}
