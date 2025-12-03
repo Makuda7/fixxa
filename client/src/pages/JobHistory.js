@@ -272,7 +272,7 @@ const JobHistory = () => {
             </div>
 
             <div className="modal-footer">
-              {(selectedBooking.status === 'pending' || selectedBooking.status === 'confirmed') && (
+              {(selectedBooking.status?.toLowerCase() === 'pending' || selectedBooking.status?.toLowerCase() === 'confirmed') && (
                 <>
                   <button className="btn-warning" onClick={handleReschedule}>
                     Reschedule
@@ -282,7 +282,7 @@ const JobHistory = () => {
                   </button>
                 </>
               )}
-              {selectedBooking.status === 'completed' && (
+              {selectedBooking.status?.toLowerCase() === 'completed' && (
                 <button className="btn-warning" onClick={handleReschedule}>
                   Book Again
                 </button>
