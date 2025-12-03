@@ -243,7 +243,24 @@ const JobHistory = () => {
       fetchBookings();
     } catch (err) {
       console.error('Error rescheduling booking:', err);
-      showToast(err.response?.data?.error || 'Failed to reschedule booking', 'error');
+
+      // Check if this is a 48-hour restriction error
+      const errorMessage = err.response?.data?.error || 'Failed to reschedule booking';
+      const is48HourError = errorMessage.toLowerCase().includes('48 hour') ||
+                           errorMessage.toLowerCase().includes('48-hour') ||
+                           errorMessage.toLowerCase().includes('at least 48 hours');
+
+      if (is48HourError) {
+        // Show graceful, informative message with extended duration
+        showToast(
+          '⚠️ Reschedule Policy: Bookings must be rescheduled at least 48 hours in advance to give the professional time to adjust their schedule. For emergency changes, please contact our support team.',
+          'error',
+          8000 // Extended duration for important policy message
+        );
+      } else {
+        // Standard error handling
+        showToast(errorMessage, 'error');
+      }
     } finally {
       setSubmitting(false);
     }
