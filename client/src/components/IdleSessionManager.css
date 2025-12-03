@@ -1,0 +1,148 @@
+.idle-warning-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.idle-warning-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.idle-warning-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: pulse 1.5s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.idle-warning-modal h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.75rem;
+  color: #333;
+  font-weight: 700;
+}
+
+.idle-warning-modal p {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+.idle-warning-modal p strong {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+.idle-warning-subtitle {
+  font-size: 0.95rem !important;
+  color: #888 !important;
+  margin-bottom: 2rem !important;
+}
+
+.idle-warning-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.idle-warning-buttons button {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-stay-logged-in {
+  background: var(--fixxa-primary, #228B22);
+  color: white;
+}
+
+.btn-stay-logged-in:hover {
+  background: #1e7a1e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 139, 34, 0.3);
+}
+
+.btn-logout-now {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.btn-logout-now:hover {
+  background: #e0e0e0;
+  color: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .idle-warning-modal {
+    padding: 2rem;
+    max-width: 90%;
+  }
+
+  .idle-warning-modal h3 {
+    font-size: 1.5rem;
+  }
+
+  .idle-warning-modal p {
+    font-size: 1rem;
+  }
+
+  .idle-warning-buttons {
+    flex-direction: column;
+  }
+
+  .idle-warning-buttons button {
+    width: 100%;
+  }
+}

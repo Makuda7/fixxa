@@ -5,6 +5,7 @@ import { SocketProvider } from './contexts/SocketContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CookieConsent from './components/CookieConsent';
+import IdleSessionManager from './components/IdleSessionManager';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -86,7 +87,7 @@ const AdminRoute = ({ children }) => {
 
 // Main App component
 function AppRoutes() {
-  const { loading } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
 
   if (loading) {
     return <LoadingSpinner />;
@@ -95,6 +96,7 @@ function AppRoutes() {
   return (
     <>
       <Header />
+      {isAuthenticated && <IdleSessionManager />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
