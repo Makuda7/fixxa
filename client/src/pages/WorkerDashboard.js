@@ -5,7 +5,6 @@ import PortfolioGallery from '../components/PortfolioGallery';
 import DashboardStats from '../components/DashboardStats';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import Messages from '../components/Messages';
-import QuoteModal from '../components/QuoteModal';
 import './WorkerDashboard.css';
 
 const WorkerDashboard = () => {
@@ -26,10 +25,6 @@ const WorkerDashboard = () => {
   // Bookings data
   const [bookings, setBookings] = useState([]);
   const [bookingRequests, setBookingRequests] = useState([]);
-
-  // Quote modal
-  const [showQuoteModal, setShowQuoteModal] = useState(false);
-  const [selectedBookingForQuote, setSelectedBookingForQuote] = useState(null);
 
   // Reviews data
   const [reviews, setReviews] = useState([]);
@@ -320,22 +315,6 @@ const WorkerDashboard = () => {
   const handleBookingAction = async (bookingId, action) => {
     // This is now a wrapper that calls the appropriate handler
     await handleNewBookingResponse(bookingId, action);
-  };
-
-  // Quote modal handlers
-  const handleOpenQuoteModal = (booking) => {
-    setSelectedBookingForQuote(booking);
-    setShowQuoteModal(true);
-  };
-
-  const handleCloseQuoteModal = () => {
-    setShowQuoteModal(false);
-    setSelectedBookingForQuote(null);
-  };
-
-  const handleQuoteSuccess = async () => {
-    // Refresh bookings and requests after sending quote
-    await Promise.all([fetchBookings(), fetchBookingRequests()]);
   };
 
   const handleAvailabilityToggle = async () => {
@@ -698,16 +677,6 @@ const WorkerDashboard = () => {
                                 }
                               >
                                 ✓ Approve Booking
-                              </button>
-                              <button
-                                className="btn-quote"
-                                onClick={() => handleOpenQuoteModal(request)}
-                                style={{
-                                  background: '#2196F3',
-                                  color: 'white'
-                                }}
-                              >
-                                💰 Send Quote
                               </button>
                               <button
                                 className="btn-decline"
@@ -1164,16 +1133,6 @@ const WorkerDashboard = () => {
                                 ✓ Approve Booking
                               </button>
                               <button
-                                className="btn-quote"
-                                onClick={() => handleOpenQuoteModal(request)}
-                                style={{
-                                  background: '#2196F3',
-                                  color: 'white'
-                                }}
-                              >
-                                💰 Send Quote
-                              </button>
-                              <button
                                 className="btn-decline"
                                 onClick={() =>
                                   handleNewBookingResponse(request.booking_id, 'decline')
@@ -1248,26 +1207,45 @@ const WorkerDashboard = () => {
                             </span>
                           </td>
                           <td>
-                            {booking.status === 'pending' && (
-                              <div className="booking-actions">
-                                <button
-                                  className="btn-approve"
-                                  onClick={() =>
-                                    handleBookingAction(booking.id, 'approve')
-                                  }
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  className="btn-decline"
-                                  onClick={() =>
-                                    handleBookingAction(booking.id, 'decline')
-                                  }
-                                >
-                                  Decline
-                                </button>
-                              </div>
-                            )}
+                            <div className="booking-actions">
+                              {booking.status === 'pending' && (
+                                <>
+                                  <button
+                                    className="btn-approve"
+                                    onClick={() =>
+                                      handleBookingAction(booking.id, 'approve')
+                                    }
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    className="btn-decline"
+                                    onClick={() =>
+                                      handleBookingAction(booking.id, 'decline')
+                                    }
+                                  >
+                                    Decline
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                className="btn-message"
+                                onClick={() => setActiveTab('messages')}
+                                style={{
+                                  background: '#2196F3',
+                                  color: 'white',
+                                  padding: '0.4rem 0.8rem',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500'
+                                }}
+                                title="Send a message to this client"
+                              >
+                                💬 Message
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1395,15 +1373,6 @@ const WorkerDashboard = () => {
           </div>
         )}
       </main>
-
-      {/* Quote Modal */}
-      {showQuoteModal && selectedBookingForQuote && (
-        <QuoteModal
-          booking={selectedBookingForQuote}
-          onClose={handleCloseQuoteModal}
-          onSuccess={handleQuoteSuccess}
-        />
-      )}
     </div>
   );
 };
