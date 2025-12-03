@@ -29,6 +29,11 @@ const JobHistory = () => {
   // Quote management state
   const [quotes, setQuotes] = useState({});
 
+  // Service address state
+  const [serviceAddresses, setServiceAddresses] = useState({});
+  const [addressInput, setAddressInput] = useState('');
+  const [showAddressForm, setShowAddressForm] = useState(null); // booking ID
+
   useEffect(() => {
     fetchBookings();
   }, []);
@@ -266,6 +271,60 @@ const JobHistory = () => {
     }
   };
 
+  const handleSubmitServiceAddress = async (bookingId) => {
+    // Validate address
+    const trimmedAddress = addressInput.trim();
+
+    if (trimmedAddress.length < 10) {
+      showToast('Please provide a complete address (minimum 10 characters)', 'error');
+      return;
+    }
+
+    // Check if address contains basic components
+    if (!trimmedAddress.match(/\d/) || trimmedAddress.split(' ').length < 3) {
+      showToast('Please include street number, street name, suburb, and city', 'error');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await api.post(`/bookings/${bookingId}/service-address`, {
+        service_address: trimmedAddress
+      }, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        showToast('Service address submitted successfully!', 'success');
+
+        // Update local state
+        setServiceAddresses(prev => ({
+          ...prev,
+          [bookingId]: {
+            address: trimmedAddress,
+            submitted_at: new Date().toISOString()
+          }
+        }));
+
+        setShowAddressForm(null);
+        setAddressInput('');
+        await fetchBookings();
+      } else {
+        showToast(response.data.error || 'Failed to submit address', 'error');
+      }
+    } catch (err) {
+      console.error('Error submitting service address:', err);
+      showToast(err.response?.data?.error || 'Failed to submit address', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancelAddressForm = (bookingId) => {
+    setShowAddressForm(null);
+    setAddressInput('');
+  };
+
   if (loading) {
     return (
       <div className="job-history-page">
@@ -486,6 +545,166 @@ const JobHistory = () => {
                         ❌ Decline Quote
                       </button>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Service Address Submission */}
+              {quotes[booking.id] && quotes[booking.id].status === 'accepted' && !booking.service_address && !serviceAddresses[booking.id] && (
+                <div style={{
+                  background: '#fff3cd',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  margin: '1rem 0',
+                  borderLeft: '4px solid #ffc107'
+                }}>
+                  {showAddressForm === booking.id ? (
+                    <>
+                      <h4 style={{
+                        margin: '0 0 0.75rem 0',
+                        color: '#856404',
+                        fontSize: '1rem',
+                        fontWeight: 600
+                      }}>
+                        📍 Provide Service Address
+                      </h4>
+                      <p style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '0.9rem',
+                        color: '#856404',
+                        lineHeight: '1.5'
+                      }}>
+                        Please provide your complete service address so the professional can visit your location.
+                        Include street number, street name, suburb, and city.
+                      </p>
+                      <textarea
+                        value={addressInput}
+                        onChange={(e) => setAddressInput(e.target.value)}
+                        placeholder="e.g., 123 Main Street, Sandton, Johannesburg, 2196"
+                        rows="3"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '2px solid #ffc107',
+                          borderRadius: '8px',
+                          fontSize: '0.9rem',
+                          fontFamily: 'inherit',
+                          resize: 'vertical',
+                          marginBottom: '0.75rem'
+                        }}
+                      />
+                      <div style={{
+                        display: 'flex',
+                        gap: '0.5rem'
+                      }}>
+                        <button
+                          style={{
+                            flex: 1,
+                            background: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.65rem 1rem',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            cursor: submitting ? 'not-allowed' : 'pointer',
+                            opacity: submitting ? 0.6 : 1
+                          }}
+                          onClick={() => handleSubmitServiceAddress(booking.id)}
+                          disabled={submitting}
+                        >
+                          ✅ Submit Address
+                        </button>
+                        <button
+                          style={{
+                            flex: 1,
+                            background: '#6c757d',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.65rem 1rem',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            cursor: submitting ? 'not-allowed' : 'pointer',
+                            opacity: submitting ? 0.6 : 1
+                          }}
+                          onClick={() => handleCancelAddressForm(booking.id)}
+                          disabled={submitting}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h4 style={{
+                        margin: '0 0 0.5rem 0',
+                        color: '#856404',
+                        fontSize: '1rem',
+                        fontWeight: 600
+                      }}>
+                        ⚠️ Service Address Required
+                      </h4>
+                      <p style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '0.9rem',
+                        color: '#856404',
+                        lineHeight: '1.5'
+                      }}>
+                        You've accepted the quote! Please provide your service address so the professional knows where to go.
+                      </p>
+                      <button
+                        style={{
+                          background: '#ffc107',
+                          color: '#000',
+                          border: 'none',
+                          padding: '0.65rem 1.5rem',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          width: '100%'
+                        }}
+                        onClick={() => setShowAddressForm(booking.id)}
+                      >
+                        📍 Provide Address
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Address Confirmation Display */}
+              {(booking.service_address || serviceAddresses[booking.id]) && (
+                <div style={{
+                  background: '#d4edda',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  margin: '1rem 0',
+                  borderLeft: '4px solid #28a745'
+                }}>
+                  <h4 style={{
+                    margin: '0 0 0.5rem 0',
+                    color: '#155724',
+                    fontSize: '1rem',
+                    fontWeight: 600
+                  }}>
+                    ✅ Service Address Confirmed
+                  </h4>
+                  <p style={{
+                    margin: '0.5rem 0',
+                    fontSize: '0.95rem',
+                    color: '#155724',
+                    fontWeight: 500
+                  }}>
+                    📍 {booking.service_address || serviceAddresses[booking.id]?.address}
+                  </p>
+                  {(booking.service_address_submitted_at || serviceAddresses[booking.id]?.submitted_at) && (
+                    <p style={{
+                      margin: '0.5rem 0 0 0',
+                      fontSize: '0.8rem',
+                      color: '#155724',
+                      opacity: 0.8
+                    }}>
+                      Submitted: {formatDate(booking.service_address_submitted_at || serviceAddresses[booking.id]?.submitted_at)}
+                    </p>
                   )}
                 </div>
               )}
