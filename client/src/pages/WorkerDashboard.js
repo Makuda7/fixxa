@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSocket } from '../contexts/SocketContext';
 import { workerAPI, certificationsAPI } from '../services/api';
 import PortfolioGallery from '../components/PortfolioGallery';
 import DashboardStats from '../components/DashboardStats';
@@ -9,6 +10,7 @@ import './WorkerDashboard.css';
 
 const WorkerDashboard = () => {
   const { user, logout } = useAuth();
+  const socket = useSocket();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -68,6 +70,45 @@ const WorkerDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Listen for real-time completion response notifications
+  useEffect(() => {
+    if (!socket || !socket.registerCompletionResponseCallback) {
+      return;
+    }
+
+    const cleanup = socket.registerCompletionResponseCallback((data) => {
+      console.log('Received completion-response notification:', data);
+      const { status } = data;
+
+      if (status === 'approved') {
+        alert('Client approved the job completion! Payment will be processed.');
+      } else if (status === 'rejected') {
+        alert('Client rejected the completion request. Please check their feedback.');
+      }
+
+      // Refresh bookings and requests to get updated data
+      fetchBookings();
+      fetchBookingRequests();
+    });
+
+    return cleanup;
+  }, [socket]);
+
+  // Listen for real-time new message notifications
+  useEffect(() => {
+    if (!socket || !socket.registerNewMessageCallback) {
+      return;
+    }
+
+    const cleanup = socket.registerNewMessageCallback((data) => {
+      console.log('Received new message notification:', data);
+      // You could add a toast notification here if you have a toast system
+      // For now, just log it - Messages component will handle the actual message display
+    });
+
+    return cleanup;
+  }, [socket]);
 
   const fetchProfile = async () => {
     try {

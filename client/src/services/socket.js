@@ -250,6 +250,86 @@ export const isConnected = () => {
   return socket && socket.connected;
 };
 
+/**
+ * Listen for completion request notifications
+ * @param {Function} callback - Callback function to handle completion request events
+ * @returns {Function} Cleanup function to remove listener
+ */
+export const onCompletionRequest = (callback) => {
+  if (!socket) {
+    console.error('Socket not initialized');
+    return () => {};
+  }
+
+  socket.on('completion-request', callback);
+  console.log('Listening for completion requests');
+
+  return () => {
+    socket.off('completion-request', callback);
+    console.log('Stopped listening for completion requests');
+  };
+};
+
+/**
+ * Listen for completion response notifications
+ * @param {Function} callback - Callback function to handle completion response events
+ * @returns {Function} Cleanup function to remove listener
+ */
+export const onCompletionResponse = (callback) => {
+  if (!socket) {
+    console.error('Socket not initialized');
+    return () => {};
+  }
+
+  socket.on('completion-response', callback);
+  console.log('Listening for completion responses');
+
+  return () => {
+    socket.off('completion-response', callback);
+    console.log('Stopped listening for completion responses');
+  };
+};
+
+/**
+ * Listen for booking request response notifications
+ * @param {Function} callback - Callback function to handle booking request response events
+ * @returns {Function} Cleanup function to remove listener
+ */
+export const onBookingRequestResponse = (callback) => {
+  if (!socket) {
+    console.error('Socket not initialized');
+    return () => {};
+  }
+
+  socket.on('booking-request-response', callback);
+  console.log('Listening for booking request responses');
+
+  return () => {
+    socket.off('booking-request-response', callback);
+    console.log('Stopped listening for booking request responses');
+  };
+};
+
+/**
+ * Listen for new message notifications
+ * @param {Function} callback - Callback function to handle new message events
+ * @returns {Function} Cleanup function to remove listener
+ */
+export const onNewMessage = (callback) => {
+  if (!socket) {
+    console.error('Socket not initialized');
+    return () => {};
+  }
+
+  socket.on('newMessage', callback);
+  console.log('Listening for new messages');
+
+  return () => {
+    socket.off('newMessage', callback);
+    console.log('Stopped listening for new messages');
+  };
+};
+
 export default {
   initializeSocket,
   getSocket,
@@ -263,5 +343,9 @@ export default {
   onUserOffline,
   onMessageRead,
   emitMessageRead,
-  isConnected
+  isConnected,
+  onCompletionRequest,
+  onCompletionResponse,
+  onBookingRequestResponse,
+  onNewMessage
 };

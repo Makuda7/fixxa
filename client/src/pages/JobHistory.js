@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSocket } from '../contexts/SocketContext';
 import api from '../services/api';
 import './JobHistory.css';
 
 const JobHistory = () => {
   const { user } = useAuth();
+  const socket = useSocket();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [error, setError] = useState(null);
@@ -90,6 +92,67 @@ const JobHistory = () => {
 
     setQuotes(quotesData);
   };
+
+  // Listen for real-time completion request notifications
+  useEffect(() => {
+    if (!socket || !socket.registerCompletionRequestCallback) {
+      return;
+    }
+
+    const cleanup = socket.registerCompletionRequestCallback((data) => {
+      console.log('Received completion-request notification:', data);
+      showToast('Professional has marked a job as complete. Please review!', 'info');
+      // Refresh bookings to get updated data
+      fetchBookings();
+    });
+
+    return cleanup;
+  }, [socket]);
+
+  // Listen for real-time booking request responses
+  useEffect(() => {
+    if (!socket || !socket.registerBookingRequestResponseCallback) {
+      return;
+    }
+
+    const cleanup = socket.registerBookingRequestResponseCallback((data) => {
+      console.log('Received booking-request-response:', data);
+      const { type, status } = data;
+
+      if (type === 'reschedule') {
+        if (status === 'approved') {
+          showToast('Your reschedule request has been approved!', 'success');
+        } else if (status === 'declined') {
+          showToast('Your reschedule request was declined', 'error');
+        }
+      } else if (type === 'cancel') {
+        if (status === 'approved') {
+          showToast('Your cancellation request has been approved', 'success');
+        } else if (status === 'declined') {
+          showToast('Your cancellation request was declined', 'error');
+        }
+      }
+
+      // Refresh bookings to get updated data
+      fetchBookings();
+    });
+
+    return cleanup;
+  }, [socket]);
+
+  // Listen for real-time new message notifications
+  useEffect(() => {
+    if (!socket || !socket.registerNewMessageCallback) {
+      return;
+    }
+
+    const cleanup = socket.registerNewMessageCallback((data) => {
+      console.log('Received new message notification:', data);
+      showToast(`New message from ${data.senderName || 'Professional'}`, 'info');
+    });
+
+    return cleanup;
+  }, [socket]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';

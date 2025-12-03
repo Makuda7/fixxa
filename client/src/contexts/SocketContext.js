@@ -12,7 +12,11 @@ import {
   onMessageRead,
   emitTyping as socketEmitTyping,
   emitMessageRead as socketEmitMessageRead,
-  isConnected as socketIsConnected
+  isConnected as socketIsConnected,
+  onCompletionRequest,
+  onCompletionResponse,
+  onBookingRequestResponse,
+  onNewMessage
 } from '../services/socket';
 
 const SocketContext = createContext(null);
@@ -253,6 +257,42 @@ export const SocketProvider = ({ children }) => {
     return total;
   }, [unreadMessages]);
 
+  // Register completion request callback
+  const registerCompletionRequestCallback = useCallback((callback) => {
+    if (!isConnected) {
+      console.warn('Socket not connected');
+      return () => {};
+    }
+    return onCompletionRequest(callback);
+  }, [isConnected]);
+
+  // Register completion response callback
+  const registerCompletionResponseCallback = useCallback((callback) => {
+    if (!isConnected) {
+      console.warn('Socket not connected');
+      return () => {};
+    }
+    return onCompletionResponse(callback);
+  }, [isConnected]);
+
+  // Register booking request response callback
+  const registerBookingRequestResponseCallback = useCallback((callback) => {
+    if (!isConnected) {
+      console.warn('Socket not connected');
+      return () => {};
+    }
+    return onBookingRequestResponse(callback);
+  }, [isConnected]);
+
+  // Register new message callback
+  const registerNewMessageCallback = useCallback((callback) => {
+    if (!isConnected) {
+      console.warn('Socket not connected');
+      return () => {};
+    }
+    return onNewMessage(callback);
+  }, [isConnected]);
+
   const value = {
     isConnected: isConnected && socketIsConnected(),
     onlineUsers: Array.from(onlineUsers),
@@ -263,7 +303,11 @@ export const SocketProvider = ({ children }) => {
     isUserOnline,
     isUserTyping,
     getUnreadCount,
-    getTotalUnreadCount
+    getTotalUnreadCount,
+    registerCompletionRequestCallback,
+    registerCompletionResponseCallback,
+    registerBookingRequestResponseCallback,
+    registerNewMessageCallback
   };
 
   return (
