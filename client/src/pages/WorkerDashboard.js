@@ -420,29 +420,17 @@ const WorkerDashboard = () => {
         </button>
         <button
           className={activeTab === 'profile' ? 'active' : ''}
-          onClick={() => setActiveTab('profile')}
+          onClick={() => {
+            setActiveTab('profile');
+            fetchPortfolioPhotos();
+          }}
         >
           Profile
-        </button>
-        <button
-          className={activeTab === 'certifications' ? 'active' : ''}
-          onClick={() => setActiveTab('certifications')}
-        >
-          Certifications
           {certifications.filter((c) => c.status === 'pending').length > 0 && (
             <span className="badge">
               {certifications.filter((c) => c.status === 'pending').length}
             </span>
           )}
-        </button>
-        <button
-          className={activeTab === 'portfolio' ? 'active' : ''}
-          onClick={() => {
-            setActiveTab('portfolio');
-            fetchPortfolioPhotos();
-          }}
-        >
-          Portfolio
         </button>
         <button
           className={activeTab === 'bookings' ? 'active' : ''}
@@ -912,13 +900,9 @@ const WorkerDashboard = () => {
                 )}
               </form>
             </section>
-          </div>
-        )}
 
-        {/* Certifications Tab */}
-        {activeTab === 'certifications' && (
-          <div className="certifications-tab">
-            <section className="certifications-management">
+            {/* Certifications Section */}
+            <section className="certifications-management" style={{ marginTop: '2rem' }}>
               <h3>Professional Certifications</h3>
 
               {/* Upload Section */}
@@ -982,6 +966,16 @@ const WorkerDashboard = () => {
                   ))
                 )}
               </div>
+            </section>
+
+            {/* Portfolio Section */}
+            <section style={{ marginTop: '2rem' }}>
+              <h3>Portfolio</h3>
+              <PortfolioGallery
+                photos={portfolioPhotos}
+                onUpload={handlePortfolioUpload}
+                onDelete={handlePortfolioDelete}
+              />
             </section>
           </div>
         )}
@@ -1352,17 +1346,6 @@ const WorkerDashboard = () => {
                 </div>
               )}
             </section>
-          </div>
-        )}
-
-        {/* Portfolio Tab */}
-        {activeTab === 'portfolio' && (
-          <div className="portfolio-tab">
-            <PortfolioGallery
-              photos={portfolioPhotos}
-              onUpload={handlePortfolioUpload}
-              onDelete={handlePortfolioDelete}
-            />
           </div>
         )}
 
