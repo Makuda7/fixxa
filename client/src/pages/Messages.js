@@ -203,6 +203,17 @@ const Messages = () => {
     if (!hasContent && !hasImage) return;
     if (!currentChat) return;
 
+    // Validate image URL format if present
+    if (selectedImage?.url) {
+      // Ensure it's a proper HTTP(S) URL, not a data: URL
+      if (!selectedImage.url.startsWith('http://') && !selectedImage.url.startsWith('https://')) {
+        console.error('Invalid image URL format:', selectedImage.url.substring(0, 50));
+        alert('Image upload error. Please try uploading the image again.');
+        setSelectedImage(null);
+        return;
+      }
+    }
+
     setSendingMessage(true);
     try {
       const payload = {
@@ -233,9 +244,12 @@ const Messages = () => {
         setSelectedImage(null);
         shouldAutoScroll.current = true;
         loadMessages(currentPage);
+      } else {
+        throw new Error(data.error || 'Failed to send message');
       }
     } catch (error) {
       console.error('Failed to send message:', error);
+      alert(`Failed to send message: ${error.message}`);
     } finally {
       setSendingMessage(false);
     }
