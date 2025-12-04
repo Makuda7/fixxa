@@ -2152,3 +2152,302 @@
     padding: 1rem;
   }
 }
+
+/* ===================================
+   Contact & Feedback Tab Styles
+   =================================== */
+
+.contact-feedback-tab {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.contact-feedback-tab h1 {
+  font-size: 2.25rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Section Containers */
+.contact-section,
+.suggestions-section,
+.submissions-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.contact-section h3,
+.suggestions-section h3,
+.submissions-section h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+}
+
+.section-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+/* Form Styling */
+.contact-form,
+.suggestion-form {
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 1rem;
+}
+
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-hint {
+  display: block;
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Submit Buttons */
+.btn-submit {
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-submit-contact {
+  background: forestgreen;
+  color: white;
+}
+
+.btn-submit-contact:hover {
+  background: #1e7a1e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 139, 34, 0.3);
+}
+
+.btn-submit-suggestion {
+  background: #17a2b8;
+  color: white;
+}
+
+.btn-submit-suggestion:hover {
+  background: #138496;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+/* Status Messages */
+.status-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+.status-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Submissions List */
+.submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.no-submissions {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #999;
+}
+
+.no-submissions p {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.no-submissions small {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+/* Submission Cards */
+.submission-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.submission-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.submission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.submission-type {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.type-contact {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.type-suggestion {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.submission-date {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.submission-body {
+  margin-bottom: 0.75rem;
+}
+
+.submission-body strong {
+  color: #333;
+  font-size: 1rem;
+}
+
+.submission-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submission-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-submitted {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .contact-feedback-tab {
+    padding: 0 0.5rem;
+  }
+
+  .contact-feedback-tab h1 {
+    font-size: 1.75rem;
+  }
+
+  .contact-section,
+  .suggestions-section,
+  .submissions-section {
+    padding: 1.5rem;
+  }
+
+  .contact-section h3,
+  .suggestions-section h3,
+  .submissions-section h3 {
+    font-size: 1.25rem;
+  }
+
+  .form-select,
+  .form-textarea {
+    font-size: 0.95rem;
+  }
+
+  .btn-submit {
+    padding: 0.8rem 1.25rem;
+  }
+
+  .submission-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .no-submissions {
+    padding: 2rem 1rem;
+  }
+}

@@ -47,6 +47,15 @@ const WorkerDashboard = () => {
   // Portfolio data
   const [portfolioPhotos, setPortfolioPhotos] = useState([]);
 
+  // Contact & Feedback form states
+  const [contactSubject, setContactSubject] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactStatus, setContactStatus] = useState({ show: false, message: '', type: '' });
+  const [suggestionCategory, setSuggestionCategory] = useState('');
+  const [suggestionText, setSuggestionText] = useState('');
+  const [suggestionStatus, setSuggestionStatus] = useState({ show: false, message: '', type: '' });
+  const [submissions, setSubmissions] = useState([]);
+
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -442,6 +451,127 @@ const WorkerDashboard = () => {
     window.open(url, '_blank');
   };
 
+  // Contact & Feedback handlers
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!contactSubject || !contactMessage) {
+      setContactStatus({
+        show: true,
+        message: 'Please fill in all required fields',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/support/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          worker_id: user.id,
+          subject: contactSubject,
+          message: contactMessage,
+        }),
+      });
+
+      if (response.ok) {
+        setContactStatus({
+          show: true,
+          message: '✅ Message sent successfully! We\'ll get back to you within 24 hours.',
+          type: 'success'
+        });
+        setContactSubject('');
+        setContactMessage('');
+
+        // Add to submissions
+        const newSubmission = {
+          id: Date.now(),
+          type: 'Contact',
+          subject: contactSubject,
+          date: new Date().toLocaleDateString(),
+          status: 'Pending'
+        };
+        setSubmissions([newSubmission, ...submissions]);
+
+        setTimeout(() => setContactStatus({ show: false, message: '', type: '' }), 5000);
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (err) {
+      console.error('Error sending contact message:', err);
+      setContactStatus({
+        show: true,
+        message: '❌ Failed to send message. Please try again.',
+        type: 'error'
+      });
+      setTimeout(() => setContactStatus({ show: false, message: '', type: '' }), 5000);
+    }
+  };
+
+  const handleSuggestionSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!suggestionText) {
+      setSuggestionStatus({
+        show: true,
+        message: 'Please describe your suggestion',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/support/suggestion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          worker_id: user.id,
+          category: suggestionCategory || 'Other',
+          suggestion: suggestionText,
+        }),
+      });
+
+      if (response.ok) {
+        setSuggestionStatus({
+          show: true,
+          message: '✅ Thank you for your suggestion! We appreciate your feedback.',
+          type: 'success'
+        });
+        setSuggestionCategory('');
+        setSuggestionText('');
+
+        // Add to submissions
+        const newSubmission = {
+          id: Date.now(),
+          type: 'Suggestion',
+          subject: suggestionCategory || 'Other',
+          date: new Date().toLocaleDateString(),
+          status: 'Submitted'
+        };
+        setSubmissions([newSubmission, ...submissions]);
+
+        setTimeout(() => setSuggestionStatus({ show: false, message: '', type: '' }), 5000);
+      } else {
+        throw new Error('Failed to submit suggestion');
+      }
+    } catch (err) {
+      console.error('Error submitting suggestion:', err);
+      setSuggestionStatus({
+        show: true,
+        message: '❌ Failed to submit suggestion. Please try again.',
+        type: 'error'
+      });
+      setTimeout(() => setSuggestionStatus({ show: false, message: '', type: '' }), 5000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="dashboard-loading">
@@ -566,6 +696,12 @@ const WorkerDashboard = () => {
           onClick={() => setActiveTab('rules-guidelines')}
         >
           📜 Rules & Guidelines
+        </button>
+        <button
+          className={activeTab === 'contact-feedback' ? 'active' : ''}
+          onClick={() => setActiveTab('contact-feedback')}
+        >
+          📞 Contact & Feedback
         </button>
       </nav>
 
@@ -1923,6 +2059,157 @@ const WorkerDashboard = () => {
               <p className="last-updated">
                 Last updated: January 2025
               </p>
+            </section>
+          </div>
+        )}
+
+        {/* Contact & Feedback Tab */}
+        {activeTab === 'contact-feedback' && (
+          <div className="contact-feedback-tab">
+            <h1>📞 Contact & Feedback</h1>
+
+            {/* Contact Admin Section */}
+            <section className="contact-section">
+              <h3>📞 Contact Admin Support</h3>
+              <p className="section-description">
+                Have a question, issue, or need help? Send us a message and we'll get back to you as soon as possible.
+              </p>
+
+              <form onSubmit={handleContactSubmit} className="contact-form">
+                <div className="form-group">
+                  <label htmlFor="contactSubject">Subject *</label>
+                  <select
+                    id="contactSubject"
+                    value={contactSubject}
+                    onChange={(e) => setContactSubject(e.target.value)}
+                    required
+                    className="form-select"
+                  >
+                    <option value="">-- Select a topic --</option>
+                    <option value="Account Issue">Account Issue</option>
+                    <option value="Payment/Billing Question">Payment/Billing Question</option>
+                    <option value="Booking Problem">Booking Problem</option>
+                    <option value="Technical Issue">Technical Issue</option>
+                    <option value="Profile/Verification Help">Profile/Verification Help</option>
+                    <option value="Client Dispute">Client Dispute</option>
+                    <option value="General Question">General Question</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="contactMessage">Message *</label>
+                  <textarea
+                    id="contactMessage"
+                    rows="6"
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    required
+                    className="form-textarea"
+                    placeholder="Please describe your question or issue in detail..."
+                  />
+                  <small className="form-hint">Be as specific as possible so we can help you quickly</small>
+                </div>
+
+                <button type="submit" className="btn-submit btn-submit-contact">
+                  📤 Send Message to Admin
+                </button>
+              </form>
+
+              {contactStatus.show && (
+                <div className={`status-message status-${contactStatus.type}`}>
+                  {contactStatus.message}
+                </div>
+              )}
+            </section>
+
+            {/* Feature Suggestions Section */}
+            <section className="suggestions-section">
+              <h3>💡 Suggest a Feature or Improvement</h3>
+              <p className="section-description">
+                We're constantly improving Fixxa! Share your ideas for new features or improvements you'd like to see.
+              </p>
+
+              <form onSubmit={handleSuggestionSubmit} className="suggestion-form">
+                <div className="form-group">
+                  <label htmlFor="suggestionCategory">Feature Category</label>
+                  <select
+                    id="suggestionCategory"
+                    value={suggestionCategory}
+                    onChange={(e) => setSuggestionCategory(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="">-- Optional: Select category --</option>
+                    <option value="Booking System">Booking System</option>
+                    <option value="Messaging">Messaging</option>
+                    <option value="Profile/Portfolio">Profile/Portfolio</option>
+                    <option value="Payments">Payments</option>
+                    <option value="Search/Discovery">Search/Discovery</option>
+                    <option value="Mobile App">Mobile App</option>
+                    <option value="Notifications">Notifications</option>
+                    <option value="Analytics/Reports">Analytics/Reports</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="suggestionText">Your Suggestion *</label>
+                  <textarea
+                    id="suggestionText"
+                    rows="6"
+                    value={suggestionText}
+                    onChange={(e) => setSuggestionText(e.target.value)}
+                    required
+                    className="form-textarea"
+                    placeholder="Describe your feature idea or improvement suggestion..."
+                  />
+                  <small className="form-hint">What problem would this solve? How would it help you?</small>
+                </div>
+
+                <button type="submit" className="btn-submit btn-submit-suggestion">
+                  💡 Submit Suggestion
+                </button>
+              </form>
+
+              {suggestionStatus.show && (
+                <div className={`status-message status-${suggestionStatus.type}`}>
+                  {suggestionStatus.message}
+                </div>
+              )}
+            </section>
+
+            {/* Recent Submissions Section */}
+            <section className="submissions-section">
+              <h3>📝 Your Recent Submissions</h3>
+              <p className="section-description">Track your support tickets and feature suggestions</p>
+
+              <div className="submissions-list">
+                {submissions.length === 0 ? (
+                  <div className="no-submissions">
+                    <p>No submissions yet</p>
+                    <small>Your contact messages and suggestions will appear here</small>
+                  </div>
+                ) : (
+                  submissions.map((submission) => (
+                    <div key={submission.id} className="submission-card">
+                      <div className="submission-header">
+                        <span className={`submission-type type-${submission.type.toLowerCase()}`}>
+                          {submission.type}
+                        </span>
+                        <span className="submission-date">{submission.date}</span>
+                      </div>
+                      <div className="submission-body">
+                        <strong>{submission.subject}</strong>
+                      </div>
+                      <div className="submission-footer">
+                        <span className={`submission-status status-${submission.status.toLowerCase()}`}>
+                          {submission.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </section>
           </div>
         )}
