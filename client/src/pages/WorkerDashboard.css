@@ -1380,3 +1380,167 @@
   font-size: 1rem;
   line-height: 1.6;
 }
+
+/* Getting Started Tab */
+.getting-started-tab {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.getting-started-tab > h1 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.welcome-banner {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-left: 4px solid forestgreen;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.welcome-banner h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2e7d32;
+  font-size: 1.3rem;
+}
+
+.welcome-banner p {
+  margin: 0;
+  color: #1b5e20;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.video-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.video-section h3 {
+  margin: 0 0 1.5rem 0;
+  color: forestgreen;
+  font-size: 1.2rem;
+}
+
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.video-tip {
+  color: #666;
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 1rem 0 0 0;
+}
+
+.quick-tips-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.quick-tips-section h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.tips-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  line-height: 2;
+  color: #555;
+}
+
+.tips-list li {
+  margin-bottom: 0.75rem;
+}
+
+.tips-list li strong {
+  color: #333;
+}
+
+.help-section {
+  background: #e3f2fd;
+  border-left: 4px solid #2196F3;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.help-section h3 {
+  margin: 0 0 0.5rem 0;
+  color: #1565c0;
+  font-size: 1.2rem;
+}
+
+.help-section p {
+  margin: 0 0 1rem 0;
+  color: #0d47a1;
+  line-height: 1.6;
+}
+
+.btn-contact {
+  background: #2196F3;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-contact:hover {
+  background: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+/* Mobile responsive for Getting Started */
+@media (max-width: 768px) {
+  .getting-started-tab > h1 {
+    font-size: 1.5rem;
+  }
+
+  .welcome-banner {
+    padding: 1rem;
+  }
+
+  .video-section {
+    padding: 1.5rem;
+  }
+
+  .quick-tips-section {
+    padding: 1rem;
+  }
+
+  .tips-list {
+    line-height: 1.8;
+  }
+
+  .help-section {
+    padding: 1rem;
+  }
+}

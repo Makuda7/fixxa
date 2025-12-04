@@ -549,6 +549,12 @@ const WorkerDashboard = () => {
         >
           Messages
         </button>
+        <button
+          className={activeTab === 'getting-started' ? 'active' : ''}
+          onClick={() => setActiveTab('getting-started')}
+        >
+          🎬 Getting Started
+        </button>
       </nav>
 
       {/* Main Content */}
@@ -1449,6 +1455,88 @@ const WorkerDashboard = () => {
         {activeTab === 'messages' && (
           <div className="messages-tab">
             <Messages />
+          </div>
+        )}
+
+        {/* Getting Started Tab */}
+        {activeTab === 'getting-started' && (
+          <div className="getting-started-tab">
+            <h1>🎬 Getting Started with Fixxa</h1>
+
+            {/* Welcome Banner */}
+            <div className="welcome-banner">
+              <h3>👋 Welcome to Fixxa!</h3>
+              <p>
+                Watch this video to learn how to use the Fixxa platform, manage your bookings,
+                communicate with clients, and grow your business. This tutorial covers everything
+                you need to know to get started and succeed on Fixxa.
+              </p>
+            </div>
+
+            {/* Video Section */}
+            <section className="video-section">
+              <h3>📺 How to Get Started with Fixxa</h3>
+
+              <div className="video-container">
+                <iframe
+                  src="https://www.youtube.com/embed/eloSnb-dKRE?si=sd9JQ-3nwaHfDRgG"
+                  title="Fixxa Tutorial - How to Get Started"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
+
+              <p className="video-tip">
+                💡 <strong>Tip:</strong> Watch this video whenever you need help navigating the platform
+              </p>
+            </section>
+
+            {/* Quick Tips Section */}
+            <section className="quick-tips-section">
+              <h3>🚀 Quick Tips for Success</h3>
+              <ul className="tips-list">
+                <li>
+                  <strong>Complete Your Profile:</strong> Add a professional bio, experience,
+                  and certifications to attract more clients
+                </li>
+                <li>
+                  <strong>Upload Portfolio Photos:</strong> Showcase your best work to build
+                  trust with potential clients
+                </li>
+                <li>
+                  <strong>Respond Quickly:</strong> Reply to booking requests within 24 hours
+                  to maintain a high acceptance rate
+                </li>
+                <li>
+                  <strong>Use Professional Communication:</strong> Always be courteous and
+                  professional in your messages
+                </li>
+                <li>
+                  <strong>Send Detailed Quotes:</strong> Break down costs clearly and keep
+                  receipts for materials
+                </li>
+                <li>
+                  <strong>Ask for Reviews:</strong> Encourage satisfied clients to leave
+                  reviews to boost your profile
+                </li>
+              </ul>
+            </section>
+
+            {/* Need Help Section */}
+            <section className="help-section">
+              <h3>❓ Need Help?</h3>
+              <p>
+                If you have questions or need assistance, our support team is here to help you succeed.
+              </p>
+              <button
+                className="btn-contact"
+                onClick={() => window.location.href = 'mailto:support@fixxa.co.za'}
+              >
+                Contact Support
+              </button>
+            </section>
           </div>
         )}
       </main>
