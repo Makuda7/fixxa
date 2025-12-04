@@ -561,6 +561,12 @@ const WorkerDashboard = () => {
         >
           💡 FixxaTips
         </button>
+        <button
+          className={activeTab === 'rules-guidelines' ? 'active' : ''}
+          onClick={() => setActiveTab('rules-guidelines')}
+        >
+          📜 Rules & Guidelines
+        </button>
       </nav>
 
       {/* Main Content */}
@@ -1705,6 +1711,218 @@ const WorkerDashboard = () => {
                   Back to Dashboard
                 </button>
               </div>
+            </section>
+          </div>
+        )}
+
+        {/* Rules & Guidelines Tab */}
+        {activeTab === 'rules-guidelines' && (
+          <div className="rules-guidelines-tab">
+            <h1>📜 Platform Rules & Guidelines</h1>
+
+            {/* Important Notice Banner */}
+            <div className="rules-notice-banner">
+              <h3>⚠️ Important Notice</h3>
+              <p>
+                These rules protect you, our clients, and the integrity of the Fixxa platform. Violations may result in account suspension or permanent removal from the platform. Please read carefully and comply with all guidelines.
+              </p>
+            </div>
+
+            {/* Communication Rules */}
+            <section className="rule-section">
+              <h3 className="rule-heading rule-danger">🚫 Prohibited: Sharing Contact Information</h3>
+              <div className="rule-card rule-card-danger">
+                <h4>You MUST NOT share or request:</h4>
+                <ul className="rule-list">
+                  <li>Phone numbers (yours or theirs)</li>
+                  <li>Email addresses</li>
+                  <li>WhatsApp, Telegram, or other messaging app contacts</li>
+                  <li>Social media profiles (Facebook, Instagram, etc.)</li>
+                  <li>Physical addresses before booking approval</li>
+                </ul>
+                <div className="rule-warning-box">
+                  <strong>⚠️ Warning:</strong>
+                  <p>
+                    All messages are monitored. Sharing contact info or screenshots containing contact details will result in immediate account suspension.
+                  </p>
+                </div>
+              </div>
+              <p className="rule-explanation">
+                ✅ <strong>Why?</strong> Keeping communication on-platform protects both parties, ensures quality service, and allows us to help resolve disputes.
+              </p>
+            </section>
+
+            {/* Payment Guidelines */}
+            <section className="rule-section">
+              <h3 className="rule-heading rule-success">💳 Payment Guidelines & Best Practices</h3>
+              <div className="rule-card rule-card-success">
+                <h4>✅ Accepted Payment Methods:</h4>
+                <ul className="rule-list">
+                  <li><strong>Bank Transfer (EFT) - RECOMMENDED</strong> - Safest option with clear payment trail</li>
+                  <li>Cash - Only upon job completion and with receipt</li>
+                  <li>Mobile payment apps (SnapScan, Zapper, etc.)</li>
+                </ul>
+
+                <div className="rule-important-box">
+                  <strong>⚠️ IMPORTANT - Always Provide Receipts:</strong>
+                  <p>
+                    <strong>You MUST provide a receipt for every payment received.</strong> This protects both you and the client. Include: Date, service description, amount paid, and your contact details.
+                  </p>
+                </div>
+
+                <h4 style={{marginTop: '1rem'}}>✅ Payment Best Practices:</h4>
+                <ul className="rule-list">
+                  <li>Discuss and agree on pricing BEFORE starting any work</li>
+                  <li>For large jobs, a deposit (30-50%) is acceptable</li>
+                  <li>Collect final payment only after work is completed to client's satisfaction</li>
+                  <li>Keep your own records of all payments received</li>
+                  <li>If a client disputes payment, report it through the Fixxa platform</li>
+                </ul>
+              </div>
+
+              <div className="rule-danger-box">
+                <strong>🚫 Never Accept:</strong>
+                <p>
+                  Cryptocurrency, gift cards, or suspicious payment methods. If a client requests unusual payment methods, report it to Fixxa support immediately.
+                </p>
+              </div>
+
+              <p className="rule-explanation">
+                ✅ <strong>Why these guidelines?</strong> Following safe payment practices protects your earnings, builds trust with clients, and helps resolve disputes if they occur.
+              </p>
+            </section>
+
+            {/* Professional Conduct */}
+            <section className="rule-section">
+              <h3 className="rule-heading rule-success">✅ Required: Professional Conduct</h3>
+              <div className="rule-card rule-card-success">
+                <h4>You MUST:</h4>
+                <ul className="rule-list">
+                  <li>✅ Respond to messages within 24 hours</li>
+                  <li>✅ Provide accurate availability and pricing information</li>
+                  <li>✅ Show up on time for confirmed bookings</li>
+                  <li>✅ Complete jobs to the best of your ability</li>
+                  <li>✅ Be respectful and professional at all times</li>
+                  <li>✅ Report any issues or disputes through the platform</li>
+                  <li>✅ Update your profile with accurate qualifications</li>
+                  <li>✅ Upload legitimate certifications and credentials</li>
+                </ul>
+              </div>
+            </section>
+
+            {/* Booking & Scheduling Rules */}
+            <section className="rule-section">
+              <h3 className="rule-heading rule-info">📅 Booking & Scheduling Guidelines</h3>
+              <div className="rule-card rule-card-info">
+                <ul className="rule-list">
+                  <li><strong>Accept/Decline Promptly:</strong> Respond to booking requests within 24 hours</li>
+                  <li><strong>No Last-Minute Cancellations:</strong> Canceling less than 12 hours before a booking may affect your rating</li>
+                  <li><strong>Reschedule Requests:</strong> Use the platform's reschedule feature, don't arrange outside</li>
+                  <li><strong>Availability Updates:</strong> Keep your schedule current to avoid double bookings</li>
+                  <li><strong>No-Shows:</strong> Failing to show up without notice can result in account suspension</li>
+                </ul>
+              </div>
+            </section>
+
+            {/* Image & Content Guidelines */}
+            <section className="rule-section">
+              <h3 className="rule-heading rule-secondary">📸 Image & Content Guidelines</h3>
+              <div className="rule-card rule-card-secondary">
+                <h4>Profile Photos & Portfolio:</h4>
+                <ul className="rule-list">
+                  <li>❌ No screenshots containing contact information</li>
+                  <li>❌ No inappropriate, offensive, or misleading images</li>
+                  <li>✅ Use professional photos of your actual work</li>
+                  <li>✅ Ensure photos are clear and well-lit</li>
+                  <li>✅ Only upload work you personally completed</li>
+                </ul>
+                <div className="rule-important-box">
+                  <strong>Note:</strong>
+                  <p>
+                    Workers cannot send images to clients (security measure). Clients can share job photos with you.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Verification & Certification Rules */}
+            <section className="rule-section">
+              <h3 className="rule-heading rule-purple">🎓 Verification & Certification Rules</h3>
+              <div className="rule-card rule-card-purple">
+                <ul className="rule-list">
+                  <li><strong>No Fake Certificates:</strong> Only upload genuine, verifiable credentials</li>
+                  <li><strong>Accurate Information:</strong> All profile information must be truthful</li>
+                  <li><strong>Verification Process:</strong> Submit required documents promptly for verification</li>
+                  <li><strong>Update Expired Credentials:</strong> Keep certifications current</li>
+                </ul>
+                <div className="rule-danger-box">
+                  <strong>⚠️ Serious Violation:</strong>
+                  <p>
+                    Submitting fake certifications or credentials will result in immediate permanent ban and potential legal action.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Dispute Resolution */}
+            <section className="rule-section">
+              <h3 className="rule-heading rule-warning">⚖️ Dispute Resolution</h3>
+              <div className="rule-card rule-card-warning">
+                <p style={{marginTop: 0}}><strong>If you have a problem with a client or booking:</strong></p>
+                <ul className="rule-list">
+                  <li>✅ Contact admin support through the "Contact & Feedback" tab</li>
+                  <li>✅ Provide screenshots of messages (if relevant)</li>
+                  <li>✅ Explain the issue clearly and professionally</li>
+                  <li>❌ Do NOT contact the client outside the platform</li>
+                  <li>❌ Do NOT leave negative public comments</li>
+                  <li>❌ Do NOT retaliate or harass the client</li>
+                </ul>
+              </div>
+            </section>
+
+            {/* Consequences Section */}
+            <section className="consequences-section">
+              <h3>🚨 Consequences of Rule Violations</h3>
+              <div className="consequences-content">
+                <div className="consequence-level">
+                  <h4>First Offense:</h4>
+                  <ul>
+                    <li>⚠️ Written warning</li>
+                    <li>⚠️ 7-day account suspension</li>
+                    <li>⚠️ Visibility reduction in search results</li>
+                  </ul>
+                </div>
+
+                <div className="consequence-level">
+                  <h4>Second Offense:</h4>
+                  <ul>
+                    <li>🚫 30-day account suspension</li>
+                    <li>🚫 Loss of verification status</li>
+                    <li>🚫 Pending earnings held for review</li>
+                  </ul>
+                </div>
+
+                <div className="consequence-level">
+                  <h4>Third Offense / Serious Violations:</h4>
+                  <ul>
+                    <li>❌ Permanent account termination</li>
+                    <li>❌ Forfeiture of all pending earnings</li>
+                    <li>❌ Ban from re-registering on Fixxa</li>
+                    <li>❌ Potential legal action (for fraud or serious misconduct)</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* Acknowledgment Section */}
+            <section className="acknowledgment-section">
+              <h3>✅ Acknowledgment</h3>
+              <p>
+                By using the Fixxa platform, you acknowledge that you have read, understood, and agree to comply with all rules and guidelines outlined above. These rules are in place to create a safe, fair, and professional environment for everyone.
+              </p>
+              <p className="last-updated">
+                Last updated: January 2025
+              </p>
             </section>
           </div>
         )}

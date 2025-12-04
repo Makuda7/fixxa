@@ -1843,3 +1843,312 @@
     width: 100%;
   }
 }
+
+/* ===================================
+   Rules & Guidelines Tab Styles
+   =================================== */
+
+.rules-guidelines-tab {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.rules-guidelines-tab h1 {
+  font-size: 2.25rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Important Notice Banner */
+.rules-notice-banner {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+  border-left: 4px solid #ffc107;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.rules-notice-banner h3 {
+  margin: 0 0 0.5rem 0;
+  color: #856404;
+  font-size: 1.25rem;
+}
+
+.rules-notice-banner p {
+  margin: 0;
+  color: #856404;
+  line-height: 1.6;
+}
+
+/* Rule Section */
+.rule-section {
+  margin-bottom: 2.5rem;
+}
+
+.rule-heading {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.rule-heading.rule-danger {
+  color: #dc3545;
+}
+
+.rule-heading.rule-success {
+  color: #228b22;
+}
+
+.rule-heading.rule-info {
+  color: #17a2b8;
+}
+
+.rule-heading.rule-secondary {
+  color: #6c757d;
+}
+
+.rule-heading.rule-purple {
+  color: #6f42c1;
+}
+
+.rule-heading.rule-warning {
+  color: #fd7e14;
+}
+
+/* Rule Cards */
+.rule-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.rule-card-danger {
+  border: 2px solid #dc3545;
+}
+
+.rule-card-success {
+  border: 2px solid #28a745;
+}
+
+.rule-card-info {
+  border: 2px solid #17a2b8;
+}
+
+.rule-card-secondary {
+  border: 2px solid #6c757d;
+}
+
+.rule-card-purple {
+  border: 2px solid #6f42c1;
+}
+
+.rule-card-warning {
+  border: 2px solid #fd7e14;
+}
+
+.rule-card h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.rule-card-danger h4 {
+  color: #dc3545;
+}
+
+.rule-card-success h4 {
+  color: #155724;
+}
+
+/* Rule List */
+.rule-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  line-height: 2;
+}
+
+.rule-list li {
+  margin-bottom: 0.5rem;
+}
+
+/* Warning/Important Boxes */
+.rule-warning-box {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+  padding: 1rem;
+  margin-top: 1rem;
+  border-radius: 4px;
+}
+
+.rule-warning-box strong {
+  color: #721c24;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.rule-warning-box p {
+  margin: 0;
+  color: #721c24;
+  line-height: 1.6;
+}
+
+.rule-important-box {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+
+.rule-important-box strong {
+  color: #856404;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.rule-important-box p {
+  margin: 0;
+  color: #856404;
+  line-height: 1.6;
+}
+
+.rule-danger-box {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+.rule-danger-box strong {
+  color: #721c24;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.rule-danger-box p {
+  margin: 0;
+  color: #721c24;
+  line-height: 1.6;
+}
+
+/* Rule Explanation */
+.rule-explanation {
+  color: #666;
+  font-style: italic;
+  margin-top: 1rem;
+  line-height: 1.6;
+}
+
+/* Consequences Section */
+.consequences-section {
+  background: #dc3545;
+  color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.consequences-section h3 {
+  color: white;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.consequences-content {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.consequence-level {
+  margin-bottom: 1.5rem;
+}
+
+.consequence-level:last-child {
+  margin-bottom: 0;
+}
+
+.consequence-level h4 {
+  color: white;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.15rem;
+}
+
+.consequence-level ul {
+  line-height: 2;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.consequence-level li {
+  margin-bottom: 0.5rem;
+}
+
+/* Acknowledgment Section */
+.acknowledgment-section {
+  background: linear-gradient(135deg, #228b22 0%, #1e7a1e 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.acknowledgment-section h3 {
+  color: white;
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+}
+
+.acknowledgment-section p {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.acknowledgment-section .last-updated {
+  margin-top: 1rem;
+  font-style: italic;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .rules-guidelines-tab {
+    padding: 0 0.5rem;
+  }
+
+  .rules-guidelines-tab h1 {
+    font-size: 1.75rem;
+  }
+
+  .rule-heading {
+    font-size: 1.25rem;
+  }
+
+  .rules-notice-banner,
+  .rule-card,
+  .consequences-section,
+  .acknowledgment-section {
+    padding: 1rem;
+  }
+
+  .rule-list {
+    padding-left: 1.2rem;
+    line-height: 1.8;
+  }
+
+  .consequences-content {
+    padding: 1rem;
+  }
+}
