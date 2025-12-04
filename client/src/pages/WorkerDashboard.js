@@ -555,6 +555,12 @@ const WorkerDashboard = () => {
         >
           🎬 Getting Started
         </button>
+        <button
+          className={activeTab === 'fixxa-tips' ? 'active' : ''}
+          onClick={() => setActiveTab('fixxa-tips')}
+        >
+          💡 FixxaTips
+        </button>
       </nav>
 
       {/* Main Content */}
@@ -1536,6 +1542,169 @@ const WorkerDashboard = () => {
               >
                 Contact Support
               </button>
+            </section>
+          </div>
+        )}
+
+        {/* FixxaTips Tab */}
+        {activeTab === 'fixxa-tips' && (
+          <div className="fixxa-tips-tab">
+            <h1>💡 FixxaTips: Get the Best Out of Fixxa</h1>
+
+            {/* Intro Banner */}
+            <div className="tips-intro-banner">
+              <h3>🚀 Maximize Your Success</h3>
+              <p>
+                Follow these proven tips to attract more clients, earn better reviews,
+                and grow your business on Fixxa!
+              </p>
+            </div>
+
+            {/* Tip 1: Keep Your Profile Polished */}
+            <section className="tip-card tip-green">
+              <h3>
+                <span className="tip-icon">🏆</span>
+                Tip 1: Keep Your Profile Polished
+              </h3>
+              <p className="tip-impact">
+                <strong>Profiles with clear photos, professional descriptions, and verified badges get 3x more bookings.</strong>
+              </p>
+              <p className="tip-description">
+                Update your profile photo, add a compelling bio describing your skills, upload portfolio
+                images of your best work, and keep your certifications current. A complete profile builds trust!
+              </p>
+            </section>
+
+            {/* Tip 2: Choose the Right Suburbs */}
+            <section className="tip-card tip-blue">
+              <h3>
+                <span className="tip-icon">📍</span>
+                Tip 2: Choose the Right Suburbs
+              </h3>
+              <p className="tip-impact">
+                <strong>List areas you actually want to work in — clients prefer local pros who can arrive quickly.</strong>
+              </p>
+              <p className="tip-description">
+                Be specific about your service areas. Clients search by location and choose professionals nearby.
+                Update your primary and secondary service areas to match where you're willing to travel.
+              </p>
+            </section>
+
+            {/* Tip 3: Respond Fast */}
+            <section className="tip-card tip-yellow">
+              <h3>
+                <span className="tip-icon">⚡</span>
+                Tip 3: Respond Fast
+              </h3>
+              <p className="tip-impact">
+                <strong>When job requests come in, speed matters!</strong> Clients often pick the first few pros who reply.
+              </p>
+              <p className="tip-description">
+                Turn on push notifications, check the app regularly, and respond within minutes when possible.
+                A quick "I'm available and interested!" can win you the job before competitors even see it.
+              </p>
+            </section>
+
+            {/* Tip 4: Communicate Clearly */}
+            <section className="tip-card tip-purple">
+              <h3>
+                <span className="tip-icon">💬</span>
+                Tip 4: Communicate Clearly
+              </h3>
+              <p className="tip-impact">
+                <strong>Keep messages polite and professional.</strong>
+              </p>
+              <div className="example-message">
+                <p className="example-label">Example Message:</p>
+                <p className="example-text">
+                  "Hi there! Thanks for reaching out. I can assist with that tomorrow morning. Does 9am work for you?"
+                </p>
+              </div>
+              <p className="tip-description">
+                Be friendly, confirm details, ask questions if anything is unclear, and always follow up.
+                Good communication builds confidence and leads to repeat business.
+              </p>
+            </section>
+
+            {/* Tip 5: Collect Reviews */}
+            <section className="tip-card tip-orange">
+              <h3>
+                <span className="tip-icon">⭐</span>
+                Tip 5: Collect Reviews
+              </h3>
+              <p className="tip-impact">
+                <strong>After each job, kindly ask your client to leave a review.</strong>
+              </p>
+              <p className="tip-description">
+                Positive reviews boost your ranking and make future clients confident to hire you.
+                A simple "If you're happy with my work, I'd really appreciate a review!" goes a long way.
+                Reviews are your best marketing tool.
+              </p>
+            </section>
+
+            {/* Tip 6: Go the Extra Mile */}
+            <section className="tip-card tip-cyan">
+              <h3>
+                <span className="tip-icon">🔧</span>
+                Tip 6: Go the Extra Mile
+              </h3>
+              <p className="tip-impact">
+                <strong>A simple thank-you, clean workspace, or small gesture goes a long way.</strong>
+              </p>
+              <p className="tip-description">
+                Happy clients bring repeat work — and referrals. Clean up after yourself, arrive on time,
+                exceed expectations, and treat every job like it matters. Word-of-mouth is powerful on Fixxa!
+              </p>
+            </section>
+
+            {/* Tip 7: Stay Active */}
+            <section className="tip-card tip-light-green">
+              <h3>
+                <span className="tip-icon">🚀</span>
+                Tip 7: Stay Active
+              </h3>
+              <p className="tip-impact">
+                <strong>Log in regularly, update your profile, and keep your calendar accurate.</strong>
+              </p>
+              <p className="tip-description">
+                The more active you are, the more Fixxa promotes you in search results. Set your availability
+                correctly, respond to messages promptly, and stay engaged. Active professionals get more
+                visibility and more jobs!
+              </p>
+            </section>
+
+            {/* Bonus Tip */}
+            <section className="bonus-tip">
+              <h3>
+                <span className="tip-icon">✨</span>
+                Bonus Tip: Build Your Reputation
+              </h3>
+              <p>
+                <strong>Consistency is key!</strong> Follow these tips regularly, deliver quality work, and watch
+                your bookings grow. The top-rated professionals on Fixxa didn't get there overnight — they earned
+                it through great service, one job at a time. You can too! 🎯
+              </p>
+            </section>
+
+            {/* Call to Action */}
+            <section className="tips-cta">
+              <p className="cta-text">
+                <strong>Ready to put these tips into action?</strong>
+              </p>
+              <div className="cta-buttons">
+                <button
+                  className="btn-primary-cta"
+                  onClick={() => setActiveTab('profile')}
+                >
+                  Update My Profile
+                </button>
+                <button
+                  className="btn-secondary-cta"
+                  onClick={() => setActiveTab('overview')}
+                >
+                  Back to Dashboard
+                </button>
+              </div>
             </section>
           </div>
         )}

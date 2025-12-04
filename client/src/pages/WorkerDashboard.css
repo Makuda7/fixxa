@@ -1544,3 +1544,302 @@
     padding: 1rem;
   }
 }
+
+/* FixxaTips Tab */
+.fixxa-tips-tab {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.fixxa-tips-tab > h1 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.tips-intro-banner {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-left: 4px solid #ff9800;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.tips-intro-banner h3 {
+  margin: 0 0 0.5rem 0;
+  color: #e65100;
+  font-size: 1.3rem;
+}
+
+.tips-intro-banner p {
+  margin: 0;
+  color: #bf360c;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.tip-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #ccc;
+}
+
+.tip-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tip-icon {
+  font-size: 1.5rem;
+}
+
+.tip-impact {
+  margin: 0 0 0.8rem 0;
+  color: #555;
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.tip-description {
+  margin: 0;
+  color: #666;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  padding-left: 1rem;
+  border-left: 3px solid #e0e0e0;
+}
+
+/* Tip color variants */
+.tip-green {
+  border-left-color: #4caf50;
+}
+
+.tip-green h3 {
+  color: #2e7d32;
+}
+
+.tip-green .tip-description {
+  border-left-color: #c8e6c9;
+}
+
+.tip-blue {
+  border-left-color: #2196F3;
+}
+
+.tip-blue h3 {
+  color: #1565c0;
+}
+
+.tip-blue .tip-description {
+  border-left-color: #bbdefb;
+}
+
+.tip-yellow {
+  border-left-color: #ffc107;
+}
+
+.tip-yellow h3 {
+  color: #f57f17;
+}
+
+.tip-yellow .tip-description {
+  border-left-color: #fff9c4;
+}
+
+.tip-purple {
+  border-left-color: #9c27b0;
+}
+
+.tip-purple h3 {
+  color: #6a1b9a;
+}
+
+.tip-purple .tip-description {
+  border-left-color: #e1bee7;
+}
+
+.tip-orange {
+  border-left-color: #ff5722;
+}
+
+.tip-orange h3 {
+  color: #d84315;
+}
+
+.tip-orange .tip-description {
+  border-left-color: #ffccbc;
+}
+
+.tip-cyan {
+  border-left-color: #00bcd4;
+}
+
+.tip-cyan h3 {
+  color: #006064;
+}
+
+.tip-cyan .tip-description {
+  border-left-color: #b2ebf2;
+}
+
+.tip-light-green {
+  border-left-color: #8bc34a;
+}
+
+.tip-light-green h3 {
+  color: #33691e;
+}
+
+.tip-light-green .tip-description {
+  border-left-color: #dcedc8;
+}
+
+/* Example message box */
+.example-message {
+  background: #f3e5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.8rem;
+}
+
+.example-label {
+  margin: 0 0 0.3rem 0;
+  font-size: 0.85rem;
+  color: #6a1b9a;
+  font-weight: 600;
+}
+
+.example-text {
+  margin: 0;
+  color: #4a148c;
+  font-style: italic;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Bonus Tip */
+.bonus-tip {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  border-radius: 12px;
+  padding: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #9c27b0;
+}
+
+.bonus-tip h3 {
+  margin: 0 0 1rem 0;
+  color: #6a1b9a;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bonus-tip p {
+  margin: 0;
+  color: #4a148c;
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+/* Call to Action */
+.tips-cta {
+  background: #e8f5e9;
+  border-left: 4px solid forestgreen;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.cta-text {
+  margin: 0 0 1rem 0;
+  color: #1b5e20;
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-primary-cta {
+  background: forestgreen;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-primary-cta:hover {
+  background: #1b5e20;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 139, 34, 0.3);
+}
+
+.btn-secondary-cta {
+  background: #2196F3;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary-cta:hover {
+  background: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+/* Mobile responsive for FixxaTips */
+@media (max-width: 768px) {
+  .fixxa-tips-tab > h1 {
+    font-size: 1.5rem;
+  }
+
+  .tips-intro-banner {
+    padding: 1rem;
+  }
+
+  .tip-card {
+    padding: 1.2rem;
+  }
+
+  .tip-icon {
+    font-size: 1.3rem;
+  }
+
+  .tip-description {
+    padding-left: 0.75rem;
+  }
+
+  .bonus-tip {
+    padding: 1.2rem;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .btn-primary-cta,
+  .btn-secondary-cta {
+    width: 100%;
+  }
+}
