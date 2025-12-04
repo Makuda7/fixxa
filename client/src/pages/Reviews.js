@@ -388,10 +388,14 @@ const Reviews = () => {
 
     setSubmitting(true);
     try {
-      await api.put(`/reviews/${selectedReview.id}`, formData);
+      await api.put(`/reviews/${selectedReview.id}`, {
+        ...formData,
+        photos: uploadedPhotos
+      });
 
       showToast('Review updated successfully!', 'success');
       setShowEditModal(false);
+      setUploadedPhotos([]);
       await fetchMyReviews();
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Failed to update review';
