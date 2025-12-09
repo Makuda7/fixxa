@@ -50,6 +50,16 @@ const ClientDashboard = () => {
   const [rescheduleReason, setRescheduleReason] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showNewReviewModal, setShowNewReviewModal] = useState(false);
+  const [serviceAddress, setServiceAddress] = useState('');
+  const [submittingAddress, setSubmittingAddress] = useState(false);
+  const [showRejectQuoteModal, setShowRejectQuoteModal] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState(null);
+  const [quoteRejectionReason, setQuoteRejectionReason] = useState('');
+  const [submittingQuoteAction, setSubmittingQuoteAction] = useState(false);
+  const [reviewPhotos, setReviewPhotos] = useState([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef(null);
+  const [recentInquiries, setRecentInquiries] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -123,7 +133,8 @@ const ClientDashboard = () => {
         fetchBookings(),
         fetchUnreadCount(),
         fetchCompletionRequests(),
-        fetchReviews()
+        fetchReviews(),
+        fetchRecentInquiries()
       ]);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -169,6 +180,38 @@ const ClientDashboard = () => {
     } catch (err) {
       console.error('Failed to fetch reviews:', err);
       // Silently fail - endpoint may not exist yet
+    }
+  };
+
+  const fetchRecentInquiries = async () => {
+    try {
+      const response = await api.get('/messages');
+      const messages = response.data || [];
+
+      // Group messages by professional
+      const conversations = {};
+      messages.forEach(msg => {
+        const key = msg.professional_id || 'unknown';
+        if (!conversations[key]) {
+          conversations[key] = {
+            professional_id: msg.professional_id,
+            professional_name: msg.professional_name || 'Professional',
+            messages: []
+          };
+        }
+        conversations[key].messages.push(msg);
+      });
+
+      // Convert to array and get last 3 messages for each conversation
+      const conversationsArray = Object.values(conversations).map(conv => ({
+        ...conv,
+        recentMessages: conv.messages.slice(-3)
+      }));
+
+      setRecentInquiries(conversationsArray);
+    } catch (err) {
+      console.error('Failed to fetch inquiries:', err);
+      // Silently fail - not critical
     }
   };
 
@@ -330,6 +373,7 @@ const ClientDashboard = () => {
       communication: review.communication_rating || 0,
       value: review.value_rating || 0
     });
+    setReviewPhotos(review.photos || []);
     setShowEditReviewModal(true);
   };
 
@@ -387,11 +431,106 @@ const ClientDashboard = () => {
       communication: 0,
       value: 0
     });
+    setReviewPhotos([]);
+  };
+
+  const handleAddPhotoClick = () => {
+    if (photoInputRef.current) {
+      photoInputRef.current.click();
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!selectedReview) {
+      showToast('No review selected', 'error');
+      return;
+    }
+
+    // Validate photo count
+    if (reviewPhotos.length >= 5) {
+      showToast('Maximum 5 photos allowed', 'error');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('File size must be less than 5MB', 'error');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'error');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+      const response = await api.post(`/reviews/${selectedReview.id}/upload-photo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.success) {
+        showToast('Photo added successfully', 'success');
+        setReviewPhotos(response.data.allPhotos || []);
+        // Update selectedReview with new photos
+        setSelectedReview({
+          ...selectedReview,
+          photos: response.data.allPhotos || []
+        });
+      } else {
+        showToast(response.data.error || 'Upload failed', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to upload photo:', err);
+      showToast(err.response?.data?.error || 'Error uploading photo', 'error');
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemovePhoto = async (photoUrl) => {
+    if (!selectedReview) return;
+    if (!window.confirm('Remove this photo?')) return;
+
+    try {
+      const response = await api.delete(`/reviews/${selectedReview.id}/photos`, {
+        data: { photoUrl }
+      });
+
+      if (response.data.success) {
+        showToast('Photo removed', 'success');
+        setReviewPhotos(response.data.photos || []);
+        // Update selectedReview with remaining photos
+        setSelectedReview({
+          ...selectedReview,
+          photos: response.data.photos || []
+        });
+      } else {
+        showToast(response.data.error || 'Failed to remove photo', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to remove photo:', err);
+      showToast(err.response?.data?.error || 'Error removing photo', 'error');
+    }
   };
 
   // Phase 5: Booking details and actions
   const handleOpenBookingDetails = (booking) => {
     setSelectedBooking(booking);
+    setServiceAddress(''); // Reset address field when opening modal
     setShowBookingDetailsModal(true);
   };
 
@@ -536,6 +675,136 @@ const ClientDashboard = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmitServiceAddress = async () => {
+    if (!serviceAddress.trim()) {
+      showToast('Please enter your service address', 'error');
+      return;
+    }
+
+    if (serviceAddress.length < 10) {
+      showToast('Please provide a complete address with street, suburb, and city', 'error');
+      return;
+    }
+
+    setSubmittingAddress(true);
+    try {
+      await api.post(`/bookings/${selectedBooking.id}/submit-address`, {
+        service_address: serviceAddress
+      });
+
+      showToast('✅ Service address shared with professional!', 'success');
+      setServiceAddress('');
+
+      // Refresh bookings to show updated address
+      await fetchBookings();
+
+      // Update selectedBooking with new address
+      setSelectedBooking({
+        ...selectedBooking,
+        service_address: serviceAddress,
+        service_address_provided_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('Failed to submit address:', err);
+      showToast(err.response?.data?.error || 'Failed to submit address', 'error');
+    } finally {
+      setSubmittingAddress(false);
+    }
+  };
+
+  const handleAcceptQuote = async (quote, booking) => {
+    if (!window.confirm('Accept this quote? The job will be confirmed.')) {
+      return;
+    }
+
+    setSubmittingQuoteAction(true);
+    try {
+      const response = await api.post(`/quotes/${quote.id}/accept`);
+
+      if (response.data.success) {
+        showToast('✅ Quote accepted! Booking confirmed.', 'success');
+
+        // Refresh bookings to show updated quote status
+        await fetchBookings();
+
+        // Update selectedBooking if modal is open
+        if (selectedBooking && selectedBooking.id === booking.id) {
+          setSelectedBooking({
+            ...selectedBooking,
+            quote: {
+              ...quote,
+              status: 'accepted'
+            },
+            status: 'confirmed'
+          });
+        }
+      } else {
+        showToast(response.data.error || 'Failed to accept quote', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to accept quote:', err);
+      showToast(err.response?.data?.error || 'Failed to accept quote', 'error');
+    } finally {
+      setSubmittingQuoteAction(false);
+    }
+  };
+
+  const handleOpenRejectQuoteModal = (quote, booking) => {
+    setSelectedQuote({ quote, booking });
+    setQuoteRejectionReason('');
+    setShowRejectQuoteModal(true);
+  };
+
+  const handleRejectQuote = async () => {
+    if (!quoteRejectionReason.trim()) {
+      showToast('Please provide a reason for declining the quote', 'error');
+      return;
+    }
+
+    setSubmittingQuoteAction(true);
+    try {
+      const response = await api.post(`/quotes/${selectedQuote.quote.id}/reject`, {
+        reason: quoteRejectionReason
+      });
+
+      if (response.data.success) {
+        showToast('Quote declined', 'success');
+
+        // Refresh bookings to show updated quote status
+        await fetchBookings();
+
+        // Update selectedBooking if modal is open
+        if (selectedBooking && selectedBooking.id === selectedQuote.booking.id) {
+          setSelectedBooking({
+            ...selectedBooking,
+            quote: {
+              ...selectedQuote.quote,
+              status: 'rejected'
+            }
+          });
+        }
+
+        // Close modal
+        setShowRejectQuoteModal(false);
+        setSelectedQuote(null);
+        setQuoteRejectionReason('');
+      } else {
+        showToast(response.data.error || 'Failed to decline quote', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to reject quote:', err);
+      showToast(err.response?.data?.error || 'Failed to decline quote', 'error');
+    } finally {
+      setSubmittingQuoteAction(false);
+    }
+  };
+
+  const handleCloseRejectQuoteModal = () => {
+    setShowRejectQuoteModal(false);
+    setSelectedQuote(null);
+    setQuoteRejectionReason('');
   };
 
   if (loading) {
@@ -742,6 +1011,144 @@ const ClientDashboard = () => {
                   )}
                 </div>
 
+                {/* Address Required Alert */}
+                {(booking.status === 'confirmed' || booking.status === 'Confirmed') && !booking.service_address && (
+                  <div style={{
+                    background: '#fff3cd',
+                    border: '1px solid #ffc107',
+                    borderRadius: '6px',
+                    padding: '0.75rem',
+                    marginTop: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '1.25rem' }}>📍</span>
+                    <span style={{ fontSize: '0.9rem', color: '#856404', fontWeight: 500 }}>
+                      Service address required - Click "View Details" to provide
+                    </span>
+                  </div>
+                )}
+
+                {/* Quote Display */}
+                {booking.quote && (
+                  <div style={{
+                    background: booking.quote.status === 'pending' ? '#e3f2fd' : booking.quote.status === 'accepted' ? '#d4edda' : '#f8d7da',
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    marginTop: '0.75rem',
+                    borderLeft: `4px solid ${booking.quote.status === 'pending' ? '#2196F3' : booking.quote.status === 'accepted' ? '#28a745' : '#dc3545'}`
+                  }}>
+                    <h4 style={{
+                      margin: '0 0 0.5rem 0',
+                      color: booking.quote.status === 'pending' ? '#0d47a1' : booking.quote.status === 'accepted' ? '#155724' : '#721c24',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      💰 Quote {booking.quote.status === 'accepted' ? 'Accepted' : booking.quote.status === 'rejected' ? 'Declined' : 'Received'}
+                    </h4>
+
+                    {/* Line Items */}
+                    {booking.quote.line_items && Array.isArray(booking.quote.line_items) && booking.quote.line_items.length > 0 && (
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        {booking.quote.line_items.map((item, index) => (
+                          <div key={index} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: '0.3rem',
+                            fontSize: '0.9rem'
+                          }}>
+                            <span>{item.description}</span>
+                            <span><strong>R {parseFloat(item.amount).toFixed(2)}</strong></span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Total */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      paddingTop: '0.5rem',
+                      marginTop: '0.5rem',
+                      borderTop: `2px solid ${booking.quote.status === 'pending' ? '#2196F3' : booking.quote.status === 'accepted' ? '#28a745' : '#dc3545'}`,
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold'
+                    }}>
+                      <span>Total:</span>
+                      <span>R {parseFloat(booking.quote.total_amount).toFixed(2)}</span>
+                    </div>
+
+                    {/* Payment Methods */}
+                    {booking.quote.payment_methods && booking.quote.payment_methods.length > 0 && (
+                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem' }}>
+                        <strong>Payment:</strong> {booking.quote.payment_methods.map(pm => pm.toUpperCase()).join(', ')}
+                      </p>
+                    )}
+
+                    {/* Notes */}
+                    {booking.quote.notes && (
+                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                        "{booking.quote.notes}"
+                      </p>
+                    )}
+
+                    {/* Valid Until */}
+                    {booking.quote.status === 'pending' && booking.quote.valid_until && (
+                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>
+                        Valid until: {formatDate(booking.quote.valid_until)}
+                      </p>
+                    )}
+
+                    {/* Quote Actions */}
+                    {booking.quote.status === 'pending' && (
+                      <div style={{
+                        display: 'flex',
+                        gap: '0.75rem',
+                        marginTop: '0.75rem'
+                      }}>
+                        <button
+                          onClick={() => handleAcceptQuote(booking.quote, booking)}
+                          disabled={submittingQuoteAction}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem 1rem',
+                            background: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            cursor: submittingQuoteAction ? 'not-allowed' : 'pointer',
+                            opacity: submittingQuoteAction ? 0.6 : 1
+                          }}
+                        >
+                          ✅ Accept Quote
+                        </button>
+                        <button
+                          onClick={() => handleOpenRejectQuoteModal(booking.quote, booking)}
+                          disabled={submittingQuoteAction}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem 1rem',
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            cursor: submittingQuoteAction ? 'not-allowed' : 'pointer',
+                            opacity: submittingQuoteAction ? 0.6 : 1
+                          }}
+                        >
+                          ❌ Decline Quote
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Booking Actions */}
                 <div className="booking-actions">
                   <button
@@ -866,6 +1273,95 @@ const ClientDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Recent Inquiries Section */}
+      <div className="inquiries-section" style={{ marginTop: '2rem' }}>
+        <h3>Your Recent Inquiries</h3>
+        <p className="section-subtitle">
+          Recent conversations with professionals
+        </p>
+        <div className="inquiries-list">
+          {recentInquiries.length > 0 ? (
+            recentInquiries.map((conversation, index) => (
+              <div
+                key={conversation.professional_id || index}
+                className="conversation-group"
+                style={{
+                  marginBottom: '1.5rem',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  background: '#fafafa'
+                }}
+              >
+                <h4 style={{ margin: '0 0 0.5rem', color: 'forestgreen' }}>
+                  Conversation with {conversation.professional_name}
+                </h4>
+                <div className="messages-container" style={{ marginBottom: '1rem' }}>
+                  {conversation.recentMessages.map((msg, msgIndex) => (
+                    <div
+                      key={msgIndex}
+                      className={`inquiry-card ${msg.sender_type === 'client' ? 'client' : 'professional'}`}
+                      style={{
+                        padding: '0.75rem',
+                        marginBottom: '0.5rem',
+                        borderRadius: '6px',
+                        background: msg.sender_type === 'client' ? '#e3f2fd' : '#f1f8e9',
+                        borderLeft: `4px solid ${msg.sender_type === 'client' ? '#2196F3' : '#8bc34a'}`
+                      }}
+                    >
+                      <p style={{ margin: '0 0 0.25rem', fontWeight: 600 }}>
+                        {msg.sender_type === 'client' ? 'You' : conversation.professional_name}:
+                      </p>
+                      <p style={{ margin: '0 0 0.25rem' }}>{msg.content}</p>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>
+                        <small>{formatDate(msg.created_at)}</small>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => navigate('/messages')}
+                    style={{
+                      background: 'forestgreen',
+                      color: 'white',
+                      textDecoration: 'none',
+                      padding: '0.5rem 1.5rem',
+                      borderRadius: '6px',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Continue Conversation
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+              <p>No inquiries yet.</p>
+              <p>Browse our services and connect with professionals to get started!</p>
+              <button
+                className="btn-primary"
+                onClick={() => navigate('/')}
+                style={{
+                  background: 'forestgreen',
+                  color: 'white',
+                  marginTop: '1rem',
+                  padding: '0.5rem 1.5rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                Find Services
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Approval Modal */}
       {showApprovalModal && selectedRequest && (
@@ -1051,6 +1547,124 @@ const ClientDashboard = () => {
                   Help other clients by sharing specific details about your experience
                 </p>
               </div>
+
+              {/* Photo Upload Section */}
+              <div className="edit-photo-section" style={{ marginTop: '1.5rem' }}>
+                <h4>Photos</h4>
+
+                {/* Safety Guidelines */}
+                <div style={{
+                  background: '#fff3cd',
+                  borderLeft: '4px solid #ffc107',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  margin: '0.5rem 0',
+                  fontSize: '0.85rem'
+                }}>
+                  <strong style={{ color: '#856404' }}>Photo Safety Guidelines:</strong>
+                  <ul style={{
+                    margin: '0.25rem 0 0',
+                    paddingLeft: '1.5rem',
+                    color: '#856404',
+                    lineHeight: 1.4
+                  }}>
+                    <li>Only photograph work areas</li>
+                    <li>Avoid personal documents or sensitive information</li>
+                    <li>Don't include faces without consent</li>
+                    <li>Avoid addresses and valuables</li>
+                  </ul>
+                </div>
+
+                {/* Photo Grid */}
+                {reviewPhotos.length > 0 && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                    gap: '1rem',
+                    margin: '1rem 0'
+                  }}>
+                    {reviewPhotos.map((photo, index) => (
+                      <div key={index} style={{
+                        position: 'relative',
+                        aspectRatio: '1',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        background: '#f8f9fa',
+                        border: '2px solid #e9ecef'
+                      }}>
+                        <img
+                          src={photo}
+                          alt={`Review ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                        />
+                        <button
+                          onClick={() => handleRemovePhoto(photo)}
+                          disabled={uploadingPhoto}
+                          style={{
+                            position: 'absolute',
+                            top: '0.5rem',
+                            right: '0.5rem',
+                            background: 'rgba(220, 53, 69, 0.9)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            fontSize: '1.5rem',
+                            lineHeight: 1,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0
+                          }}
+                          title="Remove photo"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Hidden File Input */}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  style={{ display: 'none' }}
+                />
+
+                {/* Add Photo Button */}
+                <button
+                  onClick={handleAddPhotoClick}
+                  disabled={uploadingPhoto || reviewPhotos.length >= 5}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1.5rem',
+                    background: 'white',
+                    color: '#667eea',
+                    border: '2px dashed #667eea',
+                    borderRadius: '8px',
+                    cursor: uploadingPhoto || reviewPhotos.length >= 5 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: 500,
+                    opacity: uploadingPhoto || reviewPhotos.length >= 5 ? 0.5 : 1,
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  {uploadingPhoto ? 'Uploading...' : reviewPhotos.length >= 5 ? 'Maximum 5 photos reached' : '+ Add Photo'}
+                </button>
+
+                <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem', textAlign: 'center' }}>
+                  Max 5 photos, 5MB each
+                </p>
+              </div>
             </div>
             <div className="modal-footer">
               <button
@@ -1131,6 +1745,208 @@ const ClientDashboard = () => {
                     <p>{selectedBooking.worker_notes}</p>
                   </div>
                 )}
+
+                {/* Quote Section in Modal */}
+                {selectedBooking.quote && (
+                  <div className="detail-section full-width">
+                    <div style={{
+                      background: selectedBooking.quote.status === 'pending' ? '#e3f2fd' : selectedBooking.quote.status === 'accepted' ? '#d4edda' : '#f8d7da',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      borderLeft: `4px solid ${selectedBooking.quote.status === 'pending' ? '#2196F3' : selectedBooking.quote.status === 'accepted' ? '#28a745' : '#dc3545'}`,
+                      marginTop: '1rem'
+                    }}>
+                      <h4 style={{
+                        margin: '0 0 1rem 0',
+                        color: selectedBooking.quote.status === 'pending' ? '#0d47a1' : selectedBooking.quote.status === 'accepted' ? '#155724' : '#721c24'
+                      }}>
+                        💰 Quote {selectedBooking.quote.status === 'accepted' ? 'Accepted' : selectedBooking.quote.status === 'rejected' ? 'Declined' : 'Details'}
+                      </h4>
+
+                      {/* Line Items */}
+                      {selectedBooking.quote.line_items && Array.isArray(selectedBooking.quote.line_items) && selectedBooking.quote.line_items.length > 0 && (
+                        <div style={{ marginBottom: '1rem' }}>
+                          {selectedBooking.quote.line_items.map((item, index) => (
+                            <div key={index} style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              marginBottom: '0.5rem',
+                              fontSize: '1rem'
+                            }}>
+                              <span>{item.description}</span>
+                              <span><strong>R {parseFloat(item.amount).toFixed(2)}</strong></span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Total */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        paddingTop: '1rem',
+                        marginTop: '1rem',
+                        borderTop: `2px solid ${selectedBooking.quote.status === 'pending' ? '#2196F3' : selectedBooking.quote.status === 'accepted' ? '#28a745' : '#dc3545'}`,
+                        fontSize: '1.25rem',
+                        fontWeight: 'bold'
+                      }}>
+                        <span>Total:</span>
+                        <span>R {parseFloat(selectedBooking.quote.total_amount).toFixed(2)}</span>
+                      </div>
+
+                      {/* Payment Methods */}
+                      {selectedBooking.quote.payment_methods && selectedBooking.quote.payment_methods.length > 0 && (
+                        <p style={{ margin: '1rem 0 0 0', fontSize: '0.95rem' }}>
+                          <strong>Payment Methods:</strong> {selectedBooking.quote.payment_methods.map(pm => pm.toUpperCase()).join(', ')}
+                        </p>
+                      )}
+
+                      {/* Notes */}
+                      {selectedBooking.quote.notes && (
+                        <p style={{ margin: '1rem 0 0 0', fontSize: '0.95rem', fontStyle: 'italic', padding: '0.75rem', background: 'rgba(255,255,255,0.5)', borderRadius: '6px' }}>
+                          "{selectedBooking.quote.notes}"
+                        </p>
+                      )}
+
+                      {/* Valid Until */}
+                      {selectedBooking.quote.status === 'pending' && selectedBooking.quote.valid_until && (
+                        <p style={{ margin: '1rem 0 0 0', fontSize: '0.9rem', color: '#666' }}>
+                          Valid until: {formatDate(selectedBooking.quote.valid_until)}
+                        </p>
+                      )}
+
+                      {/* Quote Actions in Modal */}
+                      {selectedBooking.quote.status === 'pending' && (
+                        <div style={{
+                          display: 'flex',
+                          gap: '1rem',
+                          marginTop: '1.5rem'
+                        }}>
+                          <button
+                            onClick={() => handleAcceptQuote(selectedBooking.quote, selectedBooking)}
+                            disabled={submittingQuoteAction}
+                            style={{
+                              flex: 1,
+                              padding: '0.75rem 1.5rem',
+                              background: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '1rem',
+                              fontWeight: 600,
+                              cursor: submittingQuoteAction ? 'not-allowed' : 'pointer',
+                              opacity: submittingQuoteAction ? 0.6 : 1
+                            }}
+                          >
+                            ✅ Accept Quote
+                          </button>
+                          <button
+                            onClick={() => handleOpenRejectQuoteModal(selectedBooking.quote, selectedBooking)}
+                            disabled={submittingQuoteAction}
+                            style={{
+                              flex: 1,
+                              padding: '0.75rem 1.5rem',
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '1rem',
+                              fontWeight: 600,
+                              cursor: submittingQuoteAction ? 'not-allowed' : 'pointer',
+                              opacity: submittingQuoteAction ? 0.6 : 1
+                            }}
+                          >
+                            ❌ Decline Quote
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Service Address Section */}
+                {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'Confirmed') && !selectedBooking.service_address && (
+                  <div className="detail-section full-width address-required-section">
+                    <div style={{
+                      background: '#fff3cd',
+                      border: '1px solid #ffc107',
+                      borderLeft: '4px solid #ffc107',
+                      borderRadius: '8px',
+                      padding: '1.5rem',
+                      marginTop: '1rem'
+                    }}>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#856404', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        📍 Service Address Required
+                      </h4>
+                      <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#856404' }}>
+                        Please provide your service address so the professional can arrive for the job.
+                      </p>
+                      <textarea
+                        className="form-input"
+                        placeholder="Enter your full service address (street, suburb, city, postal code)"
+                        value={serviceAddress}
+                        onChange={(e) => setServiceAddress(e.target.value)}
+                        rows={3}
+                        disabled={submittingAddress}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '2px solid #ffc107',
+                          borderRadius: '6px',
+                          fontSize: '0.95rem',
+                          resize: 'vertical',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                      <button
+                        onClick={handleSubmitServiceAddress}
+                        disabled={submittingAddress || !serviceAddress.trim()}
+                        style={{
+                          width: '100%',
+                          marginTop: '0.75rem',
+                          padding: '0.75rem 1.5rem',
+                          background: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          cursor: submittingAddress ? 'not-allowed' : 'pointer',
+                          opacity: submittingAddress || !serviceAddress.trim() ? 0.6 : 1,
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {submittingAddress ? 'Sharing Address...' : '✅ Share Address with Professional'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Address Confirmation Display */}
+                {selectedBooking.service_address && (
+                  <div className="detail-section full-width address-confirmed-section">
+                    <div style={{
+                      background: '#d4edda',
+                      border: '1px solid #28a745',
+                      borderLeft: '4px solid #28a745',
+                      borderRadius: '8px',
+                      padding: '1.5rem',
+                      marginTop: '1rem'
+                    }}>
+                      <h4 style={{ margin: '0 0 0.5rem 0', color: '#155724', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        ✅ Service Address Shared
+                      </h4>
+                      <p style={{ margin: '0', fontSize: '0.9rem', color: '#155724' }}>
+                        <strong>Address:</strong> {selectedBooking.service_address}
+                      </p>
+                      {selectedBooking.service_address_provided_at && (
+                        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>
+                          Shared on {formatDate(selectedBooking.service_address_provided_at)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="modal-footer">
@@ -1185,15 +2001,31 @@ const ClientDashboard = () => {
 
               <div className="feedback-section">
                 <h4>Reason for Cancellation</h4>
-                <textarea
-                  className="feedback-textarea"
-                  placeholder="Please explain why you need to cancel..."
+                <select
+                  className="form-input"
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  rows={4}
                   disabled={submitting}
-                />
-                <p className="feedback-hint">
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #ccc',
+                    borderRadius: '6px',
+                    fontSize: '0.95rem',
+                    fontFamily: 'inherit',
+                    background: 'white',
+                    cursor: submitting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <option value="">Select cancellation reason</option>
+                  <option value="Emergency">Emergency</option>
+                  <option value="Schedule conflict">Schedule conflict</option>
+                  <option value="Financial constraints">Financial constraints</option>
+                  <option value="Found alternative service">Found alternative service</option>
+                  <option value="No longer needed">No longer needed</option>
+                  <option value="Other">Other</option>
+                </select>
+                <p className="feedback-hint" style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>
                   Your cancellation will be processed immediately
                 </p>
               </div>
@@ -1387,6 +2219,68 @@ const ClientDashboard = () => {
                 disabled={submitting || !reviewText.trim() || reviewRatings.overall === 0}
               >
                 {submitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Quote Modal */}
+      {showRejectQuoteModal && selectedQuote && (
+        <div className="modal-overlay" onClick={handleCloseRejectQuoteModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Decline Quote</h3>
+              <button className="modal-close" onClick={handleCloseRejectQuoteModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="rejection-details">
+                <p><strong>Professional:</strong> {selectedQuote.booking.worker_name}</p>
+                <p><strong>Service:</strong> {selectedQuote.booking.service_type}</p>
+                <p><strong>Quote Amount:</strong> R {parseFloat(selectedQuote.quote.total_amount).toFixed(2)}</p>
+              </div>
+
+              <div className="feedback-section" style={{ marginTop: '1.5rem' }}>
+                <h4>Why are you declining this quote?</h4>
+                <textarea
+                  className="feedback-textarea"
+                  placeholder="Please explain your reason (e.g., price too high, found another service, changed requirements)..."
+                  value={quoteRejectionReason}
+                  onChange={(e) => setQuoteRejectionReason(e.target.value)}
+                  rows={5}
+                  disabled={submittingQuoteAction}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid #ccc',
+                    borderRadius: '6px',
+                    fontSize: '0.95rem',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+                <p className="feedback-hint" style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>
+                  Your feedback helps professionals improve their services
+                </p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-secondary"
+                onClick={handleCloseRejectQuoteModal}
+                disabled={submittingQuoteAction}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                onClick={handleRejectQuote}
+                disabled={submittingQuoteAction || !quoteRejectionReason.trim()}
+                style={{
+                  opacity: submittingQuoteAction || !quoteRejectionReason.trim() ? 0.6 : 1
+                }}
+              >
+                {submittingQuoteAction ? 'Declining...' : 'Decline Quote'}
               </button>
             </div>
           </div>
