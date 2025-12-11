@@ -18,13 +18,26 @@ export const AuthProvider = ({ children }) => {
       const storedUser = await AsyncStorage.getItem('user');
 
       if (token && storedUser) {
-        setUser(JSON.parse(storedUser));
+        let parsedUser = JSON.parse(storedUser);
+
+        // Normalize user type: backend uses 'professional' but mobile app uses 'worker'
+        if (parsedUser.type === 'professional') {
+          parsedUser = { ...parsedUser, type: 'worker' };
+        }
+
+        setUser(parsedUser);
 
         // Verify token is still valid
         try {
           const response = await api.get('/check-session');
           if (response.data.authenticated) {
-            const userData = response.data.user;
+            let userData = response.data.user;
+
+            // Normalize user type: backend uses 'professional' but mobile app uses 'worker'
+            if (userData.type === 'professional') {
+              userData = { ...userData, type: 'worker' };
+            }
+
             setUser(userData);
             await AsyncStorage.setItem('user', JSON.stringify(userData));
           } else {
@@ -54,12 +67,18 @@ export const AuthProvider = ({ children }) => {
       console.log('Response keys:', Object.keys(response.data));
 
       if (response.data.success) {
-        const userData = response.data.user;
+        let userData = response.data.user;
         const token = response.data.token;
 
         console.log('User data received:', userData);
         console.log('User type:', userData?.type);
         console.log('Token received:', token ? 'YES' : 'NO');
+
+        // Normalize user type: backend uses 'professional' but mobile app uses 'worker'
+        if (userData.type === 'professional') {
+          userData = { ...userData, type: 'worker' };
+          console.log('Normalized type from "professional" to "worker"');
+        }
 
         setUser(userData);
 
