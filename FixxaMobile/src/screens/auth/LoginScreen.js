@@ -43,7 +43,27 @@ const LoginScreen = ({ navigation }) => {
         // Navigation handled by App.js based on user type
         console.log('Login successful');
       } else {
-        Alert.alert('Login Failed', result.error || 'Incorrect email or password');
+        // Check if error is about email verification
+        const errorMessage = result.error || 'Incorrect email or password';
+
+        if (errorMessage.toLowerCase().includes('verify') || errorMessage.toLowerCase().includes('verification')) {
+          Alert.alert(
+            'Email Not Verified',
+            errorMessage,
+            [
+              {
+                text: 'Resend Email',
+                onPress: () => navigation.navigate('ResendVerification'),
+              },
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+            ]
+          );
+        } else {
+          Alert.alert('Login Failed', errorMessage);
+        }
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -112,6 +132,15 @@ const LoginScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Forgot Password Link */}
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => navigation.navigate('ForgotPassword')}
+            disabled={loading}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
 
           {/* Submit Button */}
           <TouchableOpacity
@@ -208,6 +237,15 @@ const styles = StyleSheet.create({
   },
   toggleIcon: {
     fontSize: 20,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+  },
+  forgotPasswordText: {
+    fontSize: SIZES.sm,
+    color: COLORS.primary,
+    ...FONTS.semiBold,
   },
   button: {
     backgroundColor: COLORS.primary,

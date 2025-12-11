@@ -17,6 +17,7 @@ import BurgerMenu from '../../components/BurgerMenu';
 
 const ReviewsScreen = ({ navigation }) => {
   const [reviews, setReviews] = useState([]);
+  const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -26,12 +27,50 @@ const ReviewsScreen = ({ navigation }) => {
       if (response.data.reviews) {
         setReviews(response.data.reviews);
       }
+
+      // Calculate statistics from reviews
+      if (response.data.reviews && response.data.reviews.length > 0) {
+        const stats = calculateStatistics(response.data.reviews);
+        setStatistics(stats);
+      }
     } catch (error) {
       console.error('Error fetching reviews:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const calculateStatistics = (reviewsData) => {
+    const totalReviews = reviewsData.length;
+    const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = totalRating / totalReviews;
+
+    // Count reviews by star rating
+    const ratingDistribution = {
+      5: 0,
+      4: 0,
+      3: 0,
+      2: 0,
+      1: 0,
+    };
+
+    reviewsData.forEach(review => {
+      ratingDistribution[review.rating]++;
+    });
+
+    // Calculate percentages
+    const ratingPercentages = {};
+    Object.keys(ratingDistribution).forEach(rating => {
+      ratingPercentages[rating] = (ratingDistribution[rating] / totalReviews) * 100;
+    });
+
+    return {
+      totalReviews,
+      averageRating,
+      ratingDistribution,
+      ratingPercentages,
+    };
   };
 
   useEffect(() => {
@@ -53,6 +92,52 @@ const ReviewsScreen = ({ navigation }) => {
       );
     }
     return stars;
+  };
+
+  const renderStatistics = () => {
+    if (!statistics) return null;
+
+    return (
+      <View style={styles.statisticsCard}>
+        <Text style={styles.statisticsTitle}>Review Statistics</Text>
+
+        {/* Average Rating Display */}
+        <View style={styles.averageRatingContainer}>
+          <View style={styles.averageRatingCircle}>
+            <Text style={styles.averageRatingNumber}>
+              {statistics.averageRating.toFixed(1)}
+            </Text>
+            <Text style={styles.averageRatingLabel}>out of 5</Text>
+          </View>
+
+          <View style={styles.ratingBarsContainer}>
+            {[5, 4, 3, 2, 1].map(rating => (
+              <View key={rating} style={styles.ratingBarRow}>
+                <Text style={styles.ratingBarLabel}>{rating}⭐</Text>
+                <View style={styles.ratingBar}>
+                  <View
+                    style={[
+                      styles.ratingBarFill,
+                      { width: `${statistics.ratingPercentages[rating] || 0}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.ratingBarCount}>
+                  {statistics.ratingDistribution[rating]}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Total Reviews */}
+        <View style={styles.totalReviewsContainer}>
+          <Text style={styles.totalReviewsText}>
+            Based on {statistics.totalReviews} review{statistics.totalReviews !== 1 ? 's' : ''}
+          </Text>
+        </View>
+      </View>
+    );
   };
 
   const renderReviewItem = ({ item }) => (
@@ -126,10 +211,21 @@ const ReviewsScreen = ({ navigation }) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Reviews</Text>
-        <Text style={styles.headerSubtitle}>
-          {reviews.length} review{reviews.length !== 1 ? 's' : ''}
-        </Text>
+        <View>
+          <Text style={styles.headerTitle}>My Reviews</Text>
+          <Text style={styles.headerSubtitle}>
+            {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+          </Text>
+        </View>
+
+        {/* Write Review Button */}
+        <TouchableOpacity
+          style={styles.writeReviewButton}
+          onPress={() => navigation.navigate('CreateReview')}
+        >
+          <Text style={styles.writeReviewIcon}>✍️</Text>
+          <Text style={styles.writeReviewText}>Write</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Reviews List */}
@@ -138,6 +234,7 @@ const ReviewsScreen = ({ navigation }) => {
         renderItem={renderReviewItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={renderStatistics}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -192,12 +289,32 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.primary,
     padding: SIZES.padding * 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: SIZES.xxl,
     ...FONTS.bold,
     color: COLORS.white,
     marginBottom: 4,
+  },
+  writeReviewButton: {
+    backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 6,
+  },
+  writeReviewIcon: {
+    fontSize: 16,
+  },
+  writeReviewText: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.primary,
   },
   headerSubtitle: {
     fontSize: SIZES.md,
@@ -299,6 +416,85 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     color: COLORS.textLight,
     textAlign: 'center',
+  },
+  statisticsCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SIZES.padding,
+    marginBottom: 16,
+    ...SHADOWS.small,
+  },
+  statisticsTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+  },
+  averageRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  averageRatingCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  averageRatingNumber: {
+    fontSize: 32,
+    ...FONTS.bold,
+    color: COLORS.white,
+  },
+  averageRatingLabel: {
+    fontSize: SIZES.xs,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 4,
+  },
+  ratingBarsContainer: {
+    flex: 1,
+  },
+  ratingBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  ratingBarLabel: {
+    width: 50,
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+  },
+  ratingBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 4,
+    marginHorizontal: 8,
+    overflow: 'hidden',
+  },
+  ratingBarFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+    borderRadius: 4,
+  },
+  ratingBarCount: {
+    width: 30,
+    fontSize: SIZES.xs,
+    color: COLORS.textLight,
+    textAlign: 'right',
+  },
+  totalReviewsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+    paddingTop: 12,
+    alignItems: 'center',
+  },
+  totalReviewsText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
   },
 });
 

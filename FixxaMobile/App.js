@@ -3,7 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
+import { SocketProvider } from './src/contexts/SocketContext';
+import { ActivityIndicator, View, Text, StyleSheet, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,15 +14,35 @@ SplashScreen.preventAutoHideAsync();
 
 // Screens
 import LoginScreen from './src/screens/auth/LoginScreen';
+import RegisterScreen from './src/screens/auth/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
+import VerificationPendingScreen from './src/screens/auth/VerificationPendingScreen';
+import ResendVerificationScreen from './src/screens/auth/ResendVerificationScreen';
 import ClientDashboard from './src/screens/client/ClientDashboard';
 import FindProfessionalScreen from './src/screens/client/FindProfessionalScreen';
+import WorkerDetailsScreen from './src/screens/client/WorkerDetailsScreen';
 import BookingsScreen from './src/screens/client/BookingsScreen';
 import BookingDetailScreen from './src/screens/client/BookingDetailScreen';
+import CreateBookingScreen from './src/screens/client/CreateBookingScreen';
+import WorkerDashboard from './src/screens/worker/WorkerDashboard';
+import MyJobsScreen from './src/screens/worker/MyJobsScreen';
+import JobRequestsScreen from './src/screens/worker/JobRequestsScreen';
+import JobCompletionScreen from './src/screens/worker/JobCompletionScreen';
+import WorkerProfileCompletionScreen from './src/screens/worker/WorkerProfileCompletionScreen';
+import ScheduleScreen from './src/screens/worker/ScheduleScreen';
+import PortfolioScreen from './src/screens/worker/PortfolioScreen';
+import EarningsScreen from './src/screens/worker/EarningsScreen';
 import ReviewsScreen from './src/screens/shared/ReviewsScreen';
 import CreateReviewScreen from './src/screens/shared/CreateReviewScreen';
 import ProfileScreen from './src/screens/shared/ProfileScreen';
+import EditProfileScreen from './src/screens/shared/EditProfileScreen';
 import MessagesScreen from './src/screens/shared/MessagesScreen';
+import ChatScreen from './src/screens/shared/ChatScreen';
+import NotificationsScreen from './src/screens/shared/NotificationsScreen';
 import SettingsScreen from './src/screens/shared/SettingsScreen';
+import SupportScreen from './src/screens/shared/SupportScreen';
+import ServicesScreen from './src/screens/shared/ServicesScreen';
 import AboutScreen from './src/screens/info/AboutScreen';
 import ContactScreen from './src/screens/info/ContactScreen';
 import FAQScreen from './src/screens/info/FAQScreen';
@@ -33,8 +54,8 @@ import JoinProScreen from './src/screens/info/JoinProScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Bottom Tab Navigator for authenticated users
-function MainTabs() {
+// Bottom Tab Navigator for Client users
+function ClientTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -59,29 +80,94 @@ function MainTabs() {
         name="Dashboard"
         component={ClientDashboard}
         options={{
-          tabBarIcon: ({ color, size }) => <View style={{ fontSize: size }}>🏠</View>,
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>🏠</Text>,
           tabBarLabel: 'Home',
+        }}
+      />
+      <Tab.Screen
+        name="Find"
+        component={FindProfessionalScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>🔍</Text>,
+          tabBarLabel: 'Find',
         }}
       />
       <Tab.Screen
         name="Bookings"
         component={BookingsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <View style={{ fontSize: size }}>📋</View>,
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>📋</Text>,
         }}
       />
       <Tab.Screen
         name="Messages"
         component={MessagesScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <View style={{ fontSize: size }}>💬</View>,
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>💬</Text>,
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <View style={{ fontSize: size }}>⚙️</View>,
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>⚙️</Text>,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// Bottom Tab Navigator for Worker users
+function WorkerTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: 'forestgreen',
+        tabBarInactiveTintColor: '#666666',
+        tabBarStyle: {
+          height: Platform.OS === 'ios' ? 85 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          paddingTop: 8,
+          borderTopWidth: 1,
+          borderTopColor: '#e0e0e0',
+          backgroundColor: '#ffffff',
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Dashboard"
+        component={WorkerDashboard}
+        options={{
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>🏠</Text>,
+          tabBarLabel: 'Home',
+        }}
+      />
+      <Tab.Screen
+        name="JobRequests"
+        component={JobRequestsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>📨</Text>,
+          tabBarLabel: 'Requests',
+        }}
+      />
+      <Tab.Screen
+        name="MyJobs"
+        component={MyJobsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>💼</Text>,
+          tabBarLabel: 'My Jobs',
+        }}
+      />
+      <Tab.Screen
+        name="Messages"
+        component={MessagesScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size }}>💬</Text>,
         }}
       />
     </Tab.Navigator>
@@ -115,6 +201,17 @@ function AppNavigator() {
     }
   }, [appIsReady, loading]);
 
+  // Debug logging - MUST be before early return to follow Rules of Hooks
+  useEffect(() => {
+    if (user) {
+      console.log('=== USER DATA DEBUG ===');
+      console.log('Full user object:', JSON.stringify(user, null, 2));
+      console.log('User type:', user.type);
+      console.log('User type check:', (user.type === 'worker' || user.type === 'professional') ? 'WORKER' : 'CLIENT');
+      console.log('======================');
+    }
+  }, [user]);
+
   if (!appIsReady || loading) {
     return null; // Splash screen still visible
   }
@@ -128,14 +225,43 @@ function AppNavigator() {
           }}
         >
           {user ? (
-            // Authenticated screens - now with bottom tabs
+            // Authenticated screens - route based on user type
             <>
-              <Stack.Screen name="MainTabs" component={MainTabs} />
-              <Stack.Screen name="Find" component={FindProfessionalScreen} />
-              <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+              {/* Conditional tabs based on user type */}
+              <Stack.Screen
+                name="MainTabs"
+                component={(user.type === 'worker' || user.type === 'professional') ? WorkerTabs : ClientTabs}
+              />
+
+              {/* Client-specific screens */}
+              {(user.type !== 'worker' && user.type !== 'professional') && (
+                <>
+                  <Stack.Screen name="WorkerDetails" component={WorkerDetailsScreen} />
+                  <Stack.Screen name="CreateBooking" component={CreateBookingScreen} />
+                  <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+                </>
+              )}
+
+              {/* Worker-specific screens */}
+              {(user.type === 'worker' || user.type === 'professional') && (
+                <>
+                  <Stack.Screen name="Schedule" component={ScheduleScreen} />
+                  <Stack.Screen name="Portfolio" component={PortfolioScreen} />
+                  <Stack.Screen name="Earnings" component={EarningsScreen} />
+                  <Stack.Screen name="JobCompletion" component={JobCompletionScreen} />
+                  <Stack.Screen name="WorkerProfileCompletion" component={WorkerProfileCompletionScreen} />
+                </>
+              )}
+
+              {/* Shared screens */}
+              <Stack.Screen name="ChatScreen" component={ChatScreen} />
               <Stack.Screen name="CreateReview" component={CreateReviewScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
+              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
               <Stack.Screen name="Reviews" component={ReviewsScreen} />
+              <Stack.Screen name="Notifications" component={NotificationsScreen} />
+              <Stack.Screen name="Support" component={SupportScreen} />
+              <Stack.Screen name="Services" component={ServicesScreen} />
               <Stack.Screen name="About" component={AboutScreen} />
               <Stack.Screen name="Contact" component={ContactScreen} />
               <Stack.Screen name="FAQ" component={FAQScreen} />
@@ -148,6 +274,11 @@ function AppNavigator() {
             // Auth screens
             <>
               <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+              <Stack.Screen name="VerificationPending" component={VerificationPendingScreen} />
+              <Stack.Screen name="ResendVerification" component={ResendVerificationScreen} />
             </>
           )}
         </Stack.Navigator>
@@ -162,7 +293,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <AppNavigator />
+        <SocketProvider>
+          <AppNavigator />
+        </SocketProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

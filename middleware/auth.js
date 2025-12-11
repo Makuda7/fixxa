@@ -1,5 +1,22 @@
+const jwt = require('jsonwebtoken');
+
 // Authorization middleware functions
 function requireAuth(req, res, next) {
+  // Check for JWT token (mobile apps)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.session = req.session || {};
+      req.session.user = { id: decoded.id, email: decoded.email, type: decoded.type, isAdmin: decoded.isAdmin };
+      return next();
+    } catch (err) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    }
+  }
+
+  // Check for session (web app)
   if (req.session?.user?.id) next();
   else res.status(401).json({ success: false, error: 'Authentication required' });
 }

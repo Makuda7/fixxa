@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
@@ -56,7 +57,12 @@ const ProfileScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Top Bar with Burger Menu */}
       <View style={styles.topBar}>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
         <Text style={styles.topBarTitle}>Profile</Text>
         <BurgerMenu navigation={navigation} />
       </View>
@@ -65,9 +71,16 @@ const ProfileScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {user?.name?.charAt(0).toUpperCase() || '?'}
-            </Text>
+            {user?.profile_picture ? (
+              <Image
+                source={{ uri: user.profile_picture }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {user?.name?.charAt(0).toUpperCase() || '?'}
+              </Text>
+            )}
           </View>
           <Text style={styles.userName}>{user?.name || 'User'}</Text>
           <Text style={styles.userType}>
@@ -99,7 +112,7 @@ const ProfileScreen = ({ navigation }) => {
           <MenuButton
             icon="✏️"
             title="Edit Profile"
-            onPress={() => Alert.alert('Coming Soon', 'Edit profile feature coming soon!')}
+            onPress={() => navigation.navigate('EditProfile')}
           />
           <MenuButton
             icon="🔒"
@@ -119,19 +132,24 @@ const ProfileScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Help & Support</Text>
         <View style={styles.card}>
           <MenuButton
+            icon="🆘"
+            title="Contact Support"
+            onPress={() => navigation.navigate('Support')}
+          />
+          <MenuButton
             icon="❓"
             title="Help Center"
-            onPress={() => Alert.alert('Help', 'Need help? Contact support@fixxa.co.za')}
+            onPress={() => navigation.navigate('FAQ')}
           />
           <MenuButton
             icon="📄"
             title="Terms & Conditions"
-            onPress={() => Alert.alert('Coming Soon', 'Terms & Conditions coming soon!')}
+            onPress={() => navigation.navigate('Terms')}
           />
           <MenuButton
             icon="🔒"
             title="Privacy Policy"
-            onPress={() => Alert.alert('Coming Soon', 'Privacy Policy coming soon!')}
+            onPress={() => navigation.navigate('Privacy')}
           />
         </View>
       </View>
@@ -166,6 +184,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.padding,
     paddingBottom: SIZES.padding,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  },
+  backIcon: {
+    fontSize: 28,
+    color: COLORS.white,
+  },
   topBarTitle: {
     fontSize: SIZES.xl,
     ...FONTS.bold,
@@ -193,6 +220,11 @@ const styles = StyleSheet.create({
     fontSize: 36,
     ...FONTS.bold,
     color: COLORS.primary,
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   userName: {
     fontSize: SIZES.xxl,

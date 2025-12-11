@@ -1,0 +1,538 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+  Switch,
+  ActivityIndicator,
+} from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
+import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
+import { formatCurrency } from '../../utils/formatting';
+import BurgerMenu from '../../components/BurgerMenu';
+
+const WorkerDashboard = ({ navigation }) => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    pendingJobs: 0,
+    activeJobs: 0,
+    completedJobs: 0,
+    totalEarnings: 0,
+  });
+  const [recentJobs, setRecentJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [updatingAvailability, setUpdatingAvailability] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchAvailabilityStatus();
+    fetchUnreadCount();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsResponse, jobsResponse] = await Promise.all([
+        api.get('/workers/stats'),
+        api.get('/workers/jobs?limit=5'),
+      ]);
+
+      if (statsResponse.data.stats) {
+        setStats(statsResponse.data.stats);
+      }
+
+      if (jobsResponse.data.jobs) {
+        setRecentJobs(jobsResponse.data.jobs);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const fetchAvailabilityStatus = async () => {
+    try {
+      const response = await api.get('/workers/profile');
+      if (response.data.worker) {
+        setIsAvailable(response.data.worker.is_available || false);
+      }
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+    }
+  };
+
+  const toggleAvailability = async () => {
+    const newStatus = !isAvailable;
+
+    setUpdatingAvailability(true);
+    try {
+      const response = await api.put('/workers/availability', {
+        is_available: newStatus,
+      });
+
+      if (response.data.success) {
+        setIsAvailable(newStatus);
+        Alert.alert(
+          'Success',
+          `You are now ${newStatus ? 'available' : 'unavailable'} for new jobs`
+        );
+      } else {
+        Alert.alert('Error', 'Failed to update availability');
+      }
+    } catch (error) {
+      console.error('Error updating availability:', error);
+      Alert.alert('Error', 'Failed to update availability. Please try again.');
+    } finally {
+      setUpdatingAvailability(false);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await api.get('/api/messages/worker/unread-count');
+      if (response.data.unreadCount !== undefined) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchDashboardData();
+    fetchUnreadCount();
+  };
+
+  const StatCard = ({ icon, label, value, color, onPress }) => (
+    <TouchableOpacity
+      style={[styles.statCard, { borderLeftColor: color }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.statIcon}>{icon}</Text>
+      <View style={styles.statContent}>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const QuickActionButton = ({ icon, label, onPress, color, badge }) => (
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: color }]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View>
+        <Text style={styles.actionIcon}>{icon}</Text>
+        {badge > 0 && (
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+          </View>
+        )}
+      </View>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  const JobCard = ({ job }) => {
+    const getStatusColor = (status) => {
+      switch (status?.toLowerCase()) {
+        case 'completed':
+          return COLORS.success;
+        case 'in-progress':
+        case 'in progress':
+          return COLORS.info;
+        case 'pending':
+          return COLORS.warning;
+        default:
+          return COLORS.gray;
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={styles.jobCard}
+        onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
+      >
+        <View style={styles.jobHeader}>
+          <Text style={styles.jobService}>{job.service_type}</Text>
+          <View
+            style={[
+              styles.jobStatusBadge,
+              { backgroundColor: getStatusColor(job.status) },
+            ]}
+          >
+            <Text style={styles.jobStatusText}>{job.status}</Text>
+          </View>
+        </View>
+        <Text style={styles.jobClient}>Client: {job.client_name}</Text>
+        {job.price && (
+          <Text style={styles.jobPrice}>{formatCurrency(job.price)}</Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View style={styles.greetingContainer}>
+            <Text style={styles.greeting}>Hello,</Text>
+            <Text style={styles.userName}>{user?.name || 'Professional'}</Text>
+          </View>
+          <BurgerMenu navigation={navigation} />
+        </View>
+        <Text style={styles.headerSubtitle}>Worker Dashboard</Text>
+
+        {/* Availability Toggle */}
+        <View style={styles.availabilityContainer}>
+          <View style={styles.availabilityInfo}>
+            <Text style={styles.availabilityLabel}>Availability Status</Text>
+            <Text style={styles.availabilityStatus}>
+              {isAvailable ? '🟢 Available for Jobs' : '🔴 Unavailable'}
+            </Text>
+          </View>
+          {updatingAvailability ? (
+            <ActivityIndicator color={COLORS.white} size="small" />
+          ) : (
+            <Switch
+              value={isAvailable}
+              onValueChange={toggleAvailability}
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={isAvailable ? COLORS.white : '#f4f3f4'}
+              ios_backgroundColor="#3e3e3e"
+            />
+          )}
+        </View>
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Stats Grid */}
+        <View style={styles.statsSection}>
+          <StatCard
+            icon="📋"
+            label="Pending Requests"
+            value={stats.pendingJobs}
+            color={COLORS.warning}
+            onPress={() => navigation.navigate('JobRequests')}
+          />
+          <StatCard
+            icon="⚡"
+            label="Active Jobs"
+            value={stats.activeJobs}
+            color={COLORS.info}
+            onPress={() => navigation.navigate('MyJobs')}
+          />
+          <StatCard
+            icon="✅"
+            label="Completed"
+            value={stats.completedJobs}
+            color={COLORS.success}
+            onPress={() => navigation.navigate('MyJobs')}
+          />
+          <StatCard
+            icon="💰"
+            label="Total Earnings"
+            value={formatCurrency(stats.totalEarnings)}
+            color={COLORS.primary}
+            onPress={() => navigation.navigate('Earnings')}
+          />
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionsGrid}>
+            <QuickActionButton
+              icon="📋"
+              label="Job Requests"
+              color={COLORS.primary}
+              onPress={() => navigation.navigate('JobRequests')}
+            />
+            <QuickActionButton
+              icon="📅"
+              label="My Schedule"
+              color={COLORS.info}
+              onPress={() => navigation.navigate('Schedule')}
+            />
+            <QuickActionButton
+              icon="📸"
+              label="Portfolio"
+              color="#9C27B0"
+              onPress={() => navigation.navigate('Portfolio')}
+            />
+            <QuickActionButton
+              icon="💬"
+              label="Messages"
+              color={COLORS.success}
+              badge={unreadCount}
+              onPress={() => navigation.navigate('Messages')}
+            />
+            <QuickActionButton
+              icon="⭐"
+              label="My Reviews"
+              color={COLORS.warning}
+              onPress={() => navigation.navigate('Reviews')}
+            />
+          </View>
+        </View>
+
+        {/* Recent Jobs */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Jobs</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('MyJobs')}>
+              <Text style={styles.seeAllText}>See All →</Text>
+            </TouchableOpacity>
+          </View>
+
+          {recentJobs.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📭</Text>
+              <Text style={styles.emptyText}>No recent jobs</Text>
+              <Text style={styles.emptySubtext}>
+                Jobs you accept will appear here
+              </Text>
+            </View>
+          ) : (
+            recentJobs.map((job) => <JobCard key={job.id} job={job} />)
+          )}
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    backgroundColor: COLORS.primary,
+    paddingTop: 60,
+    paddingHorizontal: SIZES.padding,
+    paddingBottom: SIZES.padding * 1.5,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  greetingContainer: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: SIZES.md,
+    color: 'rgba(255,255,255,0.9)',
+  },
+  userName: {
+    fontSize: SIZES.xxl,
+    ...FONTS.bold,
+    color: COLORS.white,
+  },
+  headerSubtitle: {
+    fontSize: SIZES.sm,
+    color: 'rgba(255,255,255,0.8)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  availabilityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 16,
+  },
+  availabilityInfo: {
+    flex: 1,
+  },
+  availabilityLabel: {
+    fontSize: SIZES.xs,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 4,
+  },
+  availabilityStatus: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.white,
+  },
+  content: {
+    flex: 1,
+  },
+  statsSection: {
+    padding: SIZES.padding,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SIZES.padding,
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+    borderLeftWidth: 4,
+    ...SHADOWS.small,
+  },
+  statIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  statContent: {
+    flex: 1,
+  },
+  statValue: {
+    fontSize: SIZES.xl,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+  },
+  statLabel: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  section: {
+    padding: SIZES.padding,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+  },
+  seeAllText: {
+    fontSize: SIZES.sm,
+    color: COLORS.primary,
+    ...FONTS.semiBold,
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  actionButton: {
+    width: '48%',
+    padding: SIZES.padding,
+    borderRadius: 12,
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  actionIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
+  actionLabel: {
+    color: COLORS.white,
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+  },
+  jobCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SIZES.padding,
+    marginBottom: 12,
+    ...SHADOWS.small,
+  },
+  jobHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  jobService: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  jobStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  jobStatusText: {
+    fontSize: SIZES.xs,
+    ...FONTS.semiBold,
+    color: COLORS.white,
+    textTransform: 'capitalize',
+  },
+  jobClient: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  jobPrice: {
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+    color: COLORS.primary,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    ...SHADOWS.small,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    fontSize: SIZES.sm,
+    color: COLORS.textLight,
+    textAlign: 'center',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  badgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    ...FONTS.bold,
+  },
+});
+
+export default WorkerDashboard;

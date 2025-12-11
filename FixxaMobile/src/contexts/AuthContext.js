@@ -47,24 +47,38 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login for:', email);
       const response = await api.post('/login', { email, password });
+
+      console.log('Login response:', response.data);
+      console.log('Response keys:', Object.keys(response.data));
 
       if (response.data.success) {
         const userData = response.data.user;
         const token = response.data.token;
 
+        console.log('User data received:', userData);
+        console.log('User type:', userData?.type);
+        console.log('Token received:', token ? 'YES' : 'NO');
+
         setUser(userData);
 
-        // Store both token and user data
-        await AsyncStorage.setItem('authToken', token);
+        // Store both token and user data (only if token exists)
+        if (token) {
+          await AsyncStorage.setItem('authToken', token);
+        } else {
+          console.warn('No token received from login response');
+        }
+
         await AsyncStorage.setItem('user', JSON.stringify(userData));
 
         return response.data;
       }
 
+      console.log('Login was not successful:', response.data);
       return response.data;
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error('Login error details:', err.response?.data || err.message);
       return {
         success: false,
         error: err.response?.data?.error || 'Login failed. Please try again.'
@@ -109,6 +123,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = async (updatedUserData) => {
+    try {
+      // Update local state
+      setUser(updatedUserData);
+
+      // Update AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUserData));
+
+      return { success: true };
+    } catch (err) {
+      console.error('Update user failed:', err);
+      return {
+        success: false,
+        error: 'Failed to update user data locally'
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -118,6 +150,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         checkAuth,
+        updateUser,
       }}
     >
       {children}

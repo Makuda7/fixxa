@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { SALT_ROUNDS, VERIFICATION_TOKEN_EXPIRY, PASSWORD_RESET_TOKEN_EXPIRY, USER_TYPES } = require('../config/constants');
 const {
@@ -466,7 +467,19 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       logger.info('User logged in', { userId: user.id, email: user.email, type, isAdmin, redirectUrl });
 
-      res.json({ success: true, redirect: redirectUrl, user: req.session.user });
+      // Generate JWT token for mobile apps
+      const token = jwt.sign(
+        { id: user.id, email: user.email, type, isAdmin },
+        process.env.JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+
+      res.json({
+        success: true,
+        redirect: redirectUrl,
+        user: { ...req.session.user, type }, // Explicitly include type in user object
+        token
+      });
 
     } catch (err) {
       logger.error('Login error', { error: err.message, email });
@@ -568,7 +581,23 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
   
 
-  router.get('/check-session', (req, res) => {
+  router.get('/check-session', async (req, res) => {
+    // Check for JWT token (mobile apps)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        return res.json({
+          authenticated: true,
+          user: { id: decoded.id, email: decoded.email, type: decoded.type, isAdmin: decoded.isAdmin }
+        });
+      } catch (err) {
+        // Invalid token - fall through to session check
+      }
+    }
+
+    // Check for session (web app)
     if (req.session?.user?.id) {
       res.json({
         authenticated: true,

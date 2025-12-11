@@ -9,12 +9,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocket } from '../../contexts/SocketContext';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatDate } from '../../utils/formatting';
 
 const MessagesScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { socket, connected, on, off } = useSocket();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,11 +25,144 @@ const MessagesScreen = ({ navigation }) => {
     fetchConversations();
   }, []);
 
+  // Socket.IO real-time updates
+  useEffect(() => {
+    if (!connected || !socket) return;
+
+    // Listen for new messages
+    const handleNewMessage = (message) => {
+      console.log('New message received:', message);
+
+      // Update conversations list
+      setConversations(prev => {
+        const conversationIndex = prev.findIndex(
+          conv => conv.booking_id === message.booking_id
+        );
+
+        if (conversationIndex >= 0) {
+          // Update existing conversation
+          const updated = [...prev];
+          updated[conversationIndex] = {
+            ...updated[conversationIndex],
+            last_message: message.message,
+            last_message_time: message.created_at,
+            unread_count: message.sender_id !== user.id
+              ? (updated[conversationIndex].unread_count || 0) + 1
+              : updated[conversationIndex].unread_count,
+          };
+
+          // Move to top
+          const [conversation] = updated.splice(conversationIndex, 1);
+          return [conversation, ...updated];
+        } else {
+          // New conversation - refresh the list
+          fetchConversations();
+        }
+
+        return prev;
+      });
+    };
+
+    on('new-message', handleNewMessage);
+
+    // Cleanup
+    return () => {
+      off('new-message', handleNewMessage);
+    };
+  }, [connected, socket, user]);
+
   const fetchConversations = async () => {
     try {
-      const response = await api.get('/messages/conversations');
-      if (response.data.conversations) {
-        setConversations(response.data.conversations);
+      let response;
+
+      if (user.type === 'worker') {
+        // Workers use the /api/messages/worker endpoint
+        response = await api.get('/api/messages/worker');
+
+        if (response.data.messages) {
+          // Group messages by client to create conversations
+          const conversationMap = {};
+
+          response.data.messages.forEach(msg => {
+            const clientId = msg.client_id;
+
+            if (!conversationMap[clientId]) {
+              conversationMap[clientId] = {
+                id: clientId,
+                other_user_name: msg.client_name,
+                last_message: msg.content,
+                last_message_time: msg.datetime || msg.created_at,
+                unread_count: msg.sender_type === 'client' && !msg.read ? 1 : 0,
+                booking_id: null,
+              };
+            } else {
+              // Update if this message is newer
+              const existingTime = new Date(conversationMap[clientId].last_message_time);
+              const currentTime = new Date(msg.datetime || msg.created_at);
+
+              if (currentTime > existingTime) {
+                conversationMap[clientId].last_message = msg.content;
+                conversationMap[clientId].last_message_time = msg.datetime || msg.created_at;
+              }
+
+              // Count unread messages
+              if (msg.sender_type === 'client' && !msg.read) {
+                conversationMap[clientId].unread_count++;
+              }
+            }
+          });
+
+          // Convert to array and sort by last message time
+          const conversations = Object.values(conversationMap).sort((a, b) => {
+            return new Date(b.last_message_time) - new Date(a.last_message_time);
+          });
+
+          setConversations(conversations);
+        }
+      } else {
+        // Clients use the /api/messages endpoint
+        response = await api.get('/api/messages');
+
+        if (response.data.messages) {
+          // Group messages by professional to create conversations
+          const conversationMap = {};
+
+          response.data.messages.forEach(msg => {
+            const professionalId = msg.professional_id;
+
+            if (!conversationMap[professionalId]) {
+              conversationMap[professionalId] = {
+                id: professionalId,
+                other_user_name: msg.professional_name,
+                last_message: msg.content,
+                last_message_time: msg.datetime || msg.created_at,
+                unread_count: msg.sender_type === 'professional' && !msg.read ? 1 : 0,
+                booking_id: null,
+              };
+            } else {
+              // Update if this message is newer
+              const existingTime = new Date(conversationMap[professionalId].last_message_time);
+              const currentTime = new Date(msg.datetime || msg.created_at);
+
+              if (currentTime > existingTime) {
+                conversationMap[professionalId].last_message = msg.content;
+                conversationMap[professionalId].last_message_time = msg.datetime || msg.created_at;
+              }
+
+              // Count unread messages
+              if (msg.sender_type === 'professional' && !msg.read) {
+                conversationMap[professionalId].unread_count++;
+              }
+            }
+          });
+
+          // Convert to array and sort by last message time
+          const conversations = Object.values(conversationMap).sort((a, b) => {
+            return new Date(b.last_message_time) - new Date(a.last_message_time);
+          });
+
+          setConversations(conversations);
+        }
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -45,7 +180,23 @@ const MessagesScreen = ({ navigation }) => {
   const renderConversationItem = ({ item }) => (
     <TouchableOpacity
       style={styles.conversationCard}
-      onPress={() => navigation.navigate('ChatScreen', { conversation: item })}
+      onPress={() => {
+        if (user.type === 'worker') {
+          // Worker viewing client conversation
+          navigation.navigate('ChatScreen', {
+            clientId: item.id,
+            clientName: item.other_user_name,
+            conversation: item,
+          });
+        } else {
+          // Client viewing worker conversation
+          navigation.navigate('ChatScreen', {
+            workerId: item.id,
+            workerName: item.other_user_name,
+            conversation: item,
+          });
+        }
+      }}
     >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>
@@ -81,10 +232,19 @@ const MessagesScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
-        <Text style={styles.headerSubtitle}>
-          {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>Messages</Text>
+          <Text style={styles.headerSubtitle}>
+            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+          </Text>
+        </View>
+        <View style={{ width: 40 }} />
       </View>
 
       <FlatList
@@ -122,8 +282,25 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.primary,
-    padding: SIZES.padding * 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 60,
+    paddingHorizontal: SIZES.padding,
+    paddingBottom: SIZES.padding * 1.5,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  },
+  backIcon: {
+    fontSize: 28,
+    color: COLORS.white,
+  },
+  headerTextContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: SIZES.xxl,

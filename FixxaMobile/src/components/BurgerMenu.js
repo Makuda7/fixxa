@@ -51,6 +51,15 @@ const BurgerMenu = ({ navigation }) => {
         navigation.navigate('Reviews');
       },
     },
+    {
+      id: 'services',
+      title: 'Browse Services',
+      icon: '🛠️',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Services');
+      },
+    },
     { id: 'divider1', isDivider: true },
     {
       id: 'about',

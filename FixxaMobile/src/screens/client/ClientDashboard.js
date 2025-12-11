@@ -21,6 +21,7 @@ const ClientDashboard = ({ navigation }) => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchBookings = async () => {
     try {
@@ -36,13 +37,26 @@ const ClientDashboard = ({ navigation }) => {
     }
   };
 
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await api.get('/api/messages/client/unread-count');
+      if (response.data.unreadCount !== undefined) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
+    fetchUnreadCount();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchBookings();
+    fetchUnreadCount();
   };
 
   const getStatusColor = (status) => {
@@ -176,6 +190,22 @@ const ClientDashboard = ({ navigation }) => {
       {/* Quick Actions */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Messages')}
+        >
+          <View style={styles.iconContainer}>
+            <Text style={styles.actionIcon}>💬</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badgeContainer}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.actionText}>Messages</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => navigation.navigate('Bookings')}
@@ -404,14 +434,34 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     ...SHADOWS.small,
   },
+  iconContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
   actionIcon: {
     fontSize: 24,
-    marginRight: 16,
   },
   actionText: {
     fontSize: SIZES.md,
     ...FONTS.semiBold,
     color: COLORS.textPrimary,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  badgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    ...FONTS.bold,
   },
 });
 
