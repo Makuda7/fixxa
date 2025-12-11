@@ -254,7 +254,14 @@ function AppNavigator() {
               )}
 
               {/* Shared screens */}
-              <Stack.Screen name="ChatScreen" component={ChatScreen} />
+              <Stack.Screen
+                name="ChatScreen"
+                component={ChatScreen}
+                options={{
+                  headerShown: true,
+                  headerBackTitle: 'Back',
+                }}
+              />
               <Stack.Screen name="CreateReview" component={CreateReviewScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="EditProfile" component={EditProfileScreen} />

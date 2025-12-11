@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Fixxa",
+  "name": "Fixxa - Find Verified Professionals in South Africa",
+  "description": "Connect with skilled professionals for home repairs and services. Verified experts you can trust.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#228B22",
   "background_color": "#ffffff"
 }
