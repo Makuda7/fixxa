@@ -46,8 +46,11 @@ const ChatScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     // Set header title
+    console.log('Setting header title to:', otherUserName);
+    console.log('Route params:', { conversation, workerId, workerName, clientId, clientName });
+
     navigation.setOptions({
-      title: otherUserName,
+      title: otherUserName || 'Chat',
     });
 
     if (otherUserId) {
@@ -55,6 +58,7 @@ const ChatScreen = ({ route, navigation }) => {
       markMessagesAsRead();
     } else {
       // No other user ID, just show empty chat
+      console.warn('No otherUserId available');
       setLoading(false);
     }
   }, []);
@@ -82,10 +86,18 @@ const ChatScreen = ({ route, navigation }) => {
     const handleNewMessage = (message) => {
       console.log('New message received:', message);
 
-      // Check if this message is for this conversation (between current user and this worker)
-      const isForThisChat =
-        (message.professional_id === workerId && message.client_id === user.id) ||
-        (message.client_id === workerId && message.professional_id === user.id);
+      // Check if this message is for this conversation
+      let isForThisChat = false;
+
+      if (user.type === 'worker') {
+        // For workers: check if message involves this worker and this specific client
+        isForThisChat = message.professional_id === user.id && message.client_id === clientId;
+      } else {
+        // For clients: check if message involves this client and this specific worker
+        isForThisChat = message.client_id === user.id && message.professional_id === workerId;
+      }
+
+      console.log('Message check:', { isForThisChat, message, user, clientId, workerId });
 
       if (isForThisChat) {
         const formattedMessage = {
@@ -110,7 +122,7 @@ const ChatScreen = ({ route, navigation }) => {
     return () => {
       off('receiveMessage', handleNewMessage);
     };
-  }, [connected, socket, workerId, user]);
+  }, [connected, socket, workerId, clientId, user]);
 
   const fetchMessages = async () => {
     try {
@@ -125,14 +137,18 @@ const ChatScreen = ({ route, navigation }) => {
       }
 
       if (response.data.messages) {
-        // Transform messages to match expected format
-        const formattedMessages = response.data.messages.map(msg => ({
-          ...msg,
-          id: msg.id,
-          sender_id: msg.sender_type === 'client' ? msg.client_id : msg.professional_id,
-          message: msg.content,
-          created_at: msg.datetime || msg.created_at,
-        }));
+        // Transform and sort messages by created_at (ascending - oldest first)
+        const formattedMessages = response.data.messages
+          .map(msg => ({
+            ...msg,
+            id: msg.id,
+            sender_id: msg.sender_type === 'client' ? msg.client_id : msg.professional_id,
+            message: msg.content,
+            created_at: msg.datetime || msg.created_at,
+          }))
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        console.log('Loaded messages:', formattedMessages.length);
         setMessages(formattedMessages);
       }
     } catch (error) {
