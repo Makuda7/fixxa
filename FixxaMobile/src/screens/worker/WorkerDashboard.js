@@ -9,8 +9,11 @@ import {
   Alert,
   Switch,
   ActivityIndicator,
+  Modal,
+  Linking,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatCurrency } from '../../utils/formatting';
@@ -30,6 +33,7 @@ const WorkerDashboard = ({ navigation }) => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showWelcomeVideo, setShowWelcomeVideo] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -43,6 +47,25 @@ const WorkerDashboard = ({ navigation }) => {
 
     return unsubscribe;
   }, [navigation]);
+
+  // Check if should show welcome video on first visit
+  useEffect(() => {
+    const checkFirstVisit = async () => {
+      try {
+        const hasSeenWelcomeVideo = await AsyncStorage.getItem('hasSeenWelcomeVideo');
+        if (!hasSeenWelcomeVideo && user) {
+          // Small delay to let dashboard load first
+          setTimeout(() => {
+            setShowWelcomeVideo(true);
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Error checking welcome video status:', error);
+      }
+    };
+
+    checkFirstVisit();
+  }, [user]);
 
   const fetchDashboardData = async () => {
     try {
@@ -118,6 +141,20 @@ const WorkerDashboard = ({ navigation }) => {
     setRefreshing(true);
     fetchDashboardData();
     fetchUnreadCount();
+  };
+
+  const handleCloseWelcomeVideo = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenWelcomeVideo', 'true');
+      setShowWelcomeVideo(false);
+    } catch (error) {
+      console.error('Error saving welcome video status:', error);
+      setShowWelcomeVideo(false);
+    }
+  };
+
+  const handleWatchVideo = () => {
+    Linking.openURL('https://www.youtube.com/watch?v=eloSnb-dKRE');
   };
 
   const StatCard = ({ icon, label, value, color, onPress }) => (
@@ -324,6 +361,52 @@ const WorkerDashboard = ({ navigation }) => {
           )}
         </View>
       </ScrollView>
+
+      {/* Welcome Video Modal */}
+      <Modal
+        visible={showWelcomeVideo}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={handleCloseWelcomeVideo}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>🎬 Welcome to Fixxa!</Text>
+
+            <Text style={styles.modalText}>
+              Before you dive in, we've prepared a helpful tutorial to get you started.
+              Watch the video to learn how to:
+            </Text>
+
+            <View style={styles.featuresList}>
+              <Text style={styles.featureItem}>📱 Navigate the platform</Text>
+              <Text style={styles.featureItem}>💼 Manage your bookings</Text>
+              <Text style={styles.featureItem}>💬 Communicate with clients</Text>
+              <Text style={styles.featureItem}>📈 Grow your business</Text>
+            </View>
+
+            <Text style={styles.modalNote}>
+              💡 You can always access this video from the Getting Started section.
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.watchButton}
+                onPress={handleWatchVideo}
+              >
+                <Text style={styles.watchButtonText}>▶️ Watch Tutorial</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.skipButton}
+                onPress={handleCloseWelcomeVideo}
+              >
+                <Text style={styles.skipButtonText}>Skip for Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -539,6 +622,82 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 10,
     ...FONTS.bold,
+  },
+  // Welcome Video Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding,
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: SIZES.padding * 2,
+    width: '100%',
+    maxWidth: 400,
+    ...SHADOWS.large,
+  },
+  modalTitle: {
+    fontSize: SIZES.xxl,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: SIZES.padding,
+  },
+  modalText: {
+    fontSize: SIZES.md,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: SIZES.padding,
+  },
+  featuresList: {
+    backgroundColor: COLORS.background,
+    padding: SIZES.padding,
+    borderRadius: 12,
+    marginBottom: SIZES.padding,
+  },
+  featureItem: {
+    fontSize: SIZES.sm,
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  modalNote: {
+    fontSize: SIZES.sm,
+    color: COLORS.textLight,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: SIZES.padding * 1.5,
+    paddingHorizontal: SIZES.padding,
+  },
+  modalButtons: {
+    gap: 12,
+  },
+  watchButton: {
+    backgroundColor: COLORS.primary,
+    padding: SIZES.padding,
+    borderRadius: 12,
+    alignItems: 'center',
+    ...SHADOWS.medium,
+  },
+  watchButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+  },
+  skipButton: {
+    backgroundColor: COLORS.background,
+    padding: SIZES.padding,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  skipButtonText: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.md,
+    ...FONTS.medium,
   },
 });
 
