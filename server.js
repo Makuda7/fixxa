@@ -940,6 +940,10 @@ async function startServer() {
     await runWorkerApprovalMigration();
     await activatePendingWorkers();
 
+    // Quote requests migration
+    const { runQuoteRequestsMigration } = require('./migrations/quote_requests');
+    await runQuoteRequestsMigration();
+
     // Worker specialties migration
     const { runWorkerSpecialtiesMigration } = require('./migrations/worker_specialties');
     await runWorkerSpecialtiesMigration(pool, logger);

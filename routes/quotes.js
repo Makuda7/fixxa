@@ -4,6 +4,111 @@ const router = express.Router();
 module.exports = (pool, logger, sendEmail, emailTemplates) => {
   const { requireAuth } = require('../middleware/auth');
 
+  // Client requests a quote from a worker (no booking yet)
+  router.post('/request', requireAuth, async (req, res) => {
+    try {
+      const clientId = req.session.user.id;
+      const userType = req.session.user.type;
+
+      if (userType !== 'client') {
+        return res.status(403).json({ success: false, error: 'Only clients can request quotes' });
+      }
+
+      const { worker_id, description, notes } = req.body;
+
+      // Validation
+      if (!worker_id || !description || !description.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Worker ID and description are required'
+        });
+      }
+
+      // Verify worker exists
+      const workerResult = await pool.query(
+        'SELECT id, name, email FROM workers WHERE id = $1',
+        [worker_id]
+      );
+
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+
+      const worker = workerResult.rows[0];
+
+      // Get client details
+      const clientResult = await pool.query(
+        'SELECT name, email FROM users WHERE id = $1',
+        [clientId]
+      );
+
+      const client = clientResult.rows[0];
+
+      // Create a quote request record
+      const quoteRequestResult = await pool.query(`
+        INSERT INTO quote_requests (
+          client_id, worker_id, description, notes, status, created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        RETURNING *
+      `, [
+        clientId,
+        worker_id,
+        description.trim(),
+        notes ? notes.trim() : null,
+        'pending'
+      ]);
+
+      const quoteRequest = quoteRequestResult.rows[0];
+
+      // Send email notification to worker
+      try {
+        const emailSubject = `New Quote Request from ${client.name}`;
+        const emailHtml = `
+          <h2>New Quote Request</h2>
+          <p>Hello ${worker.name},</p>
+          <p>You have received a new quote request from <strong>${client.name}</strong>.</p>
+
+          <h3>Request Details:</h3>
+          <p><strong>Description:</strong><br/>${description}</p>
+          ${notes ? `<p><strong>Additional Details:</strong><br/>${notes}</p>` : ''}
+
+          <p>Please log in to your dashboard to review this request and provide a quote.</p>
+
+          <p>Best regards,<br/>The Fixxa Team</p>
+        `;
+
+        await sendEmail(worker.email, emailSubject, emailHtml);
+      } catch (emailError) {
+        logger.error('Failed to send quote request email', {
+          error: emailError.message,
+          quoteRequestId: quoteRequest.id
+        });
+        // Don't fail the request if email fails
+      }
+
+      logger.info('Quote request created', {
+        quoteRequestId: quoteRequest.id,
+        clientId,
+        workerId: worker_id
+      });
+
+      res.json({
+        success: true,
+        message: 'Quote request sent successfully',
+        quoteRequest: {
+          id: quoteRequest.id,
+          status: quoteRequest.status
+        }
+      });
+
+    } catch (error) {
+      logger.error('Failed to create quote request', { error: error.message });
+      console.error('Quote request error:', error);
+      res.status(500).json({ success: false, error: 'Failed to send quote request' });
+    }
+  });
+
   // Worker sends quote for a booking
   router.post('/send', requireAuth, async (req, res) => {
     try {
