@@ -23,7 +23,14 @@ const MessagesScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchConversations();
-  }, []);
+
+    // Refresh conversations when screen comes into focus (to update unread counts)
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchConversations();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   // Socket.IO real-time updates
   useEffect(() => {

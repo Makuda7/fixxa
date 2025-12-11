@@ -51,7 +51,14 @@ const ClientDashboard = ({ navigation }) => {
   useEffect(() => {
     fetchBookings();
     fetchUnreadCount();
-  }, []);
+
+    // Refresh unread count when screen comes into focus
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchUnreadCount();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const onRefresh = () => {
     setRefreshing(true);

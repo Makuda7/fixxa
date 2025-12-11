@@ -35,7 +35,14 @@ const WorkerDashboard = ({ navigation }) => {
     fetchDashboardData();
     fetchAvailabilityStatus();
     fetchUnreadCount();
-  }, []);
+
+    // Refresh unread count when screen comes into focus
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchUnreadCount();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const fetchDashboardData = async () => {
     try {

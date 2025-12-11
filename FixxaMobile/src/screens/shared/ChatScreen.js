@@ -29,7 +29,7 @@ const ChatScreen = ({ route, navigation }) => {
   const [sending, setSending] = useState(false);
   const flatListRef = useRef(null);
 
-  const otherUserName = conversation?.other_user_name || workerName || clientName || 'User';
+  const otherUserName = conversation?.other_user_name || clientName || workerName || 'User';
   const bookingId = conversation?.booking_id;
   const otherUserId = workerId || clientId;
 
@@ -41,6 +41,7 @@ const ChatScreen = ({ route, navigation }) => {
     bookingId,
     otherUserName,
     userType: user?.type,
+    conversationData: conversation,
   });
 
   useEffect(() => {
