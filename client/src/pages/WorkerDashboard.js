@@ -56,6 +56,9 @@ const WorkerDashboard = () => {
   const [suggestionStatus, setSuggestionStatus] = useState({ show: false, message: '', type: '' });
   const [submissions, setSubmissions] = useState([]);
 
+  // Welcome video modal state
+  const [showWelcomeVideo, setShowWelcomeVideo] = useState(false);
+
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -79,6 +82,17 @@ const WorkerDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Show welcome video modal on first visit
+  useEffect(() => {
+    const hasSeenWelcomeVideo = localStorage.getItem('hasSeenWelcomeVideo');
+    if (!hasSeenWelcomeVideo && user) {
+      // Small delay to let dashboard load first
+      setTimeout(() => {
+        setShowWelcomeVideo(true);
+      }, 1000);
+    }
+  }, [user]);
 
   // Listen for real-time completion response notifications
   useEffect(() => {
@@ -570,6 +584,11 @@ const WorkerDashboard = () => {
       });
       setTimeout(() => setSuggestionStatus({ show: false, message: '', type: '' }), 5000);
     }
+  };
+
+  const handleCloseWelcomeVideo = () => {
+    setShowWelcomeVideo(false);
+    localStorage.setItem('hasSeenWelcomeVideo', 'true');
   };
 
   if (loading) {
@@ -2214,6 +2233,38 @@ const WorkerDashboard = () => {
           </div>
         )}
       </main>
+
+      {/* Welcome Video Modal - First Time Only */}
+      {showWelcomeVideo && (
+        <div className="welcome-video-modal">
+          <div className="welcome-video-content">
+            <h2>🎬 Welcome to Fixxa!</h2>
+            <p>
+              Before you dive in, take a few minutes to watch this helpful tutorial on how to use
+              the platform, manage bookings, and grow your business on Fixxa.
+            </p>
+
+            <div className="welcome-video-container">
+              <iframe
+                src="https://www.youtube.com/embed/eloSnb-dKRE?si=sd9JQ-3nwaHfDRgG"
+                title="Fixxa Tutorial - How to Get Started"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+
+            <p className="welcome-video-tip">
+              💡 You can always access this video from the <strong>Getting Started</strong> section in the side menu.
+            </p>
+
+            <button className="btn-welcome-close" onClick={handleCloseWelcomeVideo}>
+              Got It, Let's Get Started!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
