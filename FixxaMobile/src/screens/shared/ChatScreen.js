@@ -42,7 +42,22 @@ const ChatScreen = ({ route, navigation }) => {
     otherUserName,
     userType: user?.type,
     conversationData: conversation,
+    routeParams: route.params,
   });
+
+  // Early validation
+  if (user?.type === 'worker' && !clientId) {
+    console.error('CRITICAL: Worker opened chat without clientId!', {
+      routeParams: route.params,
+      conversation,
+    });
+  }
+  if (user?.type === 'client' && !workerId) {
+    console.error('CRITICAL: Client opened chat without workerId!', {
+      routeParams: route.params,
+      conversation,
+    });
+  }
 
   useEffect(() => {
     // Set header title
@@ -130,9 +145,21 @@ const ChatScreen = ({ route, navigation }) => {
 
       if (user.type === 'worker') {
         // Workers fetch messages for a specific client
+        if (!clientId) {
+          console.error('No clientId provided for worker chat');
+          Alert.alert('Error', 'Cannot load chat: missing client information');
+          setLoading(false);
+          return;
+        }
         response = await api.get(`/api/messages/worker/${clientId}`);
       } else {
         // Clients fetch messages for a specific professional
+        if (!workerId) {
+          console.error('No workerId provided for client chat');
+          Alert.alert('Error', 'Cannot load chat: missing worker information');
+          setLoading(false);
+          return;
+        }
         response = await api.get(`/api/messages?professionalId=${workerId}`);
       }
 
@@ -153,7 +180,18 @@ const ChatScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
-      Alert.alert('Error', 'Failed to load messages');
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        userType: user?.type,
+        clientId,
+        workerId,
+      });
+      Alert.alert(
+        'Error',
+        `Failed to load messages: ${error.response?.data?.error || error.message}`
+      );
     } finally {
       setLoading(false);
     }
