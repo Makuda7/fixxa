@@ -11,6 +11,10 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
@@ -177,79 +181,97 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
         transparent={true}
         onRequestClose={() => setShowQuoteModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.contactModalContent}>
-            <View style={styles.contactModalHeader}>
-              <Text style={styles.contactModalTitle}>Request Quote from {worker.name}</Text>
-              <TouchableOpacity onPress={() => setShowQuoteModal(false)}>
-                <Text style={styles.closeIcon}>✕</Text>
-              </TouchableOpacity>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.contactModalContent}>
+                <View style={styles.contactModalHeader}>
+                  <Text style={styles.contactModalTitle}>Request Quote from {worker.name}</Text>
+                  <TouchableOpacity onPress={() => setShowQuoteModal(false)}>
+                    <Text style={styles.closeIcon}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  style={styles.modalScrollView}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  <Text style={styles.contactModalSubtitle}>
+                    Describe what you need and the professional will provide a custom quote
+                  </Text>
+
+                  <Text style={styles.inputLabel}>What do you need? *</Text>
+                  <TextInput
+                    style={styles.contactTextArea}
+                    value={quoteDescription}
+                    onChangeText={setQuoteDescription}
+                    placeholder="E.g., Kitchen plumbing repair, electrical outlet installation..."
+                    placeholderTextColor={COLORS.textLight}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    maxLength={300}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                  />
+
+                  <Text style={styles.charCount}>
+                    {quoteDescription.length}/300 characters
+                  </Text>
+
+                  <Text style={styles.inputLabel}>Additional Details (Optional)</Text>
+                  <TextInput
+                    style={styles.contactTextArea}
+                    value={quoteNotes}
+                    onChangeText={setQuoteNotes}
+                    placeholder="Size, timeframe, specific requirements..."
+                    placeholderTextColor={COLORS.textLight}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    maxLength={300}
+                    returnKeyType="done"
+                    onSubmitEditing={Keyboard.dismiss}
+                  />
+
+                  <Text style={styles.charCount}>
+                    {quoteNotes.length}/300 characters
+                  </Text>
+
+                  <View style={styles.contactModalFooter}>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setShowQuoteModal(false);
+                        setQuoteDescription('');
+                        setQuoteNotes('');
+                      }}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.sendButton, sendingQuote && styles.sendButtonDisabled]}
+                      onPress={handleRequestQuote}
+                      disabled={sendingQuote || !quoteDescription.trim()}
+                    >
+                      {sendingQuote ? (
+                        <ActivityIndicator color={COLORS.white} size="small" />
+                      ) : (
+                        <Text style={styles.sendButtonText}>Send Request</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
+              </View>
             </View>
-
-            <Text style={styles.contactModalSubtitle}>
-              Describe what you need and the professional will provide a custom quote
-            </Text>
-
-            <Text style={styles.inputLabel}>What do you need? *</Text>
-            <TextInput
-              style={styles.contactTextArea}
-              value={quoteDescription}
-              onChangeText={setQuoteDescription}
-              placeholder="E.g., Kitchen plumbing repair, electrical outlet installation..."
-              placeholderTextColor={COLORS.textLight}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              maxLength={300}
-            />
-
-            <Text style={styles.charCount}>
-              {quoteDescription.length}/300 characters
-            </Text>
-
-            <Text style={styles.inputLabel}>Additional Details (Optional)</Text>
-            <TextInput
-              style={styles.contactTextArea}
-              value={quoteNotes}
-              onChangeText={setQuoteNotes}
-              placeholder="Size, timeframe, specific requirements..."
-              placeholderTextColor={COLORS.textLight}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              maxLength={300}
-            />
-
-            <Text style={styles.charCount}>
-              {quoteNotes.length}/300 characters
-            </Text>
-
-            <View style={styles.contactModalFooter}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setShowQuoteModal(false);
-                  setQuoteDescription('');
-                  setQuoteNotes('');
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.sendButton, sendingQuote && styles.sendButtonDisabled]}
-                onPress={handleRequestQuote}
-                disabled={sendingQuote || !quoteDescription.trim()}
-              >
-                {sendingQuote ? (
-                  <ActivityIndicator color={COLORS.white} size="small" />
-                ) : (
-                  <Text style={styles.sendButtonText}>Send Request</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Header */}
@@ -926,6 +948,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: SIZES.padding,
     maxHeight: '80%',
+  },
+  modalScrollView: {
+    flexGrow: 0,
   },
   contactModalHeader: {
     flexDirection: 'row',
