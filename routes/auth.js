@@ -468,9 +468,10 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
       logger.info('User logged in', { userId: user.id, email: user.email, type, isAdmin, redirectUrl });
 
       // Generate JWT token for mobile apps
+      const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'fixxa-default-secret-change-in-production';
       const token = jwt.sign(
         { id: user.id, email: user.email, type, isAdmin },
-        process.env.JWT_SECRET,
+        jwtSecret,
         { expiresIn: '30d' }
       );
 

@@ -61,10 +61,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       console.log('Attempting login for:', email);
+      console.log('API Base URL:', api.defaults.baseURL);
       const response = await api.post('/login', { email, password });
 
+      console.log('Login response status:', response.status);
       console.log('Login response:', response.data);
       console.log('Response keys:', Object.keys(response.data));
+      console.log('Success field:', response.data.success);
 
       if (response.data.success) {
         let userData = response.data.user;
@@ -97,10 +100,16 @@ export const AuthProvider = ({ children }) => {
       console.log('Login was not successful:', response.data);
       return response.data;
     } catch (err) {
-      console.error('Login error details:', err.response?.data || err.message);
+      console.error('=== LOGIN ERROR DEBUG ===');
+      console.error('Error message:', err.message);
+      console.error('Error response status:', err.response?.status);
+      console.error('Error response data:', JSON.stringify(err.response?.data, null, 2));
+      console.error('Error config URL:', err.config?.url);
+      console.error('Error config baseURL:', err.config?.baseURL);
+      console.error('========================');
       return {
         success: false,
-        error: err.response?.data?.error || 'Login failed. Please try again.'
+        error: err.response?.data?.error || err.message || 'Login failed. Please try again.'
       };
     }
   };
