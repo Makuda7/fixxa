@@ -142,14 +142,23 @@ const WorkerDashboard = ({ navigation }) => {
 
   const fetchQuoteRequests = async () => {
     try {
+      console.log('Fetching quote requests...');
       const response = await api.get('/quotes/requests');
+      console.log('Quote requests response:', response.data);
+
       if (response.data.success && response.data.requests) {
+        console.log('Total requests:', response.data.requests.length);
         // Only show pending requests
         const pending = response.data.requests.filter(req => req.status === 'pending');
+        console.log('Pending requests:', pending.length);
         setQuoteRequests(pending);
+      } else {
+        console.log('No success or no requests in response');
       }
     } catch (error) {
       console.error('Error fetching quote requests:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
     }
   };
 
