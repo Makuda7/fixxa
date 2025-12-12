@@ -496,5 +496,40 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     }
   });
 
+  // Get quote requests for a worker
+  router.get('/requests', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+
+      if (userType !== 'professional') {
+        return res.status(403).json({ success: false, error: 'Only professionals can view quote requests' });
+      }
+
+      // Get all quote requests for this worker
+      const result = await pool.query(`
+        SELECT
+          qr.*,
+          u.name as client_name,
+          u.email as client_email,
+          u.phone as client_phone
+        FROM quote_requests qr
+        JOIN users u ON qr.client_id = u.id
+        WHERE qr.worker_id = $1
+        ORDER BY qr.created_at DESC
+      `, [userId]);
+
+      res.json({
+        success: true,
+        requests: result.rows
+      });
+
+    } catch (error) {
+      logger.error('Failed to get quote requests', { error: error.message });
+      console.error('Get quote requests error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get quote requests' });
+    }
+  });
+
   return router;
 };
