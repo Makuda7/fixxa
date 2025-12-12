@@ -28,6 +28,7 @@ const WorkerDashboard = ({ navigation }) => {
     totalEarnings: 0,
   });
   const [recentJobs, setRecentJobs] = useState([]);
+  const [quoteRequests, setQuoteRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
@@ -39,10 +40,12 @@ const WorkerDashboard = ({ navigation }) => {
     fetchDashboardData();
     fetchAvailabilityStatus();
     fetchUnreadCount();
+    fetchQuoteRequests();
 
     // Refresh unread count when screen comes into focus
     const unsubscribe = navigation.addListener('focus', () => {
       fetchUnreadCount();
+      fetchQuoteRequests();
     });
 
     return unsubscribe;
@@ -137,10 +140,24 @@ const WorkerDashboard = ({ navigation }) => {
     }
   };
 
+  const fetchQuoteRequests = async () => {
+    try {
+      const response = await api.get('/quotes/requests');
+      if (response.data.success && response.data.requests) {
+        // Only show pending requests
+        const pending = response.data.requests.filter(req => req.status === 'pending');
+        setQuoteRequests(pending);
+      }
+    } catch (error) {
+      console.error('Error fetching quote requests:', error);
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchDashboardData();
     fetchUnreadCount();
+    fetchQuoteRequests();
   };
 
   const handleCloseWelcomeVideo = async () => {
@@ -188,6 +205,62 @@ const WorkerDashboard = ({ navigation }) => {
       <Text style={styles.actionLabel}>{label}</Text>
     </TouchableOpacity>
   );
+
+  const QuoteRequestCard = ({ request }) => {
+    const timeAgo = (dateString) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+
+      if (seconds < 60) return 'Just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+      return `${Math.floor(seconds / 86400)}d ago`;
+    };
+
+    return (
+      <TouchableOpacity
+        style={styles.quoteRequestCard}
+        onPress={() => {
+          Alert.alert(
+            'Quote Request Details',
+            `Client: ${request.client_name}\n\nDescription:\n${request.description}${request.notes ? `\n\nAdditional Details:\n${request.notes}` : ''}`,
+            [
+              { text: 'Close', style: 'cancel' },
+              {
+                text: 'Contact Client',
+                onPress: () => {
+                  // Navigate to messages or show contact options
+                  Alert.alert('Contact', `Email: ${request.client_email}\nPhone: ${request.client_phone || 'Not provided'}`);
+                }
+              }
+            ]
+          );
+        }}
+      >
+        <View style={styles.quoteRequestHeader}>
+          <View style={styles.quoteRequestClient}>
+            <Text style={styles.quoteRequestClientIcon}>👤</Text>
+            <View>
+              <Text style={styles.quoteRequestClientName}>{request.client_name}</Text>
+              <Text style={styles.quoteRequestTime}>{timeAgo(request.created_at)}</Text>
+            </View>
+          </View>
+          <View style={styles.newBadge}>
+            <Text style={styles.newBadgeText}>NEW</Text>
+          </View>
+        </View>
+        <Text style={styles.quoteRequestDescription} numberOfLines={2}>
+          {request.description}
+        </Text>
+        {request.notes && (
+          <Text style={styles.quoteRequestNotes} numberOfLines={1}>
+            📝 {request.notes}
+          </Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const JobCard = ({ job }) => {
     const getStatusColor = (status) => {
@@ -338,6 +411,27 @@ const WorkerDashboard = ({ navigation }) => {
             />
           </View>
         </View>
+
+        {/* Quote Requests */}
+        {quoteRequests.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                💰 Quote Requests
+                {quoteRequests.length > 0 && (
+                  <Text style={styles.requestCount}> ({quoteRequests.length})</Text>
+                )}
+              </Text>
+            </View>
+            <Text style={styles.sectionSubtitle}>
+              Clients are interested in your services
+            </Text>
+
+            {quoteRequests.map((request) => (
+              <QuoteRequestCard key={request.id} request={request} />
+            ))}
+          </View>
+        )}
 
         {/* Recent Jobs */}
         <View style={styles.section}>
@@ -518,6 +612,17 @@ const styles = StyleSheet.create({
     ...FONTS.bold,
     color: COLORS.textPrimary,
   },
+  requestCount: {
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+    color: COLORS.primary,
+  },
+  sectionSubtitle: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginTop: -8,
+    marginBottom: 12,
+  },
   seeAllText: {
     fontSize: SIZES.sm,
     color: COLORS.primary,
@@ -622,6 +727,63 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 10,
     ...FONTS.bold,
+  },
+  // Quote Request Card Styles
+  quoteRequestCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SIZES.padding,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+    ...SHADOWS.small,
+  },
+  quoteRequestHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quoteRequestClient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  quoteRequestClientIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  quoteRequestClientName: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.textPrimary,
+  },
+  quoteRequestTime: {
+    fontSize: SIZES.xs,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  newBadge: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  newBadgeText: {
+    color: COLORS.white,
+    fontSize: SIZES.xs,
+    ...FONTS.bold,
+  },
+  quoteRequestDescription: {
+    fontSize: SIZES.sm,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  quoteRequestNotes: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
   },
   // Welcome Video Modal Styles
   modalOverlay: {
