@@ -1,6 +1,4 @@
-const { pool } = require('../config/database');
-
-async function runQuoteRequestsMigration() {
+async function runQuoteRequestsMigration(pool, logger) {
   try {
     console.log('Running quote_requests migration...');
 
