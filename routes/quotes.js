@@ -4,6 +4,16 @@ const router = express.Router();
 module.exports = (pool, logger, sendEmail, emailTemplates) => {
   const { requireAuth } = require('../middleware/auth');
 
+  // Health check endpoint to verify deployment
+  router.get('/health', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Quotes routes are active',
+      version: '2025-12-12-v2',
+      endpoints: ['/request', '/send', '/:id/accept', '/:id/reject', '/booking/:bookingId']
+    });
+  });
+
   // Client requests a quote from a worker (no booking yet)
   router.post('/request', requireAuth, async (req, res) => {
     try {
