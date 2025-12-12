@@ -87,6 +87,7 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
       return;
     }
 
+    console.log('Sending quote request for worker:', worker.id);
     setSendingQuote(true);
     try {
       const response = await api.post('/quotes/request', {
@@ -95,17 +96,25 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
         notes: quoteNotes.trim(),
       });
 
+      console.log('Quote request response:', response.data);
+
       if (response.data.success) {
         Alert.alert('Success', 'Quote request sent successfully! The professional will respond soon.');
         setQuoteDescription('');
         setQuoteNotes('');
         setShowQuoteModal(false);
       } else {
-        Alert.alert('Error', 'Failed to send quote request');
+        const errorMsg = response.data.error || 'Failed to send quote request';
+        console.error('Quote request failed:', errorMsg);
+        Alert.alert('Error', errorMsg);
       }
     } catch (error) {
       console.error('Error requesting quote:', error);
-      Alert.alert('Error', 'Failed to send quote request. Please try again.');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to send quote request';
+      Alert.alert('Error', `Failed to send quote request: ${errorMsg}`);
     } finally {
       setSendingQuote(false);
     }
