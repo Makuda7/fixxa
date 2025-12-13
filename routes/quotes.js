@@ -9,7 +9,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     res.json({
       success: true,
       message: 'Quotes routes are active',
-      version: '2025-12-12-v3',
+      version: '2025-12-13-v4',
       endpoints: ['/request', '/send', '/requests', '/:id/accept', '/:id/reject', '/booking/:bookingId']
     });
   });
