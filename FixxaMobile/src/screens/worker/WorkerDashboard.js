@@ -227,26 +227,21 @@ const WorkerDashboard = ({ navigation }) => {
       return `${Math.floor(seconds / 86400)}d ago`;
     };
 
+    const handleSendMessage = () => {
+      // Navigate to messages with this client
+      navigation.navigate('Messages', {
+        recipientId: request.client_id,
+        recipientName: request.client_name
+      });
+    };
+
+    const handleCreateQuote = () => {
+      // TODO: Navigate to quote creation screen
+      Alert.alert('Coming Soon', 'Quote creation feature will be available soon!');
+    };
+
     return (
-      <TouchableOpacity
-        style={styles.quoteRequestCard}
-        onPress={() => {
-          Alert.alert(
-            'Quote Request Details',
-            `Client: ${request.client_name}\n\nDescription:\n${request.description}${request.notes ? `\n\nAdditional Details:\n${request.notes}` : ''}`,
-            [
-              { text: 'Close', style: 'cancel' },
-              {
-                text: 'Contact Client',
-                onPress: () => {
-                  // Navigate to messages or show contact options
-                  Alert.alert('Contact', `Email: ${request.client_email}\nPhone: ${request.client_phone || 'Not provided'}`);
-                }
-              }
-            ]
-          );
-        }}
-      >
+      <View style={styles.quoteRequestCard}>
         <View style={styles.quoteRequestHeader}>
           <View style={styles.quoteRequestClient}>
             <Text style={styles.quoteRequestClientIcon}>👤</Text>
@@ -259,15 +254,36 @@ const WorkerDashboard = ({ navigation }) => {
             <Text style={styles.newBadgeText}>NEW</Text>
           </View>
         </View>
-        <Text style={styles.quoteRequestDescription} numberOfLines={2}>
+
+        <Text style={styles.quoteRequestDescription}>
           {request.description}
         </Text>
+
         {request.notes && (
-          <Text style={styles.quoteRequestNotes} numberOfLines={1}>
-            📝 {request.notes}
+          <Text style={styles.quoteRequestNotes}>
+            📝 Additional details: {request.notes}
           </Text>
         )}
-      </TouchableOpacity>
+
+        {/* Action buttons */}
+        <View style={styles.quoteRequestActions}>
+          <TouchableOpacity
+            style={styles.quoteRequestMessageButton}
+            onPress={handleSendMessage}
+          >
+            <Text style={styles.quoteRequestMessageIcon}>💬</Text>
+            <Text style={styles.quoteRequestMessageText}>Send Message</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quoteRequestQuoteButton}
+            onPress={handleCreateQuote}
+          >
+            <Text style={styles.quoteRequestQuoteIcon}>💰</Text>
+            <Text style={styles.quoteRequestQuoteText}>Create Quote</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
@@ -793,6 +809,50 @@ const styles = StyleSheet.create({
     fontSize: SIZES.xs,
     color: COLORS.textSecondary,
     fontStyle: 'italic',
+    marginTop: 8,
+  },
+  quoteRequestActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  quoteRequestMessageButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  quoteRequestMessageIcon: {
+    fontSize: 16,
+  },
+  quoteRequestMessageText: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.primary,
+  },
+  quoteRequestQuoteButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  quoteRequestQuoteIcon: {
+    fontSize: 16,
+  },
+  quoteRequestQuoteText: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.white,
   },
   // Welcome Video Modal Styles
   modalOverlay: {

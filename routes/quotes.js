@@ -507,12 +507,11 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
       }
 
       // Get all quote requests for this worker
+      // SECURITY: Do NOT expose client email/phone to maintain platform integrity
       const result = await pool.query(`
         SELECT
           qr.*,
-          u.name as client_name,
-          u.email as client_email,
-          u.phone as client_phone
+          u.name as client_name
         FROM quote_requests qr
         JOIN users u ON qr.client_id = u.id
         WHERE qr.worker_id = $1
