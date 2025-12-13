@@ -530,5 +530,134 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     }
   });
 
+  // Worker responds to quote request with a quote (no booking required)
+  router.post('/requests/:requestId/respond', requireAuth, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const userType = req.session.user.type;
+      const requestId = req.params.requestId;
+
+      if (userType !== 'professional') {
+        return res.status(403).json({ success: false, error: 'Only professionals can respond to quote requests' });
+      }
+
+      const {
+        line_items, // [{description, amount}]
+        payment_methods, // ['cash', 'eft', 'card']
+        banking_details, // {bank, account_number, account_type, branch_code}
+        notes,
+        valid_days = 7
+      } = req.body;
+
+      // Validation
+      if (!line_items || !Array.isArray(line_items) || line_items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Line items are required'
+        });
+      }
+
+      // Verify quote request belongs to this worker
+      const requestResult = await pool.query(
+        'SELECT * FROM quote_requests WHERE id = $1 AND worker_id = $2',
+        [requestId, workerId]
+      );
+
+      if (requestResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Quote request not found' });
+      }
+
+      const quoteRequest = requestResult.rows[0];
+      const clientId = quoteRequest.client_id;
+
+      // Calculate totals
+      const subtotal = line_items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+      const taxAmount = 0; // No tax for now
+      const totalAmount = subtotal + taxAmount;
+
+      // Set expiry date
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + valid_days);
+
+      // Create quote (linked to quote_request, not booking)
+      const quoteResult = await pool.query(`
+        INSERT INTO quotes (
+          worker_id, client_id, quote_request_id,
+          line_items, subtotal, tax_amount, total_amount,
+          payment_methods, banking_details, notes, valid_until
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *
+      `, [
+        workerId,
+        clientId,
+        requestId,
+        JSON.stringify(line_items),
+        subtotal,
+        taxAmount,
+        totalAmount,
+        payment_methods || ['cash'],
+        banking_details ? JSON.stringify(banking_details) : null,
+        notes,
+        validUntil
+      ]);
+
+      const quote = quoteResult.rows[0];
+
+      // Update quote request status to 'quoted'
+      await pool.query(
+        'UPDATE quote_requests SET status = $1, updated_at = NOW() WHERE id = $2',
+        ['quoted', requestId]
+      );
+
+      // Get client and worker details for email
+      const clientResult = await pool.query('SELECT name, email FROM users WHERE id = $1', [clientId]);
+      const workerResult = await pool.query('SELECT name FROM workers WHERE id = $1', [workerId]);
+
+      const client = clientResult.rows[0];
+      const worker = workerResult.rows[0];
+
+      // Send email notification to client
+      try {
+        const emailContent = emailTemplates.createQuoteReceivedEmail(
+          client.name,
+          worker.name,
+          totalAmount.toFixed(2),
+          validUntil.toLocaleDateString()
+        );
+        await sendEmail(client.email, emailContent.subject, emailContent.html);
+      } catch (emailError) {
+        logger.error('Failed to send quote email', {
+          error: emailError.message,
+          quoteId: quote.id
+        });
+        // Don't fail the quote creation if email fails
+      }
+
+      logger.info('Quote sent for quote request', {
+        quoteId: quote.id,
+        quoteRequestId: requestId,
+        workerId,
+        clientId,
+        totalAmount
+      });
+
+      res.json({
+        success: true,
+        message: 'Quote sent successfully',
+        quote: {
+          id: quote.id,
+          total_amount: totalAmount.toFixed(2),
+          valid_until: validUntil
+        }
+      });
+
+    } catch (error) {
+      logger.error('Failed to send quote for request', { error: error.message });
+      console.error('Send quote for request error:', error);
+      res.status(500).json({ success: false, error: 'Failed to send quote' });
+    }
+  });
+
   return router;
 };

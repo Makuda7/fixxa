@@ -944,6 +944,10 @@ async function startServer() {
     const { runQuoteRequestsMigration } = require('./migrations/quote_requests');
     await runQuoteRequestsMigration(pool, logger);
 
+    // Quote request ID migration (enables quotes from requests, not just bookings)
+    const { runQuoteRequestIdMigration } = require('./migrations/add_quote_request_id_to_quotes');
+    await runQuoteRequestIdMigration(pool, logger);
+
     // Worker specialties migration
     const { runWorkerSpecialtiesMigration } = require('./migrations/worker_specialties');
     await runWorkerSpecialtiesMigration(pool, logger);
