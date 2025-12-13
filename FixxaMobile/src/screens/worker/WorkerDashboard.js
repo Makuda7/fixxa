@@ -236,8 +236,10 @@ const WorkerDashboard = ({ navigation }) => {
     };
 
     const handleCreateQuote = () => {
-      // TODO: Navigate to quote creation screen
-      Alert.alert('Coming Soon', 'Quote creation feature will be available soon!');
+      navigation.navigate('CreateQuote', {
+        requestId: request.id,
+        clientName: request.client_name
+      });
     };
 
     return (

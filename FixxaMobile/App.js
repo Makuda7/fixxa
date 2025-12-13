@@ -33,6 +33,7 @@ import WorkerProfileCompletionScreen from './src/screens/worker/WorkerProfileCom
 import ScheduleScreen from './src/screens/worker/ScheduleScreen';
 import PortfolioScreen from './src/screens/worker/PortfolioScreen';
 import EarningsScreen from './src/screens/worker/EarningsScreen';
+import CreateQuoteScreen from './src/screens/worker/CreateQuoteScreen';
 import ReviewsScreen from './src/screens/shared/ReviewsScreen';
 import CreateReviewScreen from './src/screens/shared/CreateReviewScreen';
 import ProfileScreen from './src/screens/shared/ProfileScreen';
@@ -250,6 +251,7 @@ function AppNavigator() {
                   <Stack.Screen name="Earnings" component={EarningsScreen} />
                   <Stack.Screen name="JobCompletion" component={JobCompletionScreen} />
                   <Stack.Screen name="WorkerProfileCompletion" component={WorkerProfileCompletionScreen} />
+                  <Stack.Screen name="CreateQuote" component={CreateQuoteScreen} />
                 </>
               )}
 
