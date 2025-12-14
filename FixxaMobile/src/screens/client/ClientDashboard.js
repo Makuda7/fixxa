@@ -222,6 +222,13 @@ const ClientDashboard = ({ navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
+          onPress={() => navigation.navigate('CompletionApprovals')}
+        >
+          <Text style={styles.actionIcon}>✅</Text>
+          <Text style={styles.actionText}>Job Completion Approvals</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
           onPress={() => navigation.navigate('Reviews')}
         >
           <Text style={styles.actionIcon}>⭐</Text>
