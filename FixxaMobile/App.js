@@ -26,6 +26,7 @@ import BookingsScreen from './src/screens/client/BookingsScreen';
 import BookingDetailScreen from './src/screens/client/BookingDetailScreen';
 import CreateBookingScreen from './src/screens/client/CreateBookingScreen';
 import CompletionApprovalsScreen from './src/screens/client/CompletionApprovalsScreen';
+import EditReviewScreen from './src/screens/client/EditReviewScreen';
 import WorkerDashboard from './src/screens/worker/WorkerDashboard';
 import MyJobsScreen from './src/screens/worker/MyJobsScreen';
 import JobRequestsScreen from './src/screens/worker/JobRequestsScreen';
@@ -242,6 +243,7 @@ function AppNavigator() {
                   <Stack.Screen name="CreateBooking" component={CreateBookingScreen} />
                   <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
                   <Stack.Screen name="CompletionApprovals" component={CompletionApprovalsScreen} />
+                  <Stack.Screen name="EditReview" component={EditReviewScreen} />
                 </>
               )}
 

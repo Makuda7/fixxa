@@ -150,7 +150,15 @@ const ReviewsScreen = ({ navigation }) => {
             {renderStars(item.rating)}
           </View>
         </View>
-        <Text style={styles.reviewDate}>{formatDate(item.created_at)}</Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.reviewDate}>{formatDate(item.created_at)}</Text>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => navigation.navigate('EditReview', { reviewId: item.id })}
+          >
+            <Text style={styles.editButtonText}>✏️ Edit</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Review Content */}
@@ -352,9 +360,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 2,
   },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
   reviewDate: {
     fontSize: SIZES.xs,
     color: COLORS.textLight,
+    marginBottom: 4,
+  },
+  editButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  editButtonText: {
+    fontSize: SIZES.xs,
+    ...FONTS.semiBold,
+    color: COLORS.white,
   },
   reviewText: {
     fontSize: SIZES.sm,
