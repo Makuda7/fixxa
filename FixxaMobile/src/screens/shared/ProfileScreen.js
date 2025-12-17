@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
-import { formatPhoneNumber } from '../../utils/formatting';
+import { formatPhoneNumber, formatDate } from '../../utils/formatting';
 import BurgerMenu from '../../components/BurgerMenu';
 
 const ProfileScreen = ({ navigation }) => {
@@ -102,6 +102,11 @@ const ProfileScreen = ({ navigation }) => {
             value={user?.phone ? formatPhoneNumber(user.phone) : null}
           />
           <ProfileItem icon="📍" label="Location" value={user?.location} />
+          <ProfileItem
+            icon="📅"
+            label="Member Since"
+            value={user?.registeredAt ? formatDate(user.registeredAt) : null}
+          />
         </View>
       </View>
 
