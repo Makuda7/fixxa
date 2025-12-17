@@ -8,78 +8,99 @@ import {
   RefreshControl,
   Image,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
-import { formatDate } from '../../utils/formatting';
+import { formatDate, formatCurrency } from '../../utils/formatting';
 import { ReviewsListSkeleton } from '../../components/LoadingSkeleton';
 import BurgerMenu from '../../components/BurgerMenu';
 
 const ReviewsScreen = ({ navigation }) => {
+  const [activeTab, setActiveTab] = useState('pending'); // pending | myReviews | statistics
   const [reviews, setReviews] = useState([]);
+  const [pendingJobs, setPendingJobs] = useState([]);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchData();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchReviews(),
+      fetchPendingJobs(),
+    ]);
+    setLoading(false);
+    setRefreshing(false);
+  };
+
   const fetchReviews = async () => {
     try {
-      const response = await api.get('/reviews');
+      const response = await api.get('/reviews/client');
       if (response.data.reviews) {
         setReviews(response.data.reviews);
-      }
 
-      // Calculate statistics from reviews
-      if (response.data.reviews && response.data.reviews.length > 0) {
-        const stats = calculateStatistics(response.data.reviews);
-        setStatistics(stats);
+        // Calculate statistics
+        if (response.data.reviews.length > 0) {
+          const stats = calculateStatistics(response.data.reviews);
+          setStatistics(stats);
+        }
       }
     } catch (error) {
       console.error('Error fetching reviews:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    }
+  };
+
+  const fetchPendingJobs = async () => {
+    try {
+      const response = await api.get('/client-dashboard');
+      if (response.data.bookings) {
+        // Filter completed jobs without reviews
+        const completed = response.data.bookings.filter(
+          booking => booking.status?.toLowerCase() === 'completed' && !booking.has_review
+        );
+        setPendingJobs(completed);
+      }
+    } catch (error) {
+      console.error('Error fetching pending jobs:', error);
     }
   };
 
   const calculateStatistics = (reviewsData) => {
     const totalReviews = reviewsData.length;
-    const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
+    const totalRating = reviewsData.reduce((sum, review) => sum + (review.overall_rating || review.rating), 0);
     const averageRating = totalRating / totalReviews;
 
-    // Count reviews by star rating
-    const ratingDistribution = {
-      5: 0,
-      4: 0,
-      3: 0,
-      2: 0,
-      1: 0,
-    };
-
-    reviewsData.forEach(review => {
-      ratingDistribution[review.rating]++;
-    });
-
-    // Calculate percentages
-    const ratingPercentages = {};
-    Object.keys(ratingDistribution).forEach(rating => {
-      ratingPercentages[rating] = (ratingDistribution[rating] / totalReviews) * 100;
-    });
+    // Calculate this month's reviews
+    const now = new Date();
+    const thisMonth = reviewsData.filter(review => {
+      const reviewDate = new Date(review.created_at);
+      return reviewDate.getMonth() === now.getMonth() &&
+             reviewDate.getFullYear() === now.getFullYear();
+    }).length;
 
     return {
       totalReviews,
       averageRating,
-      ratingDistribution,
-      ratingPercentages,
+      thisMonth,
+      pending: pendingJobs.length,
     };
   };
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
   const onRefresh = () => {
     setRefreshing(true);
-    fetchReviews();
+    fetchData();
   };
 
   const renderStars = (rating) => {
@@ -94,60 +115,133 @@ const ReviewsScreen = ({ navigation }) => {
     return stars;
   };
 
-  const renderStatistics = () => {
-    if (!statistics) return null;
-
-    return (
-      <View style={styles.statisticsCard}>
-        <Text style={styles.statisticsTitle}>Review Statistics</Text>
-
-        {/* Average Rating Display */}
-        <View style={styles.averageRatingContainer}>
-          <View style={styles.averageRatingCircle}>
-            <Text style={styles.averageRatingNumber}>
-              {statistics.averageRating.toFixed(1)}
-            </Text>
-            <Text style={styles.averageRatingLabel}>out of 5</Text>
+  // Tab Navigation
+  const renderTabs = () => (
+    <View style={styles.tabsContainer}>
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'pending' && styles.tabActive]}
+        onPress={() => setActiveTab('pending')}
+      >
+        <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
+          Pending Reviews
+        </Text>
+        {pendingJobs.length > 0 && (
+          <View style={styles.tabBadge}>
+            <Text style={styles.tabBadgeText}>{pendingJobs.length}</Text>
           </View>
+        )}
+      </TouchableOpacity>
 
-          <View style={styles.ratingBarsContainer}>
-            {[5, 4, 3, 2, 1].map(rating => (
-              <View key={rating} style={styles.ratingBarRow}>
-                <Text style={styles.ratingBarLabel}>{rating}⭐</Text>
-                <View style={styles.ratingBar}>
-                  <View
-                    style={[
-                      styles.ratingBarFill,
-                      { width: `${statistics.ratingPercentages[rating] || 0}%` },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.ratingBarCount}>
-                  {statistics.ratingDistribution[rating]}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'myReviews' && styles.tabActive]}
+        onPress={() => setActiveTab('myReviews')}
+      >
+        <Text style={[styles.tabText, activeTab === 'myReviews' && styles.tabTextActive]}>
+          My Reviews
+        </Text>
+      </TouchableOpacity>
 
-        {/* Total Reviews */}
-        <View style={styles.totalReviewsContainer}>
-          <Text style={styles.totalReviewsText}>
-            Based on {statistics.totalReviews} review{statistics.totalReviews !== 1 ? 's' : ''}
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'statistics' && styles.tabActive]}
+        onPress={() => setActiveTab('statistics')}
+      >
+        <Text style={[styles.tabText, activeTab === 'statistics' && styles.tabTextActive]}>
+          Statistics
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Pending Reviews Tab Content
+  const renderPendingTab = () => (
+    <FlatList
+      data={pendingJobs}
+      renderItem={renderPendingJob}
+      keyExtractor={(item) => item.id.toString()}
+      contentContainerStyle={styles.listContent}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+      ListEmptyComponent={
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>✅</Text>
+          <Text style={styles.emptyText}>No pending reviews</Text>
+          <Text style={styles.emptySubtext}>
+            All your completed jobs have been reviewed!
           </Text>
         </View>
+      }
+    />
+  );
+
+  const renderPendingJob = ({ item }) => (
+    <View style={styles.jobCard}>
+      <View style={styles.jobHeader}>
+        <Text style={styles.jobTitle}>{item.service_type}</Text>
+        <Text style={styles.jobDate}>{formatDate(item.booking_date)}</Text>
       </View>
-    );
-  };
+
+      <View style={styles.jobDetails}>
+        <Text style={styles.jobDetailsText}>
+          <Text style={styles.jobDetailsLabel}>Worker: </Text>
+          {item.worker_name || 'Not assigned'}
+        </Text>
+        {item.price && (
+          <Text style={styles.jobDetailsText}>
+            <Text style={styles.jobDetailsLabel}>Price: </Text>
+            {formatCurrency(item.price)}
+          </Text>
+        )}
+        <Text style={styles.jobDetailsText}>
+          <Text style={styles.jobDetailsLabel}>Status: </Text>
+          Completed
+        </Text>
+      </View>
+
+      <View style={styles.reviewStatus}>
+        <View style={styles.statusBadgePending}>
+          <Text style={styles.statusBadgeText}>Review Pending</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={styles.writeReviewBtn}
+        onPress={() => navigation.navigate('CreateReview', { booking: item })}
+      >
+        <Text style={styles.writeReviewBtnText}>Write Review</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // My Reviews Tab Content
+  const renderMyReviewsTab = () => (
+    <FlatList
+      data={reviews}
+      renderItem={renderReviewItem}
+      keyExtractor={(item) => item.id.toString()}
+      contentContainerStyle={styles.listContent}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+      ListEmptyComponent={
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>⭐</Text>
+          <Text style={styles.emptyText}>No reviews yet</Text>
+          <Text style={styles.emptySubtext}>
+            Complete a booking to leave your first review!
+          </Text>
+        </View>
+      }
+    />
+  );
 
   const renderReviewItem = ({ item }) => (
     <View style={styles.reviewCard}>
-      {/* Review Header */}
       <View style={styles.reviewHeader}>
         <View style={styles.reviewerInfo}>
-          <Text style={styles.reviewerName}>{item.client_name}</Text>
+          <Text style={styles.reviewerName}>{item.worker_name}</Text>
           <View style={styles.ratingContainer}>
-            {renderStars(item.rating)}
+            {renderStars(item.overall_rating || item.rating)}
           </View>
         </View>
         <View style={styles.headerRight}>
@@ -161,43 +255,91 @@ const ReviewsScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Review Content */}
       {item.review_text && (
         <Text style={styles.reviewText}>{item.review_text}</Text>
       )}
 
-      {/* Review Images */}
-      {item.images && item.images.length > 0 && (
+      {item.photos && item.photos.length > 0 && (
         <View style={styles.imagesContainer}>
-          {item.images.slice(0, 3).map((image, index) => (
+          {item.photos.slice(0, 3).map((photo, index) => (
             <Image
               key={index}
-              source={{ uri: image }}
+              source={{ uri: photo }}
               style={styles.reviewImage}
               resizeMode="cover"
             />
           ))}
-          {item.images.length > 3 && (
+          {item.photos.length > 3 && (
             <View style={styles.moreImagesOverlay}>
-              <Text style={styles.moreImagesText}>+{item.images.length - 3}</Text>
+              <Text style={styles.moreImagesText}>+{item.photos.length - 3}</Text>
             </View>
           )}
         </View>
       )}
 
-      {/* Booking Info */}
       <View style={styles.bookingInfo}>
         <Text style={styles.bookingInfoText}>
           Service: {item.service_type || 'N/A'}
         </Text>
-        {item.worker_name && (
-          <Text style={styles.bookingInfoText}>
-            Worker: {item.worker_name}
-          </Text>
-        )}
       </View>
     </View>
   );
+
+  // Statistics Tab Content
+  const renderStatisticsTab = () => {
+    if (!statistics || reviews.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>📊</Text>
+          <Text style={styles.emptyText}>No statistics yet</Text>
+          <Text style={styles.emptySubtext}>
+            Leave your first review to see statistics!
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView
+        contentContainerStyle={styles.statsScrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{statistics.totalReviews}</Text>
+            <Text style={styles.statLabel}>Total Reviews</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{statistics.averageRating.toFixed(1)}</Text>
+            <Text style={styles.statLabel}>Average Rating</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{pendingJobs.length}</Text>
+            <Text style={styles.statLabel}>Pending Reviews</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{statistics.thisMonth}</Text>
+            <Text style={styles.statLabel}>This Month</Text>
+          </View>
+        </View>
+
+        <View style={styles.impactCard}>
+          <Text style={styles.impactTitle}>Your Review Impact</Text>
+          <Text style={styles.impactText}>
+            Your honest reviews help other customers choose the right professionals and help our service providers improve their offerings.
+          </Text>
+          <Text style={styles.impactText}>
+            Thank you for being part of the Fixxa community!
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  };
 
   if (loading) {
     return <ReviewsListSkeleton />;
@@ -205,7 +347,7 @@ const ReviewsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Top Bar with Burger Menu */}
+      {/* Top Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -213,49 +355,27 @@ const ReviewsScreen = ({ navigation }) => {
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Reviews</Text>
+        <Text style={styles.topBarTitle}>Reviews & Ratings</Text>
         <BurgerMenu navigation={navigation} />
       </View>
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>My Reviews</Text>
-          <Text style={styles.headerSubtitle}>
-            {reviews.length} review{reviews.length !== 1 ? 's' : ''}
-          </Text>
-        </View>
-
-        {/* Write Review Button */}
-        <TouchableOpacity
-          style={styles.writeReviewButton}
-          onPress={() => navigation.navigate('CreateReview')}
-        >
-          <Text style={styles.writeReviewIcon}>✍️</Text>
-          <Text style={styles.writeReviewText}>Write</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Reviews</Text>
+        <Text style={styles.headerSubtitle}>
+          Manage your feedback and reviews
+        </Text>
       </View>
 
-      {/* Reviews List */}
-      <FlatList
-        data={reviews}
-        renderItem={renderReviewItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={renderStatistics}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>⭐</Text>
-            <Text style={styles.emptyText}>No reviews yet</Text>
-            <Text style={styles.emptySubtext}>
-              Complete a booking to leave your first review!
-            </Text>
-          </View>
-        }
-      />
+      {/* Tabs */}
+      {renderTabs()}
+
+      {/* Tab Content */}
+      <View style={styles.tabContent}>
+        {activeTab === 'pending' && renderPendingTab()}
+        {activeTab === 'myReviews' && renderMyReviewsTab()}
+        {activeTab === 'statistics' && renderStatisticsTab()}
+      </View>
     </View>
   );
 };
@@ -288,18 +408,10 @@ const styles = StyleSheet.create({
     ...FONTS.bold,
     color: COLORS.white,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
   header: {
     backgroundColor: COLORS.primary,
     padding: SIZES.padding * 2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingTop: 0,
   },
   headerTitle: {
     fontSize: SIZES.xxl,
@@ -307,30 +419,127 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     marginBottom: 4,
   },
-  writeReviewButton: {
-    backgroundColor: COLORS.white,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    gap: 6,
-  },
-  writeReviewIcon: {
-    fontSize: 16,
-  },
-  writeReviewText: {
-    fontSize: SIZES.sm,
-    ...FONTS.semiBold,
-    color: COLORS.primary,
-  },
   headerSubtitle: {
     fontSize: SIZES.md,
     color: 'rgba(255,255,255,0.9)',
   },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 2,
+    borderBottomColor: '#f0f0f0',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    position: 'relative',
+  },
+  tabActive: {
+    borderBottomWidth: 3,
+    borderBottomColor: COLORS.primary,
+    backgroundColor: '#f9fff9',
+  },
+  tabText: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: '#666',
+  },
+  tabTextActive: {
+    color: COLORS.primary,
+  },
+  tabBadge: {
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginLeft: 6,
+  },
+  tabBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    ...FONTS.bold,
+  },
+  tabContent: {
+    flex: 1,
+  },
   listContent: {
     padding: SIZES.padding,
   },
+  statsScrollContent: {
+    padding: SIZES.padding,
+  },
+  // Pending Job Card Styles
+  jobCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    ...SHADOWS.small,
+  },
+  jobHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  jobTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.semiBold,
+    color: COLORS.primary,
+  },
+  jobDate: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+  },
+  jobDetails: {
+    marginBottom: 12,
+  },
+  jobDetailsText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  jobDetailsLabel: {
+    ...FONTS.semiBold,
+    color: COLORS.textPrimary,
+  },
+  reviewStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statusBadgePending: {
+    backgroundColor: '#fff3cd',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 15,
+  },
+  statusBadgeText: {
+    fontSize: SIZES.xs,
+    ...FONTS.semiBold,
+    color: '#856404',
+  },
+  writeReviewBtn: {
+    backgroundColor: COLORS.primary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  writeReviewBtnText: {
+    color: COLORS.white,
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+  },
+  // Review Card Styles
   reviewCard: {
     backgroundColor: COLORS.white,
     borderRadius: 12,
@@ -421,9 +630,57 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginBottom: 4,
   },
+  // Statistics Styles
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: COLORS.white,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  statNumber: {
+    fontSize: 32,
+    ...FONTS.bold,
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  impactCard: {
+    backgroundColor: '#f8f9fa',
+    padding: SIZES.padding * 1.5,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  impactTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.primary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  impactText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  // Empty States
   emptyState: {
     alignItems: 'center',
-    padding: 40,
+    padding: 60,
   },
   emptyIcon: {
     fontSize: 64,
@@ -439,85 +696,6 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     color: COLORS.textLight,
     textAlign: 'center',
-  },
-  statisticsCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: SIZES.padding,
-    marginBottom: 16,
-    ...SHADOWS.small,
-  },
-  statisticsTitle: {
-    fontSize: SIZES.lg,
-    ...FONTS.bold,
-    color: COLORS.textPrimary,
-    marginBottom: 16,
-  },
-  averageRatingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  averageRatingCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  averageRatingNumber: {
-    fontSize: 32,
-    ...FONTS.bold,
-    color: COLORS.white,
-  },
-  averageRatingLabel: {
-    fontSize: SIZES.xs,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 4,
-  },
-  ratingBarsContainer: {
-    flex: 1,
-  },
-  ratingBarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  ratingBarLabel: {
-    width: 50,
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-  },
-  ratingBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 4,
-    marginHorizontal: 8,
-    overflow: 'hidden',
-  },
-  ratingBarFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: 4,
-  },
-  ratingBarCount: {
-    width: 30,
-    fontSize: SIZES.xs,
-    color: COLORS.textLight,
-    textAlign: 'right',
-  },
-  totalReviewsContainer: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
-    paddingTop: 12,
-    alignItems: 'center',
-  },
-  totalReviewsText: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
   },
 });
 
