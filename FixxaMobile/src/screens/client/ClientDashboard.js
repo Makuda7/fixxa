@@ -22,6 +22,7 @@ const ClientDashboard = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [conversations, setConversations] = useState([]);
 
   const fetchBookings = async () => {
     try {
@@ -48,13 +49,60 @@ const ClientDashboard = ({ navigation }) => {
     }
   };
 
+  const fetchConversations = async () => {
+    try {
+      const response = await api.get('/api/messages');
+
+      if (response.data.messages) {
+        // Group messages by professional to create conversations
+        const conversationMap = {};
+
+        response.data.messages.forEach(msg => {
+          const professionalId = msg.professional_id;
+
+          if (!conversationMap[professionalId]) {
+            conversationMap[professionalId] = {
+              id: professionalId,
+              professional_name: msg.professional_name,
+              messages: []
+            };
+          }
+          conversationMap[professionalId].messages.push(msg);
+        });
+
+        // Convert to array and get only the 2 most recent conversations
+        const conversationsList = Object.values(conversationMap)
+          .map(conv => ({
+            ...conv,
+            // Sort messages by date descending
+            messages: conv.messages.sort((a, b) =>
+              new Date(b.datetime || b.created_at) - new Date(a.datetime || a.created_at)
+            ).slice(0, 3) // Get last 3 messages
+          }))
+          .sort((a, b) => {
+            // Sort conversations by most recent message
+            const aTime = new Date(a.messages[0].datetime || a.messages[0].created_at);
+            const bTime = new Date(b.messages[0].datetime || b.messages[0].created_at);
+            return bTime - aTime;
+          })
+          .slice(0, 2); // Get top 2 conversations
+
+        setConversations(conversationsList);
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
     fetchUnreadCount();
+    fetchConversations();
 
-    // Refresh unread count when screen comes into focus
+    // Refresh unread count and conversations when screen comes into focus
     const unsubscribe = navigation.addListener('focus', () => {
       fetchUnreadCount();
+      fetchConversations();
     });
 
     return unsubscribe;
@@ -64,6 +112,7 @@ const ClientDashboard = ({ navigation }) => {
     setRefreshing(true);
     fetchBookings();
     fetchUnreadCount();
+    fetchConversations();
   };
 
   const getStatusColor = (status) => {
@@ -189,6 +238,74 @@ const ClientDashboard = ({ navigation }) => {
                   💰 {formatCurrency(booking.price)}
                 </Text>
               )}
+            </View>
+          ))
+        )}
+      </View>
+
+      {/* Recent Inquiries */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Your Recent Inquiries</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Messages')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
+        </View>
+
+        {conversations.length === 0 ? (
+          <View style={styles.emptyInquiries}>
+            <Text style={styles.emptyText}>No inquiries yet.</Text>
+            <Text style={styles.emptySubtext}>
+              Browse our services and connect with professionals to get started!
+            </Text>
+            <TouchableOpacity
+              style={styles.findServicesButton}
+              onPress={() => navigation.navigate('Find')}
+            >
+              <Text style={styles.findServicesButtonText}>Find Services</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          conversations.map((conversation) => (
+            <View key={conversation.id} style={styles.conversationGroup}>
+              <Text style={styles.conversationHeader}>
+                Conversation with {conversation.professional_name}
+              </Text>
+
+              <View style={styles.messagesContainer}>
+                {conversation.messages.slice(0, 3).reverse().map((msg, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.inquiryCard,
+                      msg.sender_type === 'client'
+                        ? styles.inquiryCardClient
+                        : styles.inquiryCardProfessional
+                    ]}
+                  >
+                    <Text style={styles.inquirySender}>
+                      {msg.sender_type === 'client' ? 'You' : conversation.professional_name}:
+                    </Text>
+                    <Text style={styles.inquiryContent}>{msg.content}</Text>
+                    <Text style={styles.inquiryTime}>
+                      {formatDate(msg.datetime || msg.created_at)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.continueConversationButton}
+                onPress={() =>
+                  navigation.navigate('ChatScreen', {
+                    workerId: conversation.id,
+                    workerName: conversation.professional_name,
+                    conversation: conversation,
+                  })
+                }
+              >
+                <Text style={styles.continueConversationText}>Continue Conversation</Text>
+              </TouchableOpacity>
             </View>
           ))
         )}
@@ -476,6 +593,88 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 10,
     ...FONTS.bold,
+  },
+  // Recent Inquiries Styles
+  emptyInquiries: {
+    alignItems: 'center',
+    padding: 32,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    ...SHADOWS.small,
+  },
+  findServicesButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  findServicesButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+  },
+  conversationGroup: {
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 16,
+    backgroundColor: '#fafafa',
+  },
+  conversationHeader: {
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+    color: COLORS.primary,
+    marginBottom: 12,
+  },
+  messagesContainer: {
+    marginBottom: 12,
+  },
+  inquiryCard: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    maxWidth: '90%',
+  },
+  inquiryCardClient: {
+    backgroundColor: '#d0eaff',
+    borderLeftWidth: 4,
+    borderLeftColor: '#007bff',
+    alignSelf: 'flex-end',
+  },
+  inquiryCardProfessional: {
+    backgroundColor: '#e0ffe0',
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+    alignSelf: 'flex-start',
+  },
+  inquirySender: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  inquiryContent: {
+    fontSize: SIZES.sm,
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  inquiryTime: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+  },
+  continueConversationButton: {
+    backgroundColor: COLORS.primary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  continueConversationText: {
+    color: COLORS.white,
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
   },
 });
 
