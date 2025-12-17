@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../styles/theme';
+import api from '../services/api';
 
 const BurgerMenu = ({ navigation }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
   const slideAnim = useRef(new Animated.Value(-300)).current;
 
@@ -23,6 +25,8 @@ const BurgerMenu = ({ navigation }) => {
         duration: 250,
         useNativeDriver: true,
       }).start();
+      // Fetch unread count when menu opens
+      fetchUnreadCount();
     } else {
       Animated.timing(slideAnim, {
         toValue: -300,
@@ -32,6 +36,17 @@ const BurgerMenu = ({ navigation }) => {
     }
   }, [isMenuOpen]);
 
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await api.get('/api/messages/client/unread-count');
+      if (response.data.unreadCount !== undefined) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
   const menuItems = [
     {
       id: 'profile',
@@ -40,6 +55,16 @@ const BurgerMenu = ({ navigation }) => {
       onPress: () => {
         setIsMenuOpen(false);
         navigation.navigate('Profile');
+      },
+    },
+    {
+      id: 'messages',
+      title: 'Messages',
+      icon: '💬',
+      badge: unreadCount,
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Messages');
       },
     },
     {
@@ -159,6 +184,13 @@ const BurgerMenu = ({ navigation }) => {
         >
           {item.title}
         </Text>
+        {item.badge > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              {item.badge > 99 ? '99+' : item.badge}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -311,6 +343,21 @@ const styles = StyleSheet.create({
   logoutText: {
     color: COLORS.error,
     ...FONTS.semiBold,
+  },
+  badge: {
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginLeft: 'auto',
+  },
+  badgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    ...FONTS.bold,
   },
 });
 
