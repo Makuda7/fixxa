@@ -1100,6 +1100,7 @@ async function startServer() {
 
     publicHtmlPages.forEach(page => {
       app.get(`/${page}`, (req, res) => {
+        console.log(`📄 Serving public HTML: ${page}`);
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
