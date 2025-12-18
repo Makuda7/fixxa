@@ -910,6 +910,35 @@ async function runSuburbsMigration() {
 const ReminderScheduler = require('./services/reminderScheduler');
 let reminderScheduler = null;
 
+// Explicitly serve public HTML pages (must be defined before startServer)
+const publicHtmlPages = [
+  'reset-password.html', 'forgot-password.html', 'login.html', 'register.html',
+  'aboutus.html', 'service.html', 'terms.html', 'privacy.html', 'safety.html',
+  'join.html', 'admin.html', 'proLogin.html'
+];
+
+publicHtmlPages.forEach(page => {
+  app.get(`/${page}`, (req, res) => {
+    console.log(`📄 Serving public HTML: ${page}`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', page));
+  });
+});
+
+// Serve public folder for other static assets (CSS, images, etc.)
+app.use(express.static('public', {
+  setHeaders: (res, filePath) => {
+    // Don't cache HTML files
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
+
 // Start server
 async function startServer() {
   try {
@@ -1090,35 +1119,6 @@ async function startServer() {
         res.status(500).json({ success: false, error: error.message });
       }
     });
-
-    // Explicitly serve public HTML pages (must be before React static files)
-    const publicHtmlPages = [
-      'reset-password.html', 'forgot-password.html', 'login.html', 'register.html',
-      'aboutus.html', 'service.html', 'terms.html', 'privacy.html', 'safety.html',
-      'join.html', 'admin.html', 'proLogin.html'
-    ];
-
-    publicHtmlPages.forEach(page => {
-      app.get(`/${page}`, (req, res) => {
-        console.log(`📄 Serving public HTML: ${page}`);
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        res.sendFile(path.join(__dirname, 'public', page));
-      });
-    });
-
-    // Serve public folder for other static assets (CSS, images, etc.)
-    app.use(express.static('public', {
-      setHeaders: (res, filePath) => {
-        // Don't cache HTML files
-        if (filePath.endsWith('.html')) {
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-          res.setHeader('Pragma', 'no-cache');
-          res.setHeader('Expires', '0');
-        }
-      }
-    }));
 
     // Serve React app static files (after all API routes)
     // Cache static assets (JS, CSS) for 1 year, but not HTML
