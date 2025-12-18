@@ -1091,6 +1091,18 @@ async function startServer() {
       }
     });
 
+    // Serve public folder for static HTML pages (login, register, forgot-password, etc.)
+    app.use(express.static('public', {
+      setHeaders: (res, filePath) => {
+        // Don't cache HTML files
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
+      }
+    }));
+
     // Serve React app static files (after all API routes)
     // Cache static assets (JS, CSS) for 1 year, but not HTML
     app.use(express.static('client/build', {
