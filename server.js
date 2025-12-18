@@ -1119,6 +1119,19 @@ async function startServer() {
 
     // Serve React app for all other routes (must be last!)
     app.use((req, res) => {
+      const fs = require('fs');
+
+      // Check if the requested file exists in public folder
+      const publicPath = path.join(__dirname, 'public', req.path);
+      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
+        // Serve the public file
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        return res.sendFile(publicPath);
+      }
+
+      // Otherwise serve React app
       // Always serve fresh HTML - never cache
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -1126,7 +1139,6 @@ async function startServer() {
       res.setHeader('Surrogate-Control', 'no-store');
 
       // Read the HTML file and inject version parameter
-      const fs = require('fs');
       const htmlPath = path.join(__dirname, 'client/build', 'index.html');
       let html = fs.readFileSync(htmlPath, 'utf8');
 
