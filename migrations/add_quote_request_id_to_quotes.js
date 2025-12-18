@@ -21,6 +21,12 @@ async function runQuoteRequestIdMigration(pool, logger) {
     `);
 
     // Add check constraint to ensure quote has either booking_id OR quote_request_id
+    // Drop first if it exists, then recreate
+    await pool.query(`
+      ALTER TABLE quotes
+      DROP CONSTRAINT IF EXISTS quote_source_check
+    `);
+
     await pool.query(`
       ALTER TABLE quotes
       ADD CONSTRAINT quote_source_check
