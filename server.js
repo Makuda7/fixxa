@@ -352,6 +352,35 @@ app.post('/api/upload', requireAuth, documentUpload.single('file'), async (req, 
   }
 });
 
+// Explicitly serve public HTML pages BEFORE mounting API routes
+const publicHtmlPages = [
+  'reset-password.html', 'forgot-password.html', 'login.html', 'register.html',
+  'aboutus.html', 'service.html', 'terms.html', 'privacy.html', 'safety.html',
+  'join.html', 'admin.html', 'proLogin.html'
+];
+
+publicHtmlPages.forEach(page => {
+  app.get(`/${page}`, (req, res) => {
+    console.log(`📄 Serving public HTML: ${page}`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', page));
+  });
+});
+
+// Serve public folder for other static assets (CSS, images, etc.)
+app.use(express.static('public', {
+  setHeaders: (res, filePath) => {
+    // Don't cache HTML files
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
+
 // Mount routes
 app.use('/', authRoutes);
 app.use('/bookings', bookingsRoutes);
@@ -909,35 +938,6 @@ async function runSuburbsMigration() {
 // Initialize reminder scheduler
 const ReminderScheduler = require('./services/reminderScheduler');
 let reminderScheduler = null;
-
-// Explicitly serve public HTML pages (must be defined before startServer)
-const publicHtmlPages = [
-  'reset-password.html', 'forgot-password.html', 'login.html', 'register.html',
-  'aboutus.html', 'service.html', 'terms.html', 'privacy.html', 'safety.html',
-  'join.html', 'admin.html', 'proLogin.html'
-];
-
-publicHtmlPages.forEach(page => {
-  app.get(`/${page}`, (req, res) => {
-    console.log(`📄 Serving public HTML: ${page}`);
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(__dirname, 'public', page));
-  });
-});
-
-// Serve public folder for other static assets (CSS, images, etc.)
-app.use(express.static('public', {
-  setHeaders: (res, filePath) => {
-    // Don't cache HTML files
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    }
-  }
-}));
 
 // Start server
 async function startServer() {
