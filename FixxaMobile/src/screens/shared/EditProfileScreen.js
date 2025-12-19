@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,26 +19,88 @@ import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 
 const EditProfileScreen = ({ navigation }) => {
   const { user, updateUser } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    location: user?.location || '',
-    profile_picture: user?.profile_picture || null,
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    profile_picture: null,
   });
 
   // Worker-specific fields
   const [workerData, setWorkerData] = useState({
-    speciality: user?.speciality || '',
-    bio: user?.bio || '',
-    years_experience: user?.years_experience || '',
+    speciality: '',
+    bio: '',
+    years_experience: '',
   });
 
   const isWorker = user?.type === 'worker' || user?.type === 'professional';
+
+  // Fetch full user profile on mount
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching profile for user:', user);
+      console.log('User type:', user?.type);
+
+      // Use appropriate endpoint based on user type
+      const endpoint = isWorker ? '/workers/profile' : '/users/profile';
+      console.log('Fetching from endpoint:', endpoint);
+
+      const response = await api.get(endpoint);
+      console.log('Profile response:', response.data);
+
+      if (response.data.success) {
+        const profileData = isWorker ? response.data.worker : response.data.user;
+
+        // Set basic form data
+        setFormData({
+          name: profileData.name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          location: profileData.location || '',
+          profile_picture: profileData.profile_picture || null,
+        });
+
+        // Set worker data if user is a worker
+        if (isWorker) {
+          setWorkerData({
+            speciality: profileData.speciality || '',
+            bio: profileData.bio || '',
+            years_experience: profileData.years_experience?.toString() || '',
+          });
+        }
+
+        console.log('Form data set:', {
+          formData: {
+            name: profileData.name,
+            email: profileData.email,
+            phone: profileData.phone,
+            location: profileData.location,
+          },
+          workerData: isWorker ? {
+            speciality: profileData.speciality,
+            bio: profileData.bio,
+            years_experience: profileData.years_experience,
+          } : null,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      Alert.alert('Error', 'Failed to load profile data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const pickImage = async () => {
     try {
@@ -120,7 +182,7 @@ const EditProfileScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
 
     try {
       const updateData = {
@@ -138,11 +200,14 @@ const EditProfileScreen = ({ navigation }) => {
         updateData.years_experience = workerData.years_experience;
       }
 
-      const response = await api.put('/users/profile', updateData);
+      // Use appropriate endpoint based on user type
+      const endpoint = isWorker ? '/workers/profile' : '/users/profile';
+      const response = await api.put(endpoint, updateData);
 
       if (response.data.success) {
         // Update local user state
-        await updateUser(response.data.user);
+        const updatedUser = isWorker ? response.data.worker : response.data.user;
+        await updateUser(updatedUser);
 
         Alert.alert('Success', 'Profile updated successfully!', [
           {
@@ -157,9 +222,28 @@ const EditProfileScreen = ({ navigation }) => {
       console.error('Update profile error:', error);
       Alert.alert('Error', error.response?.data?.error || 'Failed to update profile');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  // Show loading indicator while fetching profile
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <View style={styles.saveButton} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -171,10 +255,10 @@ const EditProfileScreen = ({ navigation }) => {
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity
           onPress={handleSave}
-          disabled={loading}
+          disabled={saving}
           style={styles.saveButton}
         >
-          {loading ? (
+          {saving ? (
             <ActivityIndicator color={COLORS.primary} size="small" />
           ) : (
             <Text style={styles.saveButtonText}>Save</Text>
@@ -223,7 +307,7 @@ const EditProfileScreen = ({ navigation }) => {
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
               placeholder="Enter your full name"
-              editable={!loading}
+              editable={!saving}
             />
           </View>
 
@@ -236,7 +320,7 @@ const EditProfileScreen = ({ navigation }) => {
               placeholder="your@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
-              editable={!loading}
+              editable={!saving}
             />
           </View>
 
@@ -248,7 +332,7 @@ const EditProfileScreen = ({ navigation }) => {
               onChangeText={(text) => setFormData({ ...formData, phone: text })}
               placeholder="0XX XXX XXXX"
               keyboardType="phone-pad"
-              editable={!loading}
+              editable={!saving}
             />
           </View>
 
@@ -259,7 +343,7 @@ const EditProfileScreen = ({ navigation }) => {
               value={formData.location}
               onChangeText={(text) => setFormData({ ...formData, location: text })}
               placeholder="City, Province"
-              editable={!loading}
+              editable={!saving}
             />
           </View>
         </View>
@@ -276,7 +360,7 @@ const EditProfileScreen = ({ navigation }) => {
                 value={workerData.speciality}
                 onChangeText={(text) => setWorkerData({ ...workerData, speciality: text })}
                 placeholder="e.g., Plumbing, Electrical"
-                editable={!loading}
+                editable={!saving}
               />
             </View>
 
@@ -288,7 +372,7 @@ const EditProfileScreen = ({ navigation }) => {
                 onChangeText={(text) => setWorkerData({ ...workerData, years_experience: text })}
                 placeholder="e.g., 5"
                 keyboardType="numeric"
-                editable={!loading}
+                editable={!saving}
               />
             </View>
 
@@ -302,7 +386,7 @@ const EditProfileScreen = ({ navigation }) => {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-                editable={!loading}
+                editable={!saving}
               />
             </View>
           </View>
@@ -325,6 +409,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: SIZES.md,
+    color: COLORS.textSecondary,
+    ...FONTS.medium,
   },
   header: {
     flexDirection: 'row',

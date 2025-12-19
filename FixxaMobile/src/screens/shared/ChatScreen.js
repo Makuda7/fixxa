@@ -11,6 +11,9 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Modal,
+  Dimensions,
+  StatusBar,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
@@ -27,6 +30,9 @@ const ChatScreen = ({ route, navigation }) => {
   const [messageText, setMessageText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [fullScreenImage, setFullScreenImage] = useState(null);
   const flatListRef = useRef(null);
 
   const otherUserName = conversation?.other_user_name || clientName || workerName || 'User';
@@ -203,6 +209,12 @@ const ChatScreen = ({ route, navigation }) => {
     console.log('Worker ID:', workerId);
     console.log('Client ID:', clientId);
     console.log('User type:', user?.type);
+    console.log('Selected image:', selectedImage);
+
+    // If there's an image selected, use uploadAndSendImage instead
+    if (selectedImage) {
+      return uploadAndSendImage();
+    }
 
     if (!messageText.trim()) {
       console.log('No message text, returning');
@@ -298,13 +310,89 @@ const ChatScreen = ({ route, navigation }) => {
     });
 
     if (!result.canceled && result.assets[0]) {
-      // TODO: Implement image upload
-      Alert.alert('Coming Soon', 'Image sharing will be available soon!');
+      setSelectedImage(result.assets[0]);
     }
+  };
+
+  const uploadAndSendImage = async () => {
+    if (!selectedImage || !otherUserId) return;
+
+    setUploadingImage(true);
+
+    try {
+      // Step 1: Upload image to server
+      const formData = new FormData();
+      formData.append('image', {
+        uri: selectedImage.uri,
+        type: 'image/jpeg',
+        name: 'message-image.jpg',
+      });
+
+      const uploadResponse = await api.post('/api/messages/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (!uploadResponse.data.success) {
+        throw new Error(uploadResponse.data.error || 'Failed to upload image');
+      }
+
+      const { imageUrl, cloudinaryId } = uploadResponse.data;
+
+      // Step 2: Send message with image
+      let endpoint;
+      let messageData;
+
+      if (user.type === 'worker') {
+        endpoint = '/api/messages/worker/reply';
+        messageData = {
+          clientId: clientId,
+          message: messageText.trim() || '',
+          imageUrl,
+          cloudinaryId,
+        };
+      } else {
+        endpoint = '/api/messages/contact';
+        messageData = {
+          workerId: workerId,
+          message: messageText.trim() || '',
+          imageUrl,
+          cloudinaryId,
+        };
+      }
+
+      const response = await api.post(endpoint, messageData);
+
+      if (response.data.success) {
+        // Clear input and selected image
+        setMessageText('');
+        setSelectedImage(null);
+
+        // Scroll to bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 300);
+      } else {
+        Alert.alert('Error', response.data.error || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending image:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to send image';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
   };
 
   const renderMessage = ({ item }) => {
     const isMyMessage = item.sender_id === user.id;
+    const hasImage = !!item.image_url;
+    const hasText = item.message && item.message.trim();
 
     return (
       <View
@@ -313,14 +401,31 @@ const ChatScreen = ({ route, navigation }) => {
           isMyMessage ? styles.myMessage : styles.theirMessage,
         ]}
       >
-        <Text
-          style={[
-            styles.messageText,
-            isMyMessage ? styles.myMessageText : styles.theirMessageText,
-          ]}
-        >
-          {item.message}
-        </Text>
+        {hasImage && (
+          <TouchableOpacity
+            onPress={() => setFullScreenImage(item.image_url)}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={{ uri: item.image_url }}
+              style={styles.messageImage}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+        )}
+
+        {hasText && (
+          <Text
+            style={[
+              styles.messageText,
+              isMyMessage ? styles.myMessageText : styles.theirMessageText,
+              hasImage && styles.messageTextWithImage,
+            ]}
+          >
+            {item.message}
+          </Text>
+        )}
+
         <Text
           style={[
             styles.messageTime,
@@ -378,38 +483,90 @@ const ChatScreen = ({ route, navigation }) => {
 
       {/* Input Area */}
       <View style={styles.inputContainer}>
-        {/* Only show attach button for clients */}
-        {user.type !== 'worker' && (
-          <TouchableOpacity
-            style={styles.attachButton}
-            onPress={pickImage}
-          >
-            <Text style={styles.attachIcon}>📎</Text>
-          </TouchableOpacity>
+        {/* Image Preview */}
+        {selectedImage && (
+          <View style={styles.imagePreviewContainer}>
+            <Image
+              source={{ uri: selectedImage.uri }}
+              style={styles.imagePreview}
+              resizeMode="cover"
+            />
+            <TouchableOpacity
+              style={styles.removeImageButton}
+              onPress={removeSelectedImage}
+            >
+              <Text style={styles.removeImageIcon}>✕</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor={COLORS.textLight}
-          value={messageText}
-          onChangeText={setMessageText}
-          multiline
-          maxLength={1000}
-        />
-
-        <TouchableOpacity
-          style={[styles.sendButton, sending && styles.sendButtonDisabled]}
-          onPress={sendMessage}
-          disabled={sending || (!messageText.trim())}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color={COLORS.white} />
-          ) : (
-            <Text style={styles.sendIcon}>➤</Text>
+        <View style={styles.inputRow}>
+          {/* Only show attach button for clients */}
+          {user.type !== 'worker' && (
+            <TouchableOpacity
+              style={styles.attachButton}
+              onPress={pickImage}
+              disabled={uploadingImage}
+            >
+              <Text style={styles.attachIcon}>📎</Text>
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message..."
+            placeholderTextColor={COLORS.textLight}
+            value={messageText}
+            onChangeText={setMessageText}
+            multiline
+            maxLength={1000}
+            editable={!uploadingImage}
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (sending || uploadingImage) && styles.sendButtonDisabled,
+            ]}
+            onPress={sendMessage}
+            disabled={sending || uploadingImage || (!messageText.trim() && !selectedImage)}
+          >
+            {sending || uploadingImage ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Text style={styles.sendIcon}>➤</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Full Screen Image Viewer Modal */}
+      <Modal
+        visible={!!fullScreenImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFullScreenImage(null)}
+      >
+        <View style={styles.fullScreenContainer}>
+          <StatusBar hidden />
+
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setFullScreenImage(null)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+
+          {/* Full Screen Image */}
+          <Image
+            source={{ uri: fullScreenImage }}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -446,10 +603,19 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
     ...SHADOWS.small,
   },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
   messageText: {
     fontSize: SIZES.sm,
     lineHeight: 20,
     marginBottom: 4,
+  },
+  messageTextWithImage: {
+    marginTop: 4,
   },
   myMessageText: {
     color: COLORS.white,
@@ -489,13 +655,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     padding: SIZES.padding,
     backgroundColor: COLORS.white,
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
     ...SHADOWS.small,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  imagePreviewContainer: {
+    marginBottom: 12,
+    position: 'relative',
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  removeImageIcon: {
+    fontSize: 16,
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
   attachButton: {
     width: 40,
@@ -532,6 +727,33 @@ const styles = StyleSheet.create({
   sendIcon: {
     fontSize: 20,
     color: COLORS.white,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  closeButtonText: {
+    fontSize: 28,
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
 });
 

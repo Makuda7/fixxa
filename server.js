@@ -243,6 +243,7 @@ app.get('/health', async (req, res) => {
 
 // Import routes with correct parameters
 const authRoutes = require('./routes/auth')(pool, logger, sendEmail, emailTemplates, helpers);
+const usersRoutes = require('./routes/users')(pool, logger, helpers);
 const bookingsRoutes = require('./routes/bookings')(pool, logger, sendEmail, emailTemplates, io, helpers);
 const messagesRoutes = require('./routes/messages')(pool, logger, io, helpers);
 const workersRoutes = require('./routes/workers')(pool, logger, helpers);
@@ -383,6 +384,7 @@ app.use(express.static('public', {
 
 // Mount routes
 app.use('/', authRoutes);
+app.use('/users', usersRoutes);
 app.use('/bookings', bookingsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/workers', workersRoutes);
