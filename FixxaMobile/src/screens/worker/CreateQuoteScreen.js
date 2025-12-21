@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, SIZES, FONTS } from '../../styles/theme';
 import api from '../../services/api';
 
@@ -29,6 +30,9 @@ const CreateQuoteScreen = ({ route, navigation }) => {
   });
   const [notes, setNotes] = useState('');
   const [validDays, setValidDays] = useState('7');
+  const [availableDates, setAvailableDates] = useState([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
   const [loading, setLoading] = useState(false);
 
   const addLineItem = () => {
@@ -61,6 +65,50 @@ const CreateQuoteScreen = ({ route, navigation }) => {
     setPaymentMethods(prev => ({ ...prev, [method]: !prev[method] }));
   };
 
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setTempDate(selectedDate);
+      if (Platform.OS !== 'ios') {
+        addAvailableDate(selectedDate);
+      }
+    }
+  };
+
+  const addAvailableDate = (date = tempDate) => {
+    const dateString = date.toISOString().split('T')[0];
+
+    // Check if date already exists
+    if (availableDates.includes(dateString)) {
+      Alert.alert('Date Already Added', 'This date is already in your available dates list');
+      return;
+    }
+
+    // Check if date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(date);
+    selected.setHours(0, 0, 0, 0);
+
+    if (selected < today) {
+      Alert.alert('Invalid Date', 'Please select a date that is today or in the future');
+      return;
+    }
+
+    setAvailableDates([...availableDates, dateString].sort());
+    setShowDatePicker(false);
+  };
+
+  const removeAvailableDate = (dateString) => {
+    setAvailableDates(availableDates.filter(d => d !== dateString));
+  };
+
+  const formatDateDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-ZA', options);
+  };
+
   const validateForm = () => {
     // Check if all line items have description and amount
     const validItems = lineItems.filter(item => item.description.trim() && parseFloat(item.amount) > 0);
@@ -83,6 +131,12 @@ const CreateQuoteScreen = ({ route, navigation }) => {
         Alert.alert('Banking Details Required', 'Please fill in all banking details for EFT payments');
         return false;
       }
+    }
+
+    // Check if at least one available date is selected
+    if (availableDates.length === 0) {
+      Alert.alert('Available Dates Required', 'Please select at least one date when you are available to start the job');
+      return false;
     }
 
     return true;
@@ -117,7 +171,8 @@ const CreateQuoteScreen = ({ route, navigation }) => {
         payment_methods: selectedPaymentMethods,
         banking_details: bankingData,
         notes: notes.trim() || undefined,
-        valid_days: parseInt(validDays)
+        valid_days: parseInt(validDays),
+        available_dates: availableDates
       });
 
       if (response.data.success) {
@@ -309,6 +364,64 @@ const CreateQuoteScreen = ({ route, navigation }) => {
             />
           </View>
         )}
+
+        {/* Available Dates */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Available Start Dates <Text style={styles.required}>*</Text>
+          </Text>
+          <Text style={styles.helperText}>
+            Select the dates when you're available to start this job
+          </Text>
+
+          <TouchableOpacity
+            style={styles.addDateButton}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.addDateButtonText}>+ Add Available Date</Text>
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <View>
+              <DateTimePicker
+                value={tempDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                minimumDate={new Date()}
+              />
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={styles.confirmDateButton}
+                  onPress={() => addAvailableDate()}
+                >
+                  <Text style={styles.confirmDateButtonText}>Confirm Date</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {availableDates.length > 0 && (
+            <View style={styles.selectedDatesContainer}>
+              <Text style={styles.selectedDatesLabel}>
+                Selected Dates ({availableDates.length}):
+              </Text>
+              {availableDates.map((dateString, index) => (
+                <View key={index} style={styles.dateChip}>
+                  <Text style={styles.dateChipText}>
+                    {formatDateDisplay(dateString)}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.removeDateButton}
+                    onPress={() => removeAvailableDate(dateString)}
+                  >
+                    <Text style={styles.removeDateButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* Additional Notes */}
         <View style={styles.section}>
@@ -653,6 +766,78 @@ const styles = StyleSheet.create({
     fontSize: SIZES.lg,
     ...FONTS.bold,
     color: COLORS.white,
+  },
+  required: {
+    color: COLORS.error,
+  },
+  helperText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: 12,
+  },
+  addDateButton: {
+    backgroundColor: COLORS.primary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addDateButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+  },
+  confirmDateButton: {
+    backgroundColor: COLORS.success,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  confirmDateButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+  },
+  selectedDatesContainer: {
+    marginTop: 12,
+  },
+  selectedDatesLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  dateChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#e8f5e9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.success,
+  },
+  dateChipText: {
+    fontSize: SIZES.md,
+    color: COLORS.textPrimary,
+    ...FONTS.medium,
+    flex: 1,
+  },
+  removeDateButton: {
+    backgroundColor: COLORS.error,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  removeDateButtonText: {
+    color: COLORS.white,
+    fontSize: 14,
+    ...FONTS.bold,
   },
 });
 

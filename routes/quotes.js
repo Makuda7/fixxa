@@ -733,7 +733,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         payment_methods, // ['cash', 'eft', 'card']
         banking_details, // {bank, account_number, account_type, branch_code}
         notes,
-        valid_days = 7
+        valid_days = 7,
+        available_dates = [] // Array of date strings in YYYY-MM-DD format
       } = req.body;
 
       // Validation
@@ -741,6 +742,13 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         return res.status(400).json({
           success: false,
           error: 'Line items are required'
+        });
+      }
+
+      if (!available_dates || !Array.isArray(available_dates) || available_dates.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'At least one available start date is required'
         });
       }
 
@@ -771,9 +779,9 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         INSERT INTO quotes (
           worker_id, client_id, quote_request_id,
           line_items, subtotal, tax_amount, total_amount,
-          payment_methods, banking_details, notes, valid_until
+          payment_methods, banking_details, notes, valid_until, available_dates
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         workerId,
@@ -786,7 +794,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         payment_methods || ['cash'],
         banking_details ? JSON.stringify(banking_details) : null,
         notes,
-        validUntil
+        validUntil,
+        JSON.stringify(available_dates)
       ]);
 
       const quote = quoteResult.rows[0];

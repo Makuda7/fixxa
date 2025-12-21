@@ -979,6 +979,10 @@ async function startServer() {
     const { runQuoteRequestIdMigration } = require('./migrations/add_quote_request_id_to_quotes');
     await runQuoteRequestIdMigration(pool, logger);
 
+    // Available dates migration (enables workers to specify available start dates in quotes)
+    const { runAvailableDatesMigration } = require('./migrations/add_available_dates_to_quotes');
+    await runAvailableDatesMigration(pool, logger);
+
     // Worker specialties migration
     const { runWorkerSpecialtiesMigration } = require('./migrations/worker_specialties');
     await runWorkerSpecialtiesMigration(pool, logger);

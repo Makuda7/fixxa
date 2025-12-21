@@ -71,6 +71,12 @@ const WorkerQuotesScreen = ({ navigation }) => {
     return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Unknown';
   };
 
+  const formatDateDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-ZA', options);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -162,6 +168,22 @@ const WorkerQuotesScreen = ({ navigation }) => {
                     {formatCurrency(quote.total_amount)}
                   </Text>
                 </View>
+
+                {/* Available Start Dates */}
+                {quote.available_dates && quote.available_dates.length > 0 && (
+                  <View style={styles.availableDatesContainer}>
+                    <Text style={styles.availableDatesLabel}>Available Start Dates You Offered:</Text>
+                    <View style={styles.datesGrid}>
+                      {quote.available_dates.map((dateString, index) => (
+                        <View key={index} style={styles.availableDateChip}>
+                          <Text style={styles.availableDateText}>
+                            📅 {formatDateDisplay(dateString)}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
 
                 {/* Notes */}
                 {quote.notes && (
@@ -520,6 +542,36 @@ const styles = StyleSheet.create({
     fontSize: SIZES.md,
     ...FONTS.semiBold,
     color: COLORS.white,
+  },
+  availableDatesContainer: {
+    marginBottom: 12,
+    backgroundColor: '#f0f9ff',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0ea5e9',
+  },
+  availableDatesLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  datesGrid: {
+    gap: 8,
+  },
+  availableDateChip: {
+    backgroundColor: '#e0f2fe',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#0ea5e9',
+  },
+  availableDateText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textPrimary,
+    ...FONTS.medium,
   },
 });
 

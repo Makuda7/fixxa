@@ -31,6 +31,19 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
   const handleDateChange = (event, date) => {
     setShowDatePicker(Platform.OS === 'ios');
     if (date) {
+      // Check if the selected date is in the available dates
+      const dateString = date.toISOString().split('T')[0];
+      const availableDates = quote.available_dates || [];
+
+      if (availableDates.length > 0 && !availableDates.includes(dateString)) {
+        Alert.alert(
+          'Date Not Available',
+          'Please select one of the available dates marked by the professional.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       setSelectedDate(date);
     }
   };
@@ -62,6 +75,19 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
     if (selected < now) {
       Alert.alert('Invalid Date', 'Please select a date that is today or in the future.');
       return false;
+    }
+
+    // Check if selected date is in available dates (if worker specified available dates)
+    const availableDates = quote.available_dates || [];
+    if (availableDates.length > 0) {
+      const selectedDateString = selectedDate.toISOString().split('T')[0];
+      if (!availableDates.includes(selectedDateString)) {
+        Alert.alert(
+          'Invalid Date',
+          'Please select one of the available dates marked by the professional.'
+        );
+        return false;
+      }
     }
 
     return true;
@@ -120,6 +146,12 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
     return `${hours}:${minutes}`;
   };
 
+  const formatDateDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-ZA', options);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -173,11 +205,35 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
           />
         </View>
 
+        {/* Available Dates */}
+        {quote.available_dates && quote.available_dates.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Available Start Dates</Text>
+            <Text style={styles.helperText}>
+              The professional is available to start on the following dates:
+            </Text>
+            <View style={styles.availableDatesContainer}>
+              {quote.available_dates.map((dateString, index) => (
+                <View key={index} style={styles.availableDateChip}>
+                  <Text style={styles.availableDateText}>
+                    📅 {formatDateDisplay(dateString)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Date Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             Preferred Start Date <Text style={styles.required}>*</Text>
           </Text>
+          {quote.available_dates && quote.available_dates.length > 0 && (
+            <Text style={styles.helperText}>
+              Please select one of the available dates shown above
+            </Text>
+          )}
           <TouchableOpacity
             style={styles.dateButton}
             onPress={() => setShowDatePicker(true)}
@@ -491,6 +547,22 @@ const styles = StyleSheet.create({
     fontSize: SIZES.lg,
     ...FONTS.bold,
     color: COLORS.white,
+  },
+  availableDatesContainer: {
+    marginTop: 8,
+  },
+  availableDateChip: {
+    backgroundColor: '#e8f5e9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.success,
+  },
+  availableDateText: {
+    fontSize: SIZES.md,
+    color: COLORS.textPrimary,
+    ...FONTS.medium,
   },
 });
 
