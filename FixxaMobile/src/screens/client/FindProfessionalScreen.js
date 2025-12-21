@@ -11,7 +11,11 @@ import {
   RefreshControl,
   Modal,
   Image,
+  Share,
+  Platform,
+  Linking,
 } from 'react-native';
+import * as Location from 'expo-location';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { FindProfessionalSkeleton } from '../../components/LoadingSkeleton';
@@ -23,6 +27,17 @@ const FindProfessionalScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpeciality, setSelectedSpeciality] = useState('all');
+  const [specialties, setSpecialties] = useState([]);
+  const [loadingSpecialties, setLoadingSpecialties] = useState(true);
+
+  // Sort state
+  const [sortBy, setSortBy] = useState('rating'); // 'rating', 'reviews', 'recent', 'distance'
+
+  // Location state
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationPermission, setLocationPermission] = useState(null);
+  const [showLocationBanner, setShowLocationBanner] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
 
   // Advanced filter states
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -31,18 +46,182 @@ const FindProfessionalScreen = ({ navigation }) => {
     minRating: 0,
     priceRange: 'all', // 'budget', 'standard', 'premium', 'all'
     verified: false,
+    province: '',
+    suburb: '',
+    available: false, // Currently accepting bookings
   });
 
-  const specialities = [
-    'all',
-    'plumbing',
-    'electrical',
-    'carpentry',
-    'painting',
-    'cleaning',
-    'gardening',
-    'hvac',
-  ];
+  // Province and Suburb state
+  const [provinces] = useState([
+    'Gauteng',
+    'Western Cape',
+    'Free State',
+    'KwaZulu-Natal',
+    'Eastern Cape',
+    'Northern Cape',
+    'Mpumalanga',
+    'Limpopo',
+    'North West',
+  ]);
+  const [suburbs, setSuburbs] = useState([]);
+  const [loadingSuburbs, setLoadingSuburbs] = useState(false);
+
+  const fetchSpecialties = async () => {
+    try {
+      const response = await api.get('/api/specialties');
+
+      if (response.data.success && response.data.specialties) {
+        // Filter active specialties and sort by display order
+        const activeSpecialties = response.data.specialties
+          .filter(s => s.is_active)
+          .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+        // Add "All" option at the beginning
+        const specialtiesWithAll = [
+          { name: 'All', icon: '🔧', value: 'all' },
+          ...activeSpecialties.map(s => ({
+            name: s.name,
+            icon: s.icon || '',
+            value: s.name.toLowerCase()
+          }))
+        ];
+
+        setSpecialties(specialtiesWithAll);
+      }
+    } catch (error) {
+      console.error('Error fetching specialties:', error);
+      // Fallback to hardcoded specialties if fetch fails
+      setSpecialties([
+        { name: 'All', icon: '🔧', value: 'all' },
+        { name: 'Plumbing', icon: '🔧', value: 'plumbing' },
+        { name: 'Electrical', icon: '⚡', value: 'electrical' },
+        { name: 'Carpentry', icon: '🪚', value: 'carpentry' },
+        { name: 'Painting', icon: '🎨', value: 'painting' },
+        { name: 'Cleaning', icon: '🧹', value: 'cleaning' },
+        { name: 'Gardening', icon: '🌱', value: 'gardening' },
+        { name: 'HVAC', icon: '❄️', value: 'hvac' },
+      ]);
+    } finally {
+      setLoadingSpecialties(false);
+    }
+  };
+
+  const fetchSuburbs = async (province) => {
+    if (!province) {
+      setSuburbs([]);
+      return;
+    }
+
+    setLoadingSuburbs(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('province', province);
+
+      const response = await api.get(`/suburbs?${params.toString()}`);
+
+      if (response.data.success && response.data.suburbs) {
+        setSuburbs(response.data.suburbs);
+      } else {
+        setSuburbs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching suburbs:', error);
+      setSuburbs([]);
+    } finally {
+      setLoadingSuburbs(false);
+    }
+  };
+
+  // Check location permission on mount
+  useEffect(() => {
+    checkLocationPermission();
+  }, []);
+
+  const checkLocationPermission = async () => {
+    try {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      setLocationPermission(status);
+
+      if (status === 'granted') {
+        setShowLocationBanner(false);
+      } else if (status === 'undetermined') {
+        setShowLocationBanner(true);
+      }
+    } catch (error) {
+      console.error('Error checking location permission:', error);
+    }
+  };
+
+  const requestLocationPermission = async () => {
+    setLoadingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setLocationPermission(status);
+
+      if (status === 'granted') {
+        await getUserLocation();
+        setShowLocationBanner(false);
+      } else if (status === 'denied') {
+        Alert.alert(
+          'Location Permission Denied',
+          'Please enable location services in your device settings to find professionals near you.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+          ]
+        );
+        setShowLocationBanner(false);
+      }
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      Alert.alert('Error', 'Failed to request location permission');
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const getUserLocation = async () => {
+    setLoadingLocation(true);
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      // Add workers with distance when location is available
+      if (workers.length > 0) {
+        filterWorkers();
+      }
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Failed to get your current location');
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return distance; // Returns distance in kilometers
+  };
 
   const fetchWorkers = async () => {
     try {
@@ -56,11 +235,25 @@ const FindProfessionalScreen = ({ navigation }) => {
         (w) => w.approval_status === 'approved' && w.is_verified
       );
 
+      // Add distance to each worker if user location is available
+      const workersWithDistance = approvedWorkers.map(worker => {
+        if (userLocation && worker.latitude && worker.longitude) {
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            parseFloat(worker.latitude),
+            parseFloat(worker.longitude)
+          );
+          return { ...worker, distance };
+        }
+        return worker;
+      });
+
       console.log('Fetched workers:', workersData.length);
       console.log('Approved & verified:', approvedWorkers.length);
 
-      setWorkers(approvedWorkers);
-      setFilteredWorkers(approvedWorkers);
+      setWorkers(workersWithDistance);
+      setFilteredWorkers(workersWithDistance);
     } catch (error) {
       console.error('Error fetching workers:', error);
       Alert.alert('Error', 'Failed to load professionals. Please try again.');
@@ -73,15 +266,36 @@ const FindProfessionalScreen = ({ navigation }) => {
   const onRefresh = () => {
     setRefreshing(true);
     fetchWorkers();
+    fetchSpecialties();
   };
 
   useEffect(() => {
+    fetchSpecialties();
     fetchWorkers();
   }, []);
 
   useEffect(() => {
     filterWorkers();
-  }, [searchQuery, selectedSpeciality, filters, workers]);
+  }, [searchQuery, selectedSpeciality, filters, workers, sortBy]);
+
+  // Recalculate distances when location changes
+  useEffect(() => {
+    if (userLocation && workers.length > 0) {
+      const workersWithDistance = workers.map(worker => {
+        if (worker.latitude && worker.longitude) {
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            parseFloat(worker.latitude),
+            parseFloat(worker.longitude)
+          );
+          return { ...worker, distance };
+        }
+        return worker;
+      });
+      setWorkers(workersWithDistance);
+    }
+  }, [userLocation]);
 
   const filterWorkers = () => {
     let filtered = workers;
@@ -104,11 +318,24 @@ const FindProfessionalScreen = ({ navigation }) => {
       );
     }
 
-    // Filter by location
-    if (filters.location) {
+    // Filter by suburb (priority over province and location)
+    if (filters.suburb) {
+      filtered = filtered.filter(
+        (w) => w.primary_suburb?.toLowerCase() === filters.suburb.toLowerCase()
+      );
+    } else if (filters.province) {
+      // Filter by province if no suburb selected
+      filtered = filtered.filter(
+        (w) => w.province?.toLowerCase() === filters.province.toLowerCase()
+      );
+    } else if (filters.location) {
+      // Fallback to location text filter
       const location = filters.location.toLowerCase();
       filtered = filtered.filter(
-        (w) => w.location?.toLowerCase().includes(location)
+        (w) =>
+          w.location?.toLowerCase().includes(location) ||
+          w.primary_suburb?.toLowerCase().includes(location) ||
+          w.province?.toLowerCase().includes(location)
       );
     }
 
@@ -124,6 +351,11 @@ const FindProfessionalScreen = ({ navigation }) => {
       filtered = filtered.filter((w) => w.is_verified === true);
     }
 
+    // Filter by availability (currently accepting bookings)
+    if (filters.available) {
+      filtered = filtered.filter((w) => w.is_available === true);
+    }
+
     // Filter by price range (if available in worker data)
     if (filters.priceRange !== 'all' && filters.priceRange) {
       filtered = filtered.filter((w) => {
@@ -132,7 +364,51 @@ const FindProfessionalScreen = ({ navigation }) => {
       });
     }
 
+    // Apply sorting
+    filtered = sortWorkers(filtered);
+
     setFilteredWorkers(filtered);
+  };
+
+  const sortWorkers = (workers) => {
+    const sorted = [...workers];
+
+    switch (sortBy) {
+      case 'rating':
+        // Highest rated first
+        return sorted.sort((a, b) => {
+          const ratingA = parseFloat(a.avg_rating || a.rating || 0);
+          const ratingB = parseFloat(b.avg_rating || b.rating || 0);
+          return ratingB - ratingA;
+        });
+
+      case 'reviews':
+        // Most reviews first
+        return sorted.sort((a, b) => {
+          const reviewsA = parseInt(a.review_count || 0);
+          const reviewsB = parseInt(b.review_count || 0);
+          return reviewsB - reviewsA;
+        });
+
+      case 'recent':
+        // Recently joined first
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.created_at || a.registeredAt || 0);
+          const dateB = new Date(b.created_at || b.registeredAt || 0);
+          return dateB - dateA;
+        });
+
+      case 'distance':
+        // Nearest first (only if location is available)
+        return sorted.sort((a, b) => {
+          const distanceA = a.distance !== undefined ? a.distance : Infinity;
+          const distanceB = b.distance !== undefined ? b.distance : Infinity;
+          return distanceA - distanceB;
+        });
+
+      default:
+        return sorted;
+    }
   };
 
   const clearFilters = () => {
@@ -141,18 +417,66 @@ const FindProfessionalScreen = ({ navigation }) => {
       minRating: 0,
       priceRange: 'all',
       verified: false,
+      province: '',
+      suburb: '',
+      available: false,
     });
     setSearchQuery('');
     setSelectedSpeciality('all');
+    setSuburbs([]);
+  };
+
+  const handleProvinceChange = (province) => {
+    setFilters({ ...filters, province, suburb: '' });
+    if (province) {
+      fetchSuburbs(province);
+    } else {
+      setSuburbs([]);
+    }
   };
 
   const getActiveFilterCount = () => {
     let count = 0;
     if (filters.location) count++;
+    if (filters.province) count++;
+    if (filters.suburb) count++;
     if (filters.minRating > 0) count++;
     if (filters.priceRange !== 'all') count++;
     if (filters.verified) count++;
+    if (filters.available) count++;
     return count;
+  };
+
+  const getResultsTitle = () => {
+    const count = filteredWorkers.length;
+    const plural = count !== 1 ? 's' : '';
+
+    // Build location context
+    let locationContext = '';
+
+    if (filters.suburb) {
+      locationContext = ` in ${filters.suburb}`;
+    } else if (filters.province) {
+      locationContext = ` in ${filters.province}`;
+    } else if (filters.location) {
+      locationContext = ` in ${filters.location}`;
+    }
+
+    // Add specialty context if filtered
+    let specialtyContext = '';
+    if (selectedSpeciality !== 'all') {
+      const specialty = specialties.find(s => s.value === selectedSpeciality);
+      if (specialty) {
+        specialtyContext = ` ${specialty.name}`;
+      }
+    }
+
+    // Build final title
+    if (!locationContext && selectedSpeciality === 'all' && !searchQuery) {
+      return 'All Professionals';
+    }
+
+    return `Found ${count}${specialtyContext} Professional${plural}${locationContext}`;
   };
 
   const handleViewWorker = (worker) => {
@@ -181,9 +505,111 @@ const FindProfessionalScreen = ({ navigation }) => {
           </View>
 
           <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-            {/* Location Filter */}
+            {/* Province Filter */}
             <View style={styles.filterGroup}>
-              <Text style={styles.filterGroupLabel}>Location</Text>
+              <Text style={styles.filterGroupLabel}>Province</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.provinceScroll}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.provinceButton,
+                    !filters.province && styles.provinceButtonActive,
+                  ]}
+                  onPress={() => handleProvinceChange('')}
+                >
+                  <Text
+                    style={[
+                      styles.provinceButtonText,
+                      !filters.province && styles.provinceButtonTextActive,
+                    ]}
+                  >
+                    All Provinces
+                  </Text>
+                </TouchableOpacity>
+                {provinces.map((province) => (
+                  <TouchableOpacity
+                    key={province}
+                    style={[
+                      styles.provinceButton,
+                      filters.province === province && styles.provinceButtonActive,
+                    ]}
+                    onPress={() => handleProvinceChange(province)}
+                  >
+                    <Text
+                      style={[
+                        styles.provinceButtonText,
+                        filters.province === province && styles.provinceButtonTextActive,
+                      ]}
+                    >
+                      {province}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Suburb Filter */}
+            {filters.province && (
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterGroupLabel}>
+                  Suburb {loadingSuburbs ? '(Loading...)' : `(${suburbs.length})`}
+                </Text>
+                {loadingSuburbs ? (
+                  <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 12 }} />
+                ) : suburbs.length > 0 ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.suburbScroll}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.suburbButton,
+                        !filters.suburb && styles.suburbButtonActive,
+                      ]}
+                      onPress={() => setFilters({ ...filters, suburb: '' })}
+                    >
+                      <Text
+                        style={[
+                          styles.suburbButtonText,
+                          !filters.suburb && styles.suburbButtonTextActive,
+                        ]}
+                      >
+                        All Suburbs
+                      </Text>
+                    </TouchableOpacity>
+                    {suburbs.map((suburb) => (
+                      <TouchableOpacity
+                        key={suburb.name}
+                        style={[
+                          styles.suburbButton,
+                          filters.suburb === suburb.name && styles.suburbButtonActive,
+                        ]}
+                        onPress={() => setFilters({ ...filters, suburb: suburb.name })}
+                      >
+                        <Text
+                          style={[
+                            styles.suburbButtonText,
+                            filters.suburb === suburb.name && styles.suburbButtonTextActive,
+                          ]}
+                        >
+                          {suburb.name} ({suburb.worker_count || 0})
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text style={styles.noSuburbsText}>No suburbs available for this province</Text>
+                )}
+              </View>
+            )}
+
+            {/* Location Filter (fallback text search) */}
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterGroupLabel}>Location (Text Search)</Text>
               <TextInput
                 style={styles.filterInput}
                 value={filters.location}
@@ -262,6 +688,19 @@ const FindProfessionalScreen = ({ navigation }) => {
                 <Text style={styles.checkboxLabel}>Show verified professionals only</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Currently Accepting Bookings Filter */}
+            <View style={styles.filterGroup}>
+              <TouchableOpacity
+                style={styles.checkboxRow}
+                onPress={() => setFilters({ ...filters, available: !filters.available })}
+              >
+                <View style={[styles.checkbox, filters.available && styles.checkboxActive]}>
+                  {filters.available && <Text style={styles.checkboxCheck}>✓</Text>}
+                </View>
+                <Text style={styles.checkboxLabel}>Currently accepting new bookings</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
 
           {/* Modal Footer */}
@@ -288,6 +727,35 @@ const FindProfessionalScreen = ({ navigation }) => {
     </Modal>
   );
 
+  // Share worker profile
+  const handleShareWorker = async (worker, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    const message = `Check out ${worker.name} on Fixxa!\n${worker.speciality}\nRating: ${parseFloat(worker.rating || 0).toFixed(1)} ⭐\n\nBook them now on Fixxa!`;
+
+    try {
+      const result = await Share.share({
+        message,
+        title: `${worker.name} - Fixxa Professional`,
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // Shared with activity type of result.activityType
+        } else {
+          // Shared
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // Dismissed
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to share worker profile');
+      console.error('Error sharing:', error);
+    }
+  };
+
   const SpecialityChip = ({ label, value }) => (
     <TouchableOpacity
       style={[
@@ -309,16 +777,41 @@ const FindProfessionalScreen = ({ navigation }) => {
 
   const WorkerCard = ({ worker }) => (
     <TouchableOpacity
-      style={styles.workerCard}
+      style={[
+        styles.workerCard,
+        worker.is_pending && styles.workerCardPending,
+      ]}
       onPress={() => handleViewWorker(worker)}
       activeOpacity={0.7}
     >
+      {/* Coming Soon Banner for Pending Workers */}
+      {worker.is_pending && (
+        <View style={styles.comingSoonBanner}>
+          <Text style={styles.comingSoonText}>COMING SOON</Text>
+        </View>
+      )}
+
+      {/* Distance Badge */}
+      {worker.distance !== undefined && userLocation && (
+        <View style={styles.distanceBadge}>
+          <Text style={styles.distanceBadgeText}>
+            {worker.distance < 1
+              ? `${(worker.distance * 1000).toFixed(0)}m away`
+              : `${worker.distance.toFixed(1)}km away`
+            }
+          </Text>
+        </View>
+      )}
+
       {/* Worker Avatar */}
       <View style={styles.avatarContainer}>
         {worker.profile_picture || worker.image ? (
           <Image
             source={{ uri: worker.profile_picture || worker.image }}
-            style={styles.avatarImage}
+            style={[
+              styles.avatarImage,
+              worker.is_pending && styles.avatarImagePending,
+            ]}
           />
         ) : (
           <Text style={styles.avatarText}>
@@ -342,11 +835,20 @@ const FindProfessionalScreen = ({ navigation }) => {
           {worker.speciality}
         </Text>
 
-        {(worker.primary_suburb || worker.location) && (
-          <Text style={styles.workerLocation} numberOfLines={1}>
-            📍 {worker.primary_suburb || worker.location}
-          </Text>
-        )}
+        {/* Location and Hourly Rate Row */}
+        <View style={styles.locationRateRow}>
+          {(worker.primary_suburb || worker.area || worker.location) && (
+            <Text style={styles.workerLocation} numberOfLines={1}>
+              📍 {worker.area || worker.primary_suburb || worker.location}
+            </Text>
+          )}
+
+          {worker.hourly_rate && (
+            <Text style={styles.hourlyRate}>
+              R{parseFloat(worker.hourly_rate).toFixed(0)}/hr
+            </Text>
+          )}
+        </View>
 
         {/* Rating Display */}
         <View style={styles.ratingRow}>
@@ -354,7 +856,19 @@ const FindProfessionalScreen = ({ navigation }) => {
           <Text style={styles.ratingText}>
             {parseFloat(worker.rating || 0).toFixed(1)}
           </Text>
+          {worker.review_count > 0 && (
+            <Text style={styles.reviewCount}>
+              ({worker.review_count})
+            </Text>
+          )}
         </View>
+
+        {/* Status Badges */}
+        {!worker.is_available && !worker.is_pending && (
+          <View style={styles.unavailableBadge}>
+            <Text style={styles.unavailableBadgeText}>Currently Unavailable</Text>
+          </View>
+        )}
 
         {/* Action Buttons Row */}
         <View style={styles.cardActions}>
@@ -371,8 +885,16 @@ const FindProfessionalScreen = ({ navigation }) => {
               e.stopPropagation();
               handleBookWorker(worker);
             }}
+            disabled={worker.is_pending}
           >
             <Text style={styles.bookButtonText}>Book</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={(e) => handleShareWorker(worker, e)}
+          >
+            <Text style={styles.shareButtonIcon}>📤</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -399,12 +921,31 @@ const FindProfessionalScreen = ({ navigation }) => {
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>Find a Professional</Text>
           <Text style={styles.headerSubtitle}>
-            {filteredWorkers.length} professional
-            {filteredWorkers.length !== 1 ? 's' : ''} available
+            {getResultsTitle()}
           </Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
+
+      {/* Location Banner */}
+      {showLocationBanner && (
+        <View style={styles.locationBanner}>
+          <Text style={styles.locationBannerText}>
+            Enable location to find professionals near you
+          </Text>
+          <TouchableOpacity
+            style={styles.enableLocationButton}
+            onPress={requestLocationPermission}
+            disabled={loadingLocation}
+          >
+            {loadingLocation ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Text style={styles.enableLocationButtonText}>Enable Location</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView
         style={styles.content}
@@ -446,20 +987,99 @@ const FindProfessionalScreen = ({ navigation }) => {
         {/* Speciality Filter */}
         <View style={styles.filterSection}>
           <Text style={styles.filterLabel}>Filter by speciality:</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipContainer}
-          >
-            <SpecialityChip label="All" value="all" />
-            <SpecialityChip label="Plumbing" value="plumbing" />
-            <SpecialityChip label="Electrical" value="electrical" />
-            <SpecialityChip label="Carpentry" value="carpentry" />
-            <SpecialityChip label="Painting" value="painting" />
-            <SpecialityChip label="Cleaning" value="cleaning" />
-            <SpecialityChip label="Gardening" value="gardening" />
-            <SpecialityChip label="HVAC" value="hvac" />
-          </ScrollView>
+          {loadingSpecialties ? (
+            <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 16 }} />
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipContainer}
+            >
+              {specialties.map((specialty) => (
+                <SpecialityChip
+                  key={specialty.value}
+                  label={`${specialty.icon} ${specialty.name}`.trim()}
+                  value={specialty.value}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* Sort Controls */}
+        <View style={styles.sortSection}>
+          <Text style={styles.sortLabel}>Sort by:</Text>
+          <View style={styles.sortButtons}>
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === 'rating' && styles.sortButtonActive,
+              ]}
+              onPress={() => setSortBy('rating')}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortBy === 'rating' && styles.sortButtonTextActive,
+                ]}
+              >
+                Highest Rated
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === 'reviews' && styles.sortButtonActive,
+              ]}
+              onPress={() => setSortBy('reviews')}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortBy === 'reviews' && styles.sortButtonTextActive,
+                ]}
+              >
+                Most Reviews
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortBy === 'recent' && styles.sortButtonActive,
+              ]}
+              onPress={() => setSortBy('recent')}
+            >
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortBy === 'recent' && styles.sortButtonTextActive,
+                ]}
+              >
+                Recently Joined
+              </Text>
+            </TouchableOpacity>
+
+            {userLocation && (
+              <TouchableOpacity
+                style={[
+                  styles.sortButton,
+                  sortBy === 'distance' && styles.sortButtonActive,
+                ]}
+                onPress={() => setSortBy('distance')}
+              >
+                <Text
+                  style={[
+                    styles.sortButtonText,
+                    sortBy === 'distance' && styles.sortButtonTextActive,
+                  ]}
+                >
+                  Nearest
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Workers List */}
@@ -658,10 +1278,22 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 6,
   },
+  locationRateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   workerLocation: {
     fontSize: SIZES.xs,
     color: COLORS.textLight,
-    marginBottom: 8,
+    flex: 1,
+    marginRight: 8,
+  },
+  hourlyRate: {
+    fontSize: SIZES.xs,
+    color: COLORS.primary,
+    ...FONTS.semiBold,
   },
   ratingRow: {
     flexDirection: 'row',
@@ -677,9 +1309,82 @@ const styles = StyleSheet.create({
     ...FONTS.semiBold,
     color: COLORS.textPrimary,
   },
+  reviewCount: {
+    fontSize: SIZES.xs,
+    color: COLORS.textLight,
+    marginLeft: 4,
+  },
+  unavailableBadge: {
+    backgroundColor: '#fef3cd',
+    borderColor: '#ffc107',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  unavailableBadgeText: {
+    color: '#856404',
+    fontSize: SIZES.xs,
+    ...FONTS.semiBold,
+  },
+  comingSoonBanner: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    zIndex: 10,
+    transform: [{ rotate: '15deg' }],
+    ...SHADOWS.medium,
+  },
+  comingSoonText: {
+    color: COLORS.white,
+    fontSize: SIZES.xs,
+    ...FONTS.bold,
+    letterSpacing: 1,
+  },
+  distanceBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: COLORS.info,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    zIndex: 10,
+    ...SHADOWS.small,
+  },
+  distanceBadgeText: {
+    color: COLORS.white,
+    fontSize: SIZES.xs,
+    ...FONTS.semiBold,
+  },
+  workerCardPending: {
+    opacity: 0.7,
+  },
+  avatarImagePending: {
+    opacity: 0.5,
+  },
   cardActions: {
     flexDirection: 'row',
     gap: 8,
+  },
+  shareButton: {
+    width: 40,
+    backgroundColor: COLORS.background,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  shareButtonIcon: {
+    fontSize: 18,
   },
   viewDetailsButton: {
     flex: 1,
@@ -920,6 +1625,130 @@ const styles = StyleSheet.create({
     fontSize: SIZES.md,
     ...FONTS.bold,
     color: COLORS.white,
+  },
+  // Province and Suburb Styles
+  provinceScroll: {
+    flexDirection: 'row',
+  },
+  provinceButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    marginRight: 8,
+  },
+  provinceButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  provinceButtonText: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+  },
+  provinceButtonTextActive: {
+    color: COLORS.white,
+  },
+  suburbScroll: {
+    flexDirection: 'row',
+  },
+  suburbButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    marginRight: 8,
+  },
+  suburbButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  suburbButtonText: {
+    fontSize: SIZES.xs,
+    ...FONTS.medium,
+    color: COLORS.textSecondary,
+  },
+  suburbButtonTextActive: {
+    color: COLORS.white,
+  },
+  noSuburbsText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textLight,
+    fontStyle: 'italic',
+    marginVertical: 12,
+  },
+  // Sort Styles
+  sortSection: {
+    paddingHorizontal: SIZES.padding,
+    marginBottom: 16,
+  },
+  sortLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 12,
+  },
+  sortButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sortButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  sortButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  sortButtonText: {
+    fontSize: SIZES.xs,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+  },
+  sortButtonTextActive: {
+    color: COLORS.white,
+  },
+  // Location Banner Styles
+  locationBanner: {
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  locationBannerText: {
+    flex: 1,
+    fontSize: SIZES.sm,
+    color: COLORS.white,
+    ...FONTS.medium,
+    marginRight: 12,
+  },
+  enableLocationButton: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  enableLocationButtonText: {
+    color: COLORS.primary,
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
   },
 });
 

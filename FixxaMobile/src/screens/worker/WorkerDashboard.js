@@ -436,6 +436,12 @@ const WorkerDashboard = ({ navigation }) => {
               color={COLORS.warning}
               onPress={() => navigation.navigate('Reviews')}
             />
+            <QuickActionButton
+              icon="💰"
+              label="My Quotes"
+              color="#FF6B35"
+              onPress={() => navigation.navigate('WorkerQuotes')}
+            />
           </View>
         </View>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FONTS } from '../../styles/theme';
 import api from '../../services/api';
 
 const CreateQuoteScreen = ({ route, navigation }) => {
@@ -20,6 +20,13 @@ const CreateQuoteScreen = ({ route, navigation }) => {
   const [lineItems, setLineItems] = useState([
     { description: '', amount: '' }
   ]);
+  const [paymentMethods, setPaymentMethods] = useState({ cash: true, eft: false, card: false });
+  const [bankingDetails, setBankingDetails] = useState({
+    bank: '',
+    accountNumber: '',
+    accountType: '',
+    branchCode: ''
+  });
   const [notes, setNotes] = useState('');
   const [validDays, setValidDays] = useState('7');
   const [loading, setLoading] = useState(false);
@@ -32,6 +39,8 @@ const CreateQuoteScreen = ({ route, navigation }) => {
     if (lineItems.length > 1) {
       const newItems = lineItems.filter((_, i) => i !== index);
       setLineItems(newItems);
+    } else {
+      Alert.alert('Minimum Items', 'You must have at least one line item');
     }
   };
 
@@ -48,25 +57,32 @@ const CreateQuoteScreen = ({ route, navigation }) => {
     }, 0);
   };
 
+  const togglePaymentMethod = (method) => {
+    setPaymentMethods(prev => ({ ...prev, [method]: !prev[method] }));
+  };
+
   const validateForm = () => {
     // Check if all line items have description and amount
-    const hasEmptyFields = lineItems.some(
-      item => !item.description.trim() || !item.amount.trim()
-    );
+    const validItems = lineItems.filter(item => item.description.trim() && parseFloat(item.amount) > 0);
 
-    if (hasEmptyFields) {
-      Alert.alert('Validation Error', 'Please fill in all line items');
+    if (validItems.length === 0) {
+      Alert.alert('Validation Error', 'Please add at least one line item with a description and amount');
       return false;
     }
 
-    // Check if amounts are valid numbers
-    const hasInvalidAmount = lineItems.some(
-      item => isNaN(parseFloat(item.amount)) || parseFloat(item.amount) <= 0
-    );
-
-    if (hasInvalidAmount) {
-      Alert.alert('Validation Error', 'Please enter valid amounts');
+    // Check if at least one payment method is selected
+    if (!paymentMethods.cash && !paymentMethods.eft && !paymentMethods.card) {
+      Alert.alert('Validation Error', 'Please select at least one payment method');
       return false;
+    }
+
+    // If EFT is selected, validate banking details
+    if (paymentMethods.eft) {
+      if (!bankingDetails.bank.trim() || !bankingDetails.accountNumber.trim() ||
+          !bankingDetails.accountType || !bankingDetails.branchCode.trim()) {
+        Alert.alert('Banking Details Required', 'Please fill in all banking details for EFT payments');
+        return false;
+      }
     }
 
     return true;
@@ -77,22 +93,36 @@ const CreateQuoteScreen = ({ route, navigation }) => {
 
     setLoading(true);
     try {
-      // Format line items for API
-      const formattedLineItems = lineItems.map(item => ({
+      // Format line items for API (only valid ones)
+      const validLineItems = lineItems.filter(item =>
+        item.description.trim() && parseFloat(item.amount) > 0
+      ).map(item => ({
         description: item.description.trim(),
         amount: parseFloat(item.amount)
       }));
 
+      // Format payment methods
+      const selectedPaymentMethods = Object.keys(paymentMethods).filter(method => paymentMethods[method]);
+
+      // Prepare banking details if EFT is selected
+      const bankingData = paymentMethods.eft ? {
+        bank: bankingDetails.bank.trim(),
+        account_number: bankingDetails.accountNumber.trim(),
+        account_type: bankingDetails.accountType,
+        branch_code: bankingDetails.branchCode.trim()
+      } : null;
+
       const response = await api.post(`/quotes/requests/${requestId}/respond`, {
-        line_items: formattedLineItems,
-        payment_methods: ['cash', 'eft'], // Default payment methods
+        line_items: validLineItems,
+        payment_methods: selectedPaymentMethods,
+        banking_details: bankingData,
         notes: notes.trim() || undefined,
-        valid_days: parseInt(validDays) || 7
+        valid_days: parseInt(validDays)
       });
 
       if (response.data.success) {
         Alert.alert(
-          'Quote Sent!',
+          'Quote Sent Successfully!',
           `Your quote for R${calculateTotal().toFixed(2)} has been sent to ${clientName}.`,
           [
             {
@@ -122,7 +152,7 @@ const CreateQuoteScreen = ({ route, navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.cancelButton}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Quote</Text>
+        <Text style={styles.headerTitle}>Send Quote</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -132,6 +162,15 @@ const CreateQuoteScreen = ({ route, navigation }) => {
           <Text style={styles.clientName}>{clientName}</Text>
         </View>
 
+        {/* Professional Guidelines */}
+        <View style={styles.guidelinesCard}>
+          <Text style={styles.guidelinesTitle}>📋 Professional Guidelines for Quotes</Text>
+          <Text style={styles.guidelinesText}>
+            <Text style={{ fontWeight: '600' }}>Keep receipts for all materials purchased:</Text> Always save receipts for items bought for clients and include them as separate line items in your quotes. This builds trust, provides transparency, and protects you if there are any payment disputes. List materials separately from labor costs.
+          </Text>
+        </View>
+
+        {/* Line Items */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Line Items</Text>
 
@@ -144,7 +183,7 @@ const CreateQuoteScreen = ({ route, navigation }) => {
                     onPress={() => removeLineItem(index)}
                     style={styles.removeButton}
                   >
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <Text style={styles.removeButtonText}>✕</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -175,11 +214,108 @@ const CreateQuoteScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Total */}
+        <View style={styles.totalContainer}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Subtotal:</Text>
+            <Text style={styles.totalValue}>R {calculateTotal().toFixed(2)}</Text>
+          </View>
+          <View style={styles.totalDivider} />
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabelBold}>Total:</Text>
+            <Text style={styles.totalValueBold}>R {calculateTotal().toFixed(2)}</Text>
+          </View>
+        </View>
+
+        {/* Payment Methods */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Payment Methods Accepted:</Text>
+          <View style={styles.paymentMethodsContainer}>
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => togglePaymentMethod('cash')}
+            >
+              <View style={[styles.checkbox, paymentMethods.cash && styles.checkboxChecked]}>
+                {paymentMethods.cash && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.checkboxLabel}>Cash</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => togglePaymentMethod('eft')}
+            >
+              <View style={[styles.checkbox, paymentMethods.eft && styles.checkboxChecked]}>
+                {paymentMethods.eft && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.checkboxLabel}>EFT</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => togglePaymentMethod('card')}
+            >
+              <View style={[styles.checkbox, paymentMethods.card && styles.checkboxChecked]}>
+                {paymentMethods.card && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.checkboxLabel}>Card</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Banking Details (conditional) */}
+        {paymentMethods.eft && (
+          <View style={styles.bankingSection}>
+            <Text style={styles.bankingSectionTitle}>Banking Details for EFT</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Bank Name"
+              value={bankingDetails.bank}
+              onChangeText={(text) => setBankingDetails(prev => ({ ...prev, bank: text }))}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Account Number"
+              value={bankingDetails.accountNumber}
+              onChangeText={(text) => setBankingDetails(prev => ({ ...prev, accountNumber: text }))}
+              keyboardType="numeric"
+            />
+            <View style={styles.pickerContainer}>
+              <TouchableOpacity
+                style={styles.pickerButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Account Type',
+                    'Select account type',
+                    [
+                      { text: 'Cheque', onPress: () => setBankingDetails(prev => ({ ...prev, accountType: 'Cheque' })) },
+                      { text: 'Savings', onPress: () => setBankingDetails(prev => ({ ...prev, accountType: 'Savings' })) },
+                      { text: 'Cancel', style: 'cancel' }
+                    ]
+                  );
+                }}
+              >
+                <Text style={[styles.pickerButtonText, !bankingDetails.accountType && styles.placeholderText]}>
+                  {bankingDetails.accountType || 'Select Account Type'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Branch Code"
+              value={bankingDetails.branchCode}
+              onChangeText={(text) => setBankingDetails(prev => ({ ...prev, branchCode: text }))}
+              keyboardType="numeric"
+            />
+          </View>
+        )}
+
+        {/* Additional Notes */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Additional Notes (Optional)</Text>
           <TextInput
             style={[styles.input, styles.notesInput]}
-            placeholder="Any additional information for the client..."
+            placeholder="e.g., Materials to be purchased by client, Payment due on completion"
             value={notes}
             onChangeText={setNotes}
             multiline
@@ -187,24 +323,22 @@ const CreateQuoteScreen = ({ route, navigation }) => {
           />
         </View>
 
+        {/* Quote Validity */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quote Validity</Text>
+          <Text style={styles.sectionTitle}>Quote Valid For:</Text>
           <View style={styles.validityContainer}>
-            <Text style={styles.validityLabel}>Valid for:</Text>
-            <TextInput
-              style={styles.validityInput}
-              value={validDays}
-              onChangeText={setValidDays}
-              keyboardType="number-pad"
-              maxLength={2}
-            />
-            <Text style={styles.validityLabel}>days</Text>
+            {['7', '14', '30'].map((days) => (
+              <TouchableOpacity
+                key={days}
+                style={[styles.validityOption, validDays === days && styles.validityOptionSelected]}
+                onPress={() => setValidDays(days)}
+              >
+                <Text style={[styles.validityOptionText, validDays === days && styles.validityOptionTextSelected]}>
+                  {days} Days
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
-
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total Amount:</Text>
-          <Text style={styles.totalAmount}>R{calculateTotal().toFixed(2)}</Text>
         </View>
 
         <TouchableOpacity
@@ -253,13 +387,13 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
   clientInfo: {
     backgroundColor: COLORS.white,
     padding: 16,
     borderRadius: 12,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
     fontSize: SIZES.sm,
@@ -272,8 +406,27 @@ const styles = StyleSheet.create({
     ...FONTS.bold,
     color: COLORS.dark,
   },
+  guidelinesCard: {
+    backgroundColor: '#e8f5e9',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4caf50',
+  },
+  guidelinesTitle: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: '#2e7d32',
+    marginBottom: 8,
+  },
+  guidelinesText: {
+    fontSize: SIZES.sm,
+    color: '#1b5e20',
+    lineHeight: 20,
+  },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: SIZES.md,
@@ -286,6 +439,8 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.gray,
   },
   lineItemHeader: {
     flexDirection: 'row',
@@ -299,13 +454,15 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   removeButton: {
+    backgroundColor: COLORS.error,
+    borderRadius: 6,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    paddingHorizontal: 8,
   },
   removeButtonText: {
-    fontSize: SIZES.sm,
-    color: COLORS.error,
-    ...FONTS.medium,
+    color: COLORS.white,
+    fontSize: SIZES.md,
+    ...FONTS.bold,
   },
   input: {
     backgroundColor: COLORS.lightGray,
@@ -314,6 +471,8 @@ const styles = StyleSheet.create({
     fontSize: SIZES.md,
     color: COLORS.dark,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.gray,
   },
   notesInput: {
     height: 100,
@@ -325,6 +484,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
     borderRadius: 8,
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: COLORS.gray,
   },
   currencySymbol: {
     fontSize: SIZES.lg,
@@ -353,47 +514,130 @@ const styles = StyleSheet.create({
     ...FONTS.semiBold,
     color: COLORS.primary,
   },
-  validityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
+  totalContainer: {
+    backgroundColor: '#e3f2fd',
     padding: 16,
     borderRadius: 12,
+    marginBottom: 20,
   },
-  validityLabel: {
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  totalLabel: {
     fontSize: SIZES.md,
     color: COLORS.dark,
     ...FONTS.medium,
   },
-  validityInput: {
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  totalValue: {
+    fontSize: SIZES.md,
+    color: COLORS.dark,
+    ...FONTS.medium,
+  },
+  totalDivider: {
+    height: 2,
+    backgroundColor: COLORS.primary,
+    marginVertical: 8,
+  },
+  totalLabelBold: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.dark,
+  },
+  totalValueBold: {
     fontSize: SIZES.lg,
     ...FONTS.bold,
     color: COLORS.primary,
-    marginHorizontal: 12,
-    minWidth: 50,
-    textAlign: 'center',
   },
-  totalContainer: {
-    backgroundColor: COLORS.primary,
-    padding: 20,
-    borderRadius: 12,
+  paymentMethodsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: COLORS.gray,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  checkmark: {
+    color: COLORS.white,
+    fontSize: 16,
+    ...FONTS.bold,
+  },
+  checkboxLabel: {
+    fontSize: SIZES.md,
+    color: COLORS.dark,
+    ...FONTS.medium,
+  },
+  bankingSection: {
+    backgroundColor: '#fff3cd',
+    padding: 16,
+    borderRadius: 12,
     marginBottom: 20,
   },
-  totalLabel: {
-    fontSize: SIZES.lg,
-    ...FONTS.bold,
-    color: COLORS.white,
+  bankingSectionTitle: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.dark,
+    marginBottom: 12,
   },
-  totalAmount: {
-    fontSize: SIZES.xl,
-    ...FONTS.bold,
+  pickerContainer: {
+    marginBottom: 12,
+  },
+  pickerButton: {
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.gray,
+  },
+  pickerButtonText: {
+    fontSize: SIZES.md,
+    color: COLORS.dark,
+    ...FONTS.medium,
+  },
+  placeholderText: {
+    color: COLORS.gray,
+  },
+  validityContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  validityOption: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: COLORS.gray,
+    alignItems: 'center',
+  },
+  validityOptionSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  validityOptionText: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.dark,
+  },
+  validityOptionTextSelected: {
     color: COLORS.white,
   },
   submitButton: {

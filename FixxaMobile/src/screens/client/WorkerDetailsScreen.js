@@ -35,11 +35,19 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
   const [quoteDescription, setQuoteDescription] = useState('');
   const [quoteNotes, setQuoteNotes] = useState('');
   const [sendingQuote, setSendingQuote] = useState(false);
+  const [completionRate, setCompletionRate] = useState(null);
+  const [completedJobs, setCompletedJobs] = useState(0);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [loadingCompletionRate, setLoadingCompletionRate] = useState(true);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
 
   useEffect(() => {
     fetchWorkerReviews();
     fetchPortfolio();
     fetchCertifications();
+    fetchCompletionRate();
   }, []);
 
   const fetchWorkerReviews = async () => {
@@ -78,6 +86,21 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
       console.error('Error fetching certifications:', error);
     } finally {
       setLoadingCerts(false);
+    }
+  };
+
+  const fetchCompletionRate = async () => {
+    try {
+      const response = await api.get(`/workers/${worker.id}/completion-rate`);
+      if (response.data.success) {
+        setCompletionRate(response.data.completionRate);
+        setCompletedJobs(response.data.completedJobs);
+        setTotalJobs(response.data.totalJobs);
+      }
+    } catch (error) {
+      console.error('Error fetching completion rate:', error);
+    } finally {
+      setLoadingCompletionRate(false);
     }
   };
 
@@ -174,6 +197,30 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
     return (sum / reviews.length).toFixed(1);
   };
 
+  const getRatingBreakdown = () => {
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach(review => {
+      const rating = Math.round(review.rating || 0);
+      if (rating >= 1 && rating <= 5) {
+        breakdown[rating]++;
+      }
+    });
+    return breakdown;
+  };
+
+  const getFiveStarCount = () => {
+    return reviews.filter(r => Math.round(r.rating) === 5).length;
+  };
+
+  const getFourPlusStarCount = () => {
+    return reviews.filter(r => Math.round(r.rating) >= 4).length;
+  };
+
+  const handleViewPhoto = (photoUrl, reviewerName) => {
+    setSelectedPhoto({ url: photoUrl, caption: `Review by ${reviewerName}` });
+    setShowPhotoModal(true);
+  };
+
   return (
     <View style={styles.container}>
       {/* Safety Tips Modal */}
@@ -182,6 +229,80 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
         onClose={() => setShowSafetyModal(false)}
         onProceed={handleProceedToBooking}
       />
+
+      {/* Photo Viewer Modal */}
+      <Modal
+        visible={showPhotoModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowPhotoModal(false)}
+      >
+        <View style={styles.photoModalOverlay}>
+          <TouchableOpacity
+            style={styles.photoModalClose}
+            onPress={() => setShowPhotoModal(false)}
+          >
+            <Text style={styles.photoModalCloseText}>✕</Text>
+          </TouchableOpacity>
+          {selectedPhoto && (
+            <View style={styles.photoModalContent}>
+              <Image
+                source={{ uri: selectedPhoto.url }}
+                style={styles.photoModalImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.photoModalCaption}>{selectedPhoto.caption}</Text>
+            </View>
+          )}
+        </View>
+      </Modal>
+
+      {/* Portfolio Gallery Modal */}
+      <Modal
+        visible={showPortfolioModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowPortfolioModal(false)}
+      >
+        <View style={styles.portfolioModalContainer}>
+          <View style={styles.portfolioModalHeader}>
+            <Text style={styles.portfolioModalTitle}>
+              📷 Portfolio ({portfolio.length} photo{portfolio.length !== 1 ? 's' : ''})
+            </Text>
+            <TouchableOpacity
+              style={styles.portfolioModalClose}
+              onPress={() => setShowPortfolioModal(false)}
+            >
+              <Text style={styles.portfolioModalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            style={styles.portfolioModalScroll}
+            contentContainerStyle={styles.portfolioModalContent}
+          >
+            <View style={styles.portfolioGrid}>
+              {portfolio.map((photo, index) => (
+                <TouchableOpacity
+                  key={photo.id || index}
+                  style={styles.portfolioGridItem}
+                  onPress={() => {
+                    setShowPortfolioModal(false);
+                    setTimeout(() => {
+                      handleViewPhoto(photo.photo_url, `Portfolio photo ${index + 1}`);
+                    }, 300);
+                  }}
+                >
+                  <Image
+                    source={{ uri: photo.photo_url }}
+                    style={styles.portfolioGridImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
 
       {/* Request Quote Modal */}
       <Modal
@@ -407,9 +528,17 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
         {/* Portfolio Gallery */}
         {portfolio.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Portfolio ({portfolio.length} photo{portfolio.length !== 1 ? 's' : ''})
-            </Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                📷 Portfolio ({portfolio.length} photo{portfolio.length !== 1 ? 's' : ''})
+              </Text>
+              <TouchableOpacity
+                style={styles.viewAllButton}
+                onPress={() => setShowPortfolioModal(true)}
+              >
+                <Text style={styles.viewAllButtonText}>View All</Text>
+              </TouchableOpacity>
+            </View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -420,6 +549,7 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
                   key={photo.id || index}
                   style={styles.portfolioImageContainer}
                   activeOpacity={0.8}
+                  onPress={() => handleViewPhoto(photo.photo_url, `Portfolio photo ${index + 1}`)}
                 >
                   <Image
                     source={{ uri: photo.photo_url }}
@@ -443,6 +573,18 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
               <Text style={styles.detailLabel}>Experience:</Text>
               <Text style={styles.detailValue}>
                 {worker.experience} year{worker.experience !== '1' ? 's' : ''}
+              </Text>
+            </View>
+          )}
+
+          {completionRate !== null && totalJobs > 0 && (
+            <View style={styles.completionRateBadge}>
+              <Text style={styles.completionRateIcon}>✅</Text>
+              <Text style={styles.completionRateText}>
+                {completionRate}% completion rate
+              </Text>
+              <Text style={styles.completionRateSubtext}>
+                ({completedJobs} completed out of {totalJobs} total jobs)
               </Text>
             </View>
           )}
@@ -516,31 +658,156 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
             <ActivityIndicator color={COLORS.primary} style={{ marginTop: 20 }} />
           ) : reviews.length > 0 ? (
             <View>
-              {reviews.slice(0, 3).map((review) => (
-                <View key={review.id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewerName}>{review.client_name}</Text>
-                    <View style={styles.reviewStars}>
-                      {renderStars(review.rating)}
+              {user ? (
+                // Authenticated User: Show full reviews with summary
+                <>
+                  {/* Reviews Summary Statistics */}
+                  <View style={styles.reviewsSummary}>
+                    <Text style={styles.reviewsSummaryTitle}>Customer Reviews Summary</Text>
+                    <View style={styles.reviewsStatsGrid}>
+                      <View style={styles.reviewsStat}>
+                        <Text style={styles.reviewsStatNumber}>{reviews.length}</Text>
+                        <Text style={styles.reviewsStatLabel}>Total Reviews</Text>
+                      </View>
+                      <View style={styles.reviewsStat}>
+                        <Text style={styles.reviewsStatNumber}>{calculateAverageRating()}</Text>
+                        <Text style={styles.reviewsStatLabel}>Average Rating</Text>
+                      </View>
+                      <View style={styles.reviewsStat}>
+                        <Text style={styles.reviewsStatNumber}>{getFiveStarCount()}</Text>
+                        <Text style={styles.reviewsStatLabel}>5-Star Reviews</Text>
+                      </View>
+                      <View style={styles.reviewsStat}>
+                        <Text style={styles.reviewsStatNumber}>{getFourPlusStarCount()}</Text>
+                        <Text style={styles.reviewsStatLabel}>4+ Star Reviews</Text>
+                      </View>
                     </View>
                   </View>
-                  <Text style={styles.reviewText} numberOfLines={3}>
-                    {review.review}
-                  </Text>
-                  <Text style={styles.reviewDate}>
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </Text>
+
+                  {/* Reviews List */}
+                  {reviews.slice(0, 3).map((review) => (
+                    <View key={review.id} style={styles.reviewCard}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={styles.reviewerName}>{review.client_name}</Text>
+                        <View style={styles.reviewStars}>
+                          {renderStars(review.rating)}
+                        </View>
+                      </View>
+                      <Text style={styles.reviewText} numberOfLines={3}>
+                        {review.review}
+                      </Text>
+                      <Text style={styles.reviewDate}>
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </Text>
+
+                      {/* Review Photos */}
+                      {review.photos && Array.isArray(review.photos) && review.photos.length > 0 && (
+                        <View style={styles.reviewPhotos}>
+                          <View style={styles.reviewPhotosGrid}>
+                            {review.photos.slice(0, 3).map((photo, index) => (
+                              <TouchableOpacity
+                                key={index}
+                                style={styles.reviewPhotoThumb}
+                                onPress={() => handleViewPhoto(photo, review.client_name)}
+                              >
+                                <Image
+                                  source={{ uri: photo }}
+                                  style={styles.reviewPhotoImage}
+                                  resizeMode="cover"
+                                />
+                              </TouchableOpacity>
+                            ))}
+                            {review.photos.length > 3 && (
+                              <View style={styles.reviewPhotoMore}>
+                                <Text style={styles.reviewPhotoMoreText}>
+                                  +{review.photos.length - 3} more
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                  {reviews.length > 3 && (
+                    <TouchableOpacity
+                      style={styles.viewAllButton}
+                      onPress={handleViewReviews}
+                    >
+                      <Text style={styles.viewAllButtonText}>
+                        View all {reviews.length} reviews
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : (
+                // Guest User: Show preview with login prompt
+                <View style={styles.guestReviewsContainer}>
+                  <Text style={styles.guestReviewsTitle}>Recent Customer Review</Text>
+
+                  {/* Show only the most recent review */}
+                  {reviews[0] && (
+                    <View style={styles.reviewCard}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={styles.reviewerName}>{reviews[0].client_name}</Text>
+                        <View style={styles.reviewStars}>
+                          {renderStars(reviews[0].rating)}
+                        </View>
+                      </View>
+                      <Text style={styles.reviewText} numberOfLines={3}>
+                        {reviews[0].review}
+                      </Text>
+                      <Text style={styles.reviewDate}>
+                        {new Date(reviews[0].created_at).toLocaleDateString()}
+                      </Text>
+
+                      {/* Review Photos (Guest - No click interaction) */}
+                      {reviews[0].photos && Array.isArray(reviews[0].photos) && reviews[0].photos.length > 0 && (
+                        <View style={styles.reviewPhotos}>
+                          <View style={styles.reviewPhotosGrid}>
+                            {reviews[0].photos.slice(0, 3).map((photo, index) => (
+                              <View
+                                key={index}
+                                style={styles.reviewPhotoThumb}
+                              >
+                                <Image
+                                  source={{ uri: photo }}
+                                  style={styles.reviewPhotoImage}
+                                  resizeMode="cover"
+                                />
+                              </View>
+                            ))}
+                            {reviews[0].photos.length > 3 && (
+                              <View style={styles.reviewPhotoMore}>
+                                <Text style={styles.reviewPhotoMoreText}>
+                                  +{reviews[0].photos.length - 3} more
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Login Prompt */}
+                  <View style={styles.guestLoginPrompt}>
+                    <Text style={styles.guestLoginTitle}>
+                      Want to see all {reviews.length} reviews?
+                    </Text>
+                    <Text style={styles.guestLoginSubtext}>
+                      Login to view detailed reviews, ratings, and photos
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.guestLoginButton}
+                      onPress={() => navigation.navigate('Login')}
+                    >
+                      <Text style={styles.guestLoginButtonText}>
+                        Login to View All Reviews
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              ))}
-              {reviews.length > 3 && (
-                <TouchableOpacity
-                  style={styles.viewAllButton}
-                  onPress={handleViewReviews}
-                >
-                  <Text style={styles.viewAllButtonText}>
-                    View all {reviews.length} reviews
-                  </Text>
-                </TouchableOpacity>
               )}
             </View>
           ) : (
@@ -1037,6 +1304,247 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     ...FONTS.bold,
     color: COLORS.white,
+  },
+  completionRateBadge: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.success,
+    flexDirection: 'column',
+  },
+  completionRateIcon: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  completionRateText: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.success,
+    marginBottom: 2,
+  },
+  completionRateSubtext: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+  },
+  reviewsSummary: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: SIZES.padding,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  reviewsSummaryTitle: {
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  reviewsStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  reviewsStat: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: COLORS.white,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    ...SHADOWS.small,
+  },
+  reviewsStatNumber: {
+    fontSize: SIZES.xxl,
+    ...FONTS.bold,
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  reviewsStatLabel: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  guestReviewsContainer: {
+    marginTop: 8,
+  },
+  guestReviewsTitle: {
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  guestLoginPrompt: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: SIZES.padding * 1.5,
+    marginTop: 16,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  guestLoginTitle: {
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  guestLoginSubtext: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  guestLoginButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    ...SHADOWS.small,
+  },
+  guestLoginButtonText: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.white,
+  },
+  reviewPhotos: {
+    marginTop: 12,
+  },
+  reviewPhotosGrid: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  reviewPhotoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  reviewPhotoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  reviewPhotoMore: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewPhotoMoreText: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+    ...FONTS.semiBold,
+  },
+  photoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalClose: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalCloseText: {
+    fontSize: 24,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  photoModalContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding,
+  },
+  photoModalImage: {
+    width: '100%',
+    height: '80%',
+  },
+  photoModalCaption: {
+    fontSize: SIZES.sm,
+    color: COLORS.white,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  portfolioModalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  portfolioModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 60,
+    paddingHorizontal: SIZES.padding,
+    paddingBottom: SIZES.padding,
+    backgroundColor: COLORS.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  portfolioModalTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.white,
+  },
+  portfolioModalClose: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  portfolioModalCloseText: {
+    fontSize: 24,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  portfolioModalScroll: {
+    flex: 1,
+  },
+  portfolioModalContent: {
+    padding: SIZES.padding,
+  },
+  portfolioGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  portfolioGridItem: {
+    width: '48%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: COLORS.lightGray,
+    ...SHADOWS.small,
+  },
+  portfolioGridImage: {
+    width: '100%',
+    height: '100%',
   },
 });
 

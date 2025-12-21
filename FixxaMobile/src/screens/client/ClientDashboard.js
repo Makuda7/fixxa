@@ -316,6 +316,13 @@ const ClientDashboard = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <TouchableOpacity
           style={styles.actionButton}
+          onPress={() => navigation.navigate('Quotes')}
+        >
+          <Text style={styles.actionIcon}>💰</Text>
+          <Text style={styles.actionText}>My Quotes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
           onPress={() => navigation.navigate('Messages')}
         >
           <View style={styles.iconContainer}>

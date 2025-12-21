@@ -27,6 +27,7 @@ import BookingDetailScreen from './src/screens/client/BookingDetailScreen';
 import CreateBookingScreen from './src/screens/client/CreateBookingScreen';
 import CompletionApprovalsScreen from './src/screens/client/CompletionApprovalsScreen';
 import EditReviewScreen from './src/screens/client/EditReviewScreen';
+import QuotesScreen from './src/screens/client/QuotesScreen';
 import WorkerDashboard from './src/screens/worker/WorkerDashboard';
 import MyJobsScreen from './src/screens/worker/MyJobsScreen';
 import JobRequestsScreen from './src/screens/worker/JobRequestsScreen';
@@ -36,6 +37,7 @@ import ScheduleScreen from './src/screens/worker/ScheduleScreen';
 import PortfolioScreen from './src/screens/worker/PortfolioScreen';
 import EarningsScreen from './src/screens/worker/EarningsScreen';
 import CreateQuoteScreen from './src/screens/worker/CreateQuoteScreen';
+import WorkerQuotesScreen from './src/screens/worker/WorkerQuotesScreen';
 import ReviewsScreen from './src/screens/shared/ReviewsScreen';
 import CreateReviewScreen from './src/screens/shared/CreateReviewScreen';
 import ProfileScreen from './src/screens/shared/ProfileScreen';
@@ -244,6 +246,7 @@ function AppNavigator() {
                   <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
                   <Stack.Screen name="CompletionApprovals" component={CompletionApprovalsScreen} />
                   <Stack.Screen name="EditReview" component={EditReviewScreen} />
+                  <Stack.Screen name="Quotes" component={QuotesScreen} />
                 </>
               )}
 
@@ -256,6 +259,7 @@ function AppNavigator() {
                   <Stack.Screen name="JobCompletion" component={JobCompletionScreen} />
                   <Stack.Screen name="WorkerProfileCompletion" component={WorkerProfileCompletionScreen} />
                   <Stack.Screen name="CreateQuote" component={CreateQuoteScreen} />
+                  <Stack.Screen name="WorkerQuotes" component={WorkerQuotesScreen} />
                 </>
               )}
 

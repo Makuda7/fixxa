@@ -16,6 +16,31 @@ import BurgerMenu from '../../components/BurgerMenu';
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
 
+  // Check if user is a worker
+  const isWorker = user?.type === 'worker' || user?.type === 'professional' ||
+                   (user?.speciality !== undefined) || (user?.city !== undefined);
+
+  // Format location for workers (combine city and province)
+  const getLocation = () => {
+    if (isWorker) {
+      if (user?.city && user?.province) {
+        return `${user.city}, ${user.province}`;
+      }
+      return user?.city || user?.province || null;
+    }
+    return user?.location || null;
+  };
+
+  // Get member since date - use approval_date for workers, created_at otherwise
+  const getMemberSinceDate = () => {
+    if (isWorker && user?.approval_date) {
+      return formatDate(user.approval_date);
+    }
+    // Fallback to created_at or registeredAt
+    return user?.created_at ? formatDate(user.created_at) :
+           user?.registeredAt ? formatDate(user.registeredAt) : null;
+  };
+
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
@@ -101,11 +126,11 @@ const ProfileScreen = ({ navigation }) => {
             label="Phone"
             value={user?.phone ? formatPhoneNumber(user.phone) : null}
           />
-          <ProfileItem icon="📍" label="Location" value={user?.location} />
+          <ProfileItem icon="📍" label="Location" value={getLocation()} />
           <ProfileItem
             icon="📅"
             label="Member Since"
-            value={user?.registeredAt ? formatDate(user.registeredAt) : null}
+            value={getMemberSinceDate()}
           />
         </View>
       </View>

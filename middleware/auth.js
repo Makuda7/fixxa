@@ -22,14 +22,46 @@ function requireAuth(req, res, next) {
 }
 
 function clientOnly(req, res, next) {
-  if (!req.session?.user) return res.redirect('/login.html');
-  if (req.session.user.type === 'professional') return res.redirect('/prosite.html');
+  if (!req.session?.user) {
+    // Check if this is an API request (has Authorization header or Accept: application/json)
+    const isApiRequest = req.headers.authorization || req.headers.accept?.includes('application/json');
+    if (isApiRequest) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    return res.redirect('/login.html');
+  }
+
+  if (req.session.user.type === 'professional') {
+    // Check if this is an API request
+    const isApiRequest = req.headers.authorization || req.headers.accept?.includes('application/json');
+    if (isApiRequest) {
+      return res.status(403).json({ success: false, error: 'Client access required' });
+    }
+    return res.redirect('/prosite.html');
+  }
+
   next();
 }
 
 function workerOnly(req, res, next) {
-  if (!req.session?.user) return res.redirect('/login.html');
-  if (req.session.user.type === 'client') return res.redirect('/index.html');
+  if (!req.session?.user) {
+    // Check if this is an API request (has Authorization header or Accept: application/json)
+    const isApiRequest = req.headers.authorization || req.headers.accept?.includes('application/json');
+    if (isApiRequest) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    return res.redirect('/login.html');
+  }
+
+  if (req.session.user.type === 'client') {
+    // Check if this is an API request
+    const isApiRequest = req.headers.authorization || req.headers.accept?.includes('application/json');
+    if (isApiRequest) {
+      return res.status(403).json({ success: false, error: 'Worker access required' });
+    }
+    return res.redirect('/index.html');
+  }
+
   next();
 }
 

@@ -9,8 +9,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     res.json({
       success: true,
       message: 'Quotes routes are active',
-      version: '2025-12-21-v5-fixed-bookings-columns',
-      endpoints: ['/request', '/send', '/requests', '/client', '/:id/accept', '/:id/reject', '/booking/:bookingId']
+      version: '2025-12-21-v6-worker-quotes',
+      endpoints: ['/request', '/send', '/requests', '/client', '/worker', '/:id/accept', '/:id/reject', '/booking/:bookingId']
     });
   });
 
@@ -55,6 +55,50 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     } catch (error) {
       logger.error('Failed to get client quotes', { error: error.message });
       console.error('Get client quotes error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get quotes' });
+    }
+  });
+
+  // GET /worker - Get all quotes sent by the logged-in worker
+  router.get('/worker', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+
+      if (userType !== 'professional') {
+        return res.status(403).json({ success: false, error: 'Only professionals can view their sent quotes' });
+      }
+
+      // Get all quotes sent by this worker with client details
+      const result = await pool.query(`
+        SELECT
+          q.*,
+          u.name as client_name,
+          u.email as client_email,
+          u.phone as client_phone,
+          qr.description as request_description,
+          b.note as booking_note,
+          b.service_address as booking_location,
+          b.booking_date,
+          b.booking_time,
+          COALESCE(qr.description, b.note, 'Service booking') as service_description,
+          b.service_address as service_location
+        FROM quotes q
+        JOIN users u ON q.client_id = u.id
+        LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
+        LEFT JOIN bookings b ON q.booking_id = b.id
+        WHERE q.worker_id = $1
+        ORDER BY q.created_at DESC
+      `, [userId]);
+
+      res.json({
+        success: true,
+        quotes: result.rows
+      });
+
+    } catch (error) {
+      logger.error('Failed to get worker quotes', { error: error.message });
+      console.error('Get worker quotes error:', error);
       res.status(500).json({ success: false, error: 'Failed to get quotes' });
     }
   });

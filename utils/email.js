@@ -324,6 +324,100 @@ function createCertificationSubmissionNotification(workerName, workerEmail, spec
   };
 }
 
+function createQuoteReceivedEmail(clientName, workerName, quoteAmount, serviceDescription, quoteId) {
+  return {
+    subject: 'New Quote Received - Fixxa',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: forestgreen; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">New Quote Received!</h1>
+        </div>
+        <div style="padding: 20px; background: #f9f9f9;">
+          <p>Hi ${clientName},</p>
+          <p>You've received a new quote from ${workerName} for your service request.</p>
+          <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: forestgreen;">Quote Details</h3>
+            <p><strong>Professional:</strong> ${workerName}</p>
+            <p><strong>Service:</strong> ${serviceDescription}</p>
+            <p><strong>Quote Amount:</strong> R${quoteAmount}</p>
+            <p><strong>Quote ID:</strong> #${quoteId}</p>
+          </div>
+          <p>Review the quote and accept or decline it from your dashboard.</p>
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.BASE_URL || 'http://localhost:3000'}/clientProfile.html"
+               style="background: forestgreen; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              View Quote
+            </a>
+          </p>
+          <p>Best regards,<br>The Fixxa Team</p>
+        </div>
+      </div>
+    `
+  };
+}
+
+function createQuoteAcceptedEmail(workerName, clientName, quoteAmount, serviceDescription) {
+  return {
+    subject: 'Quote Accepted - Fixxa',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: forestgreen; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">Quote Accepted!</h1>
+        </div>
+        <div style="padding: 20px; background: #f9f9f9;">
+          <p>Hi ${workerName},</p>
+          <p>Great news! ${clientName} has accepted your quote.</p>
+          <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: forestgreen;">Quote Details</h3>
+            <p><strong>Client:</strong> ${clientName}</p>
+            <p><strong>Service:</strong> ${serviceDescription}</p>
+            <p><strong>Quote Amount:</strong> R${quoteAmount}</p>
+            <p><strong>Status:</strong> Accepted</p>
+          </div>
+          <p>Please contact the client to schedule the service.</p>
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.BASE_URL || 'http://localhost:3000'}/prosite.html"
+               style="background: forestgreen; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              View Details
+            </a>
+          </p>
+          <p>Best regards,<br>The Fixxa Team</p>
+        </div>
+      </div>
+    `
+  };
+}
+
+function createQuoteRejectedEmail(workerName, clientName, serviceDescription) {
+  return {
+    subject: 'Quote Declined - Fixxa',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #e74c3c; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">Quote Declined</h1>
+        </div>
+        <div style="padding: 20px; background: #f9f9f9;">
+          <p>Hi ${workerName},</p>
+          <p>${clientName} has declined your quote for the following service:</p>
+          <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>Client:</strong> ${clientName}</p>
+            <p><strong>Service:</strong> ${serviceDescription}</p>
+            <p><strong>Status:</strong> Declined</p>
+          </div>
+          <p>Don't worry! You can continue to receive and respond to other quote requests.</p>
+          <p style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.BASE_URL || 'http://localhost:3000'}/prosite.html"
+               style="background: forestgreen; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              View Dashboard
+            </a>
+          </p>
+          <p>Best regards,<br>The Fixxa Team</p>
+        </div>
+      </div>
+    `
+  };
+}
+
 module.exports = {
   sendEmail,
   createWelcomeEmail,
@@ -331,5 +425,8 @@ module.exports = {
   createCancellationEmail,
   createCompletionEmail,
   createPasswordResetEmail,
-  createCertificationSubmissionNotification
+  createCertificationSubmissionNotification,
+  createQuoteReceivedEmail,
+  createQuoteAcceptedEmail,
+  createQuoteRejectedEmail
 };

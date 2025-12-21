@@ -39,7 +39,9 @@ const EditProfileScreen = ({ navigation }) => {
     years_experience: '',
   });
 
-  const isWorker = user?.type === 'worker' || user?.type === 'professional';
+  // Check if user is a worker based on type field or presence of worker-specific fields
+  const isWorker = user?.type === 'worker' || user?.type === 'professional' ||
+                   (user?.speciality !== undefined) || (user?.city !== undefined);
 
   // Fetch full user profile on mount
   useEffect(() => {
@@ -60,14 +62,21 @@ const EditProfileScreen = ({ navigation }) => {
       console.log('Profile response:', response.data);
 
       if (response.data.success) {
-        const profileData = isWorker ? response.data.worker : response.data.user;
+        const profileData = isWorker ? response.data.profile : response.data.user;
 
         // Set basic form data
+        // For workers, combine city and province for location display
+        const locationValue = isWorker
+          ? (profileData.city && profileData.province
+              ? `${profileData.city}, ${profileData.province}`
+              : profileData.city || profileData.province || '')
+          : (profileData.location || '');
+
         setFormData({
           name: profileData.name || '',
           email: profileData.email || '',
           phone: profileData.phone || '',
-          location: profileData.location || '',
+          location: locationValue,
           profile_picture: profileData.profile_picture || null,
         });
 
@@ -76,7 +85,7 @@ const EditProfileScreen = ({ navigation }) => {
           setWorkerData({
             speciality: profileData.speciality || '',
             bio: profileData.bio || '',
-            years_experience: profileData.years_experience?.toString() || '',
+            years_experience: (profileData.years_experience || profileData.experience)?.toString() || '',
           });
         }
 
@@ -189,7 +198,6 @@ const EditProfileScreen = ({ navigation }) => {
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
-        location: formData.location.trim(),
         profile_picture: formData.profile_picture,
       };
 
@@ -197,7 +205,19 @@ const EditProfileScreen = ({ navigation }) => {
       if (isWorker) {
         updateData.speciality = workerData.speciality.trim();
         updateData.bio = workerData.bio.trim();
-        updateData.years_experience = workerData.years_experience;
+        updateData.experience = workerData.years_experience; // Workers table uses 'experience' field
+
+        // For workers, split location into city and province
+        const locationParts = formData.location.split(',').map(s => s.trim());
+        if (locationParts.length >= 2) {
+          updateData.city = locationParts[0];
+          updateData.province = locationParts[1];
+        } else if (locationParts.length === 1) {
+          updateData.city = locationParts[0];
+        }
+      } else {
+        // For clients, use location field directly
+        updateData.location = formData.location.trim();
       }
 
       // Use appropriate endpoint based on user type
@@ -206,7 +226,9 @@ const EditProfileScreen = ({ navigation }) => {
 
       if (response.data.success) {
         // Update local user state
-        const updatedUser = isWorker ? response.data.worker : response.data.user;
+        const updatedUser = isWorker ? response.data.profile : response.data.user;
+        // Preserve the type field from the original user object
+        updatedUser.type = user.type;
         await updateUser(updatedUser);
 
         Alert.alert('Success', 'Profile updated successfully!', [

@@ -7,7 +7,8 @@ module.exports = (pool, logger, helpers) => {
 // GET /users/profile - Get current user's profile
 router.get('/profile', requireAuth, async (req, res) => {
   try {
-    console.log('GET /users/profile - User ID:', req.user.id);
+    const userId = req.session.user.id;
+    console.log('GET /users/profile - User ID:', userId);
 
     // Fetch user data from users table
     const result = await pool.query(
@@ -16,7 +17,7 @@ router.get('/profile', requireAuth, async (req, res) => {
         created_at, updated_at
       FROM users
       WHERE id = $1`,
-      [req.user.id]
+      [userId]
     );
 
     if (result.rows.length === 0) {
@@ -46,7 +47,8 @@ router.get('/profile', requireAuth, async (req, res) => {
 // PUT /users/profile - Update current user's profile
 router.put('/profile', requireAuth, async (req, res) => {
   try {
-    console.log('PUT /users/profile - User ID:', req.user.id);
+    const userId = req.session.user.id;
+    console.log('PUT /users/profile - User ID:', userId);
     console.log('Update data:', req.body);
 
     const { name, email, phone, location, profile_picture } = req.body;
@@ -69,7 +71,7 @@ router.put('/profile', requireAuth, async (req, res) => {
     // Check if email is already taken by another user
     const emailCheck = await pool.query(
       'SELECT id FROM users WHERE email = $1 AND id != $2',
-      [email.trim().toLowerCase(), req.user.id]
+      [email.trim().toLowerCase(), userId]
     );
 
     if (emailCheck.rows.length > 0) {
@@ -99,7 +101,7 @@ router.put('/profile', requireAuth, async (req, res) => {
         phone?.trim() || null,
         location?.trim() || null,
         profile_picture || null,
-        req.user.id
+        userId
       ]
     );
 

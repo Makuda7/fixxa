@@ -552,12 +552,12 @@ module.exports = (pool, logger, helpers) => {
 
       const result = await pool.query(
         `SELECT id, name, email, phone, address, city, primary_suburb, province, postal_code, speciality,
-                bio, experience, area, service_radius, approval_status, id_verified as is_verified,
+                bio, experience, area, service_radius, approval_status, approval_date, id_verified as is_verified,
                 id_type, id_number, id_verified, id_submitted_at,
                 profile_picture, profile_picture_uploaded_at,
                 emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
                 emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2,
-                registration_complete
+                registration_complete, created_at
          FROM workers WHERE id = $1`,
         [workerId]
       );
