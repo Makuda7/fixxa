@@ -10,8 +10,48 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
       success: true,
       message: 'Quotes routes are active',
       version: '2025-12-13-v4',
-      endpoints: ['/request', '/send', '/requests', '/:id/accept', '/:id/reject', '/booking/:bookingId']
+      endpoints: ['/request', '/send', '/requests', '/client', '/:id/accept', '/:id/reject', '/booking/:bookingId']
     });
+  });
+
+  // GET /client - Get all quotes received by the logged-in client
+  router.get('/client', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+
+      if (userType !== 'client') {
+        return res.status(403).json({ success: false, error: 'Only clients can view their quotes' });
+      }
+
+      // Get all quotes for this client with worker details
+      const result = await pool.query(`
+        SELECT
+          q.*,
+          w.name as worker_name,
+          w.email as worker_email,
+          w.phone as worker_phone,
+          w.speciality,
+          w.profile_picture as worker_profile_picture,
+          qr.service_description,
+          qr.location as service_location
+        FROM quotes q
+        JOIN workers w ON q.worker_id = w.id
+        LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
+        WHERE q.client_id = $1
+        ORDER BY q.created_at DESC
+      `, [userId]);
+
+      res.json({
+        success: true,
+        quotes: result.rows
+      });
+
+    } catch (error) {
+      logger.error('Failed to get client quotes', { error: error.message });
+      console.error('Get client quotes error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get quotes' });
+    }
   });
 
   // Client requests a quote from a worker (no booking yet)
