@@ -9,7 +9,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     res.json({
       success: true,
       message: 'Quotes routes are active',
-      version: '2025-12-13-v4',
+      version: '2025-12-21-v5-fixed-bookings-columns',
       endpoints: ['/request', '/send', '/requests', '/client', '/:id/accept', '/:id/reject', '/booking/:bookingId']
     });
   });
@@ -35,11 +35,10 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
           w.speciality,
           w.profile_picture as worker_profile_picture,
           qr.description as request_description,
-          b.service_type as booking_service_type,
-          b.description as booking_description,
-          b.location as booking_location,
-          COALESCE(qr.description, b.service_type, b.description) as service_description,
-          b.location as service_location
+          b.note as booking_note,
+          b.service_address as booking_location,
+          COALESCE(qr.description, b.note, 'Service booking') as service_description,
+          b.service_address as service_location
         FROM quotes q
         JOIN workers w ON q.worker_id = w.id
         LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
