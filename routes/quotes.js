@@ -34,13 +34,12 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
           w.phone as worker_phone,
           w.speciality,
           w.profile_picture as worker_profile_picture,
-          qr.service_description as request_description,
-          qr.location as request_location,
+          qr.description as request_description,
           b.service_type as booking_service_type,
           b.description as booking_description,
           b.location as booking_location,
-          COALESCE(qr.service_description, b.service_type, b.description) as service_description,
-          COALESCE(qr.location, b.location) as service_location
+          COALESCE(qr.description, b.service_type, b.description) as service_description,
+          b.location as service_location
         FROM quotes q
         JOIN workers w ON q.worker_id = w.id
         LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
