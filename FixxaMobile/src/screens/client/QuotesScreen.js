@@ -51,29 +51,9 @@ const QuotesScreen = ({ navigation }) => {
     fetchQuotes();
   };
 
-  const handleAcceptQuote = async (quoteId) => {
-    Alert.alert(
-      'Accept Quote',
-      'Are you sure you want to accept this quote?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept',
-          onPress: async () => {
-            try {
-              const response = await api.post(`/quotes/${quoteId}/accept`);
-              if (response.data.success) {
-                Alert.alert('Success', 'Quote accepted successfully!');
-                fetchQuotes();
-              }
-            } catch (error) {
-              console.error('Error accepting quote:', error);
-              Alert.alert('Error', 'Failed to accept quote. Please try again.');
-            }
-          },
-        },
-      ]
-    );
+  const handleAcceptQuote = (quote) => {
+    // Navigate to AcceptQuoteScreen with quote details
+    navigation.navigate('AcceptQuote', { quote });
   };
 
   const handleDeclineQuote = async (quoteId) => {
@@ -270,7 +250,7 @@ const QuotesScreen = ({ navigation }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.acceptButton]}
-                      onPress={() => handleAcceptQuote(quote.id)}
+                      onPress={() => handleAcceptQuote(quote)}
                     >
                       <Text style={styles.acceptButtonText}>Accept</Text>
                     </TouchableOpacity>

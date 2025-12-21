@@ -28,6 +28,7 @@ import CreateBookingScreen from './src/screens/client/CreateBookingScreen';
 import CompletionApprovalsScreen from './src/screens/client/CompletionApprovalsScreen';
 import EditReviewScreen from './src/screens/client/EditReviewScreen';
 import QuotesScreen from './src/screens/client/QuotesScreen';
+import AcceptQuoteScreen from './src/screens/client/AcceptQuoteScreen';
 import WorkerDashboard from './src/screens/worker/WorkerDashboard';
 import MyJobsScreen from './src/screens/worker/MyJobsScreen';
 import JobRequestsScreen from './src/screens/worker/JobRequestsScreen';
@@ -247,6 +248,7 @@ function AppNavigator() {
                   <Stack.Screen name="CompletionApprovals" component={CompletionApprovalsScreen} />
                   <Stack.Screen name="EditReview" component={EditReviewScreen} />
                   <Stack.Screen name="Quotes" component={QuotesScreen} />
+                  <Stack.Screen name="AcceptQuote" component={AcceptQuoteScreen} />
                 </>
               )}
 

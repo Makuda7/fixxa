@@ -9,7 +9,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     res.json({
       success: true,
       message: 'Quotes routes are active',
-      version: '2025-12-21-v6-worker-quotes',
+      version: '2025-12-21-v7-quote-to-booking',
       endpoints: ['/request', '/send', '/requests', '/client', '/worker', '/:id/accept', '/:id/reject', '/booking/:bookingId']
     });
   });
@@ -368,19 +368,33 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     }
   });
 
-  // Client accepts quote
+  // Client accepts quote and creates booking
   router.post('/:id/accept', requireAuth, async (req, res) => {
+    const client = await pool.connect();
+
     try {
+      await client.query('BEGIN');
+
       const clientId = req.session.user.id;
       const userType = req.session.user.type;
       const quoteId = req.params.id;
+      const { service_address, booking_date, booking_time, additional_notes } = req.body;
 
       if (userType !== 'client') {
         return res.status(403).json({ success: false, error: 'Only clients can accept quotes' });
       }
 
+      // Validation
+      if (!service_address || !service_address.trim()) {
+        return res.status(400).json({ success: false, error: 'Service address is required' });
+      }
+
+      if (!booking_date || !booking_time) {
+        return res.status(400).json({ success: false, error: 'Booking date and time are required' });
+      }
+
       // Get quote details
-      const quoteResult = await pool.query(
+      const quoteResult = await client.query(
         'SELECT * FROM quotes WHERE id = $1 AND client_id = $2',
         [quoteId, clientId]
       );
@@ -400,39 +414,113 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
 
       // Check if quote is expired
       if (new Date(quote.valid_until) < new Date()) {
-        await pool.query(
+        await client.query(
           'UPDATE quotes SET status = $1, updated_at = NOW() WHERE id = $2',
           ['expired', quoteId]
         );
         return res.status(400).json({ success: false, error: 'Quote has expired' });
       }
 
+      // Create or update booking
+      let booking;
+
+      if (quote.booking_id) {
+        // Update existing booking
+        const bookingResult = await client.query(`
+          UPDATE bookings
+          SET booking_date = $1,
+              booking_time = $2,
+              service_address = $3,
+              note = $4,
+              booking_amount = $5,
+              status = 'Confirmed'
+          WHERE id = $6
+          RETURNING *
+        `, [
+          booking_date,
+          booking_time,
+          service_address.trim(),
+          additional_notes ? additional_notes.trim() : null,
+          quote.total_amount,
+          quote.booking_id
+        ]);
+        booking = bookingResult.rows[0];
+      } else {
+        // Create new booking from quote
+        const bookingResult = await client.query(`
+          INSERT INTO bookings (
+            user_id, worker_id, booking_date, booking_time,
+            service_address, note, booking_amount, status, payment_status
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Confirmed', 'pending')
+          RETURNING *
+        `, [
+          clientId,
+          quote.worker_id,
+          booking_date,
+          booking_time,
+          service_address.trim(),
+          additional_notes ? additional_notes.trim() : null,
+          quote.total_amount
+        ]);
+        booking = bookingResult.rows[0];
+
+        // Link the booking to the quote
+        await client.query(
+          'UPDATE quotes SET booking_id = $1 WHERE id = $2',
+          [booking.id, quoteId]
+        );
+      }
+
       // Accept quote
-      await pool.query(
+      await client.query(
         'UPDATE quotes SET status = $1, responded_at = NOW(), updated_at = NOW() WHERE id = $2',
         ['accepted', quoteId]
       );
 
-      // Update booking status to confirmed
-      await pool.query(
-        'UPDATE bookings SET status = $1 WHERE id = $2',
-        ['Confirmed', quote.booking_id]
-      );
-
-      // Get worker details for email
-      const workerResult = await pool.query('SELECT name, email FROM workers WHERE id = $1', [quote.worker_id]);
-      const clientResult = await pool.query('SELECT name FROM users WHERE id = $1', [clientId]);
+      // Get worker and client details for email
+      const workerResult = await client.query('SELECT name, email FROM workers WHERE id = $1', [quote.worker_id]);
+      const clientResult = await client.query('SELECT name FROM users WHERE id = $1', [clientId]);
 
       const worker = workerResult.rows[0];
-      const client = clientResult.rows[0];
+      const clientData = clientResult.rows[0];
 
-      // Send email notification to worker
+      await client.query('COMMIT');
+
+      // Send email notification to worker about accepted quote and new booking
       try {
-        const emailContent = emailTemplates.createQuoteAcceptedEmail(
-          worker.name,
-          client.name,
-          quote.total_amount
-        );
+        const emailContent = {
+          subject: 'Quote Accepted & Booking Confirmed - Fixxa',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: forestgreen; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">Quote Accepted!</h1>
+              </div>
+              <div style="padding: 20px; background: #f9f9f9;">
+                <p>Hi ${worker.name},</p>
+                <p>Great news! ${clientData.name} has accepted your quote and a booking has been created.</p>
+                <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: forestgreen;">Booking Details</h3>
+                  <p><strong>Client:</strong> ${clientData.name}</p>
+                  <p><strong>Service:</strong> ${quote.service_description || 'Service booking'}</p>
+                  <p><strong>Amount:</strong> R${quote.total_amount}</p>
+                  <p><strong>Date:</strong> ${booking_date}</p>
+                  <p><strong>Time:</strong> ${booking_time}</p>
+                  <p><strong>Address:</strong> ${service_address}</p>
+                  ${additional_notes ? `<p><strong>Notes:</strong> ${additional_notes}</p>` : ''}
+                </div>
+                <p>The booking is confirmed and appears in your bookings list. Please arrive on time and provide excellent service!</p>
+                <p style="text-align: center; margin: 30px 0;">
+                  <a href="${process.env.BASE_URL || 'http://localhost:3000'}/prosite.html"
+                     style="background: forestgreen; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                    View Booking
+                  </a>
+                </p>
+                <p>Best regards,<br>The Fixxa Team</p>
+              </div>
+            </div>
+          `
+        };
         await sendEmail(worker.email, emailContent.subject, emailContent.html);
       } catch (emailError) {
         logger.error('Failed to send quote acceptance email', {
@@ -441,22 +529,32 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         });
       }
 
-      logger.info('Quote accepted', {
+      logger.info('Quote accepted and booking created', {
         quoteId,
-        bookingId: quote.booking_id,
+        bookingId: booking.id,
         clientId,
-        workerId: quote.worker_id
+        workerId: quote.worker_id,
+        bookingDate: booking_date,
+        bookingTime: booking_time
       });
 
       res.json({
         success: true,
-        message: 'Quote accepted successfully'
+        message: 'Quote accepted and booking created successfully',
+        booking: {
+          id: booking.id,
+          booking_date: booking.booking_date,
+          booking_time: booking.booking_time
+        }
       });
 
     } catch (error) {
+      await client.query('ROLLBACK');
       logger.error('Failed to accept quote', { error: error.message });
       console.error('Accept quote error:', error);
       res.status(500).json({ success: false, error: 'Failed to accept quote' });
+    } finally {
+      client.release();
     }
   });
 
