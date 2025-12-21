@@ -1,6 +1,4 @@
-async function runAvailableDatesM
-
-igration(pool, logger) {
+async function runAvailableDatesMigration(pool, logger) {
   try {
     console.log('Running available_dates migration for quotes table...');
 
