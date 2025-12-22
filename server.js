@@ -983,6 +983,10 @@ async function startServer() {
     const { runAvailableDatesMigration } = require('./migrations/add_available_dates_to_quotes');
     await runAvailableDatesMigration(pool, logger);
 
+    // Fix quote source check constraint (allow quotes to have both booking_id and quote_request_id)
+    const { runFixQuoteSourceCheckMigration } = require('./migrations/fix_quote_source_check');
+    await runFixQuoteSourceCheckMigration(pool, logger);
+
     // Worker specialties migration
     const { runWorkerSpecialtiesMigration } = require('./migrations/worker_specialties');
     await runWorkerSpecialtiesMigration(pool, logger);
