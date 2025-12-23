@@ -612,5 +612,80 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
     }
   });
 
+  // Refresh JWT token for mobile apps
+  router.post('/refresh-token', async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+          success: false,
+          error: 'No token provided'
+        });
+      }
+
+      const token = authHeader.substring(7);
+
+      try {
+        // Verify the current token (even if expired, we can still decode it)
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.SESSION_SECRET || 'fixxa-default-secret-change-in-production', {
+          ignoreExpiration: true // Allow expired tokens to be decoded
+        });
+
+        // Get fresh user data from database
+        const table = decoded.type === 'professional' ? 'workers' : 'users';
+        const result = await pool.query(
+          `SELECT id, name, email FROM ${table} WHERE id = $1`,
+          [decoded.id]
+        );
+
+        if (result.rows.length === 0) {
+          return res.status(401).json({
+            success: false,
+            error: 'User not found'
+          });
+        }
+
+        const user = result.rows[0];
+
+        // Generate new token with fresh expiration
+        const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'fixxa-default-secret-change-in-production';
+        const newToken = jwt.sign(
+          { id: user.id, email: user.email, type: decoded.type, isAdmin: decoded.isAdmin },
+          jwtSecret,
+          { expiresIn: '30d' }
+        );
+
+        logger.info('Token refreshed successfully', { userId: user.id, email: user.email });
+
+        res.json({
+          success: true,
+          token: newToken,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            type: decoded.type,
+            isAdmin: decoded.isAdmin
+          }
+        });
+
+      } catch (err) {
+        logger.error('Token refresh failed', { error: err.message });
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid token'
+        });
+      }
+
+    } catch (err) {
+      logger.error('Token refresh error', { error: err.message });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to refresh token'
+      });
+    }
+  });
+
   return router;
 };

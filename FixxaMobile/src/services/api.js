@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import activityTracker from '../utils/activityTracker';
 
 // Use your production API
 const API_BASE_URL = 'https://fixxa.co.za';
@@ -12,9 +13,27 @@ const api = axios.create({
   timeout: 10000, // 10 seconds
 });
 
-// Request interceptor - Add token to all requests
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
+// Request interceptor - Add token to all requests and record activity
 api.interceptors.request.use(
   async (config) => {
+    // Record activity for every API call
+    activityTracker.recordActivity();
+
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (token) {
@@ -30,18 +49,92 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - Handle auth errors
+// Response interceptor - Handle auth errors and attempt token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid - clear storage
+    const originalRequest = error.config;
+
+    // If 401 error and we haven't tried to refresh yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Another request is already refreshing the token
+        // Queue this request to retry after refresh completes
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
       try {
-        await AsyncStorage.multiRemove(['authToken', 'user']);
-      } catch (e) {
-        console.error('Error clearing storage:', e);
+        // Get current token
+        const currentToken = await AsyncStorage.getItem('authToken');
+
+        if (!currentToken) {
+          // No token to refresh - user needs to login
+          throw new Error('No token available');
+        }
+
+        // Attempt to refresh the token
+        const response = await axios.post(
+          `${API_BASE_URL}/refresh-token`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${currentToken}`,
+            },
+          }
+        );
+
+        if (response.data.success && response.data.token) {
+          const newToken = response.data.token;
+
+          // Store new token
+          await AsyncStorage.setItem('authToken', newToken);
+
+          // Update user data if provided
+          if (response.data.user) {
+            await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+          }
+
+          console.log('✅ Token refreshed successfully');
+
+          // Update all queued requests with new token
+          processQueue(null, newToken);
+
+          // Retry the original request with new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          isRefreshing = false;
+          return api(originalRequest);
+        } else {
+          throw new Error('Token refresh failed');
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError.message);
+
+        // Token refresh failed - clear storage and reject all queued requests
+        processQueue(refreshError, null);
+        isRefreshing = false;
+
+        try {
+          await AsyncStorage.multiRemove(['authToken', 'user']);
+        } catch (e) {
+          console.error('Error clearing storage:', e);
+        }
+
+        return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );

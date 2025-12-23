@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert, AppState } from 'react-native';
 import api from '../services/api';
+import activityTracker from '../utils/activityTracker';
 
 const AuthContext = createContext();
 
@@ -10,7 +12,19 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+
+    // Track app state changes for activity monitoring
+    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && user) {
+        // User brought app to foreground - record activity
+        activityTracker.recordActivity();
+      }
+    });
+
+    return () => {
+      appStateSubscription?.remove();
+    };
+  }, [user]);
 
   const checkAuth = async () => {
     try {
@@ -40,6 +54,9 @@ export const AuthProvider = ({ children }) => {
 
             setUser(userData);
             await AsyncStorage.setItem('user', JSON.stringify(userData));
+
+            // Start activity tracking for existing logged-in users
+            activityTracker.start(handleInactivityLogout, 30);
           } else {
             // Token invalid - clear storage
             await AsyncStorage.multiRemove(['authToken', 'user']);
@@ -56,6 +73,20 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInactivityLogout = async () => {
+    console.log('Auto-logout triggered due to inactivity');
+    Alert.alert(
+      'Session Expired',
+      'You have been logged out due to inactivity. Please log in again.',
+      [
+        {
+          text: 'OK',
+          onPress: () => logout(),
+        },
+      ]
+    );
   };
 
   const login = async (email, password) => {
@@ -94,6 +125,9 @@ export const AuthProvider = ({ children }) => {
 
         await AsyncStorage.setItem('user', JSON.stringify(userData));
 
+        // Start activity tracking for auto-logout (30 minutes of inactivity)
+        activityTracker.start(handleInactivityLogout, 30);
+
         return response.data;
       }
 
@@ -127,6 +161,9 @@ export const AuthProvider = ({ children }) => {
           setUser(user);
           await AsyncStorage.setItem('authToken', token);
           await AsyncStorage.setItem('user', JSON.stringify(user));
+
+          // Start activity tracking after registration
+          activityTracker.start(handleInactivityLogout, 30);
         }
       }
 
@@ -146,6 +183,9 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Logout request failed:', err);
     } finally {
+      // Stop activity tracking
+      activityTracker.stop();
+
       setUser(null);
       await AsyncStorage.multiRemove(['authToken', 'user']);
     }

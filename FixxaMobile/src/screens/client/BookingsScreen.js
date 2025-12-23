@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatDate, formatCurrency } from '../../utils/formatting';
@@ -21,8 +22,8 @@ const BookingsScreen = ({ navigation }) => {
 
   const fetchBookings = async () => {
     try {
-      const response = await api.get('/client-dashboard');
-      if (response.data.bookings) {
+      const response = await api.get('/bookings');
+      if (response.data.success && response.data.bookings) {
         setBookings(response.data.bookings);
       }
     } catch (error) {
@@ -33,9 +34,13 @@ const BookingsScreen = ({ navigation }) => {
     }
   };
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  // Refresh bookings when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchBookings();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -95,15 +100,18 @@ const BookingsScreen = ({ navigation }) => {
 
       <View style={styles.bookingDetails}>
         <Text style={styles.detailText}>
-          👤 Worker: {item.worker_name || 'Not assigned'}
+          👤 Professional: {item.professional_name || item.worker_name || 'Not assigned'}
+        </Text>
+        <Text style={styles.detailText}>
+          🔧 Service: {item.professional_service || item.service_type || 'Service'}
         </Text>
         <Text style={styles.detailText}>📅 {formatDate(item.booking_date)}</Text>
-        {item.price && (
-          <Text style={styles.priceText}>💰 {formatCurrency(item.price)}</Text>
+        {item.booking_amount && (
+          <Text style={styles.priceText}>💰 {formatCurrency(item.booking_amount)}</Text>
         )}
-        {item.description && (
+        {item.note && (
           <Text style={styles.description} numberOfLines={2}>
-            {item.description}
+            {item.note}
           </Text>
         )}
       </View>

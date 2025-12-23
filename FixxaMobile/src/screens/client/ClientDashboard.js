@@ -26,9 +26,9 @@ const ClientDashboard = ({ navigation }) => {
 
   const fetchBookings = async () => {
     try {
-      const response = await api.get('/client-dashboard');
-      if (response.data.bookings) {
-        setBookings(response.data.bookings.slice(0, 5)); // Show latest 5
+      const response = await api.get('/bookings');
+      if (response.data.success && response.data.bookings) {
+        setBookings(response.data.bookings.slice(0, 2)); // Show latest 2
       }
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -228,14 +228,14 @@ const ClientDashboard = ({ navigation }) => {
                 </View>
               </View>
               <Text style={styles.bookingWorker}>
-                Worker: {booking.worker_name || 'Not assigned'}
+                Professional: {booking.professional_name || booking.worker_name || 'Not assigned'}
               </Text>
               <Text style={styles.bookingDate}>
                 📅 {formatDate(booking.booking_date)}
               </Text>
-              {booking.price && (
+              {booking.booking_amount && (
                 <Text style={styles.bookingPrice}>
-                  💰 {formatCurrency(booking.price)}
+                  💰 {formatCurrency(booking.booking_amount)}
                 </Text>
               )}
             </View>
