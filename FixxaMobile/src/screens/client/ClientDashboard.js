@@ -17,7 +17,7 @@ import BurgerMenu from '../../components/BurgerMenu';
 import FloatingSearchButton from '../../components/FloatingSearchButton';
 
 const ClientDashboard = ({ navigation }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [allBookings, setAllBookings] = useState([]); // For counters
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,12 @@ const ClientDashboard = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
 
   const fetchAllData = async () => {
+    // Don't fetch if user is not authenticated yet
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       // Fetch all data in parallel
       const [bookingsRes, unreadRes, messagesRes] = await Promise.allSettled([
@@ -88,15 +94,24 @@ const ClientDashboard = ({ navigation }) => {
   };
 
   useEffect(() => {
-    fetchAllData();
+    // Only fetch data when user is authenticated and auth loading is complete
+    if (!authLoading && user) {
+      fetchAllData();
+    } else if (!authLoading && !user) {
+      setLoading(false);
+    }
+  }, [user, authLoading]);
 
+  useEffect(() => {
     // Refresh all data when screen comes into focus
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchAllData();
+      if (user) {
+        fetchAllData();
+      }
     });
 
     return unsubscribe;
-  }, []);
+  }, [user]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -119,7 +134,8 @@ const ClientDashboard = ({ navigation }) => {
     }
   };
 
-  if (loading) {
+  // Show skeleton while auth is loading or data is loading
+  if (authLoading || loading) {
     return <DashboardSkeleton />;
   }
 
