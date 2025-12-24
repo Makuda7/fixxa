@@ -19,6 +19,7 @@ import FloatingSearchButton from '../../components/FloatingSearchButton';
 const ClientDashboard = ({ navigation }) => {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]); // For counters
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -28,7 +29,8 @@ const ClientDashboard = ({ navigation }) => {
     try {
       const response = await api.get('/bookings');
       if (response.data.success && response.data.bookings) {
-        setBookings(response.data.bookings.slice(0, 2)); // Show latest 2
+        setAllBookings(response.data.bookings); // Store all bookings for counters
+        setBookings(response.data.bookings.slice(0, 2)); // Show latest 2 for display
       }
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -99,8 +101,9 @@ const ClientDashboard = ({ navigation }) => {
     fetchUnreadCount();
     fetchConversations();
 
-    // Refresh unread count and conversations when screen comes into focus
+    // Refresh all data when screen comes into focus
     const unsubscribe = navigation.addListener('focus', () => {
+      fetchBookings();
       fetchUnreadCount();
       fetchConversations();
     });
@@ -180,18 +183,18 @@ const ClientDashboard = ({ navigation }) => {
       {/* Quick Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{bookings.length}</Text>
-          <Text style={styles.statLabel}>Total Bookings</Text>
+          <Text style={styles.statNumber}>{allBookings.length}</Text>
+          <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>
-            {bookings.filter((b) => b.status === 'completed').length}
+            {allBookings.filter((b) => b.status?.toLowerCase() === 'confirmed').length}
           </Text>
-          <Text style={styles.statLabel}>Completed</Text>
+          <Text style={styles.statLabel}>Confirmed</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>
-            {bookings.filter((b) => b.status === 'pending').length}
+            {allBookings.filter((b) => b.status?.toLowerCase() === 'pending').length}
           </Text>
           <Text style={styles.statLabel}>Pending</Text>
         </View>
