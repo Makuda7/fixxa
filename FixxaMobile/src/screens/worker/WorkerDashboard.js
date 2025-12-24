@@ -42,8 +42,9 @@ const WorkerDashboard = ({ navigation }) => {
     fetchUnreadCount();
     fetchQuoteRequests();
 
-    // Refresh unread count when screen comes into focus
+    // Refresh all data when screen comes into focus
     const unsubscribe = navigation.addListener('focus', () => {
+      fetchDashboardData(); // Added: refresh stats and jobs
       fetchUnreadCount();
       fetchQuoteRequests();
     });

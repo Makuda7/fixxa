@@ -1521,6 +1521,115 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get worker stats for mobile app
+  router.get('/stats', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      // Get counts by status
+      const statsResult = await pool.query(
+        `SELECT
+          COUNT(*) FILTER (WHERE status = 'Pending') as pending_jobs,
+          COUNT(*) FILTER (WHERE status = 'Confirmed' OR status = 'In Progress') as active_jobs,
+          COUNT(*) FILTER (WHERE status = 'Completed') as completed_jobs,
+          COALESCE(SUM(booking_amount) FILTER (WHERE status = 'Completed'), 0) as total_earnings
+         FROM bookings
+         WHERE worker_id = $1`,
+        [workerId]
+      );
+
+      const stats = {
+        pendingJobs: parseInt(statsResult.rows[0].pending_jobs) || 0,
+        activeJobs: parseInt(statsResult.rows[0].active_jobs) || 0,
+        completedJobs: parseInt(statsResult.rows[0].completed_jobs) || 0,
+        totalEarnings: parseFloat(statsResult.rows[0].total_earnings) || 0
+      };
+
+      res.json({ success: true, stats });
+    } catch (error) {
+      logger.error('Worker stats error', { error: error.message });
+      console.error('Worker stats error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch worker statistics' });
+    }
+  });
+
+  // Get worker jobs/bookings for mobile app
+  router.get('/jobs', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const limit = parseInt(req.query.limit) || 10;
+
+      const jobsResult = await pool.query(
+        `SELECT b.*,
+                u.name as client_name,
+                u.phone as client_phone,
+                u.email as client_email
+         FROM bookings b
+         JOIN users u ON b.user_id = u.id
+         WHERE b.worker_id = $1
+         ORDER BY b.booking_date DESC, b.booking_time DESC
+         LIMIT $2`,
+        [workerId, limit]
+      );
+
+      res.json({ success: true, jobs: jobsResult.rows });
+    } catch (error) {
+      logger.error('Worker jobs error', { error: error.message });
+      console.error('Worker jobs error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch worker jobs' });
+    }
+  });
+
+  // Get worker schedule for mobile app
+  router.get('/schedule', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const filter = req.query.filter || 'upcoming';
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let whereClause = 'b.worker_id = $1';
+      let params = [workerId];
+
+      // Apply filter
+      if (filter === 'today') {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        whereClause += ' AND b.booking_date >= $2 AND b.booking_date < $3';
+        params.push(today, tomorrow);
+      } else if (filter === 'this_week') {
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        whereClause += ' AND b.booking_date >= $2 AND b.booking_date < $3';
+        params.push(today, weekEnd);
+      } else if (filter === 'upcoming') {
+        whereClause += ' AND b.booking_date >= $2';
+        params.push(today);
+      }
+      // 'all' filter has no date restriction
+
+      const jobsResult = await pool.query(
+        `SELECT b.*,
+                u.name as client_name,
+                u.phone as client_phone,
+                u.email as client_email,
+                u.address as client_address
+         FROM bookings b
+         JOIN users u ON b.user_id = u.id
+         WHERE ${whereClause}
+         AND b.status NOT IN ('Cancelled', 'Declined')
+         ORDER BY b.booking_date ASC, b.booking_time ASC`,
+        params
+      );
+
+      res.json({ success: true, jobs: jobsResult.rows });
+    } catch (error) {
+      logger.error('Worker schedule error', { error: error.message });
+      console.error('Worker schedule error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch worker schedule' });
+    }
+  });
+
   // Get dashboard statistics
   router.get('/dashboard-stats', requireAuth, workerOnly, async (req, res) => {
     try {
