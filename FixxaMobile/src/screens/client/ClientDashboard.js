@@ -25,41 +25,32 @@ const ClientDashboard = ({ navigation }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [conversations, setConversations] = useState([]);
 
-  const fetchBookings = async () => {
+  const fetchAllData = async () => {
     try {
-      const response = await api.get('/bookings');
-      if (response.data.success && response.data.bookings) {
-        setAllBookings(response.data.bookings); // Store all bookings for counters
-        setBookings(response.data.bookings.slice(0, 2)); // Show latest 2 for display
+      // Fetch all data in parallel
+      const [bookingsRes, unreadRes, messagesRes] = await Promise.allSettled([
+        api.get('/bookings'),
+        api.get('/api/messages/client/unread-count'),
+        api.get('/api/messages')
+      ]);
+
+      // Handle bookings
+      if (bookingsRes.status === 'fulfilled' && bookingsRes.value.data.success) {
+        const allBookingsData = bookingsRes.value.data.bookings || [];
+        setAllBookings(allBookingsData);
+        setBookings(allBookingsData.slice(0, 2));
       }
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
 
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await api.get('/api/messages/client/unread-count');
-      if (response.data.unreadCount !== undefined) {
-        setUnreadCount(response.data.unreadCount);
+      // Handle unread count
+      if (unreadRes.status === 'fulfilled' && unreadRes.value.data.unreadCount !== undefined) {
+        setUnreadCount(unreadRes.value.data.unreadCount);
       }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
 
-  const fetchConversations = async () => {
-    try {
-      const response = await api.get('/api/messages');
-
-      if (response.data.messages) {
-        // Group messages by professional to create conversations
+      // Handle conversations
+      if (messagesRes.status === 'fulfilled' && messagesRes.value.data.messages) {
         const conversationMap = {};
 
-        response.data.messages.forEach(msg => {
+        messagesRes.value.data.messages.forEach(msg => {
           const professionalId = msg.professional_id;
 
           if (!conversationMap[professionalId]) {
@@ -72,50 +63,44 @@ const ClientDashboard = ({ navigation }) => {
           conversationMap[professionalId].messages.push(msg);
         });
 
-        // Convert to array and get only the 2 most recent conversations
         const conversationsList = Object.values(conversationMap)
           .map(conv => ({
             ...conv,
-            // Sort messages by date descending
             messages: conv.messages.sort((a, b) =>
               new Date(b.datetime || b.created_at) - new Date(a.datetime || a.created_at)
-            ).slice(0, 3) // Get last 3 messages
+            ).slice(0, 3)
           }))
           .sort((a, b) => {
-            // Sort conversations by most recent message
             const aTime = new Date(a.messages[0].datetime || a.messages[0].created_at);
             const bTime = new Date(b.messages[0].datetime || b.messages[0].created_at);
             return bTime - aTime;
           })
-          .slice(0, 2); // Get top 2 conversations
+          .slice(0, 2);
 
         setConversations(conversationsList);
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchBookings();
-    fetchUnreadCount();
-    fetchConversations();
+    fetchAllData();
 
     // Refresh all data when screen comes into focus
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchBookings();
-      fetchUnreadCount();
-      fetchConversations();
+      fetchAllData();
     });
 
     return unsubscribe;
-  }, [navigation]);
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchBookings();
-    fetchUnreadCount();
-    fetchConversations();
+    fetchAllData();
   };
 
   const getStatusColor = (status) => {
