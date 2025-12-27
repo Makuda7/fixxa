@@ -34,8 +34,9 @@ api.interceptors.request.use(
     // Record activity for every API call
     activityTracker.recordActivity();
 
-    // Don't override Authorization header if it's already set (e.g., from retry after token refresh)
-    if (!config.headers.Authorization) {
+    // Skip adding token for refresh-token endpoint (it adds its own)
+    // Also skip if this is a retry after token refresh (marked with _retry flag)
+    if (!config.url?.includes('/refresh-token') && !config._retry) {
       try {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
@@ -67,7 +68,7 @@ api.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then(token => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
             return api(originalRequest);
           })
           .catch(err => {
@@ -115,7 +116,7 @@ api.interceptors.response.use(
           processQueue(null, newToken);
 
           // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
           isRefreshing = false;
           return api(originalRequest);
         } else {
