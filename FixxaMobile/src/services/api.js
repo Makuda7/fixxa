@@ -45,6 +45,8 @@ api.interceptors.request.use(
       } catch (error) {
         console.error('Error getting auth token:', error);
       }
+    } else if (config._retry) {
+      console.log('🔄 Retry request - keeping existing auth header');
     }
     return config;
   },
@@ -69,6 +71,7 @@ api.interceptors.response.use(
         })
           .then(token => {
             originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            console.log('🔄 Retrying queued request with refreshed token');
             return api(originalRequest);
           })
           .catch(err => {
@@ -117,6 +120,7 @@ api.interceptors.response.use(
 
           // Retry the original request with new token
           originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+          console.log('🔄 Retrying original request with refreshed token');
           isRefreshing = false;
           return api(originalRequest);
         } else {
