@@ -34,13 +34,16 @@ api.interceptors.request.use(
     // Record activity for every API call
     activityTracker.recordActivity();
 
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    // Don't override Authorization header if it's already set (e.g., from retry after token refresh)
+    if (!config.headers.Authorization) {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error getting auth token:', error);
       }
-    } catch (error) {
-      console.error('Error getting auth token:', error);
     }
     return config;
   },
