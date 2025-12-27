@@ -31,8 +31,7 @@ async function runQuoteRequestIdMigration(pool, logger) {
       ALTER TABLE quotes
       ADD CONSTRAINT quote_source_check
       CHECK (
-        (booking_id IS NOT NULL AND quote_request_id IS NULL) OR
-        (booking_id IS NULL AND quote_request_id IS NOT NULL)
+        booking_id IS NOT NULL OR quote_request_id IS NOT NULL
       )
     `);
 
