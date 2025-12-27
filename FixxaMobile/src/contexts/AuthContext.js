@@ -10,10 +10,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Check authentication on mount (only once)
   useEffect(() => {
     checkAuth();
+  }, []);
 
-    // Track app state changes for activity monitoring
+  // Track app state changes for activity monitoring
+  useEffect(() => {
     const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active' && user) {
         // User brought app to foreground - record activity
