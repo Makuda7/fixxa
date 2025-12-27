@@ -131,7 +131,10 @@ api.interceptors.response.use(
           console.error('Error clearing storage:', e);
         }
 
-        return Promise.reject(refreshError);
+        // Create a more user-friendly error
+        const authError = new Error('SESSION_EXPIRED');
+        authError.userMessage = 'Your session has expired. Please log out and log in again.';
+        return Promise.reject(authError);
       }
     }
 

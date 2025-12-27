@@ -393,9 +393,13 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         return res.status(400).json({ success: false, error: 'Booking date and time are required' });
       }
 
-      // Get quote details
+      // Get quote details with quote request info for service type
       const quoteResult = await client.query(
-        'SELECT * FROM quotes WHERE id = $1 AND client_id = $2',
+        `SELECT q.*, qr.service_type, w.speciality as worker_speciality
+         FROM quotes q
+         LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
+         LEFT JOIN workers w ON q.worker_id = w.id
+         WHERE q.id = $1 AND q.client_id = $2`,
         [quoteId, clientId]
       );
 
@@ -447,12 +451,15 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         booking = bookingResult.rows[0];
       } else {
         // Create new booking from quote
+        // Use service_type from quote request, or worker's speciality as fallback
+        const serviceType = quote.service_type || quote.worker_speciality || 'General Service';
+
         const bookingResult = await client.query(`
           INSERT INTO bookings (
             user_id, worker_id, booking_date, booking_time,
-            service_address, note, booking_amount, status, payment_status
+            service_address, note, booking_amount, status, payment_status, service
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Confirmed', 'pending')
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'Confirmed', 'pending', $8)
           RETURNING *
         `, [
           clientId,
@@ -461,7 +468,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
           booking_time,
           service_address.trim(),
           additional_notes ? additional_notes.trim() : null,
-          quote.total_amount
+          quote.total_amount,
+          serviceType
         ]);
         booking = bookingResult.rows[0];
 

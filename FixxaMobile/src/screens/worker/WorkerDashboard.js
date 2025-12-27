@@ -87,6 +87,23 @@ const WorkerDashboard = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+
+      // Show user-friendly message if session expired
+      if (error.message === 'SESSION_EXPIRED' || error.userMessage) {
+        Alert.alert(
+          'Session Expired',
+          error.userMessage || 'Your session has expired. Please log out and log in again.',
+          [
+            {
+              text: 'Logout',
+              onPress: () => navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              }),
+            },
+          ]
+        );
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -158,8 +175,23 @@ const WorkerDashboard = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching quote requests:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+
+      // Show user-friendly message if session expired
+      if (error.message === 'SESSION_EXPIRED' || error.userMessage) {
+        Alert.alert(
+          'Session Expired',
+          error.userMessage || 'Your session has expired. Please log out and log in again.',
+          [
+            {
+              text: 'Logout',
+              onPress: () => navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              }),
+            },
+          ]
+        );
+      }
     }
   };
 
@@ -311,7 +343,7 @@ const WorkerDashboard = ({ navigation }) => {
         onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
       >
         <View style={styles.jobHeader}>
-          <Text style={styles.jobService}>{job.service_type}</Text>
+          <Text style={styles.jobService}>{job.service || job.service_type || 'Service'}</Text>
           <View
             style={[
               styles.jobStatusBadge,
@@ -322,8 +354,8 @@ const WorkerDashboard = ({ navigation }) => {
           </View>
         </View>
         <Text style={styles.jobClient}>Client: {job.client_name}</Text>
-        {job.price && (
-          <Text style={styles.jobPrice}>{formatCurrency(job.price)}</Text>
+        {(job.booking_amount || job.price) && (
+          <Text style={styles.jobPrice}>{formatCurrency(job.booking_amount || job.price)}</Text>
         )}
       </TouchableOpacity>
     );
