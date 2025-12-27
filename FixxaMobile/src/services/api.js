@@ -35,8 +35,12 @@ api.interceptors.request.use(
     activityTracker.recordActivity();
 
     // Skip adding token for refresh-token endpoint (it adds its own)
-    // Also skip if this is a retry after token refresh (marked with _retry flag)
-    if (!config.url?.includes('/refresh-token') && !config._retry) {
+    if (config.url?.includes('/refresh-token')) {
+      return config;
+    }
+
+    // Only add token from storage if Authorization header is not already set
+    if (!config.headers.Authorization) {
       try {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
@@ -45,8 +49,8 @@ api.interceptors.request.use(
       } catch (error) {
         console.error('Error getting auth token:', error);
       }
-    } else if (config._retry) {
-      console.log('🔄 Retry request - keeping existing auth header');
+    } else {
+      console.log('🔄 Using existing Authorization header');
     }
     return config;
   },
