@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatDate, formatCurrency } from '../../utils/formatting';
@@ -23,16 +24,32 @@ const MyJobsScreen = ({ navigation }) => {
     fetchJobs();
   }, [filter]);
 
+  // Refresh jobs when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchJobs();
+    }, [filter])
+  );
+
   const fetchJobs = async () => {
     try {
-      const endpoint =
-        filter === 'all'
-          ? '/workers/jobs'
-          : `/workers/jobs?status=${filter}`;
-      const response = await api.get(endpoint);
+      const response = await api.get('/workers/jobs');
 
       if (response.data.jobs) {
-        setJobs(response.data.jobs);
+        let filteredJobs = response.data.jobs;
+
+        // Apply client-side filtering
+        if (filter === 'active') {
+          // Active includes both Confirmed and In Progress
+          filteredJobs = filteredJobs.filter(
+            job => job.status === 'Confirmed' || job.status === 'In Progress'
+          );
+        } else if (filter === 'completed') {
+          filteredJobs = filteredJobs.filter(job => job.status === 'Completed');
+        }
+        // 'all' shows everything
+
+        setJobs(filteredJobs);
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -51,6 +68,8 @@ const MyJobsScreen = ({ navigation }) => {
     switch (status?.toLowerCase()) {
       case 'completed':
         return COLORS.success;
+      case 'confirmed':
+        return COLORS.info;
       case 'in-progress':
       case 'in progress':
         return COLORS.info;
@@ -83,7 +102,7 @@ const MyJobsScreen = ({ navigation }) => {
       onPress={() => navigation.navigate('JobDetail', { jobId: item.id })}
     >
       <View style={styles.jobHeader}>
-        <Text style={styles.jobService}>{item.service_type}</Text>
+        <Text style={styles.jobService}>{item.service || item.service_type || 'Service'}</Text>
         <View
           style={[
             styles.statusBadge,
@@ -102,14 +121,14 @@ const MyJobsScreen = ({ navigation }) => {
         </Text>
       )}
 
-      {item.description && (
+      {item.note && (
         <Text style={styles.jobDescription} numberOfLines={2}>
-          {item.description}
+          {item.note}
         </Text>
       )}
 
-      {item.price && (
-        <Text style={styles.jobPrice}>{formatCurrency(item.price)}</Text>
+      {(item.booking_amount || item.price) && (
+        <Text style={styles.jobPrice}>{formatCurrency(item.booking_amount || item.price)}</Text>
       )}
     </TouchableOpacity>
   );
@@ -139,7 +158,7 @@ const MyJobsScreen = ({ navigation }) => {
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
         <FilterChip label="All" value="all" />
-        <FilterChip label="Active" value="in-progress" />
+        <FilterChip label="Active" value="active" />
         <FilterChip label="Completed" value="completed" />
       </View>
 
