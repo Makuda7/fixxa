@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
@@ -25,6 +26,13 @@ const ScheduleScreen = ({ navigation }) => {
   useEffect(() => {
     fetchScheduledJobs();
   }, [filter]);
+
+  // Refresh schedule when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchScheduledJobs();
+    }, [filter])
+  );
 
   const fetchScheduledJobs = async () => {
     try {
@@ -113,61 +121,68 @@ const ScheduleScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const JobCard = ({ job }) => (
-    <TouchableOpacity
-      style={styles.jobCard}
-      onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
-      activeOpacity={0.7}
-    >
-      {/* Date Badge */}
-      <View style={styles.dateBadge}>
-        <Text style={styles.dateDay}>
-          {new Date(job.scheduled_date || job.created_at).getDate()}
-        </Text>
-        <Text style={styles.dateMonth}>
-          {new Date(job.scheduled_date || job.created_at).toLocaleDateString(
-            'en-US',
-            { month: 'short' }
-          )}
-        </Text>
-      </View>
+  const JobCard = ({ job }) => {
+    // Use booking_date for scheduled jobs, fall back to created_at
+    const jobDate = job.booking_date || job.scheduled_date || job.created_at;
+    const jobTime = job.booking_time;
 
-      {/* Job Details */}
-      <View style={styles.jobDetails}>
-        <View style={styles.jobHeader}>
-          <Text style={styles.jobService} numberOfLines={1}>
-            {job.service_type}
+    return (
+      <TouchableOpacity
+        style={styles.jobCard}
+        onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
+        activeOpacity={0.7}
+      >
+        {/* Date Badge */}
+        <View style={styles.dateBadge}>
+          <Text style={styles.dateDay}>
+            {new Date(jobDate).getDate()}
           </Text>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(job.status) },
-            ]}
-          >
-            <Text style={styles.statusText}>{job.status}</Text>
-          </View>
+          <Text style={styles.dateMonth}>
+            {new Date(jobDate).toLocaleDateString('en-US', { month: 'short' })}
+          </Text>
         </View>
 
-        <Text style={styles.jobClient}>
-          👤 {job.client_name || 'Client'}
-        </Text>
+        {/* Job Details */}
+        <View style={styles.jobDetails}>
+          <View style={styles.jobHeader}>
+            <Text style={styles.jobService} numberOfLines={1}>
+              {job.service || job.service_type || 'Service'}
+            </Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(job.status) },
+              ]}
+            >
+              <Text style={styles.statusText}>{job.status}</Text>
+            </View>
+          </View>
 
-        <Text style={styles.jobTime}>
-          🕐 {getTimeDisplay(job.scheduled_date || job.created_at)}
-        </Text>
-
-        {job.location && (
-          <Text style={styles.jobLocation} numberOfLines={1}>
-            📍 {job.location}
+          <Text style={styles.jobClient}>
+            👤 {job.client_name || 'Client'}
           </Text>
-        )}
 
-        {job.price && (
-          <Text style={styles.jobPrice}>{formatCurrency(job.price)}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+          {jobTime && (
+            <Text style={styles.jobTime}>
+              🕐 {jobTime}
+            </Text>
+          )}
+
+          {(job.service_address || job.client_address || job.location) && (
+            <Text style={styles.jobLocation} numberOfLines={1}>
+              📍 {job.service_address || job.client_address || job.location}
+            </Text>
+          )}
+
+          {(job.booking_amount || job.price) && (
+            <Text style={styles.jobPrice}>
+              {formatCurrency(job.booking_amount || job.price)}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -186,7 +201,7 @@ const ScheduleScreen = ({ navigation }) => {
   const groupJobsByDate = (jobs) => {
     const grouped = {};
     jobs.forEach((job) => {
-      const date = new Date(job.scheduled_date || job.created_at);
+      const date = new Date(job.booking_date || job.scheduled_date || job.created_at);
       const dateKey = date.toDateString();
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
