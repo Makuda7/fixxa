@@ -110,8 +110,15 @@ const JobDetailScreen = ({ route, navigation }) => {
   };
 
   const handleMessageClient = () => {
-    // Navigate to Messages tab instead of direct chat
-    navigation.navigate('MainTabs', { screen: 'Messages' });
+    // Navigate to chat with the specific client
+    if (job?.user_id && job?.client_name) {
+      navigation.navigate('ChatScreen', {
+        clientId: job.user_id,
+        clientName: job.client_name
+      });
+    } else {
+      Alert.alert('Error', 'Unable to open chat. Client information not available.');
+    }
   };
 
   const getStatusColor = (status) => {
