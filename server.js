@@ -1018,6 +1018,10 @@ async function startServer() {
     await addDocumentType(pool, logger);
     console.log('DEBUG: Finished document_type migration');
 
+    // Add line items columns to quotes table
+    const { addLineItemsToQuotes } = require('./migrations/add_line_items_to_quotes');
+    await addLineItemsToQuotes();
+
     console.log('✅ All migrations complete');
 
     // Start reminder scheduler
