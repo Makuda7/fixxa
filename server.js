@@ -1020,7 +1020,7 @@ async function startServer() {
 
     // Add line items columns to quotes table
     const { addLineItemsToQuotes } = require('./migrations/add_line_items_to_quotes');
-    await addLineItemsToQuotes();
+    await addLineItemsToQuotes(pool, logger);
 
     console.log('✅ All migrations complete');
 

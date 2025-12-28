@@ -1,6 +1,4 @@
-const pool = require('../db');
-
-async function addLineItemsToQuotes() {
+async function addLineItemsToQuotes(pool, logger) {
   console.log('🔄 Adding line items columns to quotes table...');
 
   try {
