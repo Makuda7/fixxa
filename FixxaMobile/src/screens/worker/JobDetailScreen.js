@@ -101,18 +101,17 @@ const JobDetailScreen = ({ route, navigation }) => {
   };
 
   const handleCallClient = () => {
-    if (job?.client_phone) {
-      Linking.openURL(`tel:${job.client_phone}`);
-    }
+    // TODO: Implement in-app calling for safety (like Uber)
+    Alert.alert(
+      'Call Feature',
+      'In-app calling will be available soon for your safety and security.',
+      [{ text: 'OK' }]
+    );
   };
 
   const handleMessageClient = () => {
-    if (job?.user_id) {
-      navigation.navigate('ChatScreen', {
-        recipientId: job.user_id,
-        recipientName: job.client_name
-      });
-    }
+    // Navigate to Messages tab instead of direct chat
+    navigation.navigate('MainTabs', { screen: 'Messages' });
   };
 
   const getStatusColor = (status) => {
