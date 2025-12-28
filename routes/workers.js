@@ -1630,6 +1630,144 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get job requests (pending bookings)
+  router.get('/job-requests', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      const requestsResult = await pool.query(
+        `SELECT b.*,
+                u.name as client_name,
+                u.phone as client_phone,
+                u.email as client_email,
+                u.address as location
+         FROM bookings b
+         JOIN users u ON b.user_id = u.id
+         WHERE b.worker_id = $1
+         AND b.status = 'Pending'
+         ORDER BY b.created_at DESC`,
+        [workerId]
+      );
+
+      res.json({ success: true, requests: requestsResult.rows });
+    } catch (error) {
+      logger.error('Worker job requests error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch job requests' });
+    }
+  });
+
+  // Accept job request
+  router.post('/job-requests/:requestId/accept', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const requestId = parseInt(req.params.requestId);
+
+      // Verify the booking belongs to this worker and is pending
+      const checkResult = await pool.query(
+        'SELECT id, user_id FROM bookings WHERE id = $1 AND worker_id = $2 AND status = $3',
+        [requestId, workerId, 'Pending']
+      );
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Job request not found or already processed'
+        });
+      }
+
+      // Update status to Confirmed
+      await pool.query(
+        'UPDATE bookings SET status = $1 WHERE id = $2',
+        ['Confirmed', requestId]
+      );
+
+      logger.info('Job request accepted', { workerId, requestId });
+      res.json({ success: true, message: 'Job request accepted' });
+    } catch (error) {
+      logger.error('Accept job request error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to accept job request' });
+    }
+  });
+
+  // Decline job request
+  router.post('/job-requests/:requestId/decline', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const requestId = parseInt(req.params.requestId);
+
+      // Verify the booking belongs to this worker and is pending
+      const checkResult = await pool.query(
+        'SELECT id FROM bookings WHERE id = $1 AND worker_id = $2 AND status = $3',
+        [requestId, workerId, 'Pending']
+      );
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Job request not found or already processed'
+        });
+      }
+
+      // Update status to Declined
+      await pool.query(
+        'UPDATE bookings SET status = $1 WHERE id = $2',
+        ['Declined', requestId]
+      );
+
+      logger.info('Job request declined', { workerId, requestId });
+      res.json({ success: true, message: 'Job request declined' });
+    } catch (error) {
+      logger.error('Decline job request error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to decline job request' });
+    }
+  });
+
+  // Send quote for job request
+  router.post('/job-requests/:requestId/quote', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const requestId = parseInt(req.params.requestId);
+      const { quoted_price, notes } = req.body;
+
+      if (!quoted_price || quoted_price <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Valid quote amount is required'
+        });
+      }
+
+      // Verify the booking belongs to this worker
+      const bookingResult = await pool.query(
+        'SELECT id, user_id FROM bookings WHERE id = $1 AND worker_id = $2',
+        [requestId, workerId]
+      );
+
+      if (bookingResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Job request not found'
+        });
+      }
+
+      const booking = bookingResult.rows[0];
+
+      // Create or update quote
+      await pool.query(
+        `INSERT INTO quotes (booking_id, worker_id, user_id, amount, notes, status)
+         VALUES ($1, $2, $3, $4, $5, 'pending')
+         ON CONFLICT (booking_id) DO UPDATE
+         SET amount = $4, notes = $5, status = 'pending', created_at = CURRENT_TIMESTAMP`,
+        [requestId, workerId, booking.user_id, quoted_price, notes || null]
+      );
+
+      logger.info('Quote sent for job request', { workerId, requestId, quoted_price });
+      res.json({ success: true, message: 'Quote sent successfully' });
+    } catch (error) {
+      logger.error('Send quote error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to send quote' });
+    }
+  });
+
   // Get dashboard statistics
   router.get('/dashboard-stats', requireAuth, workerOnly, async (req, res) => {
     try {

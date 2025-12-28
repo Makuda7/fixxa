@@ -21,7 +21,7 @@ const ScheduleScreen = ({ navigation }) => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState('upcoming'); // upcoming, today, this_week, all
+  const [filter, setFilter] = useState('all'); // upcoming, today, this_week, all
 
   useEffect(() => {
     fetchScheduledJobs();

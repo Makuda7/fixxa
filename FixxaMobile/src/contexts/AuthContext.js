@@ -35,16 +35,7 @@ export const AuthProvider = ({ children }) => {
       const storedUser = await AsyncStorage.getItem('user');
 
       if (token && storedUser) {
-        let parsedUser = JSON.parse(storedUser);
-
-        // Normalize user type: backend uses 'professional' but mobile app uses 'worker'
-        if (parsedUser.type === 'professional') {
-          parsedUser = { ...parsedUser, type: 'worker' };
-        }
-
-        setUser(parsedUser);
-
-        // Verify token is still valid
+        // Verify token is still valid BEFORE setting user
         try {
           const response = await api.get('/check-session');
           if (response.data.authenticated) {
@@ -62,17 +53,24 @@ export const AuthProvider = ({ children }) => {
             activityTracker.start(handleInactivityLogout, 30);
           } else {
             // Token invalid - clear storage
+            console.log('Token verification failed: not authenticated');
             await AsyncStorage.multiRemove(['authToken', 'user']);
             setUser(null);
           }
         } catch (err) {
           console.error('Token verification failed:', err);
+          // Clear old/invalid tokens
           await AsyncStorage.multiRemove(['authToken', 'user']);
           setUser(null);
         }
+      } else {
+        // No stored credentials
+        setUser(null);
       }
     } catch (err) {
       console.error('Auth check failed:', err);
+      await AsyncStorage.multiRemove(['authToken', 'user']);
+      setUser(null);
     } finally {
       setLoading(false);
     }
