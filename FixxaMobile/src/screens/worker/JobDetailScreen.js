@@ -27,6 +27,8 @@ const JobDetailScreen = ({ route, navigation }) => {
     try {
       const response = await api.get(`/workers/jobs/${jobId}`);
       if (response.data.job) {
+        console.log('JOB STATUS DEBUG:', response.data.job.status);
+        console.log('Full job data:', JSON.stringify(response.data.job, null, 2));
         setJob(response.data.job);
       }
     } catch (error) {

@@ -28,11 +28,16 @@ const BookingDetailScreen = ({ route, navigation }) => {
   const fetchBookingDetails = async () => {
     try {
       const response = await api.get(`/bookings/${bookingId}`);
+      console.log('CLIENT BOOKING RESPONSE:', JSON.stringify(response.data, null, 2));
       if (response.data.booking) {
+        console.log('BOOKING STATUS:', response.data.booking.status);
         setBooking(response.data.booking);
+      } else {
+        console.log('NO BOOKING IN RESPONSE!');
       }
     } catch (error) {
       console.error('Error fetching booking details:', error);
+      console.error('Error response:', error.response?.data);
       Alert.alert('Error', 'Failed to load booking details.');
     } finally {
       setLoading(false);

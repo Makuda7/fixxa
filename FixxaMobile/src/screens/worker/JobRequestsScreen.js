@@ -8,8 +8,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
-  Modal,
-  TextInput,
 } from 'react-native';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
@@ -21,11 +19,6 @@ const JobRequestsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState(null);
-  const [showQuoteModal, setShowQuoteModal] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [quoteAmount, setQuoteAmount] = useState('');
-  const [quoteNotes, setQuoteNotes] = useState('');
-  const [sendingQuote, setSendingQuote] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -115,48 +108,13 @@ const JobRequestsScreen = ({ navigation }) => {
   };
 
   const handleSendQuote = (request) => {
-    setSelectedRequest(request);
-    setQuoteAmount(request.price ? request.price.toString() : '');
-    setQuoteNotes('');
-    setShowQuoteModal(true);
+    // Navigate to full CreateQuoteScreen with line items
+    navigation.navigate('CreateQuote', {
+      requestId: request.id,
+      clientName: request.client_name,
+    });
   };
 
-  const submitQuote = async () => {
-    if (!quoteAmount.trim()) {
-      Alert.alert('Required', 'Please enter a quote amount');
-      return;
-    }
-
-    const amount = parseFloat(quoteAmount);
-    if (isNaN(amount) || amount <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount');
-      return;
-    }
-
-    setSendingQuote(true);
-    try {
-      const response = await api.post(`/workers/job-requests/${selectedRequest.id}/quote`, {
-        quoted_price: amount,
-        notes: quoteNotes.trim(),
-      });
-
-      if (response.data.success) {
-        Alert.alert('Success', 'Quote sent successfully!');
-        setShowQuoteModal(false);
-        setQuoteAmount('');
-        setQuoteNotes('');
-        setSelectedRequest(null);
-        fetchRequests(); // Refresh list
-      } else {
-        Alert.alert('Error', 'Failed to send quote');
-      }
-    } catch (error) {
-      console.error('Error sending quote:', error);
-      Alert.alert('Error', 'Failed to send quote. Please try again.');
-    } finally {
-      setSendingQuote(false);
-    }
-  };
 
   const RequestCard = ({ item }) => {
     const isProcessing = processingId === item.id;
@@ -242,82 +200,6 @@ const JobRequestsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Quote Modal */}
-      <Modal
-        visible={showQuoteModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowQuoteModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Send Quote</Text>
-
-            {selectedRequest && (
-              <View style={styles.quoteInfo}>
-                <Text style={styles.quoteInfoText}>
-                  For: {selectedRequest.service_type}
-                </Text>
-                <Text style={styles.quoteInfoText}>
-                  Client: {selectedRequest.client_name}
-                </Text>
-              </View>
-            )}
-
-            <Text style={styles.inputLabel}>Quote Amount (R)</Text>
-            <TextInput
-              style={styles.amountInput}
-              value={quoteAmount}
-              onChangeText={setQuoteAmount}
-              placeholder="0.00"
-              placeholderTextColor={COLORS.textLight}
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.inputLabel}>Notes (Optional)</Text>
-            <TextInput
-              style={styles.notesInput}
-              value={quoteNotes}
-              onChangeText={setQuoteNotes}
-              placeholder="Add any additional details..."
-              placeholderTextColor={COLORS.textLight}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              maxLength={500}
-            />
-
-            <Text style={styles.charCount}>{quoteNotes.length}/500</Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setShowQuoteModal(false);
-                  setQuoteAmount('');
-                  setQuoteNotes('');
-                  setSelectedRequest(null);
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.submitButton, sendingQuote && styles.submitButtonDisabled]}
-                onPress={submitQuote}
-                disabled={sendingQuote}
-              >
-                {sendingQuote ? (
-                  <ActivityIndicator size="small" color={COLORS.white} />
-                ) : (
-                  <Text style={styles.submitButtonText}>Send Quote</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
