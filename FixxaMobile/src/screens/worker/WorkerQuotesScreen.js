@@ -24,7 +24,18 @@ const WorkerQuotesScreen = ({ navigation }) => {
     try {
       const response = await api.get('/quotes/worker');
       if (response.data.success && response.data.quotes) {
-        setQuotes(response.data.quotes);
+        // Check for expired quotes and update status
+        const quotesWithExpiration = response.data.quotes.map(quote => {
+          if (quote.status === 'pending' && quote.valid_until) {
+            const validUntilDate = new Date(quote.valid_until);
+            const now = new Date();
+            if (now > validUntilDate) {
+              return { ...quote, status: 'expired' };
+            }
+          }
+          return quote;
+        });
+        setQuotes(quotesWithExpiration);
       }
     } catch (error) {
       console.error('Error fetching quotes:', error);
@@ -49,6 +60,32 @@ const WorkerQuotesScreen = ({ navigation }) => {
   const onRefresh = () => {
     setRefreshing(true);
     fetchQuotes();
+  };
+
+  const handleDeleteQuote = (quoteId, clientName) => {
+    Alert.alert(
+      'Delete Quote',
+      `Are you sure you want to delete the quote for ${clientName}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await api.delete(`/quotes/${quoteId}`);
+              if (response.data.success) {
+                Alert.alert('Success', 'Quote deleted successfully');
+                fetchQuotes();
+              }
+            } catch (error) {
+              console.error('Error deleting quote:', error);
+              Alert.alert('Error', 'Failed to delete quote. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getStatusColor = (status) => {
@@ -252,20 +289,30 @@ const WorkerQuotesScreen = ({ navigation }) => {
                   </Text>
                 )}
 
-                {/* Contact Client Button */}
-                <TouchableOpacity
-                  style={styles.contactButton}
-                  onPress={() =>
-                    navigation.navigate('ChatScreen', {
-                      clientId: quote.client_id,
-                      clientName: quote.client_name,
-                    })
-                  }
-                >
-                  <Text style={styles.contactButtonText}>
-                    💬 Message {quote.client_name}
-                  </Text>
-                </TouchableOpacity>
+                {/* Action Buttons */}
+                <View style={styles.actionButtonsContainer}>
+                  <TouchableOpacity
+                    style={styles.contactButton}
+                    onPress={() =>
+                      navigation.navigate('ChatScreen', {
+                        clientId: quote.client_id,
+                        clientName: quote.client_name,
+                      })
+                    }
+                  >
+                    <Text style={styles.contactButtonText}>
+                      💬 Message {quote.client_name}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Delete button - available for all quote statuses */}
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteQuote(quote.id, quote.client_name)}
+                  >
+                    <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>
@@ -532,7 +579,12 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 12,
   },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   contactButton: {
+    flex: 1,
     backgroundColor: COLORS.primary,
     paddingVertical: 12,
     borderRadius: 8,
@@ -540,6 +592,19 @@ const styles = StyleSheet.create({
   },
   contactButtonText: {
     fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.white,
+  },
+  deleteButton: {
+    backgroundColor: COLORS.error,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonText: {
+    fontSize: SIZES.sm,
     ...FONTS.semiBold,
     color: COLORS.white,
   },

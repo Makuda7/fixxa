@@ -863,5 +863,66 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
     }
   });
 
+  // DELETE /:quoteId - Delete a quote (worker only, cannot delete accepted quotes)
+  router.delete('/:quoteId', requireAuth, async (req, res) => {
+    try {
+      const quoteId = parseInt(req.params.quoteId);
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+
+      if (userType !== 'professional') {
+        return res.status(403).json({
+          success: false,
+          error: 'Only professionals can delete quotes'
+        });
+      }
+
+      // Check if quote exists and belongs to this worker
+      const quoteCheck = await pool.query(
+        'SELECT id, worker_id, status FROM quotes WHERE id = $1',
+        [quoteId]
+      );
+
+      if (quoteCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Quote not found'
+        });
+      }
+
+      const quote = quoteCheck.rows[0];
+
+      if (quote.worker_id !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'You can only delete your own quotes'
+        });
+      }
+
+      // Prevent deletion of accepted quotes
+      if (quote.status === 'accepted') {
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot delete an accepted quote. Please contact the client if you need to cancel.'
+        });
+      }
+
+      // Delete the quote
+      await pool.query('DELETE FROM quotes WHERE id = $1', [quoteId]);
+
+      logger.info('Quote deleted', { quoteId, workerId: userId });
+
+      res.json({
+        success: true,
+        message: 'Quote deleted successfully'
+      });
+
+    } catch (error) {
+      logger.error('Failed to delete quote', { error: error.message });
+      console.error('Delete quote error:', error);
+      res.status(500).json({ success: false, error: 'Failed to delete quote' });
+    }
+  });
+
   return router;
 };
