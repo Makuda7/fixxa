@@ -47,7 +47,10 @@ const BurgerMenu = ({ navigation }) => {
     }
   };
 
-  const menuItems = [
+  const isWorker = user?.type === 'worker' || user?.type === 'professional';
+
+  // Worker menu items
+  const workerMenuItems = [
     {
       id: 'profile',
       title: 'Profile',
@@ -58,13 +61,144 @@ const BurgerMenu = ({ navigation }) => {
       },
     },
     {
-      id: 'messages',
-      title: 'Messages',
-      icon: '💬',
-      badge: unreadCount,
+      id: 'schedule',
+      title: 'My Schedule',
+      icon: '📅',
       onPress: () => {
         setIsMenuOpen(false);
-        navigation.navigate('Messages');
+        navigation.navigate('Schedule');
+      },
+    },
+    {
+      id: 'quotes',
+      title: 'My Quotes',
+      icon: '💰',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('WorkerQuotes');
+      },
+    },
+    {
+      id: 'portfolio',
+      title: 'Portfolio',
+      icon: '📸',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Portfolio');
+      },
+    },
+    {
+      id: 'earnings',
+      title: 'Earnings',
+      icon: '💵',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Earnings');
+      },
+    },
+    {
+      id: 'reviews',
+      title: 'Reviews',
+      icon: '⭐',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Reviews');
+      },
+    },
+    { id: 'divider1', isDivider: true },
+    {
+      id: 'about',
+      title: 'About Us',
+      icon: 'ℹ️',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('About');
+      },
+    },
+    {
+      id: 'contact',
+      title: 'Contact Us',
+      icon: '📧',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Contact');
+      },
+    },
+    {
+      id: 'faq',
+      title: 'FAQ',
+      icon: '❓',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('FAQ');
+      },
+    },
+    {
+      id: 'terms',
+      title: 'Terms & Conditions',
+      icon: '📄',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Terms');
+      },
+    },
+    {
+      id: 'privacy',
+      title: 'Privacy Policy',
+      icon: '🔒',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Privacy');
+      },
+    },
+    {
+      id: 'safety',
+      title: 'Safety & Security',
+      icon: '🛡️',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Safety');
+      },
+    },
+    { id: 'divider2', isDivider: true },
+    {
+      id: 'logout',
+      title: 'Logout',
+      icon: '🚪',
+      onPress: async () => {
+        setIsMenuOpen(false);
+        await logout();
+      },
+    },
+  ];
+
+  // Client menu items
+  const clientMenuItems = [
+    {
+      id: 'profile',
+      title: 'Profile',
+      icon: '👤',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Profile');
+      },
+    },
+    {
+      id: 'bookings',
+      title: 'My Bookings',
+      icon: '📋',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('MainTabs', { screen: 'Bookings' });
+      },
+    },
+    {
+      id: 'quotes',
+      title: 'My Quotes',
+      icon: '💰',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('Quotes');
       },
     },
     {
@@ -160,6 +294,8 @@ const BurgerMenu = ({ navigation }) => {
       },
     },
   ];
+
+  const menuItems = isWorker ? workerMenuItems : clientMenuItems;
 
   const renderMenuItem = (item) => {
     if (item.isDivider) {
