@@ -1530,7 +1530,7 @@ module.exports = (pool, logger, helpers) => {
       const statsResult = await pool.query(
         `SELECT
           COUNT(*) FILTER (WHERE status = 'Pending') as pending_jobs,
-          COUNT(*) FILTER (WHERE status = 'Confirmed' OR status = 'In Progress') as active_jobs,
+          COUNT(*) FILTER (WHERE status = 'Confirmed' OR status = 'In Progress' OR status = 'Awaiting Client Confirmation') as active_jobs,
           COUNT(*) FILTER (WHERE status = 'Completed') as completed_jobs,
           COALESCE(SUM(booking_amount) FILTER (WHERE status = 'Completed'), 0) as total_earnings
          FROM bookings

@@ -37,7 +37,7 @@ const JobCompletionScreen = ({ navigation, route }) => {
             setLoading(true);
 
             try {
-              const response = await api.post(`/bookings/${booking.id}/complete`, {
+              const response = await api.post(`/bookings/worker/${booking.id}/complete`, {
                 notes: notes.trim() || 'Job completed successfully'
               });
 

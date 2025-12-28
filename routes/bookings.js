@@ -349,25 +349,25 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
       }
 
       await pool.query(
-        `UPDATE bookings SET status='Completed', completed_at=CURRENT_TIMESTAMP WHERE id=$1`,
+        `UPDATE bookings SET status='Awaiting Client Confirmation', completed_at=CURRENT_TIMESTAMP WHERE id=$1`,
         [bookingId]
       );
 
       // Send completion email to client
       const completionEmail = emailTemplates.createCompletionEmail(booking, booking.client_name, booking.professional_name);
-      sendEmail(booking.client_email, completionEmail.subject, completionEmail.html, logger).catch(err => 
+      sendEmail(booking.client_email, completionEmail.subject, completionEmail.html, logger).catch(err =>
         logger.error('Failed to send completion email to client', { error: err.message })
       );
 
       if (io) {
-        io.emit('booking-updated', { 
-          bookingId, 
-          status: 'Completed',
+        io.emit('booking-updated', {
+          bookingId,
+          status: 'Awaiting Client Confirmation',
           workerId: workerId
         });
       }
 
-      res.json({ success: true, message: 'Booking marked as completed' });
+      res.json({ success: true, message: 'Booking marked as awaiting client confirmation' });
     } catch (err) {
       logger.error('Complete booking error', { error: err.message });
       console.error('Complete booking error:', err);

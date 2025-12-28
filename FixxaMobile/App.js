@@ -40,6 +40,7 @@ import PortfolioScreen from './src/screens/worker/PortfolioScreen';
 import EarningsScreen from './src/screens/worker/EarningsScreen';
 import CreateQuoteScreen from './src/screens/worker/CreateQuoteScreen';
 import WorkerQuotesScreen from './src/screens/worker/WorkerQuotesScreen';
+import WorkerTipsScreen from './src/screens/worker/WorkerTipsScreen';
 import ReviewsScreen from './src/screens/shared/ReviewsScreen';
 import CreateReviewScreen from './src/screens/shared/CreateReviewScreen';
 import ProfileScreen from './src/screens/shared/ProfileScreen';
@@ -264,6 +265,7 @@ function AppNavigator() {
                   <Stack.Screen name="WorkerProfileCompletion" component={WorkerProfileCompletionScreen} />
                   <Stack.Screen name="CreateQuote" component={CreateQuoteScreen} />
                   <Stack.Screen name="WorkerQuotes" component={WorkerQuotesScreen} />
+                  <Stack.Screen name="WorkerTips" component={WorkerTipsScreen} />
                 </>
               )}
 

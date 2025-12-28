@@ -67,7 +67,15 @@ const JobDetailScreen = ({ route, navigation }) => {
   };
 
   const handleCompleteJob = () => {
-    navigation.navigate('JobCompletion', { jobId });
+    navigation.navigate('JobCompletion', {
+      booking: {
+        id: job.id,
+        user_name: job.client_name,
+        service_type: job.service || job.service_type,
+        service_address: job.service_address || job.client_address || job.location,
+        quoted_price: job.booking_amount,
+      }
+    });
   };
 
   const handleCancelJob = () => {
@@ -133,6 +141,8 @@ const JobDetailScreen = ({ route, navigation }) => {
       case 'cancelled':
       case 'declined':
         return COLORS.error;
+      case 'awaiting client confirmation':
+        return '#ff9800'; // Orange color for awaiting confirmation
       default:
         return COLORS.gray;
     }
@@ -158,6 +168,7 @@ const JobDetailScreen = ({ route, navigation }) => {
   const isInProgress = job.status === 'In Progress';
   const isCompleted = job.status === 'Completed';
   const isCancelled = job.status === 'Cancelled' || job.status === 'Declined';
+  const isAwaitingClientConfirmation = job.status === 'Awaiting Client Confirmation';
 
   return (
     <View style={styles.container}>
@@ -211,6 +222,20 @@ const JobDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
+        {/* Contact Buttons for Awaiting Confirmation */}
+        {isAwaitingClientConfirmation && (
+          <View style={styles.contactButtons}>
+            <TouchableOpacity style={styles.contactButton} onPress={handleCallClient}>
+              <Text style={styles.contactButtonIcon}>📞</Text>
+              <Text style={styles.contactButtonText}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.contactButton} onPress={handleMessageClient}>
+              <Text style={styles.contactButtonIcon}>💬</Text>
+              <Text style={styles.contactButtonText}>Message</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Schedule Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Schedule</Text>
@@ -240,8 +265,21 @@ const JobDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
+        {/* Awaiting Client Confirmation Message */}
+        {isAwaitingClientConfirmation && (
+          <View style={styles.awaitingSection}>
+            <View style={styles.awaitingCard}>
+              <Text style={styles.awaitingIcon}>⏳</Text>
+              <Text style={styles.awaitingTitle}>Awaiting Client Confirmation</Text>
+              <Text style={styles.awaitingText}>
+                You've marked this job as complete. The client will review and confirm completion. You'll be notified once they approve.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Action Buttons */}
-        {!isCancelled && !isCompleted && (
+        {!isCancelled && !isCompleted && !isAwaitingClientConfirmation && (
           <View style={styles.actionSection}>
             {isConfirmed && (
               <TouchableOpacity
@@ -448,6 +486,35 @@ const styles = StyleSheet.create({
     fontSize: SIZES.md,
     ...FONTS.bold,
     color: COLORS.white,
+  },
+  awaitingSection: {
+    padding: SIZES.padding,
+  },
+  awaitingCard: {
+    backgroundColor: '#fff8e1',
+    padding: SIZES.padding * 1.5,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ffd54f',
+    ...SHADOWS.small,
+  },
+  awaitingIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  awaitingTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: '#f57f17',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  awaitingText: {
+    fontSize: SIZES.md,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
 

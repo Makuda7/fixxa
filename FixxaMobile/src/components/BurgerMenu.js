@@ -105,6 +105,15 @@ const BurgerMenu = ({ navigation }) => {
         navigation.navigate('Reviews');
       },
     },
+    {
+      id: 'tips',
+      title: 'Tips & Tricks',
+      icon: '💡',
+      onPress: () => {
+        setIsMenuOpen(false);
+        navigation.navigate('WorkerTips');
+      },
+    },
     { id: 'divider1', isDivider: true },
     {
       id: 'about',

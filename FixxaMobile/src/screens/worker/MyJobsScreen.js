@@ -40,9 +40,11 @@ const MyJobsScreen = ({ navigation }) => {
 
         // Apply client-side filtering
         if (filter === 'active') {
-          // Active includes both Confirmed and In Progress
+          // Active includes Confirmed, In Progress, and Awaiting Client Confirmation
           filteredJobs = filteredJobs.filter(
-            job => job.status === 'Confirmed' || job.status === 'In Progress'
+            job => job.status === 'Confirmed' ||
+                   job.status === 'In Progress' ||
+                   job.status === 'Awaiting Client Confirmation'
           );
         } else if (filter === 'completed') {
           filteredJobs = filteredJobs.filter(job => job.status === 'Completed');
@@ -72,7 +74,9 @@ const MyJobsScreen = ({ navigation }) => {
         return COLORS.info;
       case 'in-progress':
       case 'in progress':
-        return COLORS.info;
+        return COLORS.warning;
+      case 'awaiting client confirmation':
+        return '#ff9800'; // Orange for awaiting confirmation
       case 'pending':
         return COLORS.warning;
       default:
