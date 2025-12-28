@@ -1630,6 +1630,122 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Get single job details
+  router.get('/jobs/:jobId', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const jobId = parseInt(req.params.jobId);
+
+      const jobResult = await pool.query(
+        `SELECT b.*,
+                u.name as client_name,
+                u.phone as client_phone,
+                u.email as client_email,
+                u.address as client_address
+         FROM bookings b
+         JOIN users u ON b.user_id = u.id
+         WHERE b.id = $1 AND b.worker_id = $2`,
+        [jobId, workerId]
+      );
+
+      if (jobResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Job not found'
+        });
+      }
+
+      res.json({ success: true, job: jobResult.rows[0] });
+    } catch (error) {
+      logger.error('Get job details error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to fetch job details' });
+    }
+  });
+
+  // Start job (mark as in progress)
+  router.post('/jobs/:jobId/start', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const jobId = parseInt(req.params.jobId);
+
+      // Verify job belongs to worker and is confirmed
+      const checkResult = await pool.query(
+        'SELECT id, status FROM bookings WHERE id = $1 AND worker_id = $2',
+        [jobId, workerId]
+      );
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Job not found'
+        });
+      }
+
+      const job = checkResult.rows[0];
+
+      if (job.status !== 'Confirmed') {
+        return res.status(400).json({
+          success: false,
+          error: 'Job must be confirmed before starting'
+        });
+      }
+
+      // Update status to In Progress
+      await pool.query(
+        'UPDATE bookings SET status = $1 WHERE id = $2',
+        ['In Progress', jobId]
+      );
+
+      logger.info('Job started', { workerId, jobId });
+      res.json({ success: true, message: 'Job marked as in progress' });
+    } catch (error) {
+      logger.error('Start job error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to start job' });
+    }
+  });
+
+  // Cancel job
+  router.post('/jobs/:jobId/cancel', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const jobId = parseInt(req.params.jobId);
+
+      // Verify job belongs to worker
+      const checkResult = await pool.query(
+        'SELECT id, status FROM bookings WHERE id = $1 AND worker_id = $2',
+        [jobId, workerId]
+      );
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Job not found'
+        });
+      }
+
+      const job = checkResult.rows[0];
+
+      if (job.status === 'Completed') {
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot cancel a completed job'
+        });
+      }
+
+      // Update status to Cancelled
+      await pool.query(
+        'UPDATE bookings SET status = $1 WHERE id = $2',
+        ['Cancelled', jobId]
+      );
+
+      logger.info('Job cancelled by worker', { workerId, jobId });
+      res.json({ success: true, message: 'Job cancelled' });
+    } catch (error) {
+      logger.error('Cancel job error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to cancel job' });
+    }
+  });
+
   // Get job requests (pending bookings)
   router.get('/job-requests', requireAuth, workerOnly, async (req, res) => {
     try {

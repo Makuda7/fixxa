@@ -32,6 +32,7 @@ import AcceptQuoteScreen from './src/screens/client/AcceptQuoteScreen';
 import WorkerDashboard from './src/screens/worker/WorkerDashboard';
 import MyJobsScreen from './src/screens/worker/MyJobsScreen';
 import JobRequestsScreen from './src/screens/worker/JobRequestsScreen';
+import JobDetailScreen from './src/screens/worker/JobDetailScreen';
 import JobCompletionScreen from './src/screens/worker/JobCompletionScreen';
 import WorkerProfileCompletionScreen from './src/screens/worker/WorkerProfileCompletionScreen';
 import ScheduleScreen from './src/screens/worker/ScheduleScreen';
@@ -255,6 +256,7 @@ function AppNavigator() {
               {/* Worker-specific screens */}
               {(user.type === 'worker' || user.type === 'professional') && (
                 <>
+                  <Stack.Screen name="JobDetail" component={JobDetailScreen} />
                   <Stack.Screen name="Schedule" component={ScheduleScreen} />
                   <Stack.Screen name="Portfolio" component={PortfolioScreen} />
                   <Stack.Screen name="Earnings" component={EarningsScreen} />
