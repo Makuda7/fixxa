@@ -151,6 +151,13 @@ const BookingDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  const handleApproveCompletion = () => {
+    navigation.navigate('CreateReview', {
+      booking,
+      isCompletionApproval: true
+    });
+  };
+
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'completed':
@@ -162,6 +169,8 @@ const BookingDetailScreen = ({ route, navigation }) => {
         return COLORS.warning;
       case 'cancelled':
         return COLORS.error;
+      case 'awaiting client confirmation':
+        return '#ff9800'; // Orange for awaiting confirmation
       default:
         return COLORS.gray;
     }
@@ -374,6 +383,20 @@ const BookingDetailScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
               </View>
             )}
+          </View>
+        )}
+
+        {/* Awaiting Approval Message */}
+        {booking.status?.toLowerCase() === 'awaiting client confirmation' && (
+          <View style={styles.approvalCard}>
+            <Text style={styles.approvalIcon}>✅</Text>
+            <Text style={styles.approvalTitle}>Job Completed!</Text>
+            <Text style={styles.approvalText}>
+              The professional has marked this job as complete. Please review the work and confirm completion.
+            </Text>
+            <TouchableOpacity style={styles.approveButton} onPress={handleApproveCompletion}>
+              <Text style={styles.approveButtonText}>Review & Confirm Completion</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -733,6 +756,50 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: SIZES.sm,
     ...FONTS.semiBold,
+  },
+  // Approval Card Styles
+  approvalCard: {
+    backgroundColor: '#fff8e1',
+    padding: SIZES.padding * 1.5,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ffd54f',
+    marginHorizontal: SIZES.padding,
+    marginTop: SIZES.padding,
+    ...SHADOWS.small,
+  },
+  approvalIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  approvalTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: '#f57f17',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  approvalText: {
+    fontSize: SIZES.md,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  approveButton: {
+    backgroundColor: COLORS.success,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    width: '100%',
+    alignItems: 'center',
+    ...SHADOWS.medium,
+  },
+  approveButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.md,
+    ...FONTS.bold,
   },
 });
 

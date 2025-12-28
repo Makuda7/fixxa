@@ -15,7 +15,7 @@ import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 
 const CreateReviewScreen = ({ route, navigation }) => {
-  const { booking } = route.params || {};
+  const { booking, isCompletionApproval } = route.params || {};
 
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
@@ -129,12 +129,28 @@ const CreateReviewScreen = ({ route, navigation }) => {
       });
 
       if (response.data.success) {
-        Alert.alert('Success', 'Review submitted successfully!', [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        // If this is a completion approval, update booking status to Completed
+        if (isCompletionApproval && booking?.id) {
+          try {
+            await api.post(`/bookings/${booking.id}/approve-completion`);
+          } catch (approvalError) {
+            console.error('Error approving completion:', approvalError);
+            // Continue even if approval fails - review is already submitted
+          }
+        }
+
+        Alert.alert(
+          'Success',
+          isCompletionApproval
+            ? 'Thank you! The job has been marked as completed.'
+            : 'Review submitted successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
       } else {
         Alert.alert('Error', response.data.error || 'Failed to submit review.');
       }
@@ -175,7 +191,9 @@ const CreateReviewScreen = ({ route, navigation }) => {
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Write a Review</Text>
+        <Text style={styles.headerTitle}>
+          {isCompletionApproval ? 'Confirm Completion' : 'Write a Review'}
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 

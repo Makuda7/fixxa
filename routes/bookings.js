@@ -375,6 +375,55 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
     }
   });
 
+  // Client approves job completion
+  router.post('/:bookingId/approve-completion', requireAuth, clientOnly, async (req, res) => {
+    const bookingId = req.params.bookingId;
+    const userId = req.session.user.id;
+
+    try {
+      // Verify booking exists and belongs to this client
+      const bookingResult = await pool.query(
+        'SELECT * FROM bookings WHERE id = $1 AND user_id = $2',
+        [bookingId, userId]
+      );
+
+      if (bookingResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Booking not found' });
+      }
+
+      const booking = bookingResult.rows[0];
+
+      // Only allow approval if status is "Awaiting Client Confirmation"
+      if (booking.status !== 'Awaiting Client Confirmation') {
+        return res.status(400).json({
+          success: false,
+          error: 'This booking is not awaiting confirmation'
+        });
+      }
+
+      // Update booking status to Completed
+      await pool.query(
+        `UPDATE bookings SET status='Completed', completed_at=CURRENT_TIMESTAMP WHERE id=$1`,
+        [bookingId]
+      );
+
+      // Emit socket event for real-time update
+      if (io) {
+        io.emit('booking-updated', {
+          bookingId,
+          status: 'Completed',
+          userId: userId
+        });
+      }
+
+      res.json({ success: true, message: 'Job completion confirmed' });
+    } catch (err) {
+      logger.error('Approve completion error', { error: err.message });
+      console.error('Approve completion error:', err);
+      res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
   // Update booking (worker) - with inline ownership check
   router.post('/worker/update/:bookingId', requireAuth, workerOnly, async (req, res) => {
     const bookingId = req.params.bookingId;
