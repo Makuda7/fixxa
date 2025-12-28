@@ -16,7 +16,7 @@ import { COLORS, SIZES, FONTS } from '../../styles/theme';
 import api from '../../services/api';
 
 const CreateQuoteScreen = ({ route, navigation }) => {
-  const { requestId, clientName } = route.params;
+  const { requestId, clientName, isJobRequest } = route.params;
 
   const [lineItems, setLineItems] = useState([
     { description: '', amount: '' }
@@ -166,7 +166,12 @@ const CreateQuoteScreen = ({ route, navigation }) => {
         branch_code: bankingDetails.branchCode.trim()
       } : null;
 
-      const response = await api.post(`/quotes/requests/${requestId}/respond`, {
+      // Use different endpoint for job requests vs quote requests
+      const endpoint = isJobRequest
+        ? `/workers/job-requests/${requestId}/quote`
+        : `/quotes/requests/${requestId}/respond`;
+
+      const response = await api.post(endpoint, {
         line_items: validLineItems,
         payment_methods: selectedPaymentMethods,
         banking_details: bankingData,

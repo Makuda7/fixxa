@@ -1838,17 +1838,32 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
-  // Send quote for job request
+  // Send quote for job request (with line items support)
   router.post('/job-requests/:requestId/quote', requireAuth, workerOnly, async (req, res) => {
     try {
       const workerId = req.session.user.id;
       const requestId = parseInt(req.params.requestId);
-      const { quoted_price, notes } = req.body;
+      const {
+        line_items,
+        payment_methods,
+        banking_details,
+        notes,
+        valid_days = 7,
+        available_dates = []
+      } = req.body;
 
-      if (!quoted_price || quoted_price <= 0) {
+      // Validation
+      if (!line_items || !Array.isArray(line_items) || line_items.length === 0) {
         return res.status(400).json({
           success: false,
-          error: 'Valid quote amount is required'
+          error: 'Line items are required'
+        });
+      }
+
+      if (!available_dates || !Array.isArray(available_dates) || available_dates.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'At least one available start date is required'
         });
       }
 
@@ -1867,16 +1882,53 @@ module.exports = (pool, logger, helpers) => {
 
       const booking = bookingResult.rows[0];
 
-      // Create or update quote
+      // Calculate totals
+      const subtotal = line_items.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+      const taxAmount = 0;
+      const totalAmount = subtotal + taxAmount;
+
+      // Set expiry date
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + valid_days);
+
+      // Create or update quote with line items
       await pool.query(
-        `INSERT INTO quotes (booking_id, worker_id, user_id, amount, notes, status)
-         VALUES ($1, $2, $3, $4, $5, 'pending')
+        `INSERT INTO quotes (
+          booking_id, worker_id, user_id,
+          line_items, subtotal, tax_amount, total_amount,
+          payment_methods, banking_details, notes,
+          valid_until, available_dates, status
+        )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')
          ON CONFLICT (booking_id) DO UPDATE
-         SET amount = $4, notes = $5, status = 'pending', created_at = CURRENT_TIMESTAMP`,
-        [requestId, workerId, booking.user_id, quoted_price, notes || null]
+         SET line_items = $4,
+             subtotal = $5,
+             tax_amount = $6,
+             total_amount = $7,
+             payment_methods = $8,
+             banking_details = $9,
+             notes = $10,
+             valid_until = $11,
+             available_dates = $12,
+             status = 'pending',
+             created_at = CURRENT_TIMESTAMP`,
+        [
+          requestId,
+          workerId,
+          booking.user_id,
+          JSON.stringify(line_items),
+          subtotal,
+          taxAmount,
+          totalAmount,
+          payment_methods || ['cash'],
+          banking_details ? JSON.stringify(banking_details) : null,
+          notes || null,
+          validUntil,
+          JSON.stringify(available_dates)
+        ]
       );
 
-      logger.info('Quote sent for job request', { workerId, requestId, quoted_price });
+      logger.info('Quote sent for job request', { workerId, requestId, totalAmount });
       res.json({ success: true, message: 'Quote sent successfully' });
     } catch (error) {
       logger.error('Send quote error', { error: error.message });

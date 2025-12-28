@@ -112,6 +112,7 @@ const JobRequestsScreen = ({ navigation }) => {
     navigation.navigate('CreateQuote', {
       requestId: request.id,
       clientName: request.client_name,
+      isJobRequest: true, // Flag to use job-requests endpoint
     });
   };
 
