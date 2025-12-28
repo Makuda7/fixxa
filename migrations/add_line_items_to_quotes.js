@@ -51,19 +51,37 @@ async function addLineItemsToQuotes(pool, logger) {
     `);
     console.log('  ✓ Added valid_until column');
 
-    // Migrate existing quotes that have amount to line_items format
-    const migrateResult = await pool.query(`
-      UPDATE quotes
-      SET
-        line_items = jsonb_build_array(
-          jsonb_build_object('description', 'Service', 'amount', amount)
-        ),
-        subtotal = amount,
-        total_amount = amount
-      WHERE amount IS NOT NULL
-        AND (line_items IS NULL OR line_items = '[]'::jsonb)
+    // Add available_dates column
+    await pool.query(`
+      ALTER TABLE quotes
+      ADD COLUMN IF NOT EXISTS available_dates JSONB
     `);
-    console.log(`  ✓ Migrated ${migrateResult.rowCount} existing quotes to line items format`);
+    console.log('  ✓ Added available_dates column');
+
+    // Check if there's a legacy 'amount' column to migrate
+    const checkAmountColumn = await pool.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'quotes' AND column_name = 'amount'
+    `);
+
+    if (checkAmountColumn.rows.length > 0) {
+      // Migrate existing quotes that have amount to line_items format
+      const migrateResult = await pool.query(`
+        UPDATE quotes
+        SET
+          line_items = jsonb_build_array(
+            jsonb_build_object('description', 'Service', 'amount', amount)
+          ),
+          subtotal = amount,
+          total_amount = amount
+        WHERE amount IS NOT NULL
+          AND (line_items IS NULL OR line_items = '[]'::jsonb)
+      `);
+      console.log(`  ✓ Migrated ${migrateResult.rowCount} existing quotes to line items format`);
+    } else {
+      console.log(`  ✓ No legacy 'amount' column to migrate`);
+    }
 
     console.log('✅ Line items columns added to quotes table');
   } catch (err) {
