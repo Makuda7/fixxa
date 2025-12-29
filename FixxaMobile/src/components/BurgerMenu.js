@@ -52,15 +52,6 @@ const BurgerMenu = ({ navigation }) => {
   // Worker menu items
   const workerMenuItems = [
     {
-      id: 'profile',
-      title: 'Profile',
-      icon: '👤',
-      onPress: () => {
-        setIsMenuOpen(false);
-        navigation.navigate('Profile');
-      },
-    },
-    {
       id: 'schedule',
       title: 'My Schedule',
       icon: '📅',
@@ -183,15 +174,6 @@ const BurgerMenu = ({ navigation }) => {
 
   // Client menu items
   const clientMenuItems = [
-    {
-      id: 'profile',
-      title: 'Profile',
-      icon: '👤',
-      onPress: () => {
-        setIsMenuOpen(false);
-        navigation.navigate('Profile');
-      },
-    },
     {
       id: 'bookings',
       title: 'My Bookings',

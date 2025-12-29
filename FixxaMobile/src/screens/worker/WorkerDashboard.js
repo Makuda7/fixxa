@@ -18,6 +18,7 @@ import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatCurrency } from '../../utils/formatting';
 import BurgerMenu from '../../components/BurgerMenu';
+import ProfileButton from '../../components/ProfileButton';
 
 const WorkerDashboard = ({ navigation }) => {
   const { user } = useAuth();
@@ -366,11 +367,12 @@ const WorkerDashboard = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
+          <BurgerMenu navigation={navigation} />
           <View style={styles.greetingContainer}>
             <Text style={styles.greeting}>Hello,</Text>
             <Text style={styles.userName}>{user?.name || 'Professional'}</Text>
           </View>
-          <BurgerMenu navigation={navigation} />
+          <ProfileButton navigation={navigation} />
         </View>
         <Text style={styles.headerSubtitle}>Worker Dashboard</Text>
 

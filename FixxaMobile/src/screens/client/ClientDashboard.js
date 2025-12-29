@@ -14,6 +14,7 @@ import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatDate, formatCurrency } from '../../utils/formatting';
 import { DashboardSkeleton } from '../../components/LoadingSkeleton';
 import BurgerMenu from '../../components/BurgerMenu';
+import ProfileButton from '../../components/ProfileButton';
 import FloatingSearchButton from '../../components/FloatingSearchButton';
 
 const ClientDashboard = ({ navigation }) => {
@@ -141,11 +142,11 @@ const ClientDashboard = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Top Bar with Burger Menu */}
+      {/* Top Bar with Burger Menu and Profile */}
       <View style={styles.topBar}>
-        <View style={{ width: 40 }} />
-        <Text style={styles.topBarTitle}>Fixxa</Text>
         <BurgerMenu navigation={navigation} />
+        <Text style={styles.topBarTitle}>Fixxa</Text>
+        <ProfileButton navigation={navigation} />
       </View>
 
       <ScrollView
@@ -154,7 +155,7 @@ const ClientDashboard = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
+        {/* Greeting Section */}
         <View style={styles.header}>
           <Text style={styles.greeting}>Hello, {user?.name}! 👋</Text>
           <Text style={styles.subtitle}>Welcome back to Fixxa</Text>

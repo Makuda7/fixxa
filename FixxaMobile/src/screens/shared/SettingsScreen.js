@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import BurgerMenu from '../../components/BurgerMenu';
+import ProfileButton from '../../components/ProfileButton';
 
 const SettingsScreen = ({ navigation }) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -56,9 +57,9 @@ const SettingsScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={{ width: 40 }} />
-        <Text style={styles.headerTitle}>Settings</Text>
         <BurgerMenu navigation={navigation} />
+        <Text style={styles.headerTitle}>Settings</Text>
+        <ProfileButton navigation={navigation} />
       </View>
 
       <ScrollView style={styles.content}>
