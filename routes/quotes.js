@@ -393,19 +393,16 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         return res.status(400).json({ success: false, error: 'Booking date and time are required' });
       }
 
-      // Get quote details with quote request info for service type
-      // Updated 2025-12-29: Fixed to handle both quote_requests and job_requests
+      // Get quote details - note: quote_requests table doesn't have service_type column
+      // Service type comes from either the booking or worker's specialty
       const queryText = `SELECT q.*,
-                qr.service_type as qr_service_type,
                 b.service as booking_service,
                 w.speciality as worker_speciality
          FROM quotes q
-         LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
          LEFT JOIN bookings b ON q.booking_id = b.id
          LEFT JOIN workers w ON q.worker_id = w.id
          WHERE q.id = $1 AND q.client_id = $2`;
 
-      console.log('QUOTE ACCEPT QUERY:', queryText);
       const quoteResult = await client.query(queryText, [quoteId, clientId]);
 
       if (quoteResult.rows.length === 0) {
@@ -456,8 +453,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         booking = bookingResult.rows[0];
       } else {
         // Create new booking from quote
-        // Use service_type from quote request, booking, or worker's speciality as fallback
-        const serviceType = quote.qr_service_type || quote.booking_service || quote.worker_speciality || 'General Service';
+        // Use service_type from booking or worker's speciality as fallback
+        const serviceType = quote.booking_service || quote.worker_speciality || 'General Service';
 
         const bookingResult = await client.query(`
           INSERT INTO bookings (
