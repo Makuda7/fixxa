@@ -282,7 +282,7 @@ const ClientDashboard = ({ navigation }) => {
               </Text>
 
               <View style={styles.messagesContainer}>
-                {conversation.messages.slice(0, 3).reverse().map((msg, index) => (
+                {conversation.messages.slice(0, 1).map((msg, index) => (
                   <View
                     key={index}
                     style={[
