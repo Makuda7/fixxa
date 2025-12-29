@@ -1930,7 +1930,7 @@ module.exports = (pool, logger, helpers) => {
         // Create new quote
         await pool.query(
           `INSERT INTO quotes (
-            booking_id, worker_id, user_id,
+            booking_id, worker_id, client_id,
             line_items, subtotal, tax_amount, total_amount,
             payment_methods, banking_details, notes,
             valid_until, available_dates, status
