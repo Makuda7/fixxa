@@ -11,6 +11,10 @@ import {
   RefreshControl,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,15 +25,18 @@ import BurgerMenu from '../../components/BurgerMenu';
 const PortfolioScreen = ({ navigation }) => {
   const { user } = useAuth();
   const [portfolio, setPortfolio] = useState([]);
+  const [reviewPhotos, setReviewPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showCaptionModal, setShowCaptionModal] = useState(false);
+  const [showReviewPhotosModal, setShowReviewPhotosModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [caption, setCaption] = useState('');
 
   useEffect(() => {
     fetchPortfolio();
+    fetchReviewPhotos();
     requestPermissions();
   }, []);
 
@@ -58,9 +65,21 @@ const PortfolioScreen = ({ navigation }) => {
     }
   };
 
+  const fetchReviewPhotos = async () => {
+    try {
+      const response = await api.get('/workers/reviews/photos');
+      if (response.data.photos) {
+        setReviewPhotos(response.data.photos);
+      }
+    } catch (error) {
+      console.error('Error fetching review photos:', error);
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchPortfolio();
+    fetchReviewPhotos();
   };
 
   const pickImage = async () => {
@@ -110,23 +129,34 @@ const PortfolioScreen = ({ navigation }) => {
   };
 
   const showImageSourceOptions = () => {
+    const options = [
+      {
+        text: 'Take Photo',
+        onPress: takePhoto,
+      },
+      {
+        text: 'Choose from Gallery',
+        onPress: pickImage,
+      },
+    ];
+
+    // Add review photos option only if there are review photos available
+    if (reviewPhotos.length > 0) {
+      options.push({
+        text: `Choose from Reviews (${reviewPhotos.length})`,
+        onPress: () => setShowReviewPhotosModal(true),
+      });
+    }
+
+    options.push({
+      text: 'Cancel',
+      style: 'cancel',
+    });
+
     Alert.alert(
       'Add Portfolio Photo',
       'Choose an option',
-      [
-        {
-          text: 'Take Photo',
-          onPress: takePhoto,
-        },
-        {
-          text: 'Choose from Gallery',
-          onPress: pickImage,
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ],
+      options,
       { cancelable: true }
     );
   };
@@ -137,11 +167,19 @@ const PortfolioScreen = ({ navigation }) => {
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('photo', {
-        uri: selectedImage.uri,
-        type: 'image/jpeg',
-        name: 'portfolio-photo.jpg',
-      });
+
+      // Check if this is a review photo (URL string) or a new image (object with uri)
+      if (typeof selectedImage === 'string') {
+        // Review photo - just send the URL
+        formData.append('photo_url', selectedImage);
+      } else {
+        // New image from camera/gallery
+        formData.append('photo', {
+          uri: selectedImage.uri,
+          type: 'image/jpeg',
+          name: 'portfolio-photo.jpg',
+        });
+      }
 
       if (caption.trim()) {
         formData.append('caption', caption.trim());
@@ -168,6 +206,12 @@ const PortfolioScreen = ({ navigation }) => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const selectReviewPhoto = (photoUrl) => {
+    setSelectedImage(photoUrl);
+    setShowReviewPhotosModal(false);
+    setShowCaptionModal(true);
   };
 
   const deleteImage = (photoId) => {
@@ -232,56 +276,69 @@ const PortfolioScreen = ({ navigation }) => {
         transparent={true}
         onRequestClose={() => setShowCaptionModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Caption (Optional)</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Add Caption (Optional)</Text>
 
-            {selectedImage && (
-              <Image
-                source={{ uri: selectedImage.uri }}
-                style={styles.previewImage}
-                resizeMode="cover"
-              />
-            )}
-
-            <TextInput
-              style={styles.captionInput}
-              value={caption}
-              onChangeText={setCaption}
-              placeholder="Describe this work..."
-              placeholderTextColor={COLORS.textLight}
-              multiline
-              maxLength={200}
-            />
-
-            <Text style={styles.charCount}>{caption.length}/200</Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setShowCaptionModal(false);
-                  setSelectedImage(null);
-                  setCaption('');
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.uploadButton, uploading && styles.uploadButtonDisabled]}
-                onPress={uploadImage}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <ActivityIndicator size="small" color={COLORS.white} />
-                ) : (
-                  <Text style={styles.uploadButtonText}>Upload</Text>
+                {selectedImage && (
+                  <Image
+                    source={{ uri: typeof selectedImage === 'string' ? selectedImage : selectedImage.uri }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
                 )}
-              </TouchableOpacity>
+
+                <TextInput
+                  style={styles.captionInput}
+                  value={caption}
+                  onChangeText={setCaption}
+                  placeholder="Describe this work..."
+                  placeholderTextColor={COLORS.textLight}
+                  multiline
+                  maxLength={200}
+                  returnKeyType="done"
+                  blurOnSubmit={true}
+                />
+
+                <Text style={styles.charCount}>{caption.length}/200</Text>
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setShowCaptionModal(false);
+                      setSelectedImage(null);
+                      setCaption('');
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.uploadButton, uploading && styles.uploadButtonDisabled]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      uploadImage();
+                    }}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <ActivityIndicator size="small" color={COLORS.white} />
+                    ) : (
+                      <Text style={styles.uploadButtonText}>Upload</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-          </View>
-        </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Content */}
@@ -342,6 +399,61 @@ const PortfolioScreen = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Review Photos Modal */}
+      <Modal
+        visible={showReviewPhotosModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowReviewPhotosModal(false)}
+      >
+        <View style={styles.reviewPhotosModalOverlay}>
+          <View style={styles.reviewPhotosModalContent}>
+            <View style={styles.reviewPhotosModalHeader}>
+              <Text style={styles.reviewPhotosModalTitle}>Choose from Review Photos</Text>
+              <TouchableOpacity
+                onPress={() => setShowReviewPhotosModal(false)}
+                style={styles.reviewPhotosCloseButton}
+              >
+                <Text style={styles.reviewPhotosCloseIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.reviewPhotosScrollView}>
+              {reviewPhotos.length === 0 ? (
+                <View style={styles.noReviewPhotos}>
+                  <Text style={styles.noReviewPhotosIcon}>📸</Text>
+                  <Text style={styles.noReviewPhotosText}>No review photos available</Text>
+                  <Text style={styles.noReviewPhotosSubtext}>
+                    Review photos from completed jobs will appear here
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.reviewPhotosGrid}>
+                  {reviewPhotos.map((photo, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.reviewPhotoCard}
+                      onPress={() => selectReviewPhoto(photo.photo_url)}
+                    >
+                      <Image
+                        source={{ uri: photo.photo_url }}
+                        style={styles.reviewPhotoImage}
+                        resizeMode="cover"
+                      />
+                      {photo.review_text && (
+                        <View style={styles.reviewPhotoInfo}>
+                          <Text style={styles.reviewPhotoRating}>⭐ {photo.rating}/5</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -560,6 +672,100 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     ...FONTS.bold,
     color: COLORS.white,
+  },
+  reviewPhotosModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  reviewPhotosModalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    paddingTop: SIZES.padding,
+  },
+  reviewPhotosModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.padding,
+    paddingBottom: SIZES.padding,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  reviewPhotosModalTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+  },
+  reviewPhotosCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewPhotosCloseIcon: {
+    fontSize: 20,
+    color: COLORS.textPrimary,
+    fontWeight: 'bold',
+  },
+  reviewPhotosScrollView: {
+    flex: 1,
+    padding: SIZES.padding,
+  },
+  reviewPhotosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  reviewPhotoCard: {
+    width: '48%',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+  },
+  reviewPhotoImage: {
+    width: '100%',
+    height: 150,
+  },
+  reviewPhotoInfo: {
+    padding: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  reviewPhotoRating: {
+    fontSize: SIZES.xs,
+    color: COLORS.white,
+    ...FONTS.semiBold,
+  },
+  noReviewPhotos: {
+    alignItems: 'center',
+    padding: 40,
+    marginTop: 40,
+  },
+  noReviewPhotosIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  noReviewPhotosText: {
+    fontSize: SIZES.lg,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  noReviewPhotosSubtext: {
+    fontSize: SIZES.sm,
+    color: COLORS.textLight,
+    textAlign: 'center',
   },
 });
 

@@ -8,6 +8,8 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  Image,
+  Modal,
 } from 'react-native';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
@@ -16,11 +18,15 @@ import { formatDate, formatCurrency } from '../../utils/formatting';
 const JobDetailScreen = ({ route, navigation }) => {
   const { jobId } = route.params;
   const [job, setJob] = useState(null);
+  const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   useEffect(() => {
     fetchJobDetails();
+    fetchReview();
   }, [jobId]);
 
   const fetchJobDetails = async () => {
@@ -37,6 +43,17 @@ const JobDetailScreen = ({ route, navigation }) => {
       navigation.goBack();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReview = async () => {
+    try {
+      const response = await api.get(`/reviews/booking/${jobId}`);
+      if (response.data.success && response.data.review) {
+        setReview(response.data.review);
+      }
+    } catch (error) {
+      console.log('No review found for this job');
     }
   };
 
@@ -280,6 +297,121 @@ const JobDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
+        {/* Review Section */}
+        {review && isCompleted && (
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewCardTitle}>Client Review</Text>
+
+            {/* Overall Rating */}
+            <View style={styles.reviewRatingContainer}>
+              <Text style={styles.reviewOverallLabel}>Overall Rating</Text>
+              <View style={styles.reviewStarsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Text key={star} style={styles.reviewStar}>
+                    {star <= (review.overall_rating || 0) ? '⭐' : '☆'}
+                  </Text>
+                ))}
+                <Text style={styles.reviewRatingNumber}>{review.overall_rating}/5</Text>
+              </View>
+            </View>
+
+            {/* Detailed Ratings */}
+            {(review.quality_rating > 0 || review.punctuality_rating > 0 ||
+              review.communication_rating > 0 || review.value_rating > 0) && (
+              <View style={styles.detailedRatingsContainer}>
+                {review.quality_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Quality:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.quality_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {review.punctuality_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Punctuality:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.punctuality_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {review.communication_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Communication:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.communication_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {review.value_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Value:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.value_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Review Text */}
+            {review.review_text && (
+              <View style={styles.reviewTextContainer}>
+                <Text style={styles.reviewTextLabel}>Client Feedback:</Text>
+                <Text style={styles.reviewText}>{review.review_text}</Text>
+              </View>
+            )}
+
+            {/* Review Photos */}
+            {review.photos && Array.isArray(review.photos) && review.photos.length > 0 && (
+              <View style={styles.reviewPhotosContainer}>
+                <Text style={styles.reviewPhotosLabel}>Photos:</Text>
+                <View style={styles.reviewPhotosGrid}>
+                  {review.photos.map((photo, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.reviewPhotoThumb}
+                      onPress={() => {
+                        setSelectedPhoto({ url: photo, caption: 'Review Photo' });
+                        setShowPhotoModal(true);
+                      }}
+                    >
+                      <Image
+                        source={{ uri: photo }}
+                        style={styles.reviewPhotoImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Review Date */}
+            {review.created_at && (
+              <Text style={styles.reviewDate}>
+                Reviewed on {formatDate(review.created_at)}
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* Action Buttons */}
         {!isCancelled && !isCompleted && !isAwaitingClientConfirmation && (
           <View style={styles.actionSection}>
@@ -328,6 +460,38 @@ const JobDetailScreen = ({ route, navigation }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Photo Modal */}
+      <Modal
+        visible={showPhotoModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPhotoModal(false)}
+      >
+        <View style={styles.photoModalContainer}>
+          <TouchableOpacity
+            style={styles.photoModalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowPhotoModal(false)}
+          >
+            <View style={styles.photoModalContent}>
+              {selectedPhoto && (
+                <Image
+                  source={{ uri: selectedPhoto.url }}
+                  style={styles.photoModalImage}
+                  resizeMode="contain"
+                />
+              )}
+              <TouchableOpacity
+                style={styles.photoModalClose}
+                onPress={() => setShowPhotoModal(false)}
+              >
+                <Text style={styles.photoModalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -517,6 +681,150 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  reviewCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SIZES.padding * 1.5,
+    marginHorizontal: SIZES.padding,
+    marginTop: SIZES.padding,
+    ...SHADOWS.medium,
+  },
+  reviewCardTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+  },
+  reviewRatingContainer: {
+    marginBottom: 16,
+  },
+  reviewOverallLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.medium,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  reviewStarsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reviewStar: {
+    fontSize: 24,
+    marginRight: 4,
+  },
+  reviewRatingNumber: {
+    fontSize: SIZES.md,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    marginLeft: 8,
+  },
+  detailedRatingsContainer: {
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  detailedRatingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailedRatingLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.medium,
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  detailedRatingStars: {
+    flexDirection: 'row',
+  },
+  detailedStar: {
+    fontSize: 16,
+    color: '#FFD700',
+    marginLeft: 2,
+  },
+  reviewTextContainer: {
+    marginBottom: 16,
+  },
+  reviewTextLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  reviewText: {
+    fontSize: SIZES.md,
+    color: COLORS.textPrimary,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  reviewPhotosContainer: {
+    marginBottom: 16,
+  },
+  reviewPhotosLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  reviewPhotosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  reviewPhotoThumb: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden',
+    ...SHADOWS.small,
+  },
+  reviewPhotoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  reviewDate: {
+    fontSize: SIZES.xs,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    textAlign: 'right',
+  },
+  photoModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+  photoModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalImage: {
+    width: '90%',
+    height: '80%',
+  },
+  photoModalClose: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalCloseText: {
+    fontSize: 24,
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
 });
 
