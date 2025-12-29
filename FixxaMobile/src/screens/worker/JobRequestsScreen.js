@@ -44,35 +44,11 @@ const JobRequestsScreen = ({ navigation }) => {
     fetchRequests();
   };
 
-  const handleAcceptRequest = async (requestId) => {
-    Alert.alert(
-      'Accept Job Request',
-      'Are you sure you want to accept this job?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept',
-          onPress: async () => {
-            setProcessingId(requestId);
-            try {
-              const response = await api.post(
-                `/workers/job-requests/${requestId}/accept`
-              );
-
-              if (response.data.success) {
-                Alert.alert('Success', 'Job request accepted!');
-                fetchRequests(); // Refresh the list
-              }
-            } catch (error) {
-              console.error('Error accepting request:', error);
-              Alert.alert('Error', 'Failed to accept job request');
-            } finally {
-              setProcessingId(null);
-            }
-          },
-        },
-      ]
-    );
+  const handleMessageClient = (request) => {
+    navigation.navigate('ChatScreen', {
+      clientId: request.user_id,
+      clientName: request.client_name,
+    });
   };
 
   const handleDeclineRequest = async (requestId) => {
@@ -164,6 +140,14 @@ const JobRequestsScreen = ({ navigation }) => {
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
+            style={[styles.actionButton, styles.messageButton]}
+            onPress={() => handleMessageClient(item)}
+          >
+            <Text style={styles.messageButtonIcon}>💬</Text>
+            <Text style={styles.messageButtonText}>Message</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[styles.actionButton, styles.declineButton]}
             onPress={() => handleDeclineRequest(item.id)}
             disabled={isProcessing}
@@ -172,18 +156,6 @@ const JobRequestsScreen = ({ navigation }) => {
               <ActivityIndicator size="small" color={COLORS.white} />
             ) : (
               <Text style={styles.declineButtonText}>Decline</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.acceptButton]}
-            onPress={() => handleAcceptRequest(item.id)}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : (
-              <Text style={styles.acceptButtonText}>Accept</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -365,18 +337,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
   },
-  declineButton: {
-    backgroundColor: COLORS.error,
+  messageButton: {
+    backgroundColor: COLORS.primary,
   },
-  acceptButton: {
-    backgroundColor: COLORS.success,
+  messageButtonIcon: {
+    fontSize: 18,
+    marginRight: 4,
   },
-  declineButtonText: {
+  messageButtonText: {
     color: COLORS.white,
     fontSize: SIZES.md,
     ...FONTS.bold,
   },
-  acceptButtonText: {
+  declineButton: {
+    backgroundColor: COLORS.error,
+  },
+  declineButtonText: {
     color: COLORS.white,
     fontSize: SIZES.md,
     ...FONTS.bold,
