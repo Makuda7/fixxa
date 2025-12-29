@@ -219,7 +219,12 @@ const ClientDashboard = ({ navigation }) => {
           </View>
         ) : (
           bookings.map((booking) => (
-            <View key={booking.id} style={styles.bookingCard}>
+            <TouchableOpacity
+              key={booking.id}
+              style={styles.bookingCard}
+              onPress={() => navigation.navigate('BookingDetail', { bookingId: booking.id })}
+              activeOpacity={0.7}
+            >
               <View style={styles.bookingHeader}>
                 <Text style={styles.bookingTitle}>{booking.service_type}</Text>
                 <View
@@ -242,7 +247,7 @@ const ClientDashboard = ({ navigation }) => {
                   💰 {formatCurrency(booking.booking_amount)}
                 </Text>
               )}
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </View>
