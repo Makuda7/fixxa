@@ -175,7 +175,7 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
   };
 
   const handleViewReviews = () => {
-    navigation.navigate('Reviews', { workerId: worker.id });
+    navigation.navigate('AllWorkerReviews', { workerId: worker.id, workerName: worker.name });
   };
 
   const renderStars = (rating) => {
@@ -684,8 +684,8 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
                     </View>
                   </View>
 
-                  {/* Reviews List */}
-                  {reviews.slice(0, 3).map((review) => (
+                  {/* Reviews List - Show 2 most recent */}
+                  {reviews.slice(0, 2).map((review) => (
                     <View key={review.id} style={styles.reviewCard}>
                       <View style={styles.reviewHeader}>
                         <Text style={styles.reviewerName}>{review.client_name}</Text>
@@ -729,7 +729,7 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
                       )}
                     </View>
                   ))}
-                  {reviews.length > 3 && (
+                  {reviews.length > 2 && (
                     <TouchableOpacity
                       style={styles.viewAllButton}
                       onPress={handleViewReviews}

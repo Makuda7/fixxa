@@ -24,7 +24,52 @@ const reviewPhotoUpload = multer({
 module.exports = (pool, logger, upload) => {
   const { requireAuth, clientOnly } = require('../middleware/auth');
 
-  // Get reviews for a worker
+  // Get reviews for a worker (path parameter version)
+  router.get('/worker/:workerId', async (req, res) => {
+    try {
+      const workerId = req.params.workerId;
+
+      const result = await pool.query(`
+        SELECT r.*, u.name AS client_name
+        FROM reviews r
+        LEFT JOIN users u ON r.client_id = u.id
+        WHERE r.worker_id = $1
+        ORDER BY r.created_at DESC
+      `, [workerId]);
+
+      const processedReviews = result.rows.map(review => {
+        let photos = [];
+        try {
+          if (review.photos) {
+            photos = typeof review.photos === 'string' ? JSON.parse(review.photos) : review.photos;
+          }
+        } catch (e) {
+          console.error('Photo parse error:', e);
+        }
+
+        return {
+          id: review.id,
+          overall_rating: review.overall_rating,
+          quality_rating: review.quality_rating,
+          punctuality_rating: review.punctuality_rating,
+          communication_rating: review.communication_rating,
+          value_rating: review.value_rating,
+          review_text: review.review_text,
+          photos: photos,
+          created_at: review.created_at,
+          client_name: review.client_name ? review.client_name.split(' ')[0] : 'Anonymous'
+        };
+      });
+
+      res.json({ reviews: processedReviews });
+    } catch (err) {
+      logger.error('Failed to fetch worker reviews', { error: err.message, stack: err.stack });
+      console.error('Failed to fetch worker reviews:', err);
+      res.status(500).json({ reviews: [] });
+    }
+  });
+
+  // Get reviews for a worker (query parameter version - for backwards compatibility)
   router.get('/', async (req, res) => {
     try {
       const workerId = req.query.workerId;
@@ -39,7 +84,7 @@ module.exports = (pool, logger, upload) => {
         WHERE r.worker_id = $1
         ORDER BY r.created_at DESC
       `, [workerId]);
-      
+
       const processedReviews = result.rows.map(review => {
         let photos = [];
         try {
@@ -49,7 +94,7 @@ module.exports = (pool, logger, upload) => {
         } catch (e) {
           console.error('Photo parse error:', e);
         }
-        
+
         return {
           id: review.id,
           overall_rating: review.overall_rating,
@@ -63,7 +108,7 @@ module.exports = (pool, logger, upload) => {
           client_name: review.client_name ? review.client_name.split(' ')[0] : 'Anonymous'
         };
       });
-      
+
       res.json(processedReviews);
     } catch (err) {
       logger.error('Failed to fetch worker reviews', { error: err.message, stack: err.stack });

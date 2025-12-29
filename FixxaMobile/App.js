@@ -43,6 +43,7 @@ import WorkerQuotesScreen from './src/screens/worker/WorkerQuotesScreen';
 import WorkerTipsScreen from './src/screens/worker/WorkerTipsScreen';
 import ReviewsScreen from './src/screens/shared/ReviewsScreen';
 import CreateReviewScreen from './src/screens/shared/CreateReviewScreen';
+import AllWorkerReviewsScreen from './src/screens/shared/AllWorkerReviewsScreen';
 import ProfileScreen from './src/screens/shared/ProfileScreen';
 import EditProfileScreen from './src/screens/shared/EditProfileScreen';
 import MessagesScreen from './src/screens/shared/MessagesScreen';
@@ -282,6 +283,7 @@ function AppNavigator() {
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="EditProfile" component={EditProfileScreen} />
               <Stack.Screen name="Reviews" component={ReviewsScreen} />
+              <Stack.Screen name="AllWorkerReviews" component={AllWorkerReviewsScreen} />
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="Support" component={SupportScreen} />
               <Stack.Screen name="Services" component={ServicesScreen} />
