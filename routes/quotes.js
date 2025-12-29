@@ -394,6 +394,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
       }
 
       // Get quote details with quote request info for service type
+      // Updated 2025-12-29: Fixed to handle both quote_requests and job_requests
       const quoteResult = await client.query(
         `SELECT q.*,
                 qr.service_type as qr_service_type,
