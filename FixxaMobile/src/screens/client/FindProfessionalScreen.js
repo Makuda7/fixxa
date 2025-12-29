@@ -483,8 +483,8 @@ const FindProfessionalScreen = ({ navigation }) => {
     navigation.navigate('WorkerDetails', { worker });
   };
 
-  const handleBookWorker = (worker) => {
-    navigation.navigate('CreateBooking', { worker });
+  const handleRequestQuote = (worker) => {
+    navigation.navigate('WorkerDetails', { worker });
   };
 
   const FilterModal = () => (
@@ -880,14 +880,14 @@ const FindProfessionalScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.bookButton}
+            style={styles.requestQuoteButton}
             onPress={(e) => {
               e.stopPropagation();
-              handleBookWorker(worker);
+              handleRequestQuote(worker);
             }}
             disabled={worker.is_pending}
           >
-            <Text style={styles.bookButtonText}>Book</Text>
+            <Text style={styles.requestQuoteButtonText}>Request Quote</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1401,7 +1401,7 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     ...FONTS.semiBold,
   },
-  bookButton: {
+  requestQuoteButton: {
     flex: 1,
     backgroundColor: COLORS.primary,
     paddingVertical: 10,
@@ -1409,7 +1409,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  bookButtonText: {
+  requestQuoteButtonText: {
     color: COLORS.white,
     fontSize: SIZES.sm,
     ...FONTS.bold,
