@@ -1892,41 +1892,66 @@ module.exports = (pool, logger, helpers) => {
       validUntil.setDate(validUntil.getDate() + valid_days);
 
       // Create or update quote with line items
-      await pool.query(
-        `INSERT INTO quotes (
-          booking_id, worker_id, user_id,
-          line_items, subtotal, tax_amount, total_amount,
-          payment_methods, banking_details, notes,
-          valid_until, available_dates, status
-        )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')
-         ON CONFLICT (booking_id) DO UPDATE
-         SET line_items = $4,
-             subtotal = $5,
-             tax_amount = $6,
-             total_amount = $7,
-             payment_methods = $8,
-             banking_details = $9,
-             notes = $10,
-             valid_until = $11,
-             available_dates = $12,
-             status = 'pending',
-             created_at = CURRENT_TIMESTAMP`,
-        [
-          requestId,
-          workerId,
-          booking.user_id,
-          JSON.stringify(line_items),
-          subtotal,
-          taxAmount,
-          totalAmount,
-          payment_methods || ['cash'],
-          banking_details ? JSON.stringify(banking_details) : null,
-          notes || null,
-          validUntil,
-          JSON.stringify(available_dates)
-        ]
+      // First check if there's an existing pending quote for this booking
+      const existingQuote = await pool.query(
+        'SELECT id FROM quotes WHERE booking_id = $1 AND status = $2',
+        [requestId, 'pending']
       );
+
+      if (existingQuote.rows.length > 0) {
+        // Update existing pending quote
+        await pool.query(
+          `UPDATE quotes
+           SET line_items = $1,
+               subtotal = $2,
+               tax_amount = $3,
+               total_amount = $4,
+               payment_methods = $5,
+               banking_details = $6,
+               notes = $7,
+               valid_until = $8,
+               available_dates = $9,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $10`,
+          [
+            JSON.stringify(line_items),
+            subtotal,
+            taxAmount,
+            totalAmount,
+            payment_methods || ['cash'],
+            banking_details ? JSON.stringify(banking_details) : null,
+            notes || null,
+            validUntil,
+            JSON.stringify(available_dates),
+            existingQuote.rows[0].id
+          ]
+        );
+      } else {
+        // Create new quote
+        await pool.query(
+          `INSERT INTO quotes (
+            booking_id, worker_id, user_id,
+            line_items, subtotal, tax_amount, total_amount,
+            payment_methods, banking_details, notes,
+            valid_until, available_dates, status
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')`,
+          [
+            requestId,
+            workerId,
+            booking.user_id,
+            JSON.stringify(line_items),
+            subtotal,
+            taxAmount,
+            totalAmount,
+            payment_methods || ['cash'],
+            banking_details ? JSON.stringify(banking_details) : null,
+            notes || null,
+            validUntil,
+            JSON.stringify(available_dates)
+          ]
+        );
+      }
 
       logger.info('Quote sent for job request', { workerId, requestId, totalAmount });
       res.json({ success: true, message: 'Quote sent successfully' });
