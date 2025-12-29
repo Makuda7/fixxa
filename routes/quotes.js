@@ -395,9 +395,13 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
 
       // Get quote details with quote request info for service type
       const quoteResult = await client.query(
-        `SELECT q.*, qr.service_type, w.speciality as worker_speciality
+        `SELECT q.*,
+                qr.service_type as qr_service_type,
+                b.service as booking_service,
+                w.speciality as worker_speciality
          FROM quotes q
          LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
+         LEFT JOIN bookings b ON q.booking_id = b.id
          LEFT JOIN workers w ON q.worker_id = w.id
          WHERE q.id = $1 AND q.client_id = $2`,
         [quoteId, clientId]
@@ -451,8 +455,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
         booking = bookingResult.rows[0];
       } else {
         // Create new booking from quote
-        // Use service_type from quote request, or worker's speciality as fallback
-        const serviceType = quote.service_type || quote.worker_speciality || 'General Service';
+        // Use service_type from quote request, booking, or worker's speciality as fallback
+        const serviceType = quote.qr_service_type || quote.booking_service || quote.worker_speciality || 'General Service';
 
         const bookingResult = await client.query(`
           INSERT INTO bookings (
