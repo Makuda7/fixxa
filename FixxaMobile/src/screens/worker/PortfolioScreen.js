@@ -278,66 +278,89 @@ const PortfolioScreen = ({ navigation }) => {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
+          style={styles.captionModalContainer}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Add Caption (Optional)</Text>
+          <TouchableWithoutFeedback onPress={() => setShowCaptionModal(false)}>
+            <View style={styles.captionModalOverlay} />
+          </TouchableWithoutFeedback>
 
-                {selectedImage && (
-                  <Image
-                    source={{ uri: typeof selectedImage === 'string' ? selectedImage : selectedImage.uri }}
-                    style={styles.previewImage}
-                    resizeMode="cover"
-                  />
-                )}
+          <View style={styles.captionModalContent}>
+            <View style={styles.captionModalHeader}>
+              <Text style={styles.captionModalTitle}>Add Caption (Optional)</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowCaptionModal(false);
+                  setSelectedImage(null);
+                  setCaption('');
+                }}
+                style={styles.captionModalCloseButton}
+              >
+                <Text style={styles.captionModalCloseIcon}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
-                <TextInput
-                  style={styles.captionInput}
-                  value={caption}
-                  onChangeText={setCaption}
-                  placeholder="Describe this work..."
-                  placeholderTextColor={COLORS.textLight}
-                  multiline
-                  maxLength={200}
-                  returnKeyType="done"
-                  blurOnSubmit={true}
+            <ScrollView
+              style={styles.captionModalScroll}
+              keyboardShouldPersistTaps="handled"
+            >
+              {selectedImage && (
+                <Image
+                  source={{ uri: typeof selectedImage === 'string' ? selectedImage : selectedImage.uri }}
+                  style={styles.previewImage}
+                  resizeMode="cover"
                 />
+              )}
 
-                <Text style={styles.charCount}>{caption.length}/200</Text>
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => {
-                      Keyboard.dismiss();
-                      setShowCaptionModal(false);
-                      setSelectedImage(null);
-                      setCaption('');
-                    }}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.uploadButton, uploading && styles.uploadButtonDisabled]}
-                    onPress={() => {
-                      Keyboard.dismiss();
-                      uploadImage();
-                    }}
-                    disabled={uploading}
-                  >
-                    {uploading ? (
-                      <ActivityIndicator size="small" color={COLORS.white} />
-                    ) : (
-                      <Text style={styles.uploadButtonText}>Upload</Text>
-                    )}
-                  </TouchableOpacity>
+              <TouchableWithoutFeedback>
+                <View>
+                  <TextInput
+                    style={styles.captionInput}
+                    value={caption}
+                    onChangeText={setCaption}
+                    placeholder="Describe this work..."
+                    placeholderTextColor={COLORS.textLight}
+                    multiline
+                    maxLength={200}
+                    returnKeyType="done"
+                    blurOnSubmit={true}
+                  />
+                  <Text style={styles.charCount}>{caption.length}/200</Text>
                 </View>
+              </TouchableWithoutFeedback>
+            </ScrollView>
+
+            <View style={styles.captionModalFooter}>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setShowCaptionModal(false);
+                    setSelectedImage(null);
+                    setCaption('');
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.uploadButton, uploading && styles.uploadButtonDisabled]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    uploadImage();
+                  }}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <ActivityIndicator size="small" color={COLORS.white} />
+                  ) : (
+                    <Text style={styles.uploadButtonText}>Upload</Text>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
-          </TouchableWithoutFeedback>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -596,41 +619,74 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     textAlign: 'center',
   },
-  modalOverlay: {
+  captionModalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  captionModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SIZES.padding,
   },
-  modalContent: {
+  captionModalContent: {
     backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: SIZES.padding * 1.5,
-    width: '100%',
-    maxWidth: 400,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
   },
-  modalTitle: {
+  captionModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.padding * 1.5,
+    paddingTop: SIZES.padding * 1.5,
+    paddingBottom: SIZES.padding,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  captionModalTitle: {
     fontSize: SIZES.lg,
     ...FONTS.bold,
     color: COLORS.textPrimary,
-    marginBottom: 16,
-    textAlign: 'center',
+  },
+  captionModalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captionModalCloseIcon: {
+    fontSize: 20,
+    color: COLORS.textPrimary,
+    fontWeight: 'bold',
+  },
+  captionModalScroll: {
+    flex: 1,
+    paddingHorizontal: SIZES.padding * 1.5,
+  },
+  captionModalFooter: {
+    paddingHorizontal: SIZES.padding * 1.5,
+    paddingVertical: SIZES.padding,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    backgroundColor: COLORS.white,
   },
   previewImage: {
     width: '100%',
-    height: 180,
+    height: 200,
     borderRadius: 12,
-    marginBottom: 16,
+    marginTop: SIZES.padding,
+    marginBottom: SIZES.padding,
   },
   captionInput: {
     backgroundColor: COLORS.background,
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     fontSize: SIZES.sm,
     color: COLORS.textPrimary,
     minHeight: 100,
-    maxHeight: 120,
+    maxHeight: 150,
     borderWidth: 1,
     borderColor: '#d0d0d0',
     textAlignVertical: 'top',
@@ -639,12 +695,12 @@ const styles = StyleSheet.create({
     fontSize: SIZES.xs,
     color: COLORS.textLight,
     marginTop: 8,
+    marginBottom: SIZES.padding,
     textAlign: 'right',
   },
   modalButtons: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 16,
   },
   cancelButton: {
     flex: 1,
