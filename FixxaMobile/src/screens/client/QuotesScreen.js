@@ -19,6 +19,7 @@ const QuotesScreen = ({ navigation }) => {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   const fetchQuotes = async () => {
     try {
@@ -105,6 +106,41 @@ const QuotesScreen = ({ navigation }) => {
     return date.toLocaleDateString('en-ZA', options);
   };
 
+  const getFilteredQuotes = () => {
+    switch (activeFilter) {
+      case 'pending':
+        return quotes.filter(q => q.status === 'pending');
+      case 'accepted':
+        return quotes.filter(q => q.status === 'accepted');
+      case 'declined':
+        return quotes.filter(q => q.status === 'declined' || q.status === 'rejected');
+      case 'recent':
+        // Sort by created_at descending (most recent first)
+        return [...quotes].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      case 'all':
+      default:
+        return quotes;
+    }
+  };
+
+  const filteredQuotes = getFilteredQuotes();
+
+  const getFilterCount = (filter) => {
+    switch (filter) {
+      case 'pending':
+        return quotes.filter(q => q.status === 'pending').length;
+      case 'accepted':
+        return quotes.filter(q => q.status === 'accepted').length;
+      case 'declined':
+        return quotes.filter(q => q.status === 'declined' || q.status === 'rejected').length;
+      case 'recent':
+      case 'all':
+        return quotes.length;
+      default:
+        return 0;
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -124,13 +160,95 @@ const QuotesScreen = ({ navigation }) => {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* Filter Tabs */}
+      {quotes.length > 0 && (
+        <View style={styles.filterContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScrollContent}
+          >
+            <TouchableOpacity
+              style={[styles.filterTab, activeFilter === 'all' && styles.filterTabActive]}
+              onPress={() => setActiveFilter('all')}
+            >
+              <Text style={[styles.filterTabText, activeFilter === 'all' && styles.filterTabTextActive]}>
+                All
+              </Text>
+              <View style={[styles.filterBadge, activeFilter === 'all' && styles.filterBadgeActive]}>
+                <Text style={[styles.filterBadgeText, activeFilter === 'all' && styles.filterBadgeTextActive]}>
+                  {getFilterCount('all')}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.filterTab, activeFilter === 'pending' && styles.filterTabActive]}
+              onPress={() => setActiveFilter('pending')}
+            >
+              <Text style={[styles.filterTabText, activeFilter === 'pending' && styles.filterTabTextActive]}>
+                Pending
+              </Text>
+              {getFilterCount('pending') > 0 && (
+                <View style={[styles.filterBadge, activeFilter === 'pending' && styles.filterBadgeActive]}>
+                  <Text style={[styles.filterBadgeText, activeFilter === 'pending' && styles.filterBadgeTextActive]}>
+                    {getFilterCount('pending')}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.filterTab, activeFilter === 'accepted' && styles.filterTabActive]}
+              onPress={() => setActiveFilter('accepted')}
+            >
+              <Text style={[styles.filterTabText, activeFilter === 'accepted' && styles.filterTabTextActive]}>
+                Accepted
+              </Text>
+              {getFilterCount('accepted') > 0 && (
+                <View style={[styles.filterBadge, activeFilter === 'accepted' && styles.filterBadgeActive]}>
+                  <Text style={[styles.filterBadgeText, activeFilter === 'accepted' && styles.filterBadgeTextActive]}>
+                    {getFilterCount('accepted')}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.filterTab, activeFilter === 'declined' && styles.filterTabActive]}
+              onPress={() => setActiveFilter('declined')}
+            >
+              <Text style={[styles.filterTabText, activeFilter === 'declined' && styles.filterTabTextActive]}>
+                Declined
+              </Text>
+              {getFilterCount('declined') > 0 && (
+                <View style={[styles.filterBadge, activeFilter === 'declined' && styles.filterBadgeActive]}>
+                  <Text style={[styles.filterBadgeText, activeFilter === 'declined' && styles.filterBadgeTextActive]}>
+                    {getFilterCount('declined')}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.filterTab, activeFilter === 'recent' && styles.filterTabActive]}
+              onPress={() => setActiveFilter('recent')}
+            >
+              <Text style={[styles.filterTabText, activeFilter === 'recent' && styles.filterTabTextActive]}>
+                Most Recent
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {quotes.length === 0 ? (
+        {filteredQuotes.length === 0 && quotes.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>📋</Text>
             <Text style={styles.emptyText}>No quotes yet</Text>
@@ -144,9 +262,17 @@ const QuotesScreen = ({ navigation }) => {
               <Text style={styles.findProButtonText}>Find Professionals</Text>
             </TouchableOpacity>
           </View>
+        ) : filteredQuotes.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>🔍</Text>
+            <Text style={styles.emptyText}>No {activeFilter} quotes</Text>
+            <Text style={styles.emptySubtext}>
+              Try selecting a different filter to view other quotes.
+            </Text>
+          </View>
         ) : (
           <View style={styles.quotesContainer}>
-            {quotes.map((quote) => (
+            {filteredQuotes.map((quote) => (
               <View key={quote.id} style={styles.quoteCard}>
                 {/* Quote Header */}
                 <View style={styles.quoteHeader}>
@@ -340,6 +466,58 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
+  },
+  filterContainer: {
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    paddingVertical: 12,
+  },
+  filterScrollContent: {
+    paddingHorizontal: SIZES.padding,
+    gap: 8,
+  },
+  filterTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    gap: 6,
+  },
+  filterTabActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterTabText: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+  },
+  filterTabTextActive: {
+    color: COLORS.white,
+  },
+  filterBadge: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  filterBadgeActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  filterBadgeText: {
+    fontSize: SIZES.xs,
+    ...FONTS.bold,
+    color: COLORS.primary,
+  },
+  filterBadgeTextActive: {
+    color: COLORS.white,
   },
   emptyState: {
     alignItems: 'center',
