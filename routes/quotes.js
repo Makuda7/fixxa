@@ -395,8 +395,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
 
       // Get quote details with quote request info for service type
       // Updated 2025-12-29: Fixed to handle both quote_requests and job_requests
-      const quoteResult = await client.query(
-        `SELECT q.*,
+      const queryText = `SELECT q.*,
                 qr.service_type as qr_service_type,
                 b.service as booking_service,
                 w.speciality as worker_speciality
@@ -404,9 +403,10 @@ module.exports = (pool, logger, sendEmail, emailTemplates) => {
          LEFT JOIN quote_requests qr ON q.quote_request_id = qr.id
          LEFT JOIN bookings b ON q.booking_id = b.id
          LEFT JOIN workers w ON q.worker_id = w.id
-         WHERE q.id = $1 AND q.client_id = $2`,
-        [quoteId, clientId]
-      );
+         WHERE q.id = $1 AND q.client_id = $2`;
+
+      console.log('QUOTE ACCEPT QUERY:', queryText);
+      const quoteResult = await client.query(queryText, [quoteId, clientId]);
 
       if (quoteResult.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Quote not found' });
