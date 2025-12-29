@@ -17,10 +17,20 @@ import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 const CreateReviewScreen = ({ route, navigation }) => {
   const { booking, isCompletionApproval } = route.params || {};
 
-  const [rating, setRating] = useState(0);
+  const [ratings, setRatings] = useState({
+    quality: 0,
+    punctuality: 0,
+    communication: 0,
+    value: 0,
+  });
   const [reviewText, setReviewText] = useState('');
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
+
+  // Calculate overall rating from detailed ratings
+  const overallRating = Math.round(
+    (ratings.quality + ratings.punctuality + ratings.communication + ratings.value) / 4
+  ) || 0;
 
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -95,8 +105,8 @@ const CreateReviewScreen = ({ route, navigation }) => {
   };
 
   const handleSubmit = async () => {
-    if (rating === 0) {
-      Alert.alert('Rating Required', 'Please select a star rating.');
+    if (overallRating === 0) {
+      Alert.alert('Rating Required', 'Please rate at least one category.');
       return;
     }
 
@@ -110,7 +120,11 @@ const CreateReviewScreen = ({ route, navigation }) => {
     try {
       const formData = new FormData();
       formData.append('booking_id', booking?.id || '');
-      formData.append('rating', rating);
+      formData.append('overall_rating', overallRating);
+      formData.append('quality_rating', ratings.quality);
+      formData.append('punctuality_rating', ratings.punctuality);
+      formData.append('communication_rating', ratings.communication);
+      formData.append('value_rating', ratings.value);
       formData.append('review_text', reviewText);
 
       // Add images
@@ -162,21 +176,35 @@ const CreateReviewScreen = ({ route, navigation }) => {
     }
   };
 
-  const renderStarRating = () => {
+  const updateRating = (category, value) => {
+    setRatings({ ...ratings, [category]: value });
+  };
+
+  const renderCategoryRating = (category, label) => {
     return (
-      <View style={styles.ratingContainer}>
-        <Text style={styles.ratingLabel}>Your Rating:</Text>
+      <View style={styles.categoryContainer}>
+        <Text style={styles.categoryLabel}>{label}</Text>
         <View style={styles.starsContainer}>
           {[1, 2, 3, 4, 5].map((star) => (
             <TouchableOpacity
               key={star}
-              onPress={() => setRating(star)}
+              onPress={() => updateRating(category, star)}
               style={styles.starButton}
             >
-              <Text style={styles.star}>{star <= rating ? '⭐' : '☆'}</Text>
+              <Text style={styles.categoryStar}>
+                {star <= ratings[category] ? '★' : '☆'}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.ratingText}>
+          {ratings[category] === 0 ? 'Tap to rate' :
+           ratings[category] === 1 ? 'Poor' :
+           ratings[category] === 2 ? 'Fair' :
+           ratings[category] === 3 ? 'Good' :
+           ratings[category] === 4 ? 'Very Good' :
+           'Excellent'}
+        </Text>
       </View>
     );
   };
@@ -201,15 +229,38 @@ const CreateReviewScreen = ({ route, navigation }) => {
         {/* Booking Info */}
         {booking && (
           <View style={styles.bookingInfo}>
-            <Text style={styles.bookingTitle}>{booking.service_type}</Text>
+            <Text style={styles.bookingTitle}>
+              {booking.service_type || booking.professional_service || 'Service'}
+            </Text>
             <Text style={styles.bookingWorker}>
-              Worker: {booking.worker_name}
+              Professional: {booking.worker_name || booking.professional_name}
             </Text>
           </View>
         )}
 
-        {/* Star Rating */}
-        {renderStarRating()}
+        {/* Overall Rating Display */}
+        {overallRating > 0 && (
+          <View style={styles.overallRatingContainer}>
+            <Text style={styles.overallLabel}>Overall Rating</Text>
+            <View style={styles.overallStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Text key={star} style={styles.overallStar}>
+                  {star <= overallRating ? '★' : '☆'}
+                </Text>
+              ))}
+            </View>
+            <Text style={styles.overallScore}>{overallRating}/5</Text>
+          </View>
+        )}
+
+        {/* Detailed Ratings */}
+        <View style={styles.ratingsSection}>
+          <Text style={styles.sectionLabel}>Rate Your Experience:</Text>
+          {renderCategoryRating('quality', 'Quality of Work')}
+          {renderCategoryRating('punctuality', 'Punctuality')}
+          {renderCategoryRating('communication', 'Communication')}
+          {renderCategoryRating('value', 'Value for Money')}
+        </View>
 
         {/* Review Text */}
         <View style={styles.section}>
@@ -330,28 +381,68 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     color: COLORS.textSecondary,
   },
-  ratingContainer: {
+  overallRatingContainer: {
+    backgroundColor: '#e8f5e8',
+    padding: SIZES.padding * 1.5,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  overallLabel: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.primary,
+    marginBottom: 12,
+  },
+  overallStars: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  overallStar: {
+    fontSize: 36,
+    color: '#ffc107',
+  },
+  overallScore: {
+    fontSize: SIZES.xl,
+    ...FONTS.bold,
+    color: COLORS.primary,
+  },
+  ratingsSection: {
     backgroundColor: COLORS.white,
     padding: SIZES.padding,
     borderRadius: 12,
     marginBottom: 20,
     ...SHADOWS.small,
   },
-  ratingLabel: {
+  categoryContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: SIZES.padding,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  categoryLabel: {
     fontSize: SIZES.md,
     ...FONTS.semiBold,
     color: COLORS.textPrimary,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   starsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    marginBottom: 6,
   },
   starButton: {
-    padding: 8,
+    padding: 4,
   },
-  star: {
-    fontSize: 40,
+  categoryStar: {
+    fontSize: 30,
+    color: '#ffc107',
+  },
+  ratingText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   section: {
     marginBottom: 20,

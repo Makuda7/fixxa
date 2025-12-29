@@ -226,9 +226,9 @@ const CompletionApprovalsScreen = ({ navigation }) => {
 
               <TouchableOpacity
                 style={styles.reviewButton}
-                onPress={() => openApprovalModal(request)}
+                onPress={() => navigation.navigate('BookingDetail', { bookingId: request.id })}
               >
-                <Text style={styles.reviewButtonText}>Review Completion</Text>
+                <Text style={styles.reviewButtonText}>View & Review</Text>
               </TouchableOpacity>
             </View>
           ))
