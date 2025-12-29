@@ -334,15 +334,76 @@ module.exports = (pool, logger, upload) => {
     }
   });
 
+  // Get review for a specific booking
+  router.get('/booking/:bookingId', requireAuth, async (req, res) => {
+    try {
+      const bookingId = req.params.bookingId;
+      const userId = req.session.user.id;
+
+      const result = await pool.query(`
+        SELECT
+          r.*,
+          w.name AS professional_name,
+          w.speciality AS service,
+          b.booking_date,
+          u.name AS client_name
+        FROM reviews r
+        LEFT JOIN workers w ON r.worker_id = w.id
+        LEFT JOIN bookings b ON r.booking_id = b.id
+        LEFT JOIN users u ON r.client_id = u.id
+        WHERE r.booking_id = $1
+      `, [bookingId]);
+
+      if (result.rows.length === 0) {
+        return res.json({ success: false, message: 'No review found for this booking' });
+      }
+
+      const review = result.rows[0];
+      let photos = [];
+      try {
+        if (review.photos) {
+          photos = typeof review.photos === 'string' ? JSON.parse(review.photos) : review.photos;
+        }
+      } catch (e) {
+        console.error('Photo parse error for review:', review.id, e);
+      }
+
+      const processedReview = {
+        id: review.id,
+        booking_id: review.booking_id,
+        worker_id: review.worker_id,
+        overall_rating: review.overall_rating,
+        quality_rating: review.quality_rating,
+        punctuality_rating: review.punctuality_rating,
+        communication_rating: review.communication_rating,
+        value_rating: review.value_rating,
+        review_text: review.review_text,
+        photos: photos,
+        created_at: review.created_at,
+        updated_at: review.updated_at,
+        booking_date: review.booking_date,
+        professional_name: review.professional_name || 'Professional',
+        service: review.service || 'Service',
+        client_name: review.client_name || 'Anonymous'
+      };
+
+      res.json({ success: true, review: processedReview });
+    } catch (err) {
+      logger.error('Failed to fetch booking review', { error: err.message, stack: err.stack });
+      console.error('Failed to fetch booking review:', err);
+      res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
   // Get client's reviews
   router.get('/client', requireAuth, clientOnly, async (req, res) => {
     try {
       const clientId = req.session.user.id;
-      
+
       const result = await pool.query(`
-        SELECT 
+        SELECT
           r.*,
-          w.name AS professional_name, 
+          w.name AS professional_name,
           w.speciality AS service,
           b.booking_date
         FROM reviews r
@@ -351,7 +412,7 @@ module.exports = (pool, logger, upload) => {
         WHERE r.client_id = $1
         ORDER BY r.created_at DESC
       `, [clientId]);
-      
+
       const processedReviews = result.rows.map(review => {
         let photos = [];
         try {
@@ -361,7 +422,7 @@ module.exports = (pool, logger, upload) => {
         } catch (e) {
           console.error('Photo parse error for review:', review.id, e);
         }
-        
+
         return {
           id: review.id,
           booking_id: review.booking_id,
@@ -380,7 +441,7 @@ module.exports = (pool, logger, upload) => {
           service: review.service || 'Service'
         };
       });
-      
+
       res.json({ success: true, reviews: processedReviews });
     } catch (err) {
       logger.error('Failed to fetch client reviews', { error: err.message, stack: err.stack });
