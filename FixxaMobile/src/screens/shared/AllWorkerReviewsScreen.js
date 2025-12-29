@@ -63,9 +63,13 @@ const AllWorkerReviewsScreen = ({ route, navigation }) => {
   };
 
   const calculateAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    const sum = reviews.reduce((acc, review) => acc + parseFloat(review.overall_rating || review.rating || 0), 0);
-    return (sum / reviews.length).toFixed(1);
+    if (reviews.length === 0) return '0.0';
+    const sum = reviews.reduce((acc, review) => {
+      const rating = parseFloat(review.overall_rating || review.rating || 0);
+      return acc + rating;
+    }, 0);
+    const avg = sum / reviews.length;
+    return isNaN(avg) ? '0.0' : avg.toFixed(1);
   };
 
   const getRatingBreakdown = () => {

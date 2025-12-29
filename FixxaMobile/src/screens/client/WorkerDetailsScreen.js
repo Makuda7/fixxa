@@ -19,14 +19,11 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
-import SafetyTipsModal from '../../components/SafetyTipsModal';
-
 const WorkerDetailsScreen = ({ route, navigation }) => {
   const { worker } = route.params;
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
-  const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [portfolio, setPortfolio] = useState([]);
   const [loadingPortfolio, setLoadingPortfolio] = useState(true);
   const [certifications, setCertifications] = useState([]);
@@ -143,14 +140,8 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleBookNow = () => {
-    // Show safety tips first
-    setShowSafetyModal(true);
-  };
-
-  const handleProceedToBooking = () => {
-    setShowSafetyModal(false);
-    navigation.navigate('CreateBooking', { worker });
+  const handleRequestQuote = () => {
+    setShowQuoteModal(true);
   };
 
   const handleMessage = () => {
@@ -223,13 +214,6 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Safety Tips Modal */}
-      <SafetyTipsModal
-        visible={showSafetyModal}
-        onClose={() => setShowSafetyModal(false)}
-        onProceed={handleProceedToBooking}
-      />
-
       {/* Photo Viewer Modal */}
       <Modal
         visible={showPhotoModal}
@@ -476,25 +460,14 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
           {/* Action Buttons Row 1 */}
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.primaryButton]}
-              onPress={handleBookNow}
-            >
-              <Text style={styles.actionButtonIcon}>📅</Text>
-              <Text style={styles.primaryButtonText}>Book Now</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               style={[styles.actionButton, styles.secondaryButton]}
               onPress={handleMessage}
             >
               <Text style={styles.actionButtonIcon}>💬</Text>
               <Text style={styles.secondaryButtonText}>Send Message</Text>
             </TouchableOpacity>
-          </View>
 
-          {/* Action Buttons Row 2 */}
-          {worker.phone && (
-            <View style={[styles.actionButtons, { marginTop: 12 }]}>
+            {worker.phone && (
               <TouchableOpacity
                 style={[styles.actionButton, styles.secondaryButton]}
                 onPress={handleCall}
@@ -502,17 +475,17 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
                 <Text style={styles.actionButtonIcon}>📱</Text>
                 <Text style={styles.secondaryButtonText}>Call</Text>
               </TouchableOpacity>
-            </View>
-          )}
+            )}
+          </View>
 
-          {/* Action Buttons Row 3 - Request Quote */}
+          {/* Action Buttons Row 2 - Request Quote */}
           <View style={[styles.actionButtons, { marginTop: 12 }]}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.quoteButton]}
-              onPress={() => setShowQuoteModal(true)}
+              style={[styles.actionButton, styles.primaryButton]}
+              onPress={handleRequestQuote}
             >
               <Text style={styles.actionButtonIcon}>💰</Text>
-              <Text style={styles.quoteButtonText}>Request Quote</Text>
+              <Text style={styles.primaryButtonText}>Request Quote</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -838,9 +811,9 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
         </View>
         <TouchableOpacity
           style={styles.bottomBookButton}
-          onPress={handleBookNow}
+          onPress={handleRequestQuote}
         >
-          <Text style={styles.bottomBookButtonText}>Book Now</Text>
+          <Text style={styles.bottomBookButtonText}>Request Quote</Text>
         </TouchableOpacity>
       </View>
     </View>

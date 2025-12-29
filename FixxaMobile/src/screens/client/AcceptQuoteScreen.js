@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatCurrency, formatDate } from '../../utils/formatting';
+import SafetyTipsModal from '../../components/SafetyTipsModal';
 
 const AcceptQuoteScreen = ({ route, navigation }) => {
   const { quote } = route.params;
@@ -27,6 +28,7 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
 
   const handleDateChange = (event, date) => {
     setShowDatePicker(Platform.OS === 'ios');
@@ -93,11 +95,16 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
     return true;
   };
 
-  const handleAcceptQuote = async () => {
+  const handleInitiateAcceptance = () => {
     if (!validateForm()) {
       return;
     }
+    // Show safety tips before proceeding
+    setShowSafetyModal(true);
+  };
 
+  const handleProceedToAccept = async () => {
+    setShowSafetyModal(false);
     setLoading(true);
 
     try {
@@ -154,6 +161,13 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Safety Tips Modal */}
+      <SafetyTipsModal
+        visible={showSafetyModal}
+        onClose={() => setShowSafetyModal(false)}
+        onProceed={handleProceedToAccept}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -351,7 +365,7 @@ const AcceptQuoteScreen = ({ route, navigation }) => {
             styles.acceptButton,
             (!termsAccepted || loading) && styles.acceptButtonDisabled,
           ]}
-          onPress={handleAcceptQuote}
+          onPress={handleInitiateAcceptance}
           disabled={!termsAccepted || loading}
         >
           <Text style={styles.acceptButtonText}>
