@@ -29,9 +29,13 @@ const CompletionApprovalsScreen = ({ navigation }) => {
 
   const fetchCompletionRequests = async () => {
     try {
-      const response = await api.get('/client/completion-requests');
-      if (response.data.completionRequests) {
-        setCompletionRequests(response.data.completionRequests);
+      const response = await api.get('/bookings');
+      if (response.data.success && response.data.bookings) {
+        // Filter bookings that are awaiting client confirmation
+        const awaitingConfirmation = response.data.bookings.filter(
+          booking => booking.status === 'Awaiting Client Confirmation'
+        );
+        setCompletionRequests(awaitingConfirmation);
       }
     } catch (error) {
       console.error('Error fetching completion requests:', error);
@@ -73,14 +77,23 @@ const CompletionApprovalsScreen = ({ navigation }) => {
 
     setProcessing(true);
     try {
-      const response = await api.post(`/client/completion-requests/${selectedRequest.id}/respond`, {
-        action: 'approve',
-        rating: rating,
-        comments: comments.trim() || undefined
-      });
+      // First approve the completion
+      const approveResponse = await api.post(`/bookings/${selectedRequest.id}/approve-completion`);
 
-      if (response.data.success) {
-        Alert.alert('Success', 'Job completion approved! Payment has been released to the worker.');
+      if (approveResponse.data.success) {
+        // Then create a review
+        try {
+          await api.post('/reviews', {
+            bookingId: selectedRequest.id,
+            rating: rating,
+            comment: comments.trim() || undefined
+          });
+        } catch (reviewError) {
+          console.error('Failed to create review:', reviewError);
+          // Continue even if review fails - completion is more important
+        }
+
+        Alert.alert('Success', 'Job completion confirmed successfully!');
         closeModal();
         fetchCompletionRequests(); // Refresh list
       }
@@ -93,31 +106,16 @@ const CompletionApprovalsScreen = ({ navigation }) => {
 
   const handleReject = () => {
     Alert.alert(
-      'Job Not Complete',
-      'Are you sure the job is not complete? This will notify the worker to continue working.',
+      'Need More Work?',
+      'If the job is not complete, please contact the professional directly to discuss what needs to be finished.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'OK', style: 'cancel' },
         {
-          text: 'Confirm',
-          style: 'destructive',
-          onPress: async () => {
-            setProcessing(true);
-            try {
-              const response = await api.post(`/client/completion-requests/${selectedRequest.id}/respond`, {
-                action: 'reject',
-                comments: comments.trim() || 'Job not complete'
-              });
-
-              if (response.data.success) {
-                Alert.alert('Rejected', 'Worker has been notified to continue working.');
-                closeModal();
-                fetchCompletionRequests();
-              }
-            } catch (error) {
-              Alert.alert('Error', error.response?.data?.error || 'Failed to reject completion.');
-            } finally {
-              setProcessing(false);
-            }
+          text: 'Contact Professional',
+          onPress: () => {
+            closeModal();
+            // Navigate to chat or contact screen
+            // navigation.navigate('ChatScreen', { workerId: selectedRequest.worker_id });
           }
         }
       ]
@@ -176,8 +174,12 @@ const CompletionApprovalsScreen = ({ navigation }) => {
             <View key={request.id} style={styles.card}>
               <View style={styles.cardHeader}>
                 <View>
-                  <Text style={styles.workerName}>{request.worker_name}</Text>
-                  <Text style={styles.serviceType}>{request.service_type}</Text>
+                  <Text style={styles.workerName}>
+                    {request.worker_name || request.professional_name || 'Professional'}
+                  </Text>
+                  <Text style={styles.serviceType}>
+                    {request.service_type || request.professional_service || request.service || 'Service'}
+                  </Text>
                 </View>
                 <View style={styles.newBadge}>
                   <Text style={styles.newBadgeText}>NEW</Text>
@@ -189,11 +191,11 @@ const CompletionApprovalsScreen = ({ navigation }) => {
                 <Text style={styles.infoValue}>{formatDate(request.booking_date)}</Text>
               </View>
 
-              {request.price && (
+              {(request.price || request.booking_amount) && (
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Amount:</Text>
                   <Text style={[styles.infoValue, styles.price]}>
-                    {formatCurrency(request.price)}
+                    {formatCurrency(request.price || request.booking_amount)}
                   </Text>
                 </View>
               )}
@@ -252,8 +254,12 @@ const CompletionApprovalsScreen = ({ navigation }) => {
             <ScrollView style={styles.modalBody}>
               {selectedRequest && (
                 <>
-                  <Text style={styles.modalWorker}>{selectedRequest.worker_name}</Text>
-                  <Text style={styles.modalService}>{selectedRequest.service_type}</Text>
+                  <Text style={styles.modalWorker}>
+                    {selectedRequest.worker_name || selectedRequest.professional_name || 'Professional'}
+                  </Text>
+                  <Text style={styles.modalService}>
+                    {selectedRequest.service_type || selectedRequest.professional_service || selectedRequest.service || 'Service'}
+                  </Text>
 
                   {/* Quality Rating */}
                   <View style={styles.ratingSection}>
@@ -296,7 +302,7 @@ const CompletionApprovalsScreen = ({ navigation }) => {
                 {processing ? (
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
-                  <Text style={styles.modalButtonText}>Job Not Complete</Text>
+                  <Text style={styles.modalButtonText}>Contact Worker</Text>
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -307,7 +313,7 @@ const CompletionApprovalsScreen = ({ navigation }) => {
                 {processing ? (
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
-                  <Text style={styles.modalButtonText}>Approve & Pay</Text>
+                  <Text style={styles.modalButtonText}>Confirm Complete</Text>
                 )}
               </TouchableOpacity>
             </View>
