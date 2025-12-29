@@ -118,28 +118,44 @@ const CreateReviewScreen = ({ route, navigation }) => {
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('booking_id', booking?.id || '');
-      formData.append('overall_rating', overallRating);
-      formData.append('quality_rating', ratings.quality);
-      formData.append('punctuality_rating', ratings.punctuality);
-      formData.append('communication_rating', ratings.communication);
-      formData.append('value_rating', ratings.value);
-      formData.append('review_text', reviewText);
+      // Step 1: Upload photos first if any
+      const photoUrls = [];
+      if (images.length > 0) {
+        for (const image of images) {
+          try {
+            const photoFormData = new FormData();
+            photoFormData.append('photo', {
+              uri: image.uri,
+              type: 'image/jpeg',
+              name: `review_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`,
+            });
 
-      // Add images
-      images.forEach((image, index) => {
-        formData.append('photos', {
-          uri: image.uri,
-          type: 'image/jpeg',
-          name: `review_${Date.now()}_${index}.jpg`,
-        });
-      });
+            const uploadResponse = await api.post('/reviews/upload-photo', photoFormData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            });
 
-      const response = await api.post('/reviews', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+            if (uploadResponse.data.success && uploadResponse.data.url) {
+              photoUrls.push(uploadResponse.data.url);
+            }
+          } catch (photoError) {
+            console.error('Error uploading photo:', photoError);
+            // Continue with other photos even if one fails
+          }
+        }
+      }
+
+      // Step 2: Submit review with photo URLs
+      const response = await api.post('/reviews/client', {
+        booking_id: booking?.id,
+        overall_rating: overallRating,
+        quality_rating: ratings.quality,
+        punctuality_rating: ratings.punctuality,
+        communication_rating: ratings.communication,
+        value_rating: ratings.value,
+        review_text: reviewText,
+        photos: photoUrls,
       });
 
       if (response.data.success) {
