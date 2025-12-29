@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Image,
+  Modal,
 } from 'react-native';
 import api from '../../services/api';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
@@ -17,12 +19,16 @@ const BookingDetailScreen = ({ route, navigation }) => {
   const { bookingId } = route.params;
   const [booking, setBooking] = useState(null);
   const [quote, setQuote] = useState(null);
+  const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processingQuote, setProcessingQuote] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   useEffect(() => {
     fetchBookingDetails();
     fetchQuote();
+    fetchReview();
   }, [bookingId]);
 
   const fetchBookingDetails = async () => {
@@ -53,6 +59,18 @@ const BookingDetailScreen = ({ route, navigation }) => {
     } catch (error) {
       // Quote might not exist yet, which is fine
       console.log('No quote found for this booking');
+    }
+  };
+
+  const fetchReview = async () => {
+    try {
+      const response = await api.get(`/reviews/booking/${bookingId}`);
+      if (response.data.success && response.data.review) {
+        setReview(response.data.review);
+      }
+    } catch (error) {
+      // Review might not exist yet, which is fine
+      console.log('No review found for this booking');
     }
   };
 
@@ -205,6 +223,33 @@ const BookingDetailScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Photo Viewer Modal */}
+      <Modal
+        visible={showPhotoModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowPhotoModal(false)}
+      >
+        <View style={styles.photoModalOverlay}>
+          <TouchableOpacity
+            style={styles.photoModalClose}
+            onPress={() => setShowPhotoModal(false)}
+          >
+            <Text style={styles.photoModalCloseText}>✕</Text>
+          </TouchableOpacity>
+          {selectedPhoto && (
+            <View style={styles.photoModalContent}>
+              <Image
+                source={{ uri: selectedPhoto.url }}
+                style={styles.photoModalImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.photoModalCaption}>{selectedPhoto.caption}</Text>
+            </View>
+          )}
+        </View>
+      </Modal>
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -402,6 +447,121 @@ const BookingDetailScreen = ({ route, navigation }) => {
             <TouchableOpacity style={styles.approveButton} onPress={handleApproveCompletion}>
               <Text style={styles.approveButtonText}>Review & Confirm Completion</Text>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Review Section */}
+        {review && booking.status?.toLowerCase() === 'completed' && (
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewCardTitle}>Your Review</Text>
+
+            {/* Overall Rating */}
+            <View style={styles.reviewRatingContainer}>
+              <Text style={styles.reviewOverallLabel}>Overall Rating</Text>
+              <View style={styles.reviewStarsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Text key={star} style={styles.reviewStar}>
+                    {star <= (review.overall_rating || 0) ? '⭐' : '☆'}
+                  </Text>
+                ))}
+                <Text style={styles.reviewRatingNumber}>{review.overall_rating}/5</Text>
+              </View>
+            </View>
+
+            {/* Detailed Ratings */}
+            {(review.quality_rating > 0 || review.punctuality_rating > 0 ||
+              review.communication_rating > 0 || review.value_rating > 0) && (
+              <View style={styles.detailedRatingsContainer}>
+                {review.quality_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Quality:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.quality_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {review.punctuality_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Punctuality:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.punctuality_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {review.communication_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Communication:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.communication_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {review.value_rating > 0 && (
+                  <View style={styles.detailedRatingRow}>
+                    <Text style={styles.detailedRatingLabel}>Value:</Text>
+                    <View style={styles.detailedRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Text key={star} style={styles.detailedStar}>
+                          {star <= review.value_rating ? '★' : '☆'}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Review Text */}
+            {review.review_text && (
+              <View style={styles.reviewTextContainer}>
+                <Text style={styles.reviewTextLabel}>Your Feedback:</Text>
+                <Text style={styles.reviewText}>{review.review_text}</Text>
+              </View>
+            )}
+
+            {/* Review Photos */}
+            {review.photos && Array.isArray(review.photos) && review.photos.length > 0 && (
+              <View style={styles.reviewPhotosContainer}>
+                <Text style={styles.reviewPhotosLabel}>Photos:</Text>
+                <View style={styles.reviewPhotosGrid}>
+                  {review.photos.map((photo, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.reviewPhotoThumb}
+                      onPress={() => {
+                        setSelectedPhoto({ url: photo, caption: 'Review Photo' });
+                        setShowPhotoModal(true);
+                      }}
+                    >
+                      <Image
+                        source={{ uri: photo }}
+                        style={styles.reviewPhotoImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Review Date */}
+            {review.created_at && (
+              <Text style={styles.reviewDate}>
+                Reviewed on {formatDate(review.created_at)}
+              </Text>
+            )}
           </View>
         )}
 
@@ -805,6 +965,161 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: SIZES.md,
     ...FONTS.bold,
+  },
+  // Review Card Styles
+  reviewCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: SIZES.padding * 1.5,
+    marginBottom: 16,
+    ...SHADOWS.small,
+  },
+  reviewCardTitle: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+  },
+  reviewRatingContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.background,
+  },
+  reviewOverallLabel: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  reviewStarsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reviewStar: {
+    fontSize: 28,
+    marginHorizontal: 2,
+  },
+  reviewRatingNumber: {
+    fontSize: SIZES.lg,
+    ...FONTS.bold,
+    color: COLORS.primary,
+    marginLeft: 12,
+  },
+  detailedRatingsContainer: {
+    backgroundColor: COLORS.background,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  detailedRatingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailedRatingLabel: {
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.medium,
+    width: 110,
+  },
+  detailedRatingStars: {
+    flexDirection: 'row',
+  },
+  detailedStar: {
+    fontSize: 16,
+    color: '#ffc107',
+    marginHorizontal: 1,
+  },
+  reviewTextContainer: {
+    marginBottom: 16,
+  },
+  reviewTextLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  reviewText: {
+    fontSize: SIZES.sm,
+    color: COLORS.textPrimary,
+    lineHeight: 22,
+  },
+  reviewPhotosContainer: {
+    marginBottom: 16,
+  },
+  reviewPhotosLabel: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  reviewPhotosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  reviewPhotoThumb: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  reviewPhotoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  reviewDate: {
+    fontSize: SIZES.xs,
+    color: COLORS.textLight,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  // Photo Modal Styles
+  photoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalClose: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoModalCloseText: {
+    fontSize: 24,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  photoModalContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding,
+  },
+  photoModalImage: {
+    width: '100%',
+    height: '80%',
+  },
+  photoModalCaption: {
+    fontSize: SIZES.sm,
+    color: COLORS.white,
+    marginTop: 16,
+    textAlign: 'center',
   },
 });
 

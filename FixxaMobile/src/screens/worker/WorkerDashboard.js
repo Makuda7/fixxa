@@ -483,19 +483,22 @@ const WorkerDashboard = ({ navigation }) => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
-                💰 Quote Requests
-                {quoteRequests.length > 0 && (
-                  <Text style={styles.requestCount}> ({quoteRequests.length})</Text>
+                💰 Recent Enquiry
+                {quoteRequests.length > 1 && (
+                  <Text style={styles.requestCount}> (+{quoteRequests.length - 1} more)</Text>
                 )}
               </Text>
+              {quoteRequests.length > 1 && (
+                <TouchableOpacity onPress={() => navigation.navigate('JobRequests')}>
+                  <Text style={styles.seeAllText}>See All →</Text>
+                </TouchableOpacity>
+              )}
             </View>
             <Text style={styles.sectionSubtitle}>
               Clients are interested in your services
             </Text>
 
-            {quoteRequests.map((request) => (
-              <QuoteRequestCard key={request.id} request={request} />
-            ))}
+            <QuoteRequestCard request={quoteRequests[0]} />
           </View>
         )}
 
