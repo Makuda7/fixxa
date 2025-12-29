@@ -146,28 +146,37 @@ const CreateReviewScreen = ({ route, navigation }) => {
         }
       }
 
-      // Step 2: Submit review with photo URLs
-      const response = await api.post('/reviews/client', {
+      // Step 2: If this is a completion approval, approve it first
+      // (Review endpoint requires status to be 'Completed')
+      if (isCompletionApproval && booking?.id) {
+        try {
+          await api.post(`/bookings/${booking.id}/approve-completion`);
+        } catch (approvalError) {
+          console.error('Error approving completion:', approvalError);
+          throw new Error('Failed to approve job completion. Please try again.');
+        }
+      }
+
+      // Step 3: Submit review with photo URLs
+      const reviewData = {
         booking_id: booking?.id,
         overall_rating: overallRating,
-        quality_rating: ratings.quality,
-        punctuality_rating: ratings.punctuality,
-        communication_rating: ratings.communication,
-        value_rating: ratings.value,
+        quality_rating: ratings.quality || 0,
+        punctuality_rating: ratings.punctuality || 0,
+        communication_rating: ratings.communication || 0,
+        value_rating: ratings.value || 0,
         review_text: reviewText,
         photos: photoUrls,
+      };
+
+      console.log('Submitting review with data:', {
+        ...reviewData,
+        photos: `${photoUrls.length} photos`
       });
 
+      const response = await api.post('/reviews/client', reviewData);
+
       if (response.data.success) {
-        // If this is a completion approval, update booking status to Completed
-        if (isCompletionApproval && booking?.id) {
-          try {
-            await api.post(`/bookings/${booking.id}/approve-completion`);
-          } catch (approvalError) {
-            console.error('Error approving completion:', approvalError);
-            // Continue even if approval fails - review is already submitted
-          }
-        }
 
         Alert.alert(
           'Success',
@@ -186,7 +195,13 @@ const CreateReviewScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      Alert.alert('Error', 'Failed to submit review. Please try again.');
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to submit review. Please try again.';
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      Alert.alert('Error', errorMessage);
     } finally {
       setUploading(false);
     }
