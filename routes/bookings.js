@@ -94,8 +94,8 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
     try {
       const clientId = req.session.user.id;
       const result = await pool.query(
-        `SELECT b.*, 
-                w.name AS professional_name, 
+        `SELECT b.*,
+                w.name AS professional_name,
                 w.speciality AS professional_service
          FROM bookings b
          JOIN workers w ON b.worker_id = w.id
@@ -103,7 +103,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
          ORDER BY b.booking_date DESC, b.booking_time DESC`,
         [clientId]
       );
-      
+
       res.json({ success: true, bookings: result.rows });
     } catch (err) {
       logger.error('Failed to fetch bookings', { error: err.message });
@@ -159,6 +159,86 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
       logger.error('Failed to fetch worker bookings', { error: err.message });
       console.error('Failed to fetch worker bookings:', err);
       res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
+  // Get single booking details (for both clients and workers)
+  router.get('/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.user.id;
+      const userType = req.session.user.type;
+      const bookingId = req.params.id;
+
+      // Different query based on user type
+      let query;
+      let params;
+
+      if (userType === 'professional') {
+        // Worker viewing their booking
+        query = `
+          SELECT b.*,
+                 u.name AS client_name,
+                 u.email AS client_email,
+                 u.phone AS client_phone,
+                 w.name AS worker_name,
+                 w.speciality AS worker_speciality,
+                 w.phone AS worker_phone
+          FROM bookings b
+          JOIN users u ON b.user_id = u.id
+          JOIN workers w ON b.worker_id = w.id
+          WHERE b.id = $1 AND b.worker_id = $2
+        `;
+        params = [bookingId, userId];
+      } else {
+        // Client viewing their booking
+        query = `
+          SELECT b.*,
+                 u.name AS client_name,
+                 w.name AS worker_name,
+                 w.speciality AS worker_speciality,
+                 w.phone AS worker_phone,
+                 w.email AS worker_email,
+                 CASE WHEN r.id IS NOT NULL THEN true ELSE false END AS has_review
+          FROM bookings b
+          JOIN users u ON b.user_id = u.id
+          JOIN workers w ON b.worker_id = w.id
+          LEFT JOIN reviews r ON r.booking_id = b.id
+          WHERE b.id = $1 AND b.user_id = $2
+        `;
+        params = [bookingId, userId];
+      }
+
+      const result = await pool.query(query, params);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Booking not found'
+        });
+      }
+
+      const booking = result.rows[0];
+
+      // Add service_type field if not present
+      if (!booking.service_type && booking.service) {
+        booking.service_type = booking.service;
+      } else if (!booking.service_type && booking.worker_speciality) {
+        booking.service_type = booking.worker_speciality;
+      }
+
+      logger.info('Booking details fetched', { bookingId, userId, userType });
+      res.json({ success: true, booking });
+    } catch (err) {
+      logger.error('Failed to fetch booking details', {
+        error: err.message,
+        bookingId: req.params.id
+      });
+      console.error('Failed to fetch booking details:', err);
+      res.status(500).json({
+        success: false,
+        error: 'Database error',
+        detail: err.message
+      });
     }
   });
 
