@@ -140,10 +140,6 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleRequestQuote = () => {
-    setShowQuoteModal(true);
-  };
-
   const handleMessage = () => {
     // Navigate directly to chat screen with worker info
     navigation.navigate('ChatScreen', {
@@ -482,7 +478,7 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
           <View style={[styles.actionButtons, { marginTop: 12 }]}>
             <TouchableOpacity
               style={[styles.actionButton, styles.primaryButton]}
-              onPress={handleRequestQuote}
+              onPress={() => setShowQuoteModal(true)}
             >
               <Text style={styles.actionButtonIcon}>💰</Text>
               <Text style={styles.primaryButtonText}>Request Quote</Text>
@@ -811,7 +807,7 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
         </View>
         <TouchableOpacity
           style={styles.bottomBookButton}
-          onPress={handleRequestQuote}
+          onPress={() => setShowQuoteModal(true)}
         >
           <Text style={styles.bottomBookButtonText}>Request Quote</Text>
         </TouchableOpacity>
