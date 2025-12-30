@@ -21,17 +21,11 @@
       return;
     }
 
-    // Create hamburger button if it doesn't exist
-    let menuToggle = document.querySelector('.mobile-menu-toggle');
+    // Find the hamburger button (now in HTML)
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
     if (!menuToggle) {
-      menuToggle = document.createElement('button');
-      menuToggle.className = 'mobile-menu-toggle';
-      menuToggle.setAttribute('aria-label', 'Toggle menu');
-      menuToggle.setAttribute('aria-expanded', 'false');
-      menuToggle.innerHTML = '<span></span><span></span><span></span>';
-
-      // Append to header (absolute positioning will place it at far right)
-      header.appendChild(menuToggle);
+      console.log('Mobile menu: Toggle button not found');
+      return;
     }
 
     // Create overlay if it doesn't exist
