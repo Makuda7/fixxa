@@ -35,13 +35,8 @@
       menuToggle.setAttribute('aria-expanded', 'false');
       menuToggle.innerHTML = '<span></span><span></span><span></span>';
 
-      // Insert after logo
-      const logo = header.querySelector('.logo');
-      if (logo) {
-        logo.after(menuToggle);
-      } else {
-        header.appendChild(menuToggle);
-      }
+      // Append to header (absolute positioning will place it at far right)
+      header.appendChild(menuToggle);
     }
 
     // Create overlay if it doesn't exist
