@@ -260,6 +260,7 @@ const notificationsRoutes = require('./routes/notifications')(pool, logger);
 const cookieConsentRoutes = require('./routes/cookieConsent')(pool, logger);
 const suburbsRoutes = require('./routes/suburbs');
 const quotesRoutes = require('./routes/quotes')(pool, logger, sendEmail, emailTemplates);
+const uploadRoutes = require('./routes/upload')(pool, logger, profilePicUpload, uploadLimiter);
 
 // Import auth middleware
 const { requireAuth } = require('./middleware/auth');
@@ -401,6 +402,7 @@ app.use('/notifications', notificationsRoutes);
 app.use('/api', cookieConsentRoutes);
 app.use('/suburbs', suburbsRoutes);
 app.use('/quotes', quotesRoutes);
+app.use('/upload', uploadRoutes); // Mobile app compatibility routes
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
