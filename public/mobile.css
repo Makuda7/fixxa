@@ -83,10 +83,10 @@
 @media (max-width: 768px) {
   .header {
     flex-direction: row !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     align-items: center !important;
     padding: 1rem !important;
-    position: relative;
+    position: relative !important;
   }
 
   .header .logo {
@@ -110,19 +110,21 @@
     cursor: pointer;
     padding: 6px;
     z-index: 1001;
-    position: absolute;
-    right: 1rem;
+    position: absolute !important;
+    right: 1rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
     border-radius: 8px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .mobile-menu-toggle:hover {
     background: rgba(34, 139, 34, 0.08);
-    transform: scale(1.08);
+    transform: translateY(-50%) scale(1.08) !important;
   }
 
   .mobile-menu-toggle:active {
-    transform: scale(0.95);
+    transform: translateY(-50%) scale(0.95) !important;
   }
 
   .mobile-menu-toggle span {
