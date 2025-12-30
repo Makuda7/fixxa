@@ -247,25 +247,23 @@ module.exports = (pool, logger, helpers) => {
       const workerId = req.session.user.id;
 
       // Get total earnings and job counts
+      // All completed jobs are considered paid earnings
       const result = await pool.query(`
         SELECT
-          COALESCE(SUM(booking_amount) FILTER (WHERE status = 'Completed' AND payment_status = 'paid'), 0) as total,
+          COALESCE(SUM(booking_amount) FILTER (WHERE status = 'Completed'), 0) as total,
           COALESCE(SUM(booking_amount) FILTER (
             WHERE status = 'Completed'
-            AND payment_status = 'paid'
             AND DATE_TRUNC('month', completed_at) = DATE_TRUNC('month', CURRENT_DATE)
           ), 0) as this_month,
           COALESCE(SUM(booking_amount) FILTER (
             WHERE status = 'Completed'
-            AND payment_status = 'paid'
             AND DATE_TRUNC('month', completed_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
           ), 0) as last_month,
           COALESCE(SUM(booking_amount) FILTER (
             WHERE status = 'Completed'
-            AND payment_status = 'paid'
             AND DATE_TRUNC('year', completed_at) = DATE_TRUNC('year', CURRENT_DATE)
           ), 0) as this_year,
-          COALESCE(SUM(booking_amount) FILTER (WHERE status = 'Completed' AND payment_status = 'pending'), 0) as pending_payments,
+          0 as pending_payments,
           COUNT(*) FILTER (WHERE status = 'Completed') as completed_jobs
         FROM bookings
         WHERE worker_id = $1
@@ -311,7 +309,7 @@ module.exports = (pool, logger, helpers) => {
           b.booking_time,
           b.service,
           b.booking_amount as amount,
-          b.payment_status as status,
+          'paid' as status,
           b.payment_method,
           b.completed_at,
           b.created_at,
