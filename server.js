@@ -41,7 +41,7 @@ const { sendEmail } = require('./utils/email');
 const { errorHandler } = require('./middleware/errorHandler');
 const emailTemplates = require('./templates/emails');
 const { sanitizeMiddleware } = require('./utils/sanitize');
-const { globalLimiter } = require('./middleware/rateLimiter');
+const { globalLimiter, uploadLimiter } = require('./middleware/rateLimiter');
 
 // PostgreSQL session store
 const pgSession = require('connect-pg-simple')(session);
