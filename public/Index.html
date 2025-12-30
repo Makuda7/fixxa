@@ -431,20 +431,48 @@ button[aria-label="Toggle menu"] {
 
 <script src="js/geolocation.js"></script>
 <script>
-// NUCLEAR OPTION: Force remove any burger menu that might exist from cache
+// ABSOLUTE FINAL NUCLEAR OPTION: MutationObserver to kill burger menu forever
 (function() {
   const removeBurgerMenu = () => {
     const burgers = document.querySelectorAll('.burger-menu, .mobile-menu-toggle, button[aria-label="Toggle menu"], button[class*="burger"]');
-    burgers.forEach(el => el.remove());
+    if (burgers.length > 0) {
+      console.log('🔪 KILLING', burgers.length, 'BURGER MENU(S)');
+      burgers.forEach(el => {
+        el.remove();
+        console.log('💀 Burger menu destroyed:', el);
+      });
+    }
   };
+
   // Run immediately
   removeBurgerMenu();
+
+  // Watch for ANY new elements being added and kill burger menus
+  const observer = new MutationObserver((mutations) => {
+    removeBurgerMenu();
+  });
+
+  // Start observing the entire document
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
   // Run after DOM loads
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', removeBurgerMenu);
   }
+
   // Run after everything loads
   window.addEventListener('load', removeBurgerMenu);
+
+  // Run every 100ms for the first 5 seconds (catch lazy-loaded scripts)
+  let counter = 0;
+  const interval = setInterval(() => {
+    removeBurgerMenu();
+    counter++;
+    if (counter >= 50) clearInterval(interval); // Stop after 5 seconds
+  }, 100);
 })();
 </script>
 <script>
