@@ -285,26 +285,23 @@
       <span class="inbox-notification-dot" id="inboxNotificationDot"></span>
     </a>
 
+    <!-- Profile Icon with Dropdown (visible when logged in) -->
     <div class="user-menu" id="userMenu">
-      <button class="user-btn" id="userBtn">User ▼</button>
+      <button class="profile-icon-btn" id="userBtn" title="Profile Menu">
+        <span class="profile-icon">👤</span>
+        <span class="profile-notification-dot" id="profileNotificationDot"></span>
+      </button>
       <div class="user-dropdown" id="userDropdown">
-        <a href="settings.html">Settings</a>
-        <a href="clientProfile.html">Profile</a>
+        <a href="settings.html">⚙️ Settings</a>
+        <a href="clientProfile.html">👤 Profile</a>
         <a href="messages.html" style="position:relative;">
-          Messages
+          ✉️ Messages
           <span class="notification-badge" id="dropdownMessageBadge" style="display:none;">0</span>
         </a>
-        <a href="#" id="logoutBtn" style="color:red;">Log out</a>
+        <a href="#" id="logoutBtn" style="color:red;">🚪 Log out</a>
       </div>
     </div>
   </nav>
-
-  <!-- Mobile Burger Menu Button -->
-  <button class="mobile-menu-toggle" aria-label="Toggle menu" aria-expanded="false">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
 </header>
 
 <!-- Location Permission Modal -->
@@ -468,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   userBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
-    userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    userDropdown.classList.toggle('show');
   });
 
   logoutBtn?.addEventListener('click', async (e) => {
@@ -482,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', (e) => {
     if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-      userDropdown.style.display = 'none';
+      userDropdown.classList.remove('show');
     }
   });
 
@@ -680,7 +677,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script src="js/mobile-menu.js"></script>
 <script src="js/scroll-indicator.js"></script>
 </body>
 </html>

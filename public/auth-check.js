@@ -8,10 +8,15 @@ async function checkAuth(redirectIfNot = true) {
       // ✅ User is logged in
       // Update UI globally if needed
       document.querySelectorAll('#loginLink').forEach(el => el.style.display = 'none');
+
+      // Show inbox icon
+      const inboxIconLink = document.getElementById('inboxIconLink');
+      if (inboxIconLink) inboxIconLink.classList.add('show');
+
+      // Show user menu with profile icon
       const userMenu = document.getElementById('userMenu');
-      if (userMenu) userMenu.style.display = 'inline-block';
-      const userBtn = document.getElementById('userBtn');
-      if (userBtn) userBtn.textContent = (data.user.name || 'User') + ' ▼';
+      if (userMenu) userMenu.classList.add('show');
+
       return data.user;
     } else {
       // ❌ Not logged in -> redirect

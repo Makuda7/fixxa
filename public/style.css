@@ -262,6 +262,161 @@ body {
   color: forestgreen;
 }
 
+/* Inbox Icon Link */
+.inbox-icon-link {
+  position: relative;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(34, 139, 34, 0.1);
+  transition: all 0.3s ease;
+  text-decoration: none;
+  border: 2px solid transparent;
+  margin-left: 1rem;
+}
+
+.inbox-icon-link.show {
+  display: flex;
+}
+
+.inbox-icon-link:hover {
+  background: rgba(34, 139, 34, 0.2);
+  border-color: var(--fixxa-primary, forestgreen);
+  transform: scale(1.1);
+}
+
+.inbox-icon {
+  font-size: 20px;
+}
+
+.inbox-notification-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #dc3545;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: none;
+}
+
+.inbox-notification-dot.show {
+  display: block;
+  animation: pulse 2s infinite;
+}
+
+/* Profile Icon Button (User Menu) */
+.user-menu {
+  position: relative;
+  display: none;
+  margin-left: 0.5rem;
+}
+
+.user-menu.show {
+  display: inline-block;
+}
+
+.profile-icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(34, 139, 34, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.profile-icon-btn:hover {
+  background: rgba(34, 139, 34, 0.2);
+  border-color: var(--fixxa-primary, forestgreen);
+  transform: scale(1.1);
+}
+
+.profile-icon {
+  font-size: 20px;
+}
+
+.profile-notification-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #dc3545;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: none;
+}
+
+.profile-notification-dot.show {
+  display: block;
+  animation: pulse 2s infinite;
+}
+
+/* User Dropdown Menu */
+.user-dropdown {
+  display: none;
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+}
+
+.user-dropdown.show {
+  display: block;
+  animation: slideDown 0.2s ease;
+}
+
+.user-dropdown a {
+  display: block;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: #333;
+  transition: background 0.2s;
+  margin-left: 0;
+}
+
+.user-dropdown a:hover {
+  background: rgba(34, 139, 34, 0.1);
+  color: forestgreen;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
 /* Hero Section */
 .hero {
   position: relative;
