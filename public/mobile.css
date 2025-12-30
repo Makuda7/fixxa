@@ -102,36 +102,58 @@
     display: flex !important;
     flex-direction: column;
     justify-content: space-around;
-    width: 30px;
-    height: 25px;
+    align-items: center;
+    width: 36px;
+    height: 32px;
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 6px;
     z-index: 1001;
-    position: relative;
+    position: absolute;
+    right: 1rem;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-menu-toggle:hover {
+    background: rgba(34, 139, 34, 0.08);
+    transform: scale(1.08);
+  }
+
+  .mobile-menu-toggle:active {
+    transform: scale(0.95);
   }
 
   .mobile-menu-toggle span {
-    width: 30px;
+    width: 28px;
     height: 3px;
     background: #333;
     border-radius: 3px;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     transform-origin: center;
+    position: relative;
   }
 
-  /* Hamburger animation when open */
+  /* Smooth hamburger to X animation */
   .mobile-menu-toggle.open span:nth-child(1) {
-    transform: translateY(8px) rotate(45deg);
+    transform: translateY(9px) rotate(45deg);
+    background: forestgreen;
   }
 
   .mobile-menu-toggle.open span:nth-child(2) {
     opacity: 0;
+    transform: scaleX(0);
   }
 
   .mobile-menu-toggle.open span:nth-child(3) {
-    transform: translateY(-8px) rotate(-45deg);
+    transform: translateY(-9px) rotate(-45deg);
+    background: forestgreen;
+  }
+
+  /* Active state styling */
+  .mobile-menu-toggle.open {
+    background: rgba(34, 139, 34, 0.1);
   }
 
   /* Hide nav links by default on mobile */
@@ -143,19 +165,21 @@
     max-width: 300px !important;
     height: 100vh !important;
     background: white !important;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
     flex-direction: column !important;
     align-items: flex-start !important;
     padding: 80px 0 20px 0 !important;
     gap: 0 !important;
     z-index: 1000;
-    transition: right 0.3s ease;
+    transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.3s ease;
     overflow-y: auto;
+    opacity: 0;
   }
 
   /* Show nav when menu is open */
   .nav-links.mobile-menu-open {
     right: 0 !important;
+    opacity: 1;
   }
 
   /* Mobile overlay */
@@ -169,10 +193,12 @@
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
     transition: opacity 0.3s ease;
+    opacity: 0;
   }
 
   .mobile-menu-overlay.show {
     display: block;
+    opacity: 1;
   }
 
   .nav-links a {
