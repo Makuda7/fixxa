@@ -24,6 +24,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
+/* CRITICAL: Hide burger menu - MUST BE FIRST */
+.burger-menu,
+.mobile-menu-toggle,
+button.burger-menu,
+button.mobile-menu-toggle,
+button[class*="burger"],
+button[aria-label="Toggle menu"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -99999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  z-index: -1 !important;
+}
+
 /* Header */
 .header {
   display: flex;
