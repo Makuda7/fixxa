@@ -310,7 +310,6 @@ module.exports = (pool, logger, helpers) => {
           b.booking_date,
           b.booking_time,
           b.service,
-          b.service_type,
           b.booking_amount as amount,
           b.payment_status as status,
           b.payment_method,
