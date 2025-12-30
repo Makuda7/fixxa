@@ -10,6 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateEmail } from '../../utils/validation';
@@ -84,7 +85,11 @@ const LoginScreen = ({ navigation }) => {
       >
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>🔧</Text>
+          <Image
+            source={require('../../../assets/icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Fixxa</Text>
           <Text style={styles.subtitle}>Sign in to continue</Text>
         </View>
@@ -186,7 +191,8 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    fontSize: 60,
+    width: 120,
+    height: 120,
     marginBottom: 16,
   },
   title: {
