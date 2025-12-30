@@ -177,8 +177,8 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
-  // Update worker availability
-  router.post('/availability', requireAuth, workerOnly, async (req, res) => {
+  // Update worker availability (shared handler for POST and PUT)
+  const updateAvailabilityHandler = async (req, res) => {
     try {
       const workerId = req.session.user.id;
       const { availability_schedule, is_available } = req.body;
@@ -203,11 +203,11 @@ module.exports = (pool, logger, helpers) => {
         updates.push(`is_available = $${idx++}`);
         values.push(Boolean(is_available));
       }
-      
+
       if (updates.length === 0) {
         return res.status(400).json({ success: false, error: 'No updates provided' });
       }
-      
+
       values.push(workerId);
       const query = `UPDATE workers SET ${updates.join(', ')} WHERE id = $${idx} RETURNING availability_schedule, is_available`;
 
@@ -236,7 +236,10 @@ module.exports = (pool, logger, helpers) => {
       console.error('Update availability error:', error);
       res.status(500).json({ success: false, error: 'Failed to update availability' });
     }
-  });
+  };
+
+  router.post('/availability', requireAuth, workerOnly, updateAvailabilityHandler);
+  router.put('/availability', requireAuth, workerOnly, updateAvailabilityHandler);
 
   // Update worker location
   router.post('/update-location', requireAuth, workerOnly, async (req, res) => {
