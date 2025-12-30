@@ -653,7 +653,7 @@ module.exports = (pool, logger, helpers) => {
                 profile_picture, profile_picture_uploaded_at,
                 emergency_name_1, emergency_relationship_1, emergency_phone_1, emergency_email_1,
                 emergency_name_2, emergency_relationship_2, emergency_phone_2, emergency_email_2,
-                registration_complete, created_at
+                registration_complete, is_available, created_at
          FROM workers WHERE id = $1`,
         [workerId]
       );

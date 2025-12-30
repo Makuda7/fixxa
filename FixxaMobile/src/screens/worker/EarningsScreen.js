@@ -123,11 +123,11 @@ const EarningsScreen = ({ navigation }) => {
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: getStatusColor(earning.payment_status) },
+              { backgroundColor: getStatusColor(earning.status) },
             ]}
           >
             <Text style={styles.statusText}>
-              {earning.payment_status || 'Pending'}
+              {earning.status || 'Paid'}
             </Text>
           </View>
         </View>
