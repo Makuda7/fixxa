@@ -4,15 +4,6 @@
    <link rel="stylesheet" href="mobile.css">
    ======================================== */
 
-/* Hide mobile menu toggle on desktop */
-.mobile-menu-toggle {
-  display: none !important;
-}
-
-.mobile-menu-overlay {
-  display: none !important;
-}
-
 /* Ensure header uses proper layout on desktop */
 @media (min-width: 769px) {
   .header {
@@ -20,7 +11,12 @@
     justify-content: space-between !important;
   }
 
+  /* Hide mobile menu toggle on desktop */
   .mobile-menu-toggle {
+    display: none !important;
+  }
+
+  .mobile-menu-overlay {
     display: none !important;
   }
 
