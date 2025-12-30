@@ -981,5 +981,23 @@ module.exports = (pool, logger, sendEmail, emailTemplates, io, helpers) => {
     });
   });
 
+  // ==================== COMPATIBILITY ALIASES ====================
+  // These routes provide backward compatibility for web app endpoints
+  // Both mobile and web apps will work simultaneously
+
+  // Alias: POST /bookings/create -> POST /bookings
+  router.post('/create', requireAuth, bookingLimiter, createBookingValidation, async (req, res) => {
+    // Forward to main booking creation handler
+    req.url = '/';
+    return router.handle(req, res);
+  });
+
+  // Alias: GET /bookings/my-bookings -> GET /bookings
+  router.get('/my-bookings', requireAuth, async (req, res) => {
+    // Forward to main get bookings handler
+    req.url = '/';
+    return router.handle(req, res);
+  });
+
   return router;
 };

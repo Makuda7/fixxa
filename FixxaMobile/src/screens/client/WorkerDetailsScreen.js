@@ -62,12 +62,24 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
 
   const fetchPortfolio = async () => {
     try {
-      const response = await api.get(`/workers/${worker.id}/portfolio`);
-      if (response.data.portfolio) {
+      const response = await api.get(`/workers/portfolio/${worker.id}`);
+      console.log('📸 Portfolio API response:', response.data);
+
+      // The API returns photos array, not portfolio
+      if (response.data.photos) {
+        // Map the photos to include photo_url field (handle both url and photo_url)
+        const mappedPhotos = response.data.photos.map(photo => ({
+          ...photo,
+          photo_url: photo.url || photo.photo_url
+        }));
+        setPortfolio(mappedPhotos);
+        console.log('📸 Loaded portfolio photos:', mappedPhotos.length);
+      } else if (response.data.portfolio) {
         setPortfolio(response.data.portfolio);
       }
     } catch (error) {
       console.error('Error fetching portfolio:', error);
+      console.error('Error details:', error.response?.data);
     } finally {
       setLoadingPortfolio(false);
     }
@@ -180,7 +192,7 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
 
   const calculateAverageRating = () => {
     if (reviews.length === 0) return 0;
-    const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+    const sum = reviews.reduce((acc, review) => acc + (review.overall_rating || review.rating || 0), 0);
     return (sum / reviews.length).toFixed(1);
   };
 
@@ -495,19 +507,27 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
         )}
 
         {/* Portfolio Gallery */}
-        {portfolio.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                📷 Portfolio ({portfolio.length} photo{portfolio.length !== 1 ? 's' : ''})
-              </Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              📷 Portfolio {portfolio.length > 0 && `(${portfolio.length} photo${portfolio.length !== 1 ? 's' : ''})`}
+            </Text>
+            {portfolio.length > 0 && (
               <TouchableOpacity
                 style={styles.viewAllButton}
                 onPress={() => setShowPortfolioModal(true)}
               >
                 <Text style={styles.viewAllButtonText}>View All</Text>
               </TouchableOpacity>
+            )}
+          </View>
+
+          {loadingPortfolio ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.loadingText}>Loading portfolio...</Text>
             </View>
+          ) : portfolio.length > 0 ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -528,8 +548,16 @@ const WorkerDetailsScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </View>
-        )}
+          ) : (
+            <View style={styles.emptyPortfolio}>
+              <Text style={styles.emptyPortfolioIcon}>📸</Text>
+              <Text style={styles.emptyPortfolioText}>No portfolio photos yet</Text>
+              <Text style={styles.emptyPortfolioSubtext}>
+                This professional hasn't uploaded any work samples
+              </Text>
+            </View>
+          )}
+        </View>
 
 
         {/* Experience & Details */}
@@ -1158,6 +1186,38 @@ const styles = StyleSheet.create({
     width: 200,
     height: 150,
     borderRadius: 12,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginLeft: 10,
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.medium,
+  },
+  emptyPortfolio: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+  },
+  emptyPortfolioIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyPortfolioText: {
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+    marginBottom: 6,
+  },
+  emptyPortfolioSubtext: {
+    fontSize: SIZES.sm,
+    color: COLORS.textLight,
+    textAlign: 'center',
   },
   certifiedBanner: {
     flexDirection: 'row',

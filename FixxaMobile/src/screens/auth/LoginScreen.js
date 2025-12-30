@@ -12,6 +12,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateEmail } from '../../utils/validation';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
@@ -75,14 +76,20 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <LinearGradient
+      colors={['#1a5f1a', '#228B22', '#2d7a2d']}
+      style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image
@@ -90,7 +97,6 @@ const LoginScreen = ({ navigation }) => {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Fixxa</Text>
           <Text style={styles.subtitle}>Sign in to continue</Text>
         </View>
 
@@ -171,15 +177,19 @@ const LoginScreen = ({ navigation }) => {
             <Text style={styles.linkText}>Sign up</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
@@ -188,22 +198,19 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginTop: 40,
+    marginBottom: 50,
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: SIZES.xxxl,
-    ...FONTS.bold,
-    color: COLORS.primary,
-    marginBottom: 8,
+    width: 250,
+    height: 250,
+    marginBottom: 24,
   },
   subtitle: {
-    fontSize: SIZES.md,
-    color: COLORS.textSecondary,
+    fontSize: SIZES.lg,
+    color: COLORS.white,
+    opacity: 0.95,
+    ...FONTS.medium,
   },
   formContainer: {
     width: '100%',
@@ -250,8 +257,9 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: SIZES.sm,
-    color: COLORS.primary,
+    color: COLORS.white,
     ...FONTS.semiBold,
+    opacity: 0.9,
   },
   button: {
     backgroundColor: COLORS.primary,
@@ -276,12 +284,14 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
+    color: COLORS.white,
+    opacity: 0.9,
   },
   linkText: {
     fontSize: SIZES.sm,
-    color: COLORS.primary,
+    color: COLORS.white,
     ...FONTS.semiBold,
+    textDecorationLine: 'underline',
   },
 });
 
