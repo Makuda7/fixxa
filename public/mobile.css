@@ -6,11 +6,35 @@
 
 /* Hide mobile menu toggle on desktop */
 .mobile-menu-toggle {
-  display: none;
+  display: none !important;
 }
 
 .mobile-menu-overlay {
-  display: none;
+  display: none !important;
+}
+
+/* Ensure header uses proper layout on desktop */
+@media (min-width: 769px) {
+  .header {
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+
+  .mobile-menu-toggle {
+    display: none !important;
+  }
+
+  .nav-links {
+    display: flex !important;
+    position: static !important;
+    flex-direction: row !important;
+    width: auto !important;
+    height: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    gap: 1rem !important;
+  }
 }
 
 /* ============ BASE MOBILE FIXES ============ */
