@@ -306,38 +306,35 @@ const ReviewsScreen = ({ navigation }) => {
 
     const filterOptions = [
       { label: 'All', value: null },
-      { label: '5⭐', value: 5 },
-      { label: '4⭐', value: 4 },
-      { label: '3⭐', value: 3 },
-      { label: '2⭐', value: 2 },
-      { label: '1⭐', value: 1 },
+      { label: '5★', value: 5 },
+      { label: '4★', value: 4 },
+      { label: '3★', value: 3 },
+      { label: '2★', value: 2 },
+      { label: '1★', value: 1 },
     ];
 
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScrollView}
-        contentContainerStyle={styles.filterContainer}
-      >
-        {filterOptions.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={[
-              styles.filterButton,
-              starFilter === option.value && styles.filterButtonActive
-            ]}
-            onPress={() => setStarFilter(option.value)}
-          >
-            <Text style={[
-              styles.filterButtonText,
-              starFilter === option.value && styles.filterButtonTextActive
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.filterContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {filterOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.filterButton,
+                starFilter === option.value && styles.filterButtonActive
+              ]}
+              onPress={() => setStarFilter(option.value)}
+            >
+              <Text style={[
+                styles.filterButtonText,
+                starFilter === option.value && styles.filterButtonTextActive
+              ]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     );
   };
 
@@ -838,24 +835,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   // Star Filter Styles
-  filterScrollView: {
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
   filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: SIZES.padding,
+    backgroundColor: COLORS.white,
     paddingVertical: 12,
-    gap: 8,
+    paddingHorizontal: SIZES.padding,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
   },
   filterButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.background,
+    marginRight: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: COLORS.lightGray,
   },
   filterButtonActive: {
     backgroundColor: COLORS.primary,

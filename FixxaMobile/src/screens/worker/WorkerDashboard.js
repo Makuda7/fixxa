@@ -127,9 +127,11 @@ const WorkerDashboard = ({ navigation }) => {
 
     setUpdatingAvailability(true);
     try {
+      console.log('🔄 Toggling availability to:', newStatus);
       const response = await api.put('/workers/availability', {
         is_available: newStatus,
       });
+      console.log('✅ Availability response:', response.data);
 
       if (response.data.success) {
         setIsAvailable(newStatus);
@@ -138,11 +140,14 @@ const WorkerDashboard = ({ navigation }) => {
           `You are now ${newStatus ? 'available' : 'unavailable'} for new jobs`
         );
       } else {
-        Alert.alert('Error', 'Failed to update availability');
+        console.error('❌ Availability update failed:', response.data);
+        Alert.alert('Error', response.data.error || 'Failed to update availability');
       }
     } catch (error) {
-      console.error('Error updating availability:', error);
-      Alert.alert('Error', 'Failed to update availability. Please try again.');
+      console.error('❌ Error updating availability:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMsg = error.response?.data?.error || 'Failed to update availability. Please try again.';
+      Alert.alert('Error', errorMsg);
     } finally {
       setUpdatingAvailability(false);
     }

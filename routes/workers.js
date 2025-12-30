@@ -241,6 +241,102 @@ module.exports = (pool, logger, helpers) => {
   router.post('/availability', requireAuth, workerOnly, updateAvailabilityHandler);
   router.put('/availability', requireAuth, workerOnly, updateAvailabilityHandler);
 
+  // Get earnings summary
+  router.get('/earnings/summary', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+
+      // Get total earnings and job counts
+      const result = await pool.query(`
+        SELECT
+          COALESCE(SUM(booking_amount) FILTER (WHERE status = 'Completed' AND payment_status = 'paid'), 0) as total,
+          COALESCE(SUM(booking_amount) FILTER (
+            WHERE status = 'Completed'
+            AND payment_status = 'paid'
+            AND DATE_TRUNC('month', completed_at) = DATE_TRUNC('month', CURRENT_DATE)
+          ), 0) as this_month,
+          COALESCE(SUM(booking_amount) FILTER (
+            WHERE status = 'Completed'
+            AND payment_status = 'paid'
+            AND DATE_TRUNC('month', completed_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+          ), 0) as last_month,
+          COALESCE(SUM(booking_amount) FILTER (
+            WHERE status = 'Completed'
+            AND payment_status = 'paid'
+            AND DATE_TRUNC('year', completed_at) = DATE_TRUNC('year', CURRENT_DATE)
+          ), 0) as this_year,
+          COALESCE(SUM(booking_amount) FILTER (WHERE status = 'Completed' AND payment_status = 'pending'), 0) as pending_payments,
+          COUNT(*) FILTER (WHERE status = 'Completed') as completed_jobs
+        FROM bookings
+        WHERE worker_id = $1
+      `, [workerId]);
+
+      res.json({
+        success: true,
+        summary: {
+          total: parseFloat(result.rows[0].total) || 0,
+          thisMonth: parseFloat(result.rows[0].this_month) || 0,
+          lastMonth: parseFloat(result.rows[0].last_month) || 0,
+          thisYear: parseFloat(result.rows[0].this_year) || 0,
+          pendingPayments: parseFloat(result.rows[0].pending_payments) || 0,
+          completedJobs: parseInt(result.rows[0].completed_jobs) || 0,
+        }
+      });
+    } catch (error) {
+      logger.error('Get earnings summary error', { error: error.message });
+      console.error('Get earnings summary error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get earnings summary' });
+    }
+  });
+
+  // Get earnings list
+  router.get('/earnings', requireAuth, workerOnly, async (req, res) => {
+    try {
+      const workerId = req.session.user.id;
+      const { filter = 'all' } = req.query;
+
+      let dateFilter = '';
+      if (filter === 'this_month') {
+        dateFilter = "AND DATE_TRUNC('month', completed_at) = DATE_TRUNC('month', CURRENT_DATE)";
+      } else if (filter === 'last_month') {
+        dateFilter = "AND DATE_TRUNC('month', completed_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')";
+      } else if (filter === 'this_year') {
+        dateFilter = "AND DATE_TRUNC('year', completed_at) = DATE_TRUNC('year', CURRENT_DATE)";
+      }
+
+      const result = await pool.query(`
+        SELECT
+          b.id,
+          b.booking_date,
+          b.booking_time,
+          b.service,
+          b.service_type,
+          b.booking_amount as amount,
+          b.payment_status as status,
+          b.payment_method,
+          b.completed_at,
+          b.created_at,
+          u.name as client_name,
+          u.email as client_email
+        FROM bookings b
+        JOIN users u ON b.user_id = u.id
+        WHERE b.worker_id = $1
+        AND b.status = 'Completed'
+        ${dateFilter}
+        ORDER BY b.completed_at DESC NULLS LAST, b.created_at DESC
+      `, [workerId]);
+
+      res.json({
+        success: true,
+        earnings: result.rows
+      });
+    } catch (error) {
+      logger.error('Get earnings error', { error: error.message });
+      console.error('Get earnings error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get earnings' });
+    }
+  });
+
   // Update worker location
   router.post('/update-location', requireAuth, workerOnly, async (req, res) => {
     try {
