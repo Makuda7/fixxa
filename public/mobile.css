@@ -4,6 +4,24 @@
    <link rel="stylesheet" href="mobile.css">
    ======================================== */
 
+/* FORCE HIDE BURGER MENU EVERYWHERE - nuclear option for cache-busting */
+.burger-menu,
+.mobile-menu-toggle,
+button.burger-menu,
+button.mobile-menu-toggle,
+.burger-menu-active,
+button[class*="burger"],
+button[aria-label="Toggle menu"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -99999px !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 /* Ensure header uses proper layout on desktop */
 @media (min-width: 769px) {
   .header {

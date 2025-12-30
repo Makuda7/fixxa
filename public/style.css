@@ -262,6 +262,19 @@ body {
   color: forestgreen;
 }
 
+/* FORCE HIDE BURGER MENU - deprecated, cache-busting override */
+.burger-menu,
+.mobile-menu-toggle,
+button.burger-menu,
+button.mobile-menu-toggle {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
 /* Inbox Icon Link */
 .inbox-icon-link {
   position: relative;
