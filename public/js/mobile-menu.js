@@ -12,11 +12,6 @@
   }
 
   function initMobileMenu() {
-    // Only run on mobile devices
-    if (window.innerWidth > 768) {
-      return;
-    }
-
     // Find or create the mobile menu toggle button
     const header = document.querySelector('.header');
     const nav = document.querySelector('.nav-links');
