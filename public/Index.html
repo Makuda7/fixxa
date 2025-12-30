@@ -439,8 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         loginLink.style.display = 'none';
-        userMenu.style.display = 'inline-block';
-        userBtn.textContent = (data.user.name || 'User') + ' ▼';
+        userMenu.classList.add('show');
 
         // Show inbox icon for logged-in clients
         const inboxIcon = document.getElementById('inboxIconLink');
@@ -449,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         loginLink.style.display = 'inline-block';
-        userMenu.style.display = 'none';
+        userMenu.classList.remove('show');
 
         // Hide inbox icon for logged-out users
         const inboxIcon = document.getElementById('inboxIconLink');
