@@ -431,6 +431,23 @@ button[aria-label="Toggle menu"] {
 
 <script src="js/geolocation.js"></script>
 <script>
+// NUCLEAR OPTION: Force remove any burger menu that might exist from cache
+(function() {
+  const removeBurgerMenu = () => {
+    const burgers = document.querySelectorAll('.burger-menu, .mobile-menu-toggle, button[aria-label="Toggle menu"], button[class*="burger"]');
+    burgers.forEach(el => el.remove());
+  };
+  // Run immediately
+  removeBurgerMenu();
+  // Run after DOM loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', removeBurgerMenu);
+  }
+  // Run after everything loads
+  window.addEventListener('load', removeBurgerMenu);
+})();
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', () => {
   const loginLink = document.getElementById('loginLink');
   const userMenu = document.getElementById('userMenu');
