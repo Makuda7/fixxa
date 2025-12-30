@@ -450,6 +450,66 @@ module.exports = (pool, logger, upload) => {
     }
   });
 
+  // Get reviews for the authenticated worker
+  router.get('/worker', requireAuth, async (req, res) => {
+    try {
+      // Make sure user is a worker
+      if (req.session.user.type !== 'worker' && req.session.user.type !== 'professional') {
+        return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+
+      const workerId = req.session.user.id;
+
+      const result = await pool.query(`
+        SELECT
+          r.*,
+          u.name AS client_name,
+          b.booking_date,
+          b.service AS service_type
+        FROM reviews r
+        LEFT JOIN users u ON r.client_id = u.id
+        LEFT JOIN bookings b ON r.booking_id = b.id
+        WHERE r.worker_id = $1
+        ORDER BY r.created_at DESC
+      `, [workerId]);
+
+      const processedReviews = result.rows.map(review => {
+        let photos = [];
+        try {
+          if (review.photos) {
+            photos = typeof review.photos === 'string' ? JSON.parse(review.photos) : review.photos;
+          }
+        } catch (e) {
+          console.error('Photo parse error for review:', review.id, e);
+        }
+
+        return {
+          id: review.id,
+          booking_id: review.booking_id,
+          client_id: review.client_id,
+          overall_rating: review.overall_rating,
+          quality_rating: review.quality_rating,
+          punctuality_rating: review.punctuality_rating,
+          communication_rating: review.communication_rating,
+          value_rating: review.value_rating,
+          review_text: review.review_text,
+          photos: photos,
+          created_at: review.created_at,
+          updated_at: review.updated_at,
+          booking_date: review.booking_date,
+          client_name: review.client_name || 'Anonymous',
+          service_type: review.service_type || 'Service'
+        };
+      });
+
+      res.json({ success: true, reviews: processedReviews });
+    } catch (err) {
+      logger.error('Failed to fetch worker reviews', { error: err.message, stack: err.stack });
+      console.error('Failed to fetch worker reviews:', err);
+      res.status(500).json({ success: false, error: 'Database error', detail: err.message });
+    }
+  });
+
   // Submit review
   router.post('/client', requireAuth, clientOnly, reviewLimiter, async (req, res) => {
     try {

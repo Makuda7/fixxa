@@ -11,21 +11,25 @@ import {
   ScrollView,
 } from 'react-native';
 import api from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../styles/theme';
 import { formatDate, formatCurrency } from '../../utils/formatting';
 import { ReviewsListSkeleton } from '../../components/LoadingSkeleton';
 import BurgerMenu from '../../components/BurgerMenu';
 
 const ReviewsScreen = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState('pending'); // pending | myReviews | statistics
+  const [activeTab, setActiveTab] = useState('myReviews'); // For workers: myReviews | statistics | starFilter
   const [reviews, setReviews] = useState([]);
+  const [filteredReviews, setFilteredReviews] = useState([]);
   const [pendingJobs, setPendingJobs] = useState([]);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [userType, setUserType] = useState(null);
+  const [starFilter, setStarFilter] = useState(null); // null = all, or 1-5
 
   useEffect(() => {
-    fetchData();
+    initializeScreen();
   }, []);
 
   useEffect(() => {
@@ -35,21 +39,72 @@ const ReviewsScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
+  useEffect(() => {
+    filterReviews();
+  }, [reviews, starFilter]);
+
+  const initializeScreen = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setUserType(user.type);
+        // Set initial tab based on user type
+        if (user.type === 'worker') {
+          setActiveTab('myReviews');
+        } else {
+          setActiveTab('pending');
+        }
+      }
+      await fetchData();
+    } catch (error) {
+      console.error('Error initializing screen:', error);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
-    await Promise.all([
-      fetchReviews(),
-      fetchPendingJobs(),
-    ]);
+    const userData = await AsyncStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+
+    if (user?.type === 'worker') {
+      await fetchReviews();
+    } else {
+      await Promise.all([
+        fetchReviews(),
+        fetchPendingJobs(),
+      ]);
+    }
     setLoading(false);
     setRefreshing(false);
   };
 
+  const filterReviews = () => {
+    if (starFilter === null) {
+      setFilteredReviews(reviews);
+    } else {
+      const filtered = reviews.filter(
+        review => Math.round(review.overall_rating || review.rating) === starFilter
+      );
+      setFilteredReviews(filtered);
+    }
+  };
+
   const fetchReviews = async () => {
     try {
-      const response = await api.get('/reviews/client');
+      const userData = await AsyncStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+
+      // Use different endpoints based on user type
+      const endpoint = user?.type === 'worker' ? '/reviews/worker' : '/reviews/client';
+      console.log('🔍 Fetching reviews from:', endpoint);
+
+      const response = await api.get(endpoint);
+      console.log('📊 Reviews response:', response.data);
+
       if (response.data.reviews) {
         setReviews(response.data.reviews);
+        setFilteredReviews(response.data.reviews);
 
         // Calculate statistics
         if (response.data.reviews.length > 0) {
@@ -116,41 +171,73 @@ const ReviewsScreen = ({ navigation }) => {
   };
 
   // Tab Navigation
-  const renderTabs = () => (
-    <View style={styles.tabsContainer}>
-      <TouchableOpacity
-        style={[styles.tab, activeTab === 'pending' && styles.tabActive]}
-        onPress={() => setActiveTab('pending')}
-      >
-        <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
-          Pending Reviews
-        </Text>
-        {pendingJobs.length > 0 && (
-          <View style={styles.tabBadge}>
-            <Text style={styles.tabBadgeText}>{pendingJobs.length}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+  const renderTabs = () => {
+    if (userType === 'worker') {
+      return (
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'myReviews' && styles.tabActive]}
+            onPress={() => setActiveTab('myReviews')}
+          >
+            <Text style={[styles.tabText, activeTab === 'myReviews' && styles.tabTextActive]}>
+              All Reviews
+            </Text>
+            {reviews.length > 0 && (
+              <View style={styles.tabBadge}>
+                <Text style={styles.tabBadgeText}>{reviews.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.tab, activeTab === 'myReviews' && styles.tabActive]}
-        onPress={() => setActiveTab('myReviews')}
-      >
-        <Text style={[styles.tabText, activeTab === 'myReviews' && styles.tabTextActive]}>
-          My Reviews
-        </Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'statistics' && styles.tabActive]}
+            onPress={() => setActiveTab('statistics')}
+          >
+            <Text style={[styles.tabText, activeTab === 'statistics' && styles.tabTextActive]}>
+              Statistics
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
-      <TouchableOpacity
-        style={[styles.tab, activeTab === 'statistics' && styles.tabActive]}
-        onPress={() => setActiveTab('statistics')}
-      >
-        <Text style={[styles.tabText, activeTab === 'statistics' && styles.tabTextActive]}>
-          Statistics
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+    // Client tabs
+    return (
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'pending' && styles.tabActive]}
+          onPress={() => setActiveTab('pending')}
+        >
+          <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
+            Pending Reviews
+          </Text>
+          {pendingJobs.length > 0 && (
+            <View style={styles.tabBadge}>
+              <Text style={styles.tabBadgeText}>{pendingJobs.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'myReviews' && styles.tabActive]}
+          onPress={() => setActiveTab('myReviews')}
+        >
+          <Text style={[styles.tabText, activeTab === 'myReviews' && styles.tabTextActive]}>
+            My Reviews
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'statistics' && styles.tabActive]}
+          onPress={() => setActiveTab('statistics')}
+        >
+          <Text style={[styles.tabText, activeTab === 'statistics' && styles.tabTextActive]}>
+            Statistics
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   // Pending Reviews Tab Content
   const renderPendingTab = () => (
@@ -213,45 +300,98 @@ const ReviewsScreen = ({ navigation }) => {
     </View>
   );
 
+  // Star Filter Row (for workers)
+  const renderStarFilters = () => {
+    if (userType !== 'worker') return null;
+
+    const filterOptions = [
+      { label: 'All', value: null },
+      { label: '5⭐', value: 5 },
+      { label: '4⭐', value: 4 },
+      { label: '3⭐', value: 3 },
+      { label: '2⭐', value: 2 },
+      { label: '1⭐', value: 1 },
+    ];
+
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScrollView}
+        contentContainerStyle={styles.filterContainer}
+      >
+        {filterOptions.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.filterButton,
+              starFilter === option.value && styles.filterButtonActive
+            ]}
+            onPress={() => setStarFilter(option.value)}
+          >
+            <Text style={[
+              styles.filterButtonText,
+              starFilter === option.value && styles.filterButtonTextActive
+            ]}>
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    );
+  };
+
   // My Reviews Tab Content
   const renderMyReviewsTab = () => (
-    <FlatList
-      data={reviews}
-      renderItem={renderReviewItem}
-      keyExtractor={(item) => item.id.toString()}
-      contentContainerStyle={styles.listContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-      ListEmptyComponent={
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>⭐</Text>
-          <Text style={styles.emptyText}>No reviews yet</Text>
-          <Text style={styles.emptySubtext}>
-            Complete a booking to leave your first review!
-          </Text>
-        </View>
-      }
-    />
+    <View style={{ flex: 1 }}>
+      {renderStarFilters()}
+      <FlatList
+        data={filteredReviews}
+        renderItem={renderReviewItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>⭐</Text>
+            <Text style={styles.emptyText}>
+              {userType === 'worker' ? 'No reviews received yet' : 'No reviews yet'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {userType === 'worker'
+                ? 'Complete jobs to start receiving reviews from clients!'
+                : 'Complete a booking to leave your first review!'
+              }
+            </Text>
+          </View>
+        }
+      />
+    </View>
   );
 
   const renderReviewItem = ({ item }) => (
     <View style={styles.reviewCard}>
       <View style={styles.reviewHeader}>
         <View style={styles.reviewerInfo}>
-          <Text style={styles.reviewerName}>{item.worker_name}</Text>
+          <Text style={styles.reviewerName}>
+            {userType === 'worker' ? (item.client_name || 'Anonymous Client') : item.worker_name}
+          </Text>
           <View style={styles.ratingContainer}>
             {renderStars(item.overall_rating || item.rating)}
           </View>
         </View>
         <View style={styles.headerRight}>
           <Text style={styles.reviewDate}>{formatDate(item.created_at)}</Text>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => navigation.navigate('EditReview', { reviewId: item.id })}
-          >
-            <Text style={styles.editButtonText}>✏️ Edit</Text>
-          </TouchableOpacity>
+          {userType !== 'worker' && (
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => navigation.navigate('EditReview', { reviewId: item.id })}
+            >
+              <Text style={styles.editButtonText}>✏️ Edit</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -696,6 +836,38 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
     color: COLORS.textLight,
     textAlign: 'center',
+  },
+  // Star Filter Styles
+  filterScrollView: {
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  filterButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterButtonText: {
+    fontSize: SIZES.sm,
+    ...FONTS.semiBold,
+    color: COLORS.textSecondary,
+  },
+  filterButtonTextActive: {
+    color: COLORS.white,
   },
 });
 

@@ -53,8 +53,9 @@ const PortfolioScreen = ({ navigation }) => {
   const fetchPortfolio = async () => {
     try {
       const response = await api.get('/workers/portfolio');
-      if (response.data.portfolio) {
-        setPortfolio(response.data.portfolio);
+      console.log('📸 Portfolio response:', response.data);
+      if (response.data.photos) {
+        setPortfolio(response.data.photos);
       }
     } catch (error) {
       console.error('Error fetching portfolio:', error);
@@ -162,8 +163,12 @@ const PortfolioScreen = ({ navigation }) => {
   };
 
   const uploadImage = async () => {
-    if (!selectedImage) return;
+    if (!selectedImage) {
+      console.log('❌ No image selected');
+      return;
+    }
 
+    console.log('📤 Starting upload...', { selectedImage: typeof selectedImage === 'string' ? 'URL' : 'File', caption });
     setUploading(true);
     try {
       const formData = new FormData();
@@ -171,9 +176,11 @@ const PortfolioScreen = ({ navigation }) => {
       // Check if this is a review photo (URL string) or a new image (object with uri)
       if (typeof selectedImage === 'string') {
         // Review photo - just send the URL
+        console.log('📎 Adding review photo URL to FormData');
         formData.append('photo_url', selectedImage);
       } else {
         // New image from camera/gallery
+        console.log('📎 Adding new image to FormData', selectedImage.uri);
         formData.append('photo', {
           uri: selectedImage.uri,
           type: 'image/jpeg',
@@ -182,15 +189,18 @@ const PortfolioScreen = ({ navigation }) => {
       }
 
       if (caption.trim()) {
-        formData.append('caption', caption.trim());
+        console.log('📝 Adding caption:', caption.trim());
+        formData.append('description', caption.trim());
       }
 
-      const response = await api.post('/workers/portfolio', formData, {
+      console.log('🚀 Sending request to /workers/portfolio/upload');
+      const response = await api.post('/workers/portfolio/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
+      console.log('✅ Upload response:', response.data);
       if (response.data.success) {
         Alert.alert('Success', 'Portfolio photo uploaded successfully!');
         setShowCaptionModal(false);
@@ -198,13 +208,16 @@ const PortfolioScreen = ({ navigation }) => {
         setCaption('');
         fetchPortfolio(); // Refresh portfolio
       } else {
+        console.log('❌ Upload failed - response not successful');
         Alert.alert('Error', 'Failed to upload photo');
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      Alert.alert('Error', 'Failed to upload photo. Please try again.');
+      console.error('❌ Error uploading image:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      Alert.alert('Error', `Failed to upload photo: ${error.response?.data?.message || error.message}`);
     } finally {
       setUploading(false);
+      console.log('📤 Upload complete');
     }
   };
 
@@ -302,7 +315,9 @@ const PortfolioScreen = ({ navigation }) => {
 
             <ScrollView
               style={styles.captionModalScroll}
+              contentContainerStyle={styles.captionModalScrollContent}
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={true}
             >
               {selectedImage && (
                 <Image
@@ -406,9 +421,9 @@ const PortfolioScreen = ({ navigation }) => {
                   style={styles.photoImage}
                   resizeMode="cover"
                 />
-                {photo.caption && (
+                {photo.description && (
                   <Text style={styles.photoCaption} numberOfLines={2}>
-                    {photo.caption}
+                    {photo.description}
                   </Text>
                 )}
                 <TouchableOpacity
@@ -632,6 +647,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
+    minHeight: '60%',
   },
   captionModalHeader: {
     flexDirection: 'row',
@@ -663,7 +679,11 @@ const styles = StyleSheet.create({
   },
   captionModalScroll: {
     flex: 1,
+  },
+  captionModalScrollContent: {
     paddingHorizontal: SIZES.padding * 1.5,
+    paddingTop: SIZES.padding,
+    paddingBottom: SIZES.padding,
   },
   captionModalFooter: {
     paddingHorizontal: SIZES.padding * 1.5,
