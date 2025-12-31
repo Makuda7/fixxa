@@ -4,22 +4,73 @@
    <link rel="stylesheet" href="mobile.css">
    ======================================== */
 
-/* FORCE HIDE BURGER MENU EVERYWHERE - nuclear option for cache-busting */
-.burger-menu,
-.mobile-menu-toggle,
-button.burger-menu,
-button.mobile-menu-toggle,
-.burger-menu-active,
-button[class*="burger"],
-button[aria-label="Toggle menu"] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  left: -99999px !important;
-  width: 0 !important;
-  height: 0 !important;
+/* ============ BURGER MENU (MOBILE ONLY) ============ */
+
+/* Burger menu button - positioned at far right */
+.burger-menu {
+  display: none; /* Hidden on desktop */
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  width: 36px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  z-index: 1100;
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.burger-menu:hover {
+  background: rgba(34, 139, 34, 0.08);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.burger-menu:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.burger-menu span {
+  width: 28px;
+  height: 3px;
+  background: #333;
+  border-radius: 3px;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transform-origin: center;
+  position: relative;
+}
+
+/* Smooth hamburger to X animation */
+.burger-menu.active span:nth-child(1) {
+  transform: translateY(9px) rotate(45deg);
+  background: var(--fixxa-primary, #228B22);
+}
+
+.burger-menu.active span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.burger-menu.active span:nth-child(3) {
+  transform: translateY(-9px) rotate(-45deg);
+  background: var(--fixxa-primary, #228B22);
+}
+
+.burger-menu.active {
+  background: rgba(34, 139, 34, 0.1);
+}
+
+/* Show burger menu on mobile/tablet */
+@media (max-width: 768px) {
+  .burger-menu {
+    display: flex;
+  }
 }
 
 /* Ensure header uses proper layout on desktop */

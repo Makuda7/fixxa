@@ -17,31 +17,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="favicons/favicon-192x192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="favicons/favicon-512x512.png">
-<link rel="stylesheet" href="style.css?v=2.0">
-<link rel="stylesheet" href="mobile.css?v=2.0">
+<link rel="stylesheet" href="style.css?v=2.1">
+<link rel="stylesheet" href="mobile.css?v=2.1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-/* CRITICAL: Hide burger menu - MUST BE FIRST */
-.burger-menu,
-.mobile-menu-toggle,
-button.burger-menu,
-button.mobile-menu-toggle,
-button[class*="burger"],
-button[aria-label="Toggle menu"] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  left: -99999px !important;
-  width: 0 !important;
-  height: 0 !important;
-  z-index: -1 !important;
-}
-
 /* Header */
 .header {
   display: flex;
@@ -290,7 +272,14 @@ button[aria-label="Toggle menu"] {
     <a href="home.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo"></a>
   </div>
 
-  <nav class="nav-links">
+  <!-- Burger Menu Button (Mobile Only) -->
+  <button class="burger-menu" id="burgerMenu" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <nav class="nav-links" id="navLinks">
     <a href="home.html">Find Service</a>
     <a href="aboutus.html">About Us</a>
     <a href="join.html">Join Our Team</a>
@@ -430,51 +419,6 @@ button[aria-label="Toggle menu"] {
 </footer>
 
 <script src="js/geolocation.js?v=2.0"></script>
-<script>
-// ABSOLUTE FINAL NUCLEAR OPTION: MutationObserver to kill burger menu forever
-(function() {
-  const removeBurgerMenu = () => {
-    const burgers = document.querySelectorAll('.burger-menu, .mobile-menu-toggle, button[aria-label="Toggle menu"], button[class*="burger"]');
-    if (burgers.length > 0) {
-      console.log('🔪 KILLING', burgers.length, 'BURGER MENU(S)');
-      burgers.forEach(el => {
-        el.remove();
-        console.log('💀 Burger menu destroyed:', el);
-      });
-    }
-  };
-
-  // Run immediately
-  removeBurgerMenu();
-
-  // Watch for ANY new elements being added and kill burger menus
-  const observer = new MutationObserver((mutations) => {
-    removeBurgerMenu();
-  });
-
-  // Start observing the entire document
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true
-  });
-
-  // Run after DOM loads
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', removeBurgerMenu);
-  }
-
-  // Run after everything loads
-  window.addEventListener('load', removeBurgerMenu);
-
-  // Run every 100ms for the first 5 seconds (catch lazy-loaded scripts)
-  let counter = 0;
-  const interval = setInterval(() => {
-    removeBurgerMenu();
-    counter++;
-    if (counter >= 50) clearInterval(interval); // Stop after 5 seconds
-  }, 100);
-})();
-</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const loginLink = document.getElementById('loginLink');
@@ -736,6 +680,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadUnreadMessageCount();
   setInterval(loadUnreadMessageCount, 30000);
+});
+</script>
+
+<!-- Burger Menu Toggle Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const burgerMenu = document.getElementById('burgerMenu');
+  const navLinks = document.getElementById('navLinks');
+
+  if (burgerMenu && navLinks) {
+    burgerMenu.addEventListener('click', function() {
+      // Toggle active class on burger menu (for animation)
+      this.classList.toggle('active');
+
+      // Toggle mobile menu visibility
+      navLinks.classList.toggle('mobile-menu-open');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!burgerMenu.contains(event.target) && !navLinks.contains(event.target)) {
+        burgerMenu.classList.remove('active');
+        navLinks.classList.remove('mobile-menu-open');
+      }
+    });
+
+    // Close menu when clicking a link
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', function() {
+        burgerMenu.classList.remove('active');
+        navLinks.classList.remove('mobile-menu-open');
+      });
+    });
+  }
 });
 </script>
 
