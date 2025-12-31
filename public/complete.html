@@ -228,10 +228,10 @@
 <!-- Header -->
 <header class="header">
   <div class="logo">
-    <a href="Index.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo"></a>
+    <a href="home.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo"></a>
   </div>
   <nav class="nav-links">
-    <a href="Index.html">Find Service</a>
+    <a href="home.html">Find Service</a>
     <a href="aboutus.html">About Us</a>
     <a href="join.html">Join Our Team</a>
     <a href="login.html" id="loginLink">Log in / Register</a>
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function handleLogout(){
     if (socket) socket.disconnect();
     await fetch('/logout',{method:'POST',credentials:'include'});
-    window.location.href='Index.html';
+    window.location.href='home.html';
   }
   if(logoutBtn) logoutBtn.addEventListener('click', handleLogout);
   if(logoutBtnBottom) logoutBtnBottom.addEventListener('click', handleLogout);
@@ -503,7 +503,7 @@ function displayJobsInContainer(jobs, container, category) {
     emptyDiv.innerHTML = `
       <div class="icon">${getEmptyIcon(category)}</div>
       <p>No ${category} jobs yet.</p>
-      ${category === 'active' ? '<p><a href="Index.html">Find services</a> to get started!</p>' : ''}
+      ${category === 'active' ? '<p><a href="home.html">Find services</a> to get started!</p>' : ''}
     `;
     container.appendChild(emptyDiv);
     return;
@@ -591,7 +591,7 @@ window.viewJobDetails = function(bookingId) {
 
 window.rebookService = function(workerId) {
   // Redirect to main page with worker pre-selected
-  window.location.href = `Index.html?worker=${workerId}`;
+  window.location.href = `home.html?worker=${workerId}`;
 };
 
 window.cancelBooking = function(bookingId) {

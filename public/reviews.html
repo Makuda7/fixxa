@@ -274,9 +274,9 @@
 <body>
 
 <header class="header">
-  <div class="logo"><a href="Index.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo" /></a></div>
+  <div class="logo"><a href="home.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo" /></a></div>
   <nav class="nav-links">
-    <a href="Index.html">Find Service</a>
+    <a href="home.html">Find Service</a>
     <a href="aboutus.html">About Us</a>
     <a href="join.html">Join Our Team</a>
     <a href="login.html" id="loginLink">Log in / Register</a>
@@ -1006,7 +1006,7 @@ function displayPendingReviews(jobs) {
   const container = document.getElementById('pendingReviewsList');
   
   if (jobs.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No pending reviews</p><p>Complete some jobs first, then you can leave reviews!</p><a href="Index.html">Find Services</a></div>';
+    container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No pending reviews</p><p>Complete some jobs first, then you can leave reviews!</p><a href="home.html">Find Services</a></div>';
     return;
   }
   

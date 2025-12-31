@@ -374,11 +374,20 @@ publicHtmlPages.forEach(page => {
 // Serve public folder for other static assets (CSS, images, etc.)
 app.use(express.static('public', {
   setHeaders: (res, filePath) => {
-    // Don't cache HTML files
+    // Don't cache HTML files - NEVER cache to prevent issues like the burger menu
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+    }
+    // Cache JS and CSS files aggressively (1 year) - use versioning in HTML to bust cache
+    else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Cache images for 1 week
+    else if (filePath.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/i)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
     }
   }
 }));

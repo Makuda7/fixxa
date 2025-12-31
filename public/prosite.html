@@ -3291,7 +3291,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const authRes = await fetch('/worker/check-auth', { credentials: 'include' });
     const authData = await authRes.json();
     if(!authData || !authData.authenticated || !authData.worker){
-      window.location.href = '/Index.html';
+      window.location.href = '/home.html';
       return;
     }
 
@@ -3307,7 +3307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Authenticated as worker ID:', workerId);
   } catch(e){
     console.error('Auth check failed', e);
-    window.location.href = '/Index.html';
+    window.location.href = '/home.html';
     return;
   }
 
@@ -3316,7 +3316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try{
       const res = await fetch('/logout',{ method:'POST', credentials:'include' });
       const data = await res.json();
-      if(data.success) window.location.href='/Index.html';
+      if(data.success) window.location.href='/home.html';
       else alert('Logout failed.');
     }catch(e){ console.error(e); alert('Logout error'); }
   });
