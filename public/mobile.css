@@ -105,25 +105,17 @@
 
 /* ============ PROFESSIONALS CAROUSEL (MOBILE ONLY) ============ */
 
-/* Hide desktop grid on mobile, show carousel */
-@media (max-width: 768px) {
-  .desktop-grid {
-    display: none !important;
-  }
-
-  .mobile-only {
-    display: block !important;
-  }
+/* Show carousel on all screen sizes, hide desktop grid */
+.desktop-grid {
+  display: none !important;
 }
 
-@media (min-width: 769px) {
-  .mobile-only {
-    display: none !important;
-  }
+.mobile-only {
+  display: block !important;
 }
 
 .pro-carousel {
-  display: none;
+  display: block;
   position: relative;
   max-width: 100%;
   overflow: visible;
@@ -314,10 +306,33 @@
   transform: scale(1.1);
 }
 
-/* Show carousel only on mobile */
-@media (max-width: 768px) {
+/* Adjust carousel width for larger screens */
+@media (min-width: 769px) {
   .pro-carousel {
-    display: block;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 4rem;
+  }
+
+  .carousel-arrow {
+    width: 55px;
+    height: 55px;
+    font-size: 32px;
+  }
+
+  .carousel-prev {
+    left: 1rem;
+  }
+
+  .carousel-next {
+    right: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pro-carousel {
+    max-width: 700px;
+    padding: 2.5rem 5rem;
   }
 }
 
