@@ -373,7 +373,6 @@ publicHtmlPages.forEach(page => {
 
 // Middleware to inject file modification timestamps into HTML for cache busting
 const fs = require('fs');
-const path = require('path');
 
 function getFileVersion(filename) {
   try {
