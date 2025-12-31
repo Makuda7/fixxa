@@ -411,8 +411,20 @@
 <!-- Featured Professionals -->
 <section class="featured">
   <h2 id="featuredTitle">Top Rated Professionals</h2>
-  <div class="pro-grid" id="proGrid">
-    <!-- Top 3 workers will be dynamically loaded here -->
+
+  <!-- Desktop Grid -->
+  <div class="pro-grid desktop-grid" id="proGrid">
+    <!-- Top 3 workers will be dynamically loaded here for desktop -->
+  </div>
+
+  <!-- Mobile Carousel -->
+  <div class="pro-carousel mobile-only">
+    <div class="pro-carousel-track" id="proCarouselTrack">
+      <!-- Workers will be dynamically loaded here for mobile -->
+    </div>
+    <div class="carousel-dots" id="proCarouselDots"></div>
+    <button class="carousel-arrow carousel-prev" id="carouselPrev">‹</button>
+    <button class="carousel-arrow carousel-next" id="carouselNext">›</button>
   </div>
 </section>
 
@@ -555,11 +567,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadFeaturedPros() {
-    const container = document.getElementById('proGrid');
-    if (!container) return;
-    
-    container.innerHTML = '<p style="text-align:center;">Loading...</p>';
-    
+    const desktopContainer = document.getElementById('proGrid');
+    const mobileCarousel = document.getElementById('proCarouselTrack');
+    const carouselDots = document.getElementById('proCarouselDots');
+
+    if (desktopContainer) desktopContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
+    if (mobileCarousel) mobileCarousel.innerHTML = '';
+
     try {
       let workers;
 
@@ -599,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       workers = workers.slice(0, 3);
 
-      container.innerHTML = '';
+      if (desktopContainer) desktopContainer.innerHTML = '';
 
       // Load each worker with their actual review rating
       for (const worker of workers) {
@@ -625,9 +639,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
 
-        const proCard = document.createElement('a');
-        proCard.href = `profile.html?id=${worker.id}`;
-
         // Display location: primary_suburb + province (new format), fallback to area
         const location = worker.primary_suburb && worker.province
           ? `${worker.primary_suburb}, ${worker.province}`
@@ -641,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
              </div>`
           : `<div style="color: #999; font-size: 0.9rem;">No reviews yet</div>`;
 
-        proCard.innerHTML = `
+        const cardHTML = `
           <div class="pro-card">
             ${worker.distance ? `<div class="distance-badge">${worker.distance} km away</div>` : ''}
             <img src="${worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
@@ -651,11 +662,107 @@ document.addEventListener('DOMContentLoaded', () => {
             ${ratingDisplay}
           </div>
         `;
-        container.appendChild(proCard);
+
+        // Add to desktop grid
+        if (desktopContainer) {
+          const desktopCard = document.createElement('a');
+          desktopCard.href = `profile.html?id=${worker.id}`;
+          desktopCard.innerHTML = cardHTML;
+          desktopContainer.appendChild(desktopCard);
+        }
+
+        // Add to mobile carousel
+        if (mobileCarousel) {
+          const mobileCard = document.createElement('a');
+          mobileCard.href = `profile.html?id=${worker.id}`;
+          mobileCard.innerHTML = cardHTML;
+          mobileCarousel.appendChild(mobileCard);
+        }
+      }
+
+      // Initialize carousel dots
+      if (carouselDots && workers.length > 0) {
+        carouselDots.innerHTML = '';
+        for (let i = 0; i < workers.length; i++) {
+          const dot = document.createElement('button');
+          dot.className = `carousel-dot ${i === 0 ? 'active' : ''}`;
+          dot.setAttribute('data-slide', i);
+          carouselDots.appendChild(dot);
+        }
+        initializeCarousel(workers.length);
       }
     } catch (err) {
       console.error('Failed to load featured professionals', err);
-      container.innerHTML = '<p style="color:red; text-align:center;">Unable to load professionals.</p>';
+      if (desktopContainer) desktopContainer.innerHTML = '<p style="color:red; text-align:center;">Unable to load professionals.</p>';
+    }
+  }
+
+  // Carousel functionality
+  function initializeCarousel(totalSlides) {
+    let currentSlide = 0;
+    const track = document.getElementById('proCarouselTrack');
+    const dots = document.querySelectorAll('#proCarouselDots .carousel-dot');
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+
+    function goToSlide(index) {
+      currentSlide = index;
+      track.style.transform = `translateX(-${currentSlide * 100}%)`;
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentSlide);
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+        goToSlide(currentSlide);
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        currentSlide = (currentSlide + 1) % totalSlides;
+        goToSlide(currentSlide);
+      });
+    }
+
+    dots.forEach((dot, index) => {
+      dot.addEventListener('click', () => goToSlide(index));
+    });
+
+    // Swipe support for touch devices
+    let startX = 0;
+    let isDragging = false;
+
+    if (track) {
+      track.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+      });
+
+      track.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+      });
+
+      track.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        const endX = e.changedTouches[0].clientX;
+        const diff = startX - endX;
+
+        if (Math.abs(diff) > 50) {
+          if (diff > 0) {
+            // Swipe left - next slide
+            currentSlide = (currentSlide + 1) % totalSlides;
+          } else {
+            // Swipe right - previous slide
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+          }
+          goToSlide(currentSlide);
+        }
+      });
     }
   }
 

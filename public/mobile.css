@@ -103,6 +103,114 @@
   text-align: center;
 }
 
+/* ============ PROFESSIONALS CAROUSEL (MOBILE ONLY) ============ */
+
+/* Hide desktop grid on mobile, show carousel */
+@media (max-width: 768px) {
+  .desktop-grid {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+.pro-carousel {
+  display: none;
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 3rem;
+}
+
+.pro-carousel-track {
+  display: flex;
+  transition: transform 0.4s ease;
+  gap: 1rem;
+}
+
+.pro-carousel-track .pro-card {
+  min-width: 100%;
+  flex-shrink: 0;
+}
+
+/* Carousel navigation arrows */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--fixxa-primary, #228B22);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.carousel-arrow:hover {
+  background: #1a7a1a;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.carousel-prev {
+  left: 0.5rem;
+}
+
+.carousel-next {
+  right: 0.5rem;
+}
+
+/* Carousel dots */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1.5rem;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ccc;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  padding: 0;
+}
+
+.carousel-dot.active {
+  background: var(--fixxa-primary, #228B22);
+  width: 24px;
+  border-radius: 5px;
+}
+
+/* Show carousel only on mobile */
+@media (max-width: 768px) {
+  .pro-carousel {
+    display: block;
+  }
+}
+
 /* ============ BASE MOBILE FIXES ============ */
 
 /* Fix viewport font sizing issue */
