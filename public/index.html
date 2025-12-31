@@ -411,20 +411,8 @@
 <!-- Featured Professionals -->
 <section class="featured">
   <h2 id="featuredTitle">Top Rated Professionals</h2>
-
-  <!-- Desktop Grid -->
-  <div class="pro-grid desktop-grid" id="proGrid">
-    <!-- Top 3 workers will be dynamically loaded here for desktop -->
-  </div>
-
-  <!-- Mobile Carousel -->
-  <div class="pro-carousel mobile-only">
-    <div class="pro-carousel-track" id="proCarouselTrack">
-      <!-- Workers will be dynamically loaded here for mobile -->
-    </div>
-    <div class="carousel-dots" id="proCarouselDots"></div>
-    <button class="carousel-arrow carousel-prev" id="carouselPrev">‹</button>
-    <button class="carousel-arrow carousel-next" id="carouselNext">›</button>
+  <div class="pro-grid" id="proGrid">
+    <!-- Top 3 workers will be dynamically loaded here -->
   </div>
 </section>
 
@@ -568,9 +556,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadFeaturedPros() {
     const container = document.getElementById('proGrid');
-
-    if (container) container.innerHTML = '<p style="text-align:center;">Loading...</p>';
-
+    if (!container) return;
+    
+    container.innerHTML = '<p style="text-align:center;">Loading...</p>';
+    
     try {
       let workers;
 
@@ -610,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       workers = workers.slice(0, 3);
 
-      if (desktopContainer) desktopContainer.innerHTML = '';
+      container.innerHTML = '';
 
       // Load each worker with their actual review rating
       for (const worker of workers) {
@@ -636,6 +625,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
 
+        const proCard = document.createElement('a');
+        proCard.href = `profile.html?id=${worker.id}`;
+
         // Display location: primary_suburb + province (new format), fallback to area
         const location = worker.primary_suburb && worker.province
           ? `${worker.primary_suburb}, ${worker.province}`
@@ -649,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
              </div>`
           : `<div style="color: #999; font-size: 0.9rem;">No reviews yet</div>`;
 
-        const cardHTML = `
+        proCard.innerHTML = `
           <div class="pro-card">
             ${worker.distance ? `<div class="distance-badge">${worker.distance} km away</div>` : ''}
             <img src="${worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
@@ -659,18 +651,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ${ratingDisplay}
           </div>
         `;
-
-        // Add to grid
-        if (container) {
-          const card = document.createElement('a');
-          card.href = `profile.html?id=${worker.id}`;
-          card.innerHTML = cardHTML;
-          container.appendChild(card);
-        }
+        container.appendChild(proCard);
       }
     } catch (err) {
       console.error('Failed to load featured professionals', err);
-      if (container) container.innerHTML = '<p style="color:red; text-align:center;">Unable to load professionals.</p>';
+      container.innerHTML = '<p style="color:red; text-align:center;">Unable to load professionals.</p>';
     }
   }
 

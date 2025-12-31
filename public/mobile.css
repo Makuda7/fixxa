@@ -103,41 +103,6 @@
   text-align: center;
 }
 
-/* ============ PROFESSIONALS GRID ============ */
-
-/* Hide carousel elements, show grid */
-.mobile-only {
-  display: none !important;
-}
-
-.desktop-grid {
-  display: grid !important;
-}
-
-/* Professional cards grid - responsive */
-.pro-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin: 2rem 0;
-}
-
-/* Mobile: side by side on small screens */
-@media (max-width: 768px) {
-  .pro-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-}
-
-/* Very small screens: single column */
-@media (max-width: 480px) {
-  .pro-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-}
-
 /* ============ BASE MOBILE FIXES ============ */
 
 /* Fix viewport font sizing issue */
