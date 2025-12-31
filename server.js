@@ -371,6 +371,58 @@ publicHtmlPages.forEach(page => {
   });
 });
 
+// Middleware to inject file modification timestamps into HTML for cache busting
+const fs = require('fs');
+const path = require('path');
+
+function getFileVersion(filename) {
+  try {
+    const filePath = path.join(__dirname, 'public', filename);
+    const stats = fs.statSync(filePath);
+    return stats.mtime.getTime(); // Returns timestamp in milliseconds
+  } catch (err) {
+    return Date.now(); // Fallback to current time if file doesn't exist
+  }
+}
+
+// Serve HTML files with automatic versioning
+app.get('*.html', (req, res, next) => {
+  const htmlPath = path.join(__dirname, 'public', req.path);
+
+  fs.readFile(htmlPath, 'utf8', (err, html) => {
+    if (err) return next();
+
+    // Replace version placeholders with actual file modification timestamps
+    html = html.replace(/style\.css\?v=[^"']*/g, `style.css?v=${getFileVersion('style.css')}`);
+    html = html.replace(/mobile\.css\?v=[^"']*/g, `mobile.css?v=${getFileVersion('mobile.css')}`);
+
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  });
+});
+
+// Serve root index.html with versioning
+app.get('/', (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
+
+  fs.readFile(htmlPath, 'utf8', (err, html) => {
+    if (err) return res.status(500).send('Error loading page');
+
+    // Replace version placeholders with actual file modification timestamps
+    html = html.replace(/style\.css\?v=[^"']*/g, `style.css?v=${getFileVersion('style.css')}`);
+    html = html.replace(/mobile\.css\?v=[^"']*/g, `mobile.css?v=${getFileVersion('mobile.css')}`);
+
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  });
+});
+
 // Serve public folder for other static assets (CSS, images, etc.)
 app.use(express.static('public', {
   setHeaders: (res, filePath) => {
