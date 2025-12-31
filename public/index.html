@@ -308,11 +308,24 @@
         <span class="menu-icon">☰</span>
       </button>
       <div class="menu-dropdown" id="menuDropdown">
+        <!-- Navigation Links -->
         <a href="home.html">🏠 Find Service</a>
         <a href="aboutus.html">ℹ️ About Us</a>
         <a href="join.html">👷 Join Our Team</a>
         <div class="menu-divider"></div>
+
+        <!-- User Options (shown when logged in) -->
+        <a href="settings.html" class="menu-user-option" style="display:none;">⚙️ Settings</a>
+        <a href="clientProfile.html" class="menu-user-option" style="display:none;">👤 Profile</a>
+        <a href="messages.html" class="menu-user-option" style="display:none; position:relative;">
+          ✉️ Messages
+          <span class="menu-message-badge" id="menuMessageBadge" style="display:none;">0</span>
+        </a>
+        <div class="menu-divider menu-user-option" style="display:none;"></div>
+
+        <!-- Login/Logout -->
         <a href="login.html" id="menuLoginLink">🔐 Log in / Register</a>
+        <a href="#" id="menuLogoutBtn" class="menu-user-option" style="display:none; color:#dc3545;">🚪 Log out</a>
       </div>
     </div>
   </nav>
@@ -692,10 +705,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- Menu Dropdown Toggle Script -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   const menuBtn = document.getElementById('menuBtn');
   const menuDropdown = document.getElementById('menuDropdown');
+  const menuLoginLink = document.getElementById('menuLoginLink');
+  const menuLogoutBtn = document.getElementById('menuLogoutBtn');
+  const menuUserOptions = document.querySelectorAll('.menu-user-option');
+  const menuMessageBadge = document.getElementById('menuMessageBadge');
 
+  // Toggle dropdown
   if (menuBtn && menuDropdown) {
     menuBtn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -706,6 +724,42 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(event) {
       if (!menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
         menuDropdown.classList.remove('show');
+      }
+    });
+  }
+
+  // Check authentication and show/hide menu options
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.authenticated) {
+      // User is logged in - show user options, hide login
+      menuUserOptions.forEach(el => el.style.display = 'block');
+      if (menuLoginLink) menuLoginLink.style.display = 'none';
+
+      // Load message count for menu badge
+      const msgRes = await fetch('/messages/unread-count', { credentials: 'include' });
+      const msgData = await msgRes.json();
+      if (msgData.unreadCount > 0 && menuMessageBadge) {
+        menuMessageBadge.textContent = msgData.unreadCount;
+        menuMessageBadge.style.display = 'inline-block';
+      }
+    }
+  } catch (err) {
+    console.error('Menu auth check failed:', err);
+  }
+
+  // Handle logout from menu
+  if (menuLogoutBtn) {
+    menuLogoutBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      try {
+        await fetch('/logout', { method: 'POST', credentials: 'include' });
+        window.location.href = '/login.html';
+      } catch (err) {
+        console.error('Logout failed:', err);
+        window.location.href = '/login.html';
       }
     });
   }

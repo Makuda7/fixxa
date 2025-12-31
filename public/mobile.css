@@ -89,6 +89,20 @@
   margin: 4px 0;
 }
 
+/* Message badge in menu */
+.menu-message-badge {
+  position: absolute;
+  right: 16px;
+  background: #dc3545;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
 /* ============ BASE MOBILE FIXES ============ */
 
 /* Fix viewport font sizing issue */
