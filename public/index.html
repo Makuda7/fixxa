@@ -311,6 +311,9 @@
   </nav>
 </header>
 
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
 <!-- Location Permission Modal -->
 <div class="location-modal-overlay" id="locationModal" style="display:none;">
   <div class="location-modal">
@@ -688,22 +691,30 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', function() {
   const burgerMenu = document.getElementById('burgerMenu');
   const navLinks = document.getElementById('navLinks');
+  const overlay = document.getElementById('mobileMenuOverlay');
 
-  if (burgerMenu && navLinks) {
-    burgerMenu.addEventListener('click', function() {
-      // Toggle active class on burger menu (for animation)
-      this.classList.toggle('active');
-
-      // Toggle mobile menu visibility
+  if (burgerMenu && navLinks && overlay) {
+    // Toggle menu when clicking burger button
+    burgerMenu.addEventListener('click', function(e) {
+      e.stopPropagation();
+      burgerMenu.classList.toggle('active');
       navLinks.classList.toggle('mobile-menu-open');
+      overlay.classList.toggle('active');
+
+      // Prevent body scroll when menu is open
+      if (navLinks.classList.contains('mobile-menu-open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
     });
 
-    // Close menu when clicking outside
-    document.addEventListener('click', function(event) {
-      if (!burgerMenu.contains(event.target) && !navLinks.contains(event.target)) {
-        burgerMenu.classList.remove('active');
-        navLinks.classList.remove('mobile-menu-open');
-      }
+    // Close menu when clicking overlay
+    overlay.addEventListener('click', function() {
+      burgerMenu.classList.remove('active');
+      navLinks.classList.remove('mobile-menu-open');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
     });
 
     // Close menu when clicking a link
@@ -711,6 +722,8 @@ document.addEventListener('DOMContentLoaded', function() {
       link.addEventListener('click', function() {
         burgerMenu.classList.remove('active');
         navLinks.classList.remove('mobile-menu-open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
       });
     });
   }
