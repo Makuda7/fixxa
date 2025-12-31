@@ -8,7 +8,7 @@
 
 /* Burger menu button - positioned at far right */
 .burger-menu {
-  display: none; /* Hidden on desktop */
+  display: flex; /* Visible on all screen sizes */
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
@@ -64,13 +64,6 @@
 
 .burger-menu.active {
   background: rgba(34, 139, 34, 0.1);
-}
-
-/* Show burger menu on mobile/tablet */
-@media (max-width: 768px) {
-  .burger-menu {
-    display: flex;
-  }
 }
 
 /* Ensure header uses proper layout on desktop */
