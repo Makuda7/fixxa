@@ -708,14 +708,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function goToSlide(index) {
       currentSlide = index;
-      track.style.transform = `translateX(-${currentSlide * 100}%)`;
+      // No need to transform track, cards are positioned absolutely
 
       // Update dot states
       dots.forEach((dot, i) => {
         dot.classList.toggle('active', i === currentSlide);
       });
 
-      // Update card 3D states
+      // Update card 3D states - all cards always visible in their positions
       cards.forEach((card, i) => {
         card.classList.remove('carousel-active', 'carousel-prev', 'carousel-next', 'carousel-hidden');
 

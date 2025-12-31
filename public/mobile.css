@@ -119,11 +119,15 @@
   position: relative;
   max-width: 100%;
   overflow: visible;
-  padding: 2rem 3rem;
+  padding: 3rem 1rem;
   perspective: 1200px;
   perspective-origin: 50% 50%;
   background: linear-gradient(135deg, rgba(34, 139, 34, 0.03) 0%, rgba(255, 255, 255, 0.05) 100%);
   border-radius: 20px;
+  min-height: 450px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pro-carousel::before {
@@ -154,66 +158,80 @@
 .pro-carousel-track {
   display: flex;
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  gap: 1rem;
+  gap: 0;
   transform-style: preserve-3d;
   position: relative;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
 }
 
 .pro-carousel-track .pro-card {
-  min-width: 100%;
+  position: absolute;
+  width: 85%;
+  max-width: 400px;
   flex-shrink: 0;
   transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   transform-style: preserve-3d;
   backface-visibility: visible;
+  left: 50%;
+  top: 50%;
+  margin-left: -42.5%;
+  margin-top: -150px;
 }
 
 /* 3D Card States */
 .pro-carousel-track .pro-card.carousel-active {
-  transform: translateZ(0) rotateY(0deg) scale(1);
+  transform: translate(-50%, -50%) translateZ(50px) rotateY(0deg) scale(1.05);
   opacity: 1;
-  z-index: 3;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
-              0 0 0 1px rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35),
+              0 0 0 2px rgba(255, 255, 255, 0.2);
   animation: float 3s ease-in-out infinite;
+  pointer-events: auto;
 }
 
 @keyframes float {
   0%, 100% {
-    transform: translateZ(0) rotateY(0deg) scale(1) translateY(0);
+    transform: translate(-50%, -50%) translateZ(50px) rotateY(0deg) scale(1.05);
   }
   50% {
-    transform: translateZ(0) rotateY(0deg) scale(1) translateY(-8px);
+    transform: translate(-50%, calc(-50% - 10px)) translateZ(50px) rotateY(0deg) scale(1.05);
   }
 }
 
 .pro-carousel-track .pro-card.carousel-prev {
-  transform: translateZ(-200px) rotateY(25deg) scale(0.85);
-  opacity: 0.6;
-  z-index: 1;
-  filter: brightness(0.7) blur(1px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transform: translate(-120%, -50%) translateZ(-100px) rotateY(35deg) scale(0.75);
+  opacity: 0.5;
+  z-index: 5;
+  filter: brightness(0.6) blur(1.5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
 }
 
 .pro-carousel-track .pro-card.carousel-next {
-  transform: translateZ(-200px) rotateY(-25deg) scale(0.85);
-  opacity: 0.6;
-  z-index: 1;
-  filter: brightness(0.7) blur(1px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transform: translate(20%, -50%) translateZ(-100px) rotateY(-35deg) scale(0.75);
+  opacity: 0.5;
+  z-index: 5;
+  filter: brightness(0.6) blur(1.5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
 }
 
 .pro-carousel-track .pro-card.carousel-hidden {
-  transform: translateZ(-400px) scale(0.5);
+  transform: translate(-50%, -50%) translateZ(-300px) scale(0.3);
   opacity: 0;
   z-index: 0;
-  filter: blur(3px);
+  filter: blur(5px);
+  pointer-events: none;
 }
 
 /* Add hover effect to active card */
 .pro-carousel-track .pro-card.carousel-active:hover {
-  transform: translateZ(20px) rotateY(0deg) scale(1.02);
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35),
-              0 0 0 2px rgba(34, 139, 34, 0.3);
+  transform: translate(-50%, -50%) translateZ(70px) rotateY(0deg) scale(1.08);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.4),
+              0 0 0 3px rgba(34, 139, 34, 0.4);
 }
 
 /* Carousel navigation arrows */
@@ -306,12 +324,45 @@
   transform: scale(1.1);
 }
 
+/* Mobile specific adjustments */
+@media (max-width: 480px) {
+  .pro-carousel {
+    padding: 2.5rem 0.5rem;
+    min-height: 400px;
+  }
+
+  .pro-carousel-track .pro-card {
+    width: 90%;
+    max-width: 320px;
+    margin-left: -45%;
+  }
+
+  .pro-carousel-track .pro-card.carousel-prev {
+    transform: translate(-130%, -50%) translateZ(-80px) rotateY(30deg) scale(0.7);
+  }
+
+  .pro-carousel-track .pro-card.carousel-next {
+    transform: translate(30%, -50%) translateZ(-80px) rotateY(-30deg) scale(0.7);
+  }
+
+  .carousel-arrow {
+    width: 42px;
+    height: 42px;
+    font-size: 24px;
+  }
+}
+
 /* Adjust carousel width for larger screens */
 @media (min-width: 769px) {
   .pro-carousel {
-    max-width: 600px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 2rem 4rem;
+    padding: 3rem 2rem;
+    min-height: 500px;
+  }
+
+  .pro-carousel-track .pro-card {
+    max-width: 500px;
   }
 
   .carousel-arrow {
@@ -321,18 +372,29 @@
   }
 
   .carousel-prev {
-    left: 1rem;
+    left: 1.5rem;
   }
 
   .carousel-next {
-    right: 1rem;
+    right: 1.5rem;
   }
 }
 
 @media (min-width: 1024px) {
   .pro-carousel {
-    max-width: 700px;
-    padding: 2.5rem 5rem;
+    max-width: 1100px;
+    padding: 3.5rem 3rem;
+    min-height: 550px;
+  }
+
+  .pro-carousel-track .pro-card {
+    max-width: 550px;
+  }
+
+  .carousel-arrow {
+    width: 60px;
+    height: 60px;
+    font-size: 36px;
   }
 }
 
