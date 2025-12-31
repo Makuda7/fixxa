@@ -272,13 +272,6 @@
     <a href="home.html"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo"></a>
   </div>
 
-  <!-- Burger Menu Button (Mobile Only) -->
-  <button class="burger-menu" id="burgerMenu" aria-label="Toggle navigation menu">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
-
   <nav class="nav-links" id="navLinks">
     <a href="home.html">Find Service</a>
     <a href="aboutus.html">About Us</a>
@@ -308,11 +301,22 @@
         <a href="#" id="logoutBtn" style="color:red;">🚪 Log out</a>
       </div>
     </div>
+
+    <!-- Menu Dropdown (always visible) -->
+    <div class="menu-dropdown-container">
+      <button class="menu-icon-btn" id="menuBtn" title="Menu">
+        <span class="menu-icon">☰</span>
+      </button>
+      <div class="menu-dropdown" id="menuDropdown">
+        <a href="home.html">🏠 Find Service</a>
+        <a href="aboutus.html">ℹ️ About Us</a>
+        <a href="join.html">👷 Join Our Team</a>
+        <div class="menu-divider"></div>
+        <a href="login.html" id="menuLoginLink">🔐 Log in / Register</a>
+      </div>
+    </div>
   </nav>
 </header>
-
-<!-- Mobile Menu Overlay -->
-<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 
 <!-- Location Permission Modal -->
 <div class="location-modal-overlay" id="locationModal" style="display:none;">
@@ -686,45 +690,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<!-- Burger Menu Toggle Script -->
+<!-- Menu Dropdown Toggle Script -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const burgerMenu = document.getElementById('burgerMenu');
-  const navLinks = document.getElementById('navLinks');
-  const overlay = document.getElementById('mobileMenuOverlay');
+  const menuBtn = document.getElementById('menuBtn');
+  const menuDropdown = document.getElementById('menuDropdown');
 
-  if (burgerMenu && navLinks && overlay) {
-    // Toggle menu when clicking burger button
-    burgerMenu.addEventListener('click', function(e) {
+  if (menuBtn && menuDropdown) {
+    menuBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      burgerMenu.classList.toggle('active');
-      navLinks.classList.toggle('mobile-menu-open');
-      overlay.classList.toggle('active');
+      menuDropdown.classList.toggle('show');
+    });
 
-      // Prevent body scroll when menu is open
-      if (navLinks.classList.contains('mobile-menu-open')) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
+        menuDropdown.classList.remove('show');
       }
-    });
-
-    // Close menu when clicking overlay
-    overlay.addEventListener('click', function() {
-      burgerMenu.classList.remove('active');
-      navLinks.classList.remove('mobile-menu-open');
-      overlay.classList.remove('active');
-      document.body.style.overflow = '';
-    });
-
-    // Close menu when clicking a link
-    navLinks.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', function() {
-        burgerMenu.classList.remove('active');
-        navLinks.classList.remove('mobile-menu-open');
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-      });
     });
   }
 });
