@@ -567,12 +567,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadFeaturedPros() {
-    const desktopContainer = document.getElementById('proGrid');
-    const mobileCarousel = document.getElementById('proCarouselTrack');
-    const carouselDots = document.getElementById('proCarouselDots');
+    const container = document.getElementById('proGrid');
 
-    if (desktopContainer) desktopContainer.innerHTML = '<p style="text-align:center;">Loading...</p>';
-    if (mobileCarousel) mobileCarousel.innerHTML = '';
+    if (container) container.innerHTML = '<p style="text-align:center;">Loading...</p>';
 
     try {
       let workers;
@@ -663,127 +660,17 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
 
-        // Add to desktop grid
-        if (desktopContainer) {
-          const desktopCard = document.createElement('a');
-          desktopCard.href = `profile.html?id=${worker.id}`;
-          desktopCard.innerHTML = cardHTML;
-          desktopContainer.appendChild(desktopCard);
+        // Add to grid
+        if (container) {
+          const card = document.createElement('a');
+          card.href = `profile.html?id=${worker.id}`;
+          card.innerHTML = cardHTML;
+          container.appendChild(card);
         }
-
-        // Add to mobile carousel
-        if (mobileCarousel) {
-          const mobileCard = document.createElement('a');
-          mobileCard.href = `profile.html?id=${worker.id}`;
-          mobileCard.innerHTML = cardHTML;
-          mobileCarousel.appendChild(mobileCard);
-        }
-      }
-
-      // Initialize carousel dots
-      if (carouselDots && workers.length > 0) {
-        carouselDots.innerHTML = '';
-        for (let i = 0; i < workers.length; i++) {
-          const dot = document.createElement('button');
-          dot.className = `carousel-dot ${i === 0 ? 'active' : ''}`;
-          dot.setAttribute('data-slide', i);
-          carouselDots.appendChild(dot);
-        }
-        initializeCarousel(workers.length);
       }
     } catch (err) {
       console.error('Failed to load featured professionals', err);
-      if (desktopContainer) desktopContainer.innerHTML = '<p style="color:red; text-align:center;">Unable to load professionals.</p>';
-    }
-  }
-
-  // Carousel functionality
-  function initializeCarousel(totalSlides) {
-    let currentSlide = 0;
-    const track = document.getElementById('proCarouselTrack');
-    const cards = track.querySelectorAll('a');
-    const dots = document.querySelectorAll('#proCarouselDots .carousel-dot');
-    const prevBtn = document.getElementById('carouselPrev');
-    const nextBtn = document.getElementById('carouselNext');
-
-    function goToSlide(index) {
-      currentSlide = index;
-      // No need to transform track, cards are positioned absolutely
-
-      // Update dot states
-      dots.forEach((dot, i) => {
-        dot.classList.toggle('active', i === currentSlide);
-      });
-
-      // Update card 3D states - all cards always visible in their positions
-      cards.forEach((card, i) => {
-        card.classList.remove('carousel-active', 'carousel-prev', 'carousel-next', 'carousel-hidden');
-
-        if (i === currentSlide) {
-          card.classList.add('carousel-active');
-        } else if (i === currentSlide - 1 || (currentSlide === 0 && i === totalSlides - 1)) {
-          card.classList.add('carousel-prev');
-        } else if (i === currentSlide + 1 || (currentSlide === totalSlides - 1 && i === 0)) {
-          card.classList.add('carousel-next');
-        } else {
-          card.classList.add('carousel-hidden');
-        }
-      });
-    }
-
-    // Initialize first slide
-    goToSlide(0);
-
-    if (prevBtn) {
-      prevBtn.addEventListener('click', () => {
-        currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-        goToSlide(currentSlide);
-      });
-    }
-
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
-        currentSlide = (currentSlide + 1) % totalSlides;
-        goToSlide(currentSlide);
-      });
-    }
-
-    dots.forEach((dot, index) => {
-      dot.addEventListener('click', () => goToSlide(index));
-    });
-
-    // Swipe support for touch devices
-    let startX = 0;
-    let isDragging = false;
-
-    if (track) {
-      track.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        isDragging = true;
-      });
-
-      track.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-      });
-
-      track.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        const endX = e.changedTouches[0].clientX;
-        const diff = startX - endX;
-
-        if (Math.abs(diff) > 50) {
-          if (diff > 0) {
-            // Swipe left - next slide
-            currentSlide = (currentSlide + 1) % totalSlides;
-          } else {
-            // Swipe right - previous slide
-            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-          }
-          goToSlide(currentSlide);
-        }
-      });
+      if (container) container.innerHTML = '<p style="color:red; text-align:center;">Unable to load professionals.</p>';
     }
   }
 
