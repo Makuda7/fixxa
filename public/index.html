@@ -701,6 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initializeCarousel(totalSlides) {
     let currentSlide = 0;
     const track = document.getElementById('proCarouselTrack');
+    const cards = track.querySelectorAll('a');
     const dots = document.querySelectorAll('#proCarouselDots .carousel-dot');
     const prevBtn = document.getElementById('carouselPrev');
     const nextBtn = document.getElementById('carouselNext');
@@ -708,10 +709,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function goToSlide(index) {
       currentSlide = index;
       track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+      // Update dot states
       dots.forEach((dot, i) => {
         dot.classList.toggle('active', i === currentSlide);
       });
+
+      // Update card 3D states
+      cards.forEach((card, i) => {
+        card.classList.remove('carousel-active', 'carousel-prev', 'carousel-next', 'carousel-hidden');
+
+        if (i === currentSlide) {
+          card.classList.add('carousel-active');
+        } else if (i === currentSlide - 1 || (currentSlide === 0 && i === totalSlides - 1)) {
+          card.classList.add('carousel-prev');
+        } else if (i === currentSlide + 1 || (currentSlide === totalSlides - 1 && i === 0)) {
+          card.classList.add('carousel-next');
+        } else {
+          card.classList.add('carousel-hidden');
+        }
+      });
     }
+
+    // Initialize first slide
+    goToSlide(0);
 
     if (prevBtn) {
       prevBtn.addEventListener('click', () => {
