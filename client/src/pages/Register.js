@@ -330,7 +330,7 @@ const Register = () => {
               />
               <label htmlFor="safetyAccepted">
                 I confirm that I am at least 18 years old and agree to Fixxa's{' '}
-                <a href="/safety.html" target="_blank" rel="noopener noreferrer">
+                <a href="/safety" target="_blank" rel="noopener noreferrer">
                   Safety Guidelines
                 </a>
               </label>
@@ -347,15 +347,15 @@ const Register = () => {
               />
               <label htmlFor="termsAccepted">
                 I agree to Fixxa's{' '}
-                <a href="/terms.html" target="_blank" rel="noopener noreferrer">
+                <a href="/terms" target="_blank" rel="noopener noreferrer">
                   Terms of Service
                 </a>
                 ,{' '}
-                <a href="/privacy.html" target="_blank" rel="noopener noreferrer">
+                <a href="/privacy" target="_blank" rel="noopener noreferrer">
                   Privacy Policy
                 </a>
                 , and{' '}
-                <a href="/safety.html" target="_blank" rel="noopener noreferrer">
+                <a href="/safety" target="_blank" rel="noopener noreferrer">
                   Safety Guidelines
                 </a>
               </label>

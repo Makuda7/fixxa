@@ -438,7 +438,7 @@ const Profile = () => {
                 <div className="rate-content">
                   {!isAuthenticated ? (
                     <div className="rate-locked">
-                      <a href="/login">Login</a> or <a href="/register">Register</a> to see rates
+                      <Link to="/login">Login</Link> or <Link to="/register">Register</Link> to see rates
                     </div>
                   ) : worker.rate_type && worker.rate_amount ? (
                     <>
@@ -736,7 +736,7 @@ const Profile = () => {
             </div>
             <div className="safety-modal-footer">
               <button className="btn-skip" onClick={() => setShowSafetyModal(false)}>Skip</button>
-              <button className="btn-read-full" onClick={() => window.open('/safety.html', '_blank')}>
+              <button className="btn-read-full" onClick={() => window.open('/safety', '_blank')}>
                 Read Full Guide
               </button>
               <button className="btn-continue" onClick={handleContinueBooking}>

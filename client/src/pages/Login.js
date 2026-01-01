@@ -51,8 +51,8 @@ const Login = () => {
         // Use the redirect URL from the backend (handles admin, professional, client)
         if (result.redirect) {
           console.log('Has redirect, checking value:', result.redirect);
-          // Convert HTML routes to React routes
-          if (result.redirect === '/admin.html') {
+          // Handle redirect routes
+          if (result.redirect === '/admin.html' || result.redirect === '/admin') {
             console.log('Redirecting to /admin');
             // Use window.location for admin to force full page reload with updated session
             window.location.href = '/admin';
