@@ -200,17 +200,81 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Featured Professionals Grid */
+/* Featured Professionals Carousel */
+.carousel-container {
+  position: relative;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 60px;
+}
+
 .pro-grid {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 2rem 0;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 1rem 0;
 }
+
+.pro-grid::-webkit-scrollbar {
+  display: none;
+}
+
 .pro-grid > a {
   text-decoration: none;
   color: inherit;
+  flex-shrink: 0;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 2px solid #228B22;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #228B22;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.carousel-btn:hover {
+  background: #228B22;
+  color: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.carousel-btn.prev {
+  left: 0;
+}
+
+.carousel-btn.next {
+  right: 0;
+}
+
+@media (max-width: 768px) {
+  .carousel-container {
+    padding: 0 50px;
+  }
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
 }
 .pro-card {
   background: #fff;
@@ -411,8 +475,12 @@
 <!-- Featured Professionals -->
 <section class="featured">
   <h2 id="featuredTitle">Top Rated Professionals</h2>
-  <div class="pro-grid" id="proGrid">
-    <!-- Top 3 workers will be dynamically loaded here -->
+  <div class="carousel-container">
+    <button class="carousel-btn prev" id="prevBtn" aria-label="Previous">‹</button>
+    <div class="pro-grid" id="proGrid">
+      <!-- Top professionals will be dynamically loaded here -->
+    </div>
+    <button class="carousel-btn next" id="nextBtn" aria-label="Next">›</button>
   </div>
 </section>
 
@@ -597,7 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
         workers.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
       }
 
-      workers = workers.slice(0, 3);
+      workers = workers.slice(0, 8); // Show more workers for carousel
 
       container.innerHTML = '';
 
@@ -700,6 +768,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadUnreadMessageCount();
   setInterval(loadUnreadMessageCount, 30000);
+
+  // Carousel Navigation
+  const proGrid = document.getElementById('proGrid');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (prevBtn && nextBtn && proGrid) {
+    prevBtn.addEventListener('click', () => {
+      const cardWidth = proGrid.querySelector('a')?.offsetWidth || 220;
+      proGrid.scrollBy({ left: -(cardWidth + 24), behavior: 'smooth' });
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const cardWidth = proGrid.querySelector('a')?.offsetWidth || 220;
+      proGrid.scrollBy({ left: cardWidth + 24, behavior: 'smooth' });
+    });
+
+    // Touch/swipe support for mobile
+    let startX = 0;
+    let scrollLeft = 0;
+
+    proGrid.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].pageX;
+      scrollLeft = proGrid.scrollLeft;
+    });
+
+    proGrid.addEventListener('touchmove', (e) => {
+      const x = e.touches[0].pageX;
+      const walk = (startX - x) * 2;
+      proGrid.scrollLeft = scrollLeft + walk;
+    });
+  }
 });
 </script>
 

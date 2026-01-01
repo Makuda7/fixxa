@@ -345,6 +345,33 @@
         <a href="#" id="logoutBtn" style="color:red;">Log out</a>
       </div>
     </div>
+
+    <!-- Menu Dropdown (always visible on mobile) -->
+    <div class="menu-dropdown-container">
+      <button class="menu-icon-btn" id="menuBtn" title="Menu">
+        <span class="menu-icon">☰</span>
+      </button>
+      <div class="menu-dropdown" id="menuDropdown">
+        <!-- Navigation Links -->
+        <a href="home.html">🏠 Find Service</a>
+        <a href="aboutus.html">ℹ️ About Us</a>
+        <a href="join.html">👷 Join Our Team</a>
+        <div class="menu-divider"></div>
+
+        <!-- User Options (shown when logged in) -->
+        <a href="settings.html" class="menu-user-option" style="display:none;">⚙️ Settings</a>
+        <a href="clientProfile.html" class="menu-user-option" style="display:none;">👤 Profile</a>
+        <a href="messages.html" class="menu-user-option" style="display:none; position:relative;">
+          ✉️ Messages
+          <span class="menu-message-badge" id="menuMessageBadge" style="display:none;">0</span>
+        </a>
+        <div class="menu-divider menu-user-option" style="display:none;"></div>
+
+        <!-- Login/Logout -->
+        <a href="login.html" id="menuLoginLink">🔐 Log in / Register</a>
+        <a href="#" id="menuLogoutBtn" class="menu-user-option" style="display:none; color:#dc3545;">🚪 Log out</a>
+      </div>
+    </div>
   </nav>
 </header>
 
@@ -821,6 +848,77 @@ function showShareMessage(message) {
     setTimeout(() => document.body.removeChild(toast), 300);
   }, 3000);
 }
+</script>
+
+<!-- Menu Dropdown Toggle Script -->
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+  const menuBtn = document.getElementById('menuBtn');
+  const menuDropdown = document.getElementById('menuDropdown');
+  const menuLoginLink = document.getElementById('menuLoginLink');
+  const menuLogoutBtn = document.getElementById('menuLogoutBtn');
+  const menuUserOptions = document.querySelectorAll('.menu-user-option');
+  const menuMessageBadge = document.getElementById('menuMessageBadge');
+
+  // Toggle dropdown
+  if (menuBtn && menuDropdown) {
+    menuBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      menuDropdown.classList.toggle('show');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!menuBtn.contains(event.target) && !menuDropdown.contains(event.target)) {
+        menuDropdown.classList.remove('show');
+      }
+    });
+  }
+
+  // Check authentication and show/hide menu options
+  try {
+    const res = await fetch('/check-auth', { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.authenticated) {
+      // User is logged in - show user options, hide login link
+      if (menuLoginLink) menuLoginLink.style.display = 'none';
+      menuUserOptions.forEach(el => el.style.display = 'block');
+
+      // Load unread message count for menu badge
+      try {
+        const msgRes = await fetch('/messages/client/unread-count', { credentials: 'include' });
+        const msgData = await msgRes.json();
+        if (msgData.success && msgData.unreadCount > 0 && menuMessageBadge) {
+          menuMessageBadge.textContent = msgData.unreadCount;
+          menuMessageBadge.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Failed to load message count for menu:', err);
+      }
+    } else {
+      // User is not logged in - show login link, hide user options
+      if (menuLoginLink) menuLoginLink.style.display = 'block';
+      menuUserOptions.forEach(el => el.style.display = 'none');
+    }
+  } catch (err) {
+    console.error('Auth check failed:', err);
+  }
+
+  // Logout handler for menu
+  if (menuLogoutBtn) {
+    menuLogoutBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      try {
+        await fetch('/logout', { method: 'POST', credentials: 'include' });
+        window.location.href = '/login.html';
+      } catch (err) {
+        console.error('Logout failed:', err);
+        window.location.href = '/login.html';
+      }
+    });
+  }
+});
 </script>
 
 <script src="js/mobile-menu.js"></script>
