@@ -200,82 +200,306 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Featured Professionals Carousel */
-.carousel-container {
+/* 3D Professional Carousel */
+.carousel-3d-container {
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #f5f3f0 0%, #e8e4df 100%);
+  overflow: hidden;
+  width: 100%;
+}
+
+.carousel-3d {
   position: relative;
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 60px;
-}
-
-.pro-grid {
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding: 1rem 0;
-}
-
-.pro-grid::-webkit-scrollbar {
-  display: none;
-}
-
-.pro-grid > a {
-  text-decoration: none;
-  color: inherit;
-  flex-shrink: 0;
-}
-
-.carousel-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: white;
-  border: 2px solid #228B22;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  cursor: pointer;
+  height: 500px;
+  perspective: 1200px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  color: #228B22;
-  transition: all 0.3s ease;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.carousel-btn:hover {
+.carousel-3d-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.carousel-card {
+  position: absolute;
+  width: 320px;
+  height: 450px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+  overflow: hidden;
+  left: 50%;
+  top: 50%;
+  margin-left: -160px;
+  margin-top: -225px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.carousel-card.center {
+  transform: translateX(0) translateZ(0) rotateY(0deg) scale(1);
+  z-index: 10;
+  opacity: 1;
+}
+
+.carousel-card.position-1 {
+  transform: translateX(350px) translateZ(-150px) rotateY(-25deg) scale(0.85);
+  z-index: 5;
+  opacity: 0.7;
+}
+
+.carousel-card.position--1 {
+  transform: translateX(-350px) translateZ(-150px) rotateY(25deg) scale(0.85);
+  z-index: 5;
+  opacity: 0.7;
+}
+
+.carousel-card:not(.center):not(.position-1):not(.position--1) {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(500px) translateZ(-400px) rotateY(-45deg) scale(0.5);
+}
+
+.carousel-card:hover.center {
+  transform: translateX(0) translateZ(20px) rotateY(0deg) scale(1.02);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  background: white;
+  border: 2px solid #228B22;
+  border-radius: 50%;
+  font-size: 2rem;
+  color: #228B22;
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.carousel-nav:hover {
   background: #228B22;
   color: white;
   transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-.carousel-btn:active {
-  transform: translateY(-50%) scale(0.95);
+.carousel-nav.prev {
+  left: 2rem;
 }
 
-.carousel-btn.prev {
-  left: 0;
+.carousel-nav.next {
+  right: 2rem;
 }
 
-.carousel-btn.next {
-  right: 0;
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.carousel-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ddd;
+  border: 2px solid #ccc;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.carousel-indicator:hover {
+  transform: scale(1.2);
+  background: #aaa;
+}
+
+.carousel-indicator.active {
+  background: #228B22;
+  border-color: #228B22;
+  transform: scale(1.3);
+}
+
+@media (max-width: 1024px) {
+  .carousel-3d {
+    height: 450px;
+  }
+  .carousel-card {
+    width: 280px;
+    height: 400px;
+    margin-left: -140px;
+    margin-top: -200px;
+  }
+  .carousel-card.position-1 {
+    transform: translateX(300px) translateZ(-120px) rotateY(-20deg) scale(0.8);
+  }
+  .carousel-card.position--1 {
+    transform: translateX(-300px) translateZ(-120px) rotateY(20deg) scale(0.8);
+  }
 }
 
 @media (max-width: 768px) {
-  .carousel-container {
-    padding: 0 50px;
+  .carousel-3d {
+    height: 400px;
   }
-  .carousel-btn {
+  .carousel-card {
+    width: 260px;
+    height: 380px;
+    margin-left: -130px;
+    margin-top: -190px;
+  }
+  .carousel-card.position-1 {
+    transform: translateX(240px) translateZ(-100px) rotateY(-15deg) scale(0.75);
+    opacity: 0.6;
+  }
+  .carousel-card.position--1 {
+    transform: translateX(-240px) translateZ(-100px) rotateY(15deg) scale(0.75);
+    opacity: 0.6;
+  }
+  .carousel-nav {
     width: 40px;
     height: 40px;
-    font-size: 20px;
+    font-size: 1.5rem;
+  }
+  .carousel-nav.prev {
+    left: 0.5rem;
+  }
+  .carousel-nav.next {
+    right: 0.5rem;
   }
 }
+
+@media (max-width: 480px) {
+  .carousel-3d-container {
+    padding: 2rem 0.5rem;
+  }
+  .carousel-3d {
+    height: 450px;
+  }
+  .carousel-card {
+    width: 90%;
+    max-width: 320px;
+    height: 420px;
+    margin-left: calc(-45%);
+    margin-top: -210px;
+  }
+  .carousel-card.position-1,
+  .carousel-card.position--1 {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(1000px);
+  }
+  .carousel-nav.prev {
+    left: 0.25rem;
+  }
+  .carousel-nav.next {
+    right: 0.25rem;
+  }
+}
+
+/* Card Content Styles */
+.card-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-bottom: 3px solid #228B22;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.carousel-card:hover .card-image {
+  transform: scale(1.1);
+}
+
+.card-content {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.card-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.card-specialty {
+  font-size: 1rem;
+  color: #228B22;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.card-location {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+}
+
+.card-experience {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0 0 1rem 0;
+}
+
+.card-rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.rating-number {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.rating-stars {
+  color: #ffd700;
+  font-size: 1rem;
+  letter-spacing: 2px;
+}
+
+.review-count {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.no-reviews {
+  color: #999;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
 .pro-card {
   background: #fff;
   border-radius: 12px;
@@ -473,14 +697,17 @@
 </section>
 
 <!-- Featured Professionals -->
-<section class="featured">
-  <h2 id="featuredTitle">Top Rated Professionals</h2>
-  <div class="carousel-container">
-    <button class="carousel-btn prev" id="prevBtn" aria-label="Previous">‹</button>
-    <div class="pro-grid" id="proGrid">
+<section class="carousel-3d-container">
+  <h2 id="featuredTitle" style="text-align: center; font-size: 2.5rem; color: #333; margin-bottom: 3rem; font-weight: 700;">Top Rated Professionals</h2>
+  <div class="carousel-3d">
+    <div class="carousel-3d-track" id="carouselTrack">
       <!-- Top professionals will be dynamically loaded here -->
     </div>
-    <button class="carousel-btn next" id="nextBtn" aria-label="Next">›</button>
+    <button class="carousel-nav prev" id="prevBtn" aria-label="Previous professional">‹</button>
+    <button class="carousel-nav next" id="nextBtn" aria-label="Next professional">›</button>
+  </div>
+  <div class="carousel-indicators" id="carouselIndicators">
+    <!-- Indicators will be added dynamically -->
   </div>
 </section>
 
@@ -623,7 +850,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadFeaturedPros() {
-    const container = document.getElementById('proGrid');
+    const container = document.getElementById('carouselTrack');
+    const indicatorsContainer = document.getElementById('carouselIndicators');
     if (!container) return;
     
     container.innerHTML = '<p style="text-align:center;">Loading...</p>';
@@ -691,40 +919,126 @@ document.addEventListener('DOMContentLoaded', () => {
           ? '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars)
           : '☆☆☆☆☆'; // Show empty stars if no reviews
 
-        const verifiedBadge = worker.is_verified ? '<span class="verified-badge">✓ Verified</span>' : '';
-
-        const proCard = document.createElement('a');
-        proCard.href = `profile.html?id=${worker.id}`;
-
         // Display location: primary_suburb + province (new format), fallback to area
         const location = worker.primary_suburb && worker.province
           ? `${worker.primary_suburb}, ${worker.province}`
           : (worker.primary_suburb || worker.area || 'Location not set');
 
+        const proCard = document.createElement('a');
+        proCard.href = `profile.html?id=${worker.id}`;
+        proCard.className = 'carousel-card';
+
         const ratingDisplay = rating > 0
-          ? `<div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-               <span style="font-weight: 600; color: #333;">${rating}</span>
-               <span>${stars}</span>
-               <span style="font-size: 0.85rem; color: #666;">(${reviewCount})</span>
+          ? `<div class="card-rating">
+               <span class="rating-number">${rating}</span>
+               <span class="rating-stars">${stars}</span>
+               <span class="review-count">(${reviewCount})</span>
              </div>`
-          : `<div style="color: #999; font-size: 0.9rem;">No reviews yet</div>`;
+          : `<div class="no-reviews">No reviews yet</div>`;
 
         proCard.innerHTML = `
-          <div class="pro-card">
-            ${worker.distance ? `<div class="distance-badge">${worker.distance} km away</div>` : ''}
-            <img src="${worker.image || 'images/default-profile.svg'}" alt="${worker.name}">
-            <h3>${worker.name} ${verifiedBadge}</h3>
-            <p>${worker.speciality} • ${location}</p>
-            <p style="font-size:0.85rem; color:#666;">${worker.experience || 'N/A'} years experience</p>
+          <div class="card-image-wrapper">
+            <img src="${worker.image || 'images/default-profile.svg'}" alt="${worker.name}" class="card-image">
+            ${worker.is_verified ? '<span class="verified-badge">Verified</span>' : ''}
+          </div>
+          <div class="card-content">
+            <h3 class="card-name">${worker.name}</h3>
+            <p class="card-specialty">${worker.speciality}</p>
+            <p class="card-location">${location}</p>
+            <p class="card-experience">${worker.experience || 'N/A'} years experience</p>
             ${ratingDisplay}
           </div>
         `;
         container.appendChild(proCard);
       }
+
+      // Initialize carousel after loading all cards
+      initCarousel(workers.length);
     } catch (err) {
       console.error('Failed to load featured professionals', err);
       container.innerHTML = '<p style="color:red; text-align:center;">Unable to load professionals.</p>';
     }
+  }
+
+  // Carousel functionality
+  let currentIndex = 0;
+  let isAnimating = false;
+  let totalCards = 0;
+
+  function initCarousel(cardCount) {
+    totalCards = cardCount;
+    const indicatorsContainer = document.getElementById('carouselIndicators');
+
+    // Create indicators
+    if (indicatorsContainer && totalCards > 1) {
+      indicatorsContainer.innerHTML = '';
+      for (let i = 0; i < totalCards; i++) {
+        const indicator = document.createElement('button');
+        indicator.className = `carousel-indicator ${i === 0 ? 'active' : ''}`;
+        indicator.setAttribute('aria-label', `Go to slide ${i + 1}`);
+        indicator.addEventListener('click', () => goToSlide(i));
+        indicatorsContainer.appendChild(indicator);
+      }
+    }
+
+    // Set initial positions
+    updateCardPositions();
+
+    // Auto-rotate every 4 seconds
+    setInterval(() => {
+      if (!isAnimating && totalCards > 1) {
+        nextSlide();
+      }
+    }, 4000);
+  }
+
+  function getCardPosition(index) {
+    const diff = index - currentIndex;
+    let position = diff;
+
+    if (position > totalCards / 2) position -= totalCards;
+    if (position < -totalCards / 2) position += totalCards;
+
+    return position;
+  }
+
+  function updateCardPositions() {
+    const cards = document.querySelectorAll('.carousel-card');
+    const indicators = document.querySelectorAll('.carousel-indicator');
+
+    cards.forEach((card, index) => {
+      const position = getCardPosition(index);
+      card.className = `carousel-card ${position === 0 ? 'center' : ''} position-${position}`;
+      card.style.setProperty('--position', position);
+    });
+
+    indicators.forEach((indicator, index) => {
+      indicator.classList.toggle('active', index === currentIndex);
+    });
+  }
+
+  function nextSlide() {
+    if (isAnimating || totalCards === 0) return;
+    isAnimating = true;
+    currentIndex = (currentIndex + 1) % totalCards;
+    updateCardPositions();
+    setTimeout(() => isAnimating = false, 600);
+  }
+
+  function prevSlide() {
+    if (isAnimating || totalCards === 0) return;
+    isAnimating = true;
+    currentIndex = (currentIndex - 1 + totalCards) % totalCards;
+    updateCardPositions();
+    setTimeout(() => isAnimating = false, 600);
+  }
+
+  function goToSlide(index) {
+    if (isAnimating || index === currentIndex) return;
+    isAnimating = true;
+    currentIndex = index;
+    updateCardPositions();
+    setTimeout(() => isAnimating = false, 600);
   }
 
   loadFeaturedPros();
@@ -769,36 +1083,16 @@ document.addEventListener('DOMContentLoaded', () => {
   loadUnreadMessageCount();
   setInterval(loadUnreadMessageCount, 30000);
 
-  // Carousel Navigation
-  const proGrid = document.getElementById('proGrid');
+  // Carousel Navigation Buttons
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
 
-  if (prevBtn && nextBtn && proGrid) {
-    prevBtn.addEventListener('click', () => {
-      const cardWidth = proGrid.querySelector('a')?.offsetWidth || 220;
-      proGrid.scrollBy({ left: -(cardWidth + 24), behavior: 'smooth' });
-    });
+  if (prevBtn) {
+    prevBtn.addEventListener('click', prevSlide);
+  }
 
-    nextBtn.addEventListener('click', () => {
-      const cardWidth = proGrid.querySelector('a')?.offsetWidth || 220;
-      proGrid.scrollBy({ left: cardWidth + 24, behavior: 'smooth' });
-    });
-
-    // Touch/swipe support for mobile
-    let startX = 0;
-    let scrollLeft = 0;
-
-    proGrid.addEventListener('touchstart', (e) => {
-      startX = e.touches[0].pageX;
-      scrollLeft = proGrid.scrollLeft;
-    });
-
-    proGrid.addEventListener('touchmove', (e) => {
-      const x = e.touches[0].pageX;
-      const walk = (startX - x) * 2;
-      proGrid.scrollLeft = scrollLeft + walk;
-    });
+  if (nextBtn) {
+    nextBtn.addEventListener('click', nextSlide);
   }
 });
 </script>
