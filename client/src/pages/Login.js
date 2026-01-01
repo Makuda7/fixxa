@@ -103,7 +103,9 @@ const Login = () => {
       <div className="login-card">
         {/* Logo/Header */}
         <div className="login-header">
-          <h1 className="login-logo">Fixxa</h1>
+          <Link to="/" className="login-logo-link">
+            <h1 className="login-logo">Fixxa</h1>
+          </Link>
           <p className="login-tagline">Sign in to continue</p>
         </div>
 

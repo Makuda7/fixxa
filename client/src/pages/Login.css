@@ -24,6 +24,16 @@
   margin-bottom: 2rem;
 }
 
+.login-logo-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.login-logo-link:hover {
+  opacity: 0.8;
+}
+
 .login-logo {
   font-size: 2.5rem;
   font-weight: 700;

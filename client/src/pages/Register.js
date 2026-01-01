@@ -133,7 +133,9 @@ const Register = () => {
   return (
     <div className="register-container">
       <div className="register-card">
-        <h1>Create Account</h1>
+        <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <h1>Create Account</h1>
+        </Link>
         <p className="subtitle">Join Fixxa Today</p>
 
         <form onSubmit={handleSubmit}>
