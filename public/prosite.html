@@ -532,7 +532,7 @@ tr.cancelled-row td {
 
 <!-- Header -->
 <header class="header">
-<div class="logo"><img src="images/fixxa-logo-new.png" alt="Fixxa Logo"></div>
+<div class="logo"><img src="images/fixxa-logo.png" alt="Fixxa Logo"></div>
 <button id="sidebarToggle">☰</button>
 <nav class="nav-links" style="display:flex; align-items:center; gap:1rem;">
 <div id="headerProfilePic" style="width:40px; height:40px; border-radius:50%; background:#f0f0f0; overflow:hidden; border:2px solid white; display:flex; align-items:center; justify-content:center;">
@@ -3934,7 +3934,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if('Notification' in window && Notification.permission === 'granted') {
         new Notification('New Booking Request', {
           body: `Client wants to ${data.requestType} their booking`,
-          icon: '/images/fixxa-logo-new.png'
+          icon: '/images/fixxa-logo.png'
         });
       }
     }
