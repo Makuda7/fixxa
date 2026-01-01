@@ -355,9 +355,11 @@ app.post('/api/upload', requireAuth, documentUpload.single('file'), async (req, 
 });
 
 // Explicitly serve public HTML pages BEFORE mounting API routes
+// Note: Pages removed from this list will be handled by React router
+// Migrated to React: login.html, register.html, service.html, aboutus.html
 const publicHtmlPages = [
-  'reset-password.html', 'forgot-password.html', 'login.html', 'register.html',
-  'aboutus.html', 'service.html', 'terms.html', 'privacy.html', 'safety.html',
+  'reset-password.html', 'forgot-password.html',
+  'terms.html', 'privacy.html', 'safety.html',
   'join.html', 'admin.html', 'proLogin.html'
 ];
 
