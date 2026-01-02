@@ -373,11 +373,19 @@ publicHtmlPages.forEach(page => {
   });
 });
 
-// Serve public folder for other static assets (CSS, images, etc.)
+// Serve ONLY non-HTML assets from public folder (images, favicons, admin CSS/JS)
+// HTML files must be explicitly whitelisted in publicHtmlPages array above
 app.use(express.static('public', {
   setHeaders: (res, filePath) => {
-    // Don't cache HTML OR CSS files to avoid cache issues
-    if (filePath.endsWith('.html') || filePath.endsWith('.css') || filePath.endsWith('.js')) {
+    // Block ALL .html files from being served via express.static
+    // This prevents old HTML files from overriding React routes
+    if (filePath.endsWith('.html')) {
+      // Return 404 for HTML files not in the whitelist
+      return res.status(404).send('HTML file not found - use React route');
+    }
+
+    // Don't cache CSS/JS files to avoid cache issues
+    if (filePath.endsWith('.css') || filePath.endsWith('.js')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
@@ -387,7 +395,10 @@ app.use(express.static('public', {
     else if (filePath.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/i)) {
       res.setHeader('Cache-Control', 'public, max-age=604800');
     }
-  }
+  },
+  // Only serve these file types from public folder
+  index: false, // Disable index.html auto-serving
+  extensions: false // Disable automatic file extension matching
 }));
 
 // Mount routes
@@ -1158,16 +1169,19 @@ async function startServer() {
       const fs = require('fs');
 
       // Check if the requested file exists in public folder
+      // BUT: Block HTML files - they must go through React router
       const publicPath = path.join(__dirname, 'public', req.path);
-      if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
-        // Serve the public file
+      if (fs.existsSync(publicPath) &&
+          fs.statSync(publicPath).isFile() &&
+          !req.path.endsWith('.html')) {
+        // Serve the public file (images, CSS, JS, etc.)
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         return res.sendFile(publicPath);
       }
 
-      // Otherwise serve React app
+      // Otherwise serve React app (this handles ALL HTML routes)
       // Always serve fresh HTML - never cache
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
