@@ -103,7 +103,6 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
                       <div className="placeholder-initial">{pro.name?.charAt(0) || '?'}</div>
                     </div>
                     {pro.is_verified && <div className="verified-badge">Verified</div>}
-                    {pro.id_verified && <div className="certified-badge">ID Verified</div>}
                   </div>
 
                   <div className="card-content">
