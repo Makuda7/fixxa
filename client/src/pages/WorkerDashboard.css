@@ -1,54 +1,12 @@
 /* Dashboard Main Container */
 .dashboard {
-  min-height: 100vh;
-  background: #f4f4f4;
+  min-height: calc(100vh - 73px); /* Account for header height */
+  background: #f5f5f5;
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
-}
-
-/* Dashboard Header */
-.dashboard-header {
-  background: linear-gradient(to right, forestgreen 0%, rgba(34, 139, 34, 0.8) 100%);
-  color: white;
-  padding: 1.5rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.dashboard-header h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 600;
-}
-
-.dashboard-header p {
-  margin: 0.25rem 0 0 0;
-  opacity: 0.9;
-  font-size: 0.95rem;
-}
-
-.btn-logout {
-  background: white;
-  color: forestgreen;
-  border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-logout:hover {
-  background: #f0f0f0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding-top: 0;
 }
 
 /* Registration Completion Banner */

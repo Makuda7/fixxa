@@ -6,6 +6,7 @@ import PortfolioGallery from '../components/PortfolioGallery';
 import DashboardStats from '../components/DashboardStats';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import Messages from '../components/Messages';
+import Header from '../components/Header';
 import './WorkerDashboard.css';
 
 const WorkerDashboard = () => {
@@ -610,19 +611,9 @@ const WorkerDashboard = () => {
   }
 
   return (
-    <div className="dashboard">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-left">
-          <h1>Worker Dashboard</h1>
-          <p>Welcome back, {profile?.name || user?.name}!</p>
-        </div>
-        <div className="header-right">
-          <button className="btn-logout" onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </header>
+    <>
+      <Header />
+      <div className="dashboard">
 
       {/* Registration Completion Banner */}
       {profile && !profile.registration_complete && (
@@ -2266,6 +2257,7 @@ const WorkerDashboard = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
