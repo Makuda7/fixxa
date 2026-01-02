@@ -107,16 +107,9 @@
   transform: translateY(0);
 }
 
-/* Navigation Tabs */
+/* Navigation Tabs - Hidden, navigation now in burger menu */
 .dashboard-nav {
-  background: white;
-  display: flex;
-  padding: 0 2rem;
-  border-bottom: 2px solid #e0e0e0;
-  overflow-x: auto;
-  position: sticky;
-  top: 73px; /* Updated to match Header height */
-  z-index: 99;
+  display: none;
 }
 
 .dashboard-nav button {
