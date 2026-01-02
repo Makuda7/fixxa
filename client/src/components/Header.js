@@ -6,7 +6,7 @@ import './Header.css';
 const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -33,11 +33,7 @@ const Header = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
-    setShowMobileMenu(false);
-  };
-
-  const closeMobileMenu = () => {
-    setShowMobileMenu(false);
+    setShowUserDropdown(false);
   };
 
   return (
@@ -48,24 +44,7 @@ const Header = () => {
         </Link>
       </div>
 
-      {/* Burger Menu Button */}
-      <button
-        className={`burger-menu ${showMobileMenu ? 'active' : ''}`}
-        onClick={() => setShowMobileMenu(!showMobileMenu)}
-        aria-label="Toggle menu"
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      {/* Mobile Menu Overlay */}
-      {showMobileMenu && (
-        <div className="mobile-menu-overlay" onClick={closeMobileMenu}></div>
-      )}
-
-      {/* Desktop Navigation Links */}
-      <nav className="nav-links desktop-nav">
+      <nav className="nav-links">
         <Link to="/">Find Service</Link>
         <Link to="/about">About Us</Link>
         <Link to="/join">Join Our Team</Link>
@@ -74,84 +53,22 @@ const Header = () => {
           <Link to="/login" className="login-link">Log in / Register</Link>
         ) : (
           <>
-            {/* Messages Icon */}
-            <Link to="/messages" className="inbox-icon-link" title="Messages">
-              <span className="inbox-icon">✉️</span>
+            <Link to="/messages" className="nav-link-with-badge">
+              Messages
               {unreadCount > 0 && (
-                <span className="inbox-notification-dot"></span>
+                <span className="nav-notification-badge">{unreadCount}</span>
               )}
             </Link>
+            <Link to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'}>
+              Profile
+            </Link>
+            <Link to="/settings">Settings</Link>
+            <button className="logout-btn" onClick={handleLogout}>
+              Log out
+            </button>
           </>
         )}
       </nav>
-
-      {/* Mobile Burger Menu */}
-      <div className={`mobile-menu ${showMobileMenu ? 'mobile-active' : ''}`}>
-        <div className="mobile-menu-header">
-          {isAuthenticated && (
-            <div className="mobile-user-greeting">
-              <div className="user-avatar">
-                {(user?.name || 'User').charAt(0).toUpperCase()}
-              </div>
-              <div className="user-info">
-                <span className="user-name">{user?.name || 'User'}</span>
-                <span className="user-type">{user?.type === 'professional' ? 'Professional' : 'Client'}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mobile-menu-links">
-          <Link to="/" onClick={closeMobileMenu}>
-            <span className="menu-icon">🏠</span>
-            Find Service
-          </Link>
-          <Link to="/about" onClick={closeMobileMenu}>
-            <span className="menu-icon">ℹ️</span>
-            About Us
-          </Link>
-          <Link to="/join" onClick={closeMobileMenu}>
-            <span className="menu-icon">👷</span>
-            Join Our Team
-          </Link>
-
-          {isAuthenticated ? (
-            <>
-              <div className="menu-divider"></div>
-              <Link to="/messages" onClick={closeMobileMenu}>
-                <span className="menu-icon">✉️</span>
-                Messages
-                {unreadCount > 0 && (
-                  <span className="menu-notification-badge">{unreadCount}</span>
-                )}
-              </Link>
-              <Link
-                to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'}
-                onClick={closeMobileMenu}
-              >
-                <span className="menu-icon">👤</span>
-                Profile
-              </Link>
-              <Link to="/settings" onClick={closeMobileMenu}>
-                <span className="menu-icon">⚙️</span>
-                Settings
-              </Link>
-              <div className="menu-divider"></div>
-              <button className="menu-logout-btn" onClick={handleLogout}>
-                <span className="menu-icon">🚪</span>
-                Log out
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="menu-divider"></div>
-              <Link to="/login" className="menu-login-btn" onClick={closeMobileMenu}>
-                Log in / Register
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
     </header>
   );
 };
