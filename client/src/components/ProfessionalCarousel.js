@@ -86,11 +86,37 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
               >
                 <Link to={`/profile?id=${pro.id}`} className="card-link">
                   <div className="card-image-wrapper">
-                    {/* BLANK IMAGE FOR TESTING */}
+                    {pro.profile_photo_url && (
+                      <img
+                        src={pro.profile_photo_url}
+                        alt={`${pro.name}'s profile`}
+                        className="card-image"
+                        loading="lazy"
+                      />
+                    )}
+                    {pro.is_verified && <div className="verified-badge">Verified</div>}
+                    {pro.id_verified && <div className="certified-badge">ID Verified</div>}
                   </div>
 
                   <div className="card-content">
-                    {/* BLANK CONTENT FOR TESTING */}
+                    <h3 className="card-name">{pro.name}</h3>
+                    <p className="card-specialty">{pro.speciality || 'General Services'}</p>
+                    {pro.city && <p className="card-location">📍 {pro.city}</p>}
+                    {pro.years_of_experience && (
+                      <p className="card-experience">
+                        {pro.years_of_experience} {pro.years_of_experience === 1 ? 'year' : 'years'} experience
+                      </p>
+                    )}
+
+                    {rating > 0 ? (
+                      <div className="card-rating">
+                        <span className="rating-number">{rating.toFixed(1)}</span>
+                        <span className="rating-stars">{stars}</span>
+                        <span className="review-count">({pro.review_count || 0})</span>
+                      </div>
+                    ) : (
+                      <p className="no-reviews">No reviews yet</p>
+                    )}
                   </div>
                 </Link>
               </div>
