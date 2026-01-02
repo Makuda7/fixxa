@@ -15,10 +15,25 @@ The following pages are now served by the React application and should **NOT** b
 - `aboutus.html` → React: `/about` (client/src/pages/About.js)
 - `profile.html` → React: `/profile` (client/src/pages/Profile.js)
 - `prosite.html` → React: `/worker-dashboard` (client/src/pages/WorkerDashboard.js)
+- `forgot-password.html` → React: `/forgot-password` (client/src/pages/ForgotPassword.js)
+- `reset-password.html` → React: `/reset-password` (client/src/pages/ResetPassword.js)
+- `resend-verification.html` → React: `/resend-verification` (client/src/pages/ResendVerification.js)
+- `complete-registration.html` → React: `/complete-registration` (client/src/pages/CompleteRegistration.js)
+- `contact.html` → React: `/contact` (client/src/pages/Contact.js)
+- `support.html` → React: `/support` (client/src/pages/Support.js)
+- `faq.html` → React: `/faq` (client/src/pages/FAQ.js)
+- `join.html` → React: `/join` (client/src/pages/Join.js)
+- `messages.html` → React: `/messages` (client/src/pages/Messages.js)
+- `settings.html` → React: `/settings` (client/src/pages/Settings.js)
+- `reviews.html` → React: `/reviews` (client/src/pages/Reviews.js)
+- `terms.html` → React: `/terms` (client/src/pages/Terms.js)
+- `privacy.html` → React: `/privacy` (client/src/pages/Privacy.js)
+- `safety.html` → React: `/safety` (client/src/pages/Safety.js)
 
 ## Migration Dates
 - Login, Register, Service, About: January 1, 2026
-- Homepage, Profile, Worker Dashboard: January 2, 2026
+- Homepage, Profile, Worker Dashboard: January 2, 2026 (morning)
+- All other pages (14 files): January 2, 2026 (cleanup)
 
 ## Why These Files Are Archived
 
