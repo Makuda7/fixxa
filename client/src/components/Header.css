@@ -189,6 +189,25 @@
   margin: 0.5rem 0;
 }
 
+.menu-link-with-badge {
+  position: relative;
+}
+
+.menu-notification-badge {
+  position: absolute;
+  top: 50%;
+  right: 1.25rem;
+  transform: translateY(-50%);
+  background: #dc3545;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+}
+
 /* Responsive - Mobile adjustments */
 @media (max-width: 768px) {
   .nav-links {

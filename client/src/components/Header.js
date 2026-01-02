@@ -85,21 +85,43 @@ const Header = () => {
               <div className="menu-overlay" onClick={closeDropdown}></div>
               <div className="menu-dropdown">
                 {!isAuthenticated ? (
-                  <Link to="/login" className="menu-login-link" onClick={closeDropdown}>
-                    Log in / Register
-                  </Link>
+                  <>
+                    <Link to="/login" className="menu-login-link" onClick={closeDropdown}>
+                      Log in / Register
+                    </Link>
+                    <div className="menu-divider"></div>
+                    <Link to="/contact" onClick={closeDropdown}>Contact Us</Link>
+                    <Link to="/faq" onClick={closeDropdown}>FAQ</Link>
+                    <Link to="/support" onClick={closeDropdown}>Feedback</Link>
+                    <Link to="/terms" onClick={closeDropdown}>Terms and Conditions</Link>
+                    <Link to="/safety" onClick={closeDropdown}>Safety and Security</Link>
+                    <Link to="/privacy" onClick={closeDropdown}>Privacy Policy</Link>
+                  </>
                 ) : (
-                  <button className="menu-logout-link" onClick={handleLogout}>
-                    Log out
-                  </button>
+                  <>
+                    <Link to="/messages" className="menu-link-with-badge" onClick={closeDropdown}>
+                      Messages
+                      {unreadCount > 0 && (
+                        <span className="menu-notification-badge">{unreadCount}</span>
+                      )}
+                    </Link>
+                    <Link to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'} onClick={closeDropdown}>
+                      Profile
+                    </Link>
+                    <Link to="/settings" onClick={closeDropdown}>Settings</Link>
+                    <div className="menu-divider"></div>
+                    <Link to="/contact" onClick={closeDropdown}>Contact Us</Link>
+                    <Link to="/faq" onClick={closeDropdown}>FAQ</Link>
+                    <Link to="/support" onClick={closeDropdown}>Feedback</Link>
+                    <Link to="/terms" onClick={closeDropdown}>Terms and Conditions</Link>
+                    <Link to="/safety" onClick={closeDropdown}>Safety and Security</Link>
+                    <Link to="/privacy" onClick={closeDropdown}>Privacy Policy</Link>
+                    <div className="menu-divider"></div>
+                    <button className="menu-logout-link" onClick={handleLogout}>
+                      Log out
+                    </button>
+                  </>
                 )}
-                <div className="menu-divider"></div>
-                <Link to="/contact" onClick={closeDropdown}>Contact Us</Link>
-                <Link to="/faq" onClick={closeDropdown}>FAQ</Link>
-                <Link to="/support" onClick={closeDropdown}>Feedback</Link>
-                <Link to="/terms" onClick={closeDropdown}>Terms and Conditions</Link>
-                <Link to="/safety" onClick={closeDropdown}>Safety and Security</Link>
-                <Link to="/privacy" onClick={closeDropdown}>Privacy Policy</Link>
               </div>
             </>
           )}
