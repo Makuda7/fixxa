@@ -53,7 +53,7 @@ const Header = () => {
         <Link to="/about">About Us</Link>
         <Link to="/join">Join Our Team</Link>
 
-        {isAuthenticated && (
+        {isAuthenticated && user?.type !== 'professional' && (
           <>
             <Link to="/messages" className="nav-link-with-badge">
               Messages
