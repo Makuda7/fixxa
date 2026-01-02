@@ -12,9 +12,12 @@ The following pages are now served by the React application and should **NOT** b
 - `register.html` → React: `/register` (client/src/pages/Register.js)
 - `service.html` → React: `/service` (client/src/pages/Service.js)
 - `aboutus.html` → React: `/about` (client/src/pages/About.js)
+- `profile.html` → React: `/profile` (client/src/pages/Profile.js)
+- `prosite.html` → React: `/worker-dashboard` (client/src/pages/WorkerDashboard.js)
 
-## Migration Date
-January 1, 2026
+## Migration Dates
+- Login, Register, Service, About: January 1, 2026
+- Profile, Worker Dashboard: January 2, 2026
 
 ## Why These Files Are Archived
 
