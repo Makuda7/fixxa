@@ -267,9 +267,10 @@ const Home = () => {
         <ProfessionalCarousel
           professionals={workers.map(worker => ({
             ...worker,
-            profile_picture: worker.image || '/images/default-profile.svg',
+            profile_photo_url: worker.image || worker.profile_picture || '/images/default-profile.svg',
             avg_rating: worker.actualRating,
-            review_count: worker.reviewCount
+            review_count: worker.reviewCount,
+            years_of_experience: worker.experience || worker.years_of_experience
           }))}
         />
       )}
