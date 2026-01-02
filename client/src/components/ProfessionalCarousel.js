@@ -86,43 +86,11 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
               >
                 <Link to={`/profile?id=${pro.id}`} className="card-link">
                   <div className="card-image-wrapper">
-                    <img
-                      src={pro.profile_picture || '/images/default-profile.svg'}
-                      alt={pro.name}
-                      className="card-image"
-                    />
-                    {pro.is_verified && (
-                      <span className="verified-badge">Verified</span>
-                    )}
-                    {pro.approved_cert_count > 0 && (
-                      <span className="certified-badge">Certified</span>
-                    )}
+                    {/* BLANK IMAGE FOR TESTING */}
                   </div>
 
                   <div className="card-content">
-                    <h3 className="card-name">{pro.name}</h3>
-                    <p className="card-specialty">{pro.speciality}</p>
-                    <p className="card-location">
-                      {pro.primary_suburb && pro.province
-                        ? `${pro.primary_suburb}, ${pro.province}`
-                        : pro.area || 'Location not set'}
-                    </p>
-
-                    {pro.experience && (
-                      <p className="card-experience">
-                        {pro.experience} years experience
-                      </p>
-                    )}
-
-                    {rating > 0 ? (
-                      <div className="card-rating">
-                        <span className="rating-number">{rating.toFixed(1)}</span>
-                        <span className="rating-stars">{stars}</span>
-                        <span className="review-count">({pro.review_count || 0})</span>
-                      </div>
-                    ) : (
-                      <div className="no-reviews">No reviews yet</div>
-                    )}
+                    {/* BLANK CONTENT FOR TESTING */}
                   </div>
                 </Link>
               </div>
