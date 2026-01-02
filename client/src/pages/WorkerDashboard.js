@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { workerAPI, certificationsAPI } from '../services/api';
@@ -12,7 +13,17 @@ import './WorkerDashboard.css';
 const WorkerDashboard = () => {
   const { user, logout } = useAuth();
   const socket = useSocket();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Handle tab from URL query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

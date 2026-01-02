@@ -110,12 +110,27 @@ const Header = () => {
                     </Link>
                     <Link to="/settings" onClick={closeDropdown}>Settings</Link>
                     <div className="menu-divider"></div>
-                    <Link to="/contact" onClick={closeDropdown}>Contact Us</Link>
-                    <Link to="/faq" onClick={closeDropdown}>FAQ</Link>
-                    <Link to="/support" onClick={closeDropdown}>Feedback</Link>
-                    <Link to="/terms" onClick={closeDropdown}>Terms and Conditions</Link>
-                    <Link to="/safety" onClick={closeDropdown}>Safety and Security</Link>
-                    <Link to="/privacy" onClick={closeDropdown}>Privacy Policy</Link>
+
+                    {/* Worker-specific menu items */}
+                    {user?.type === 'professional' ? (
+                      <>
+                        <Link to="/worker-dashboard?tab=getting-started" onClick={closeDropdown}>🎬 Getting Started</Link>
+                        <Link to="/worker-dashboard?tab=fixxa-tips" onClick={closeDropdown}>💡 FixxaTips</Link>
+                        <Link to="/worker-dashboard?tab=rules-guidelines" onClick={closeDropdown}>📜 Rules & Guidelines</Link>
+                        <Link to="/worker-dashboard?tab=contact-feedback" onClick={closeDropdown}>📞 Contact & Feedback</Link>
+                      </>
+                    ) : (
+                      /* Client menu items */
+                      <>
+                        <Link to="/contact" onClick={closeDropdown}>Contact Us</Link>
+                        <Link to="/faq" onClick={closeDropdown}>FAQ</Link>
+                        <Link to="/support" onClick={closeDropdown}>Feedback</Link>
+                        <Link to="/terms" onClick={closeDropdown}>Terms and Conditions</Link>
+                        <Link to="/safety" onClick={closeDropdown}>Safety and Security</Link>
+                        <Link to="/privacy" onClick={closeDropdown}>Privacy Policy</Link>
+                      </>
+                    )}
+
                     <div className="menu-divider"></div>
                     <button className="menu-logout-link" onClick={handleLogout}>
                       Log out
