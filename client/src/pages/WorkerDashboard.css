@@ -109,7 +109,7 @@
 
 /* Navigation Tabs - Hidden, navigation now in burger menu */
 .dashboard-nav {
-  display: none;
+  display: none !important;
 }
 
 .dashboard-nav button {
