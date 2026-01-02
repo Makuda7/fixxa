@@ -6,7 +6,7 @@ import './Header.css';
 const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -33,7 +33,11 @@ const Header = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
-    setShowUserDropdown(false);
+    setShowMenuDropdown(false);
+  };
+
+  const closeDropdown = () => {
+    setShowMenuDropdown(false);
   };
 
   return (
@@ -49,9 +53,7 @@ const Header = () => {
         <Link to="/about">About Us</Link>
         <Link to="/join">Join Our Team</Link>
 
-        {!isAuthenticated ? (
-          <Link to="/login" className="login-link">Log in / Register</Link>
-        ) : (
+        {isAuthenticated && (
           <>
             <Link to="/messages" className="nav-link-with-badge">
               Messages
@@ -63,11 +65,45 @@ const Header = () => {
               Profile
             </Link>
             <Link to="/settings">Settings</Link>
-            <button className="logout-btn" onClick={handleLogout}>
-              Log out
-            </button>
           </>
         )}
+
+        {/* Menu Dropdown */}
+        <div className="menu-dropdown-container">
+          <button
+            className="menu-icon-btn"
+            onClick={() => setShowMenuDropdown(!showMenuDropdown)}
+            aria-label="Menu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          {showMenuDropdown && (
+            <>
+              <div className="menu-overlay" onClick={closeDropdown}></div>
+              <div className="menu-dropdown">
+                {!isAuthenticated ? (
+                  <Link to="/login" className="menu-login-link" onClick={closeDropdown}>
+                    Log in / Register
+                  </Link>
+                ) : (
+                  <button className="menu-logout-link" onClick={handleLogout}>
+                    Log out
+                  </button>
+                )}
+                <div className="menu-divider"></div>
+                <Link to="/contact" onClick={closeDropdown}>Contact Us</Link>
+                <Link to="/faq" onClick={closeDropdown}>FAQ</Link>
+                <Link to="/support" onClick={closeDropdown}>Feedback</Link>
+                <Link to="/terms" onClick={closeDropdown}>Terms and Conditions</Link>
+                <Link to="/safety" onClick={closeDropdown}>Safety and Security</Link>
+                <Link to="/privacy" onClick={closeDropdown}>Privacy Policy</Link>
+              </div>
+            </>
+          )}
+        </div>
       </nav>
     </header>
   );
