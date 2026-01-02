@@ -86,14 +86,22 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
               >
                 <Link to={`/profile?id=${pro.id}`} className="card-link">
                   <div className="card-image-wrapper">
-                    {pro.profile_photo_url && (
+                    {pro.profile_photo_url ? (
                       <img
                         src={pro.profile_photo_url}
                         alt={`${pro.name}'s profile`}
                         className="card-image"
                         loading="lazy"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          const placeholder = e.target.parentElement.querySelector('.card-image-placeholder');
+                          if (placeholder) placeholder.style.display = 'flex';
+                        }}
                       />
-                    )}
+                    ) : null}
+                    <div className="card-image-placeholder" style={{ display: pro.profile_photo_url ? 'none' : 'flex' }}>
+                      <div className="placeholder-initial">{pro.name?.charAt(0) || '?'}</div>
+                    </div>
                     {pro.is_verified && <div className="verified-badge">Verified</div>}
                     {pro.id_verified && <div className="certified-badge">ID Verified</div>}
                   </div>
