@@ -7,7 +7,6 @@ import PortfolioGallery from '../components/PortfolioGallery';
 import DashboardStats from '../components/DashboardStats';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import Messages from '../components/Messages';
-import Header from '../components/Header';
 import './WorkerDashboard.css';
 
 const WorkerDashboard = () => {
@@ -622,9 +621,7 @@ const WorkerDashboard = () => {
   }
 
   return (
-    <>
-      <Header />
-      <div className="dashboard">
+    <div className="dashboard">
 
       {/* Registration Completion Banner */}
       {profile && !profile.registration_complete && (
@@ -2268,7 +2265,6 @@ const WorkerDashboard = () => {
         </div>
       )}
     </div>
-    </>
   );
 };
 
