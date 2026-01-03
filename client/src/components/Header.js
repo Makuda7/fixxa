@@ -108,7 +108,7 @@ const Header = () => {
                     <Link to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'} onClick={closeDropdown}>
                       Profile
                     </Link>
-                    <Link to="/settings" onClick={closeDropdown}>Settings</Link>
+                    <Link to={user?.type === 'professional' ? '/worker-dashboard?tab=profile' : '/settings'} onClick={closeDropdown}>Settings</Link>
                     <div className="menu-divider"></div>
 
                     {/* Worker-specific menu items */}
