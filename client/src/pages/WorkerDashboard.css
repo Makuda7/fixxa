@@ -472,6 +472,12 @@
   display: block;
 }
 
+.action-icon-img {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
 .action-label {
   font-size: 0.95rem;
   font-weight: 600;

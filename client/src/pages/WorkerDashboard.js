@@ -814,7 +814,7 @@ const WorkerDashboard = () => {
                   </div>
                 </div>
                 <div className="stat-card stat-earnings">
-                  <div className="stat-icon">💰</div>
+                  <img src="/images/icons-fixxa/market_14157550.png" alt="Earnings" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">R{stats.totalEarnings?.toFixed(2) || '0.00'}</div>
                     <div className="stat-label">Total Earnings</div>
@@ -831,7 +831,7 @@ const WorkerDashboard = () => {
                   className="action-tile action-bookings"
                   onClick={() => setActiveTab('bookings')}
                 >
-                  <span className="action-icon">📋</span>
+                  <img src="/images/icons-fixxa/booking_5619606.png" alt="Bookings" className="action-icon-img" />
                   <span className="action-label">Bookings</span>
                   {stats.pendingRequests > 0 && (
                     <span className="action-badge">{stats.pendingRequests}</span>
@@ -848,29 +848,22 @@ const WorkerDashboard = () => {
                   className="action-tile action-portfolio"
                   onClick={() => setActiveTab('profile')}
                 >
-                  <span className="action-icon">📸</span>
-                  <span className="action-label">Portfolio</span>
+                  <img src="/images/icons-fixxa/camera_2951182.png" alt="Portfolio" className="action-icon-img" />
+                  <span className="action-label">My Portfolio</span>
                 </button>
                 <button
                   className="action-tile action-messages"
                   onClick={() => setActiveTab('messages')}
                 >
-                  <span className="action-icon">💬</span>
+                  <img src="/images/icons-fixxa/email_7306809.png" alt="Messages" className="action-icon-img" />
                   <span className="action-label">Messages</span>
                 </button>
                 <button
                   className="action-tile action-reviews"
                   onClick={() => setActiveTab('reviews')}
                 >
-                  <span className="action-icon">⭐</span>
+                  <img src="/images/icons-fixxa/rating_8424553.png" alt="Reviews" className="action-icon-img" />
                   <span className="action-label">My Reviews</span>
-                </button>
-                <button
-                  className="action-tile action-profile"
-                  onClick={() => setActiveTab('profile')}
-                >
-                  <span className="action-icon">👤</span>
-                  <span className="action-label">Profile Settings</span>
                 </button>
               </div>
             </section>
