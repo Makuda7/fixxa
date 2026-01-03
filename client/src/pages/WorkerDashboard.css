@@ -351,32 +351,75 @@
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  transition: transform 0.2s ease;
+  border-left: 4px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .stat-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+  text-align: left;
 }
 
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: forestgreen;
-  margin: 0.5rem 0;
+  color: #333;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .stat-label {
   font-size: 0.9rem;
   color: #666;
   font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* Specific stat card colors */
+.stat-pending {
+  border-left-color: #ffc107;
+}
+
+.stat-pending:hover {
+  border-left-width: 6px;
+}
+
+.stat-active {
+  border-left-color: #17a2b8;
+}
+
+.stat-active:hover {
+  border-left-width: 6px;
+}
+
+.stat-completed {
+  border-left-color: #28a745;
+}
+
+.stat-completed:hover {
+  border-left-width: 6px;
+}
+
+.stat-earnings {
+  border-left-color: #228B22;
+}
+
+.stat-earnings:hover {
+  border-left-width: 6px;
 }
 
 /* Quick Actions Section */
