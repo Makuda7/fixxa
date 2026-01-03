@@ -841,7 +841,7 @@ const WorkerDashboard = () => {
                   className="action-tile action-schedule"
                   onClick={() => setActiveTab('bookings')}
                 >
-                  <span className="action-icon">📅</span>
+                  <img src="/images/icons-fixxa/calendar_16926328.png" alt="Schedule" className="action-icon-img" />
                   <span className="action-label">My Schedule</span>
                 </button>
                 <button
