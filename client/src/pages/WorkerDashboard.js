@@ -794,6 +794,58 @@ const WorkerDashboard = () => {
               <DashboardStats />
             </section>
 
+            {/* Quick Actions Grid */}
+            <section className="quick-actions-section">
+              <h3>Quick Actions</h3>
+              <div className="quick-actions-grid">
+                <button
+                  className="action-tile action-bookings"
+                  onClick={() => setActiveTab('bookings')}
+                >
+                  <span className="action-icon">📋</span>
+                  <span className="action-label">Bookings</span>
+                  {stats.pendingRequests > 0 && (
+                    <span className="action-badge">{stats.pendingRequests}</span>
+                  )}
+                </button>
+                <button
+                  className="action-tile action-schedule"
+                  onClick={() => setActiveTab('bookings')}
+                >
+                  <span className="action-icon">📅</span>
+                  <span className="action-label">My Schedule</span>
+                </button>
+                <button
+                  className="action-tile action-portfolio"
+                  onClick={() => setActiveTab('profile')}
+                >
+                  <span className="action-icon">📸</span>
+                  <span className="action-label">Portfolio</span>
+                </button>
+                <button
+                  className="action-tile action-messages"
+                  onClick={() => setActiveTab('messages')}
+                >
+                  <span className="action-icon">💬</span>
+                  <span className="action-label">Messages</span>
+                </button>
+                <button
+                  className="action-tile action-reviews"
+                  onClick={() => setActiveTab('reviews')}
+                >
+                  <span className="action-icon">⭐</span>
+                  <span className="action-label">My Reviews</span>
+                </button>
+                <button
+                  className="action-tile action-profile"
+                  onClick={() => setActiveTab('profile')}
+                >
+                  <span className="action-icon">👤</span>
+                  <span className="action-label">Profile Settings</span>
+                </button>
+              </div>
+            </section>
+
             {/* Client Requests (New Bookings, Reschedules, Cancellations) */}
             {bookingRequests.length > 0 && (
               <section className="requests-section">

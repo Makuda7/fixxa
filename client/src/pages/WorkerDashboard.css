@@ -379,6 +379,119 @@
   font-weight: 500;
 }
 
+/* Quick Actions Section */
+.quick-actions-section {
+  margin-bottom: 2rem;
+}
+
+.quick-actions-section h3 {
+  color: forestgreen;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.3rem;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.action-tile {
+  position: relative;
+  background: white;
+  border: none;
+  border-radius: 16px;
+  padding: 1.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 120px;
+}
+
+.action-tile:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.action-icon {
+  font-size: 2.5rem;
+  display: block;
+}
+
+.action-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.action-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #dc3545;
+  color: white;
+  border-radius: 12px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Specific action tile colors */
+.action-bookings:hover {
+  background: linear-gradient(135deg, #228B22 0%, #2d5016 100%);
+}
+
+.action-bookings:hover .action-label {
+  color: white;
+}
+
+.action-schedule:hover {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+.action-schedule:hover .action-label {
+  color: white;
+}
+
+.action-portfolio:hover {
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+}
+
+.action-portfolio:hover .action-label {
+  color: white;
+}
+
+.action-messages:hover {
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+}
+
+.action-messages:hover .action-label {
+  color: white;
+}
+
+.action-reviews:hover {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+}
+
+.action-reviews:hover .action-label {
+  color: white;
+}
+
+.action-profile:hover {
+  background: linear-gradient(135deg, #FF6B35 0%, #e65a2e 100%);
+}
+
+.action-profile:hover .action-label {
+  color: white;
+}
+
 /* Requests Section */
 .requests-section {
   margin-bottom: 2rem;
