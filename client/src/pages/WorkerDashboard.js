@@ -788,6 +788,41 @@ const WorkerDashboard = () => {
               </div>
             </section>
 
+            {/* Dashboard Statistics */}
+            <section className="stats-section">
+              <h3>Dashboard Overview</h3>
+              <div className="stats-grid">
+                <div className="stat-card stat-pending">
+                  <div className="stat-icon">📋</div>
+                  <div className="stat-content">
+                    <div className="stat-value">{stats.pendingRequests || 0}</div>
+                    <div className="stat-label">Pending Requests</div>
+                  </div>
+                </div>
+                <div className="stat-card stat-active">
+                  <div className="stat-icon">⚡</div>
+                  <div className="stat-content">
+                    <div className="stat-value">{stats.activeJobs || 0}</div>
+                    <div className="stat-label">Active Jobs</div>
+                  </div>
+                </div>
+                <div className="stat-card stat-completed">
+                  <div className="stat-icon">✅</div>
+                  <div className="stat-content">
+                    <div className="stat-value">{stats.completedJobs || 0}</div>
+                    <div className="stat-label">Completed</div>
+                  </div>
+                </div>
+                <div className="stat-card stat-earnings">
+                  <div className="stat-icon">💰</div>
+                  <div className="stat-content">
+                    <div className="stat-value">R{stats.totalEarnings?.toFixed(2) || '0.00'}</div>
+                    <div className="stat-label">Total Earnings</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Quick Actions Grid */}
             <section className="quick-actions-section">
               <h3>Quick Actions</h3>
@@ -837,41 +872,6 @@ const WorkerDashboard = () => {
                   <span className="action-icon">👤</span>
                   <span className="action-label">Profile Settings</span>
                 </button>
-              </div>
-            </section>
-
-            {/* Dashboard Statistics */}
-            <section className="stats-section">
-              <h3>Dashboard Overview</h3>
-              <div className="stats-grid">
-                <div className="stat-card stat-pending">
-                  <div className="stat-icon">📋</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.pendingRequests || 0}</div>
-                    <div className="stat-label">Pending Requests</div>
-                  </div>
-                </div>
-                <div className="stat-card stat-active">
-                  <div className="stat-icon">⚡</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.activeJobs || 0}</div>
-                    <div className="stat-label">Active Jobs</div>
-                  </div>
-                </div>
-                <div className="stat-card stat-completed">
-                  <div className="stat-icon">✅</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.completedJobs || 0}</div>
-                    <div className="stat-label">Completed</div>
-                  </div>
-                </div>
-                <div className="stat-card stat-earnings">
-                  <div className="stat-icon">💰</div>
-                  <div className="stat-content">
-                    <div className="stat-value">R{stats.totalEarnings?.toFixed(2) || '0.00'}</div>
-                    <div className="stat-label">Total Earnings</div>
-                  </div>
-                </div>
               </div>
             </section>
 
