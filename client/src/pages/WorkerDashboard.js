@@ -793,21 +793,21 @@ const WorkerDashboard = () => {
               <h3>Dashboard Overview</h3>
               <div className="stats-grid">
                 <div className="stat-card stat-pending">
-                  <div className="stat-icon">📋</div>
+                  <img src="/images/icons-fixxa/billing.png" alt="Pending" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">{stats.pendingRequests || 0}</div>
                     <div className="stat-label">Pending Requests</div>
                   </div>
                 </div>
                 <div className="stat-card stat-active">
-                  <div className="stat-icon">⚡</div>
+                  <img src="/images/icons-fixxa/suitcase.png" alt="Active" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">{stats.activeJobs || 0}</div>
                     <div className="stat-label">Active Jobs</div>
                   </div>
                 </div>
                 <div className="stat-card stat-completed">
-                  <div className="stat-icon">✅</div>
+                  <img src="/images/icons-fixxa/briefcase.png" alt="Completed" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">{stats.completedJobs || 0}</div>
                     <div className="stat-label">Completed</div>
