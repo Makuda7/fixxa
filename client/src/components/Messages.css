@@ -4,7 +4,7 @@
 .messages-container {
   display: grid;
   grid-template-columns: 380px 1fr;
-  height: calc(100vh - 200px);
+  height: 700px;
   min-height: 600px;
   background: white;
   border-radius: 16px;
