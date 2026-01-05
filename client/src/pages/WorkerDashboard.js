@@ -1517,7 +1517,12 @@ const WorkerDashboard = () => {
             {/* My Jobs Section with Filters */}
             {!loading && (
             <section className="my-jobs-section">
-              <h3>My Jobs ({bookings.length})</h3>
+              <div className="section-header-with-description">
+                <h3>My Jobs ({bookings.length})</h3>
+                <p className="section-description">
+                  View and manage all your bookings and jobs in one place
+                </p>
+              </div>
 
               {/* Filter Chips */}
               <div className="filter-chips">
@@ -1526,18 +1531,29 @@ const WorkerDashboard = () => {
                   onClick={() => setBookingsFilter('all')}
                 >
                   All
+                  <span className="filter-count">{bookings.length}</span>
                 </button>
                 <button
                   className={`filter-chip ${bookingsFilter === 'active' ? 'active' : ''}`}
                   onClick={() => setBookingsFilter('active')}
                 >
                   Active
+                  <span className="filter-count">
+                    {bookings.filter(
+                      (b) => b.status === 'Confirmed' ||
+                             b.status === 'In Progress' ||
+                             b.status === 'Awaiting Client Confirmation'
+                    ).length}
+                  </span>
                 </button>
                 <button
                   className={`filter-chip ${bookingsFilter === 'completed' ? 'active' : ''}`}
                   onClick={() => setBookingsFilter('completed')}
                 >
                   Completed
+                  <span className="filter-count">
+                    {bookings.filter((b) => b.status === 'Completed').length}
+                  </span>
                 </button>
               </div>
 
