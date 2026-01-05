@@ -834,7 +834,12 @@ const WorkerDashboard = () => {
               <div className="quick-actions-grid">
                 <button
                   className="action-tile action-bookings"
-                  onClick={() => setActiveTab('bookings')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveTab('bookings');
+                  }}
+                  type="button"
                 >
                   <img src="/images/icons-fixxa/booking_5619606.png" alt="Bookings" className="action-icon-img" />
                   <span className="action-label">Bookings</span>
@@ -844,28 +849,48 @@ const WorkerDashboard = () => {
                 </button>
                 <button
                   className="action-tile action-schedule"
-                  onClick={() => setActiveTab('bookings')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveTab('bookings');
+                  }}
+                  type="button"
                 >
                   <img src="/images/icons-fixxa/calendar_16926328.png" alt="Schedule" className="action-icon-img" />
                   <span className="action-label">My Schedule</span>
                 </button>
                 <button
                   className="action-tile action-portfolio"
-                  onClick={() => setActiveTab('profile')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveTab('profile');
+                  }}
+                  type="button"
                 >
                   <img src="/images/icons-fixxa/camera_2951182.png" alt="Portfolio" className="action-icon-img" />
                   <span className="action-label">My Portfolio</span>
                 </button>
                 <button
                   className="action-tile action-messages"
-                  onClick={() => setActiveTab('messages')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveTab('messages');
+                  }}
+                  type="button"
                 >
                   <img src="/images/icons-fixxa/email_7306809.png" alt="Messages" className="action-icon-img" />
                   <span className="action-label">Messages</span>
                 </button>
                 <button
                   className="action-tile action-reviews"
-                  onClick={() => setActiveTab('reviews')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveTab('reviews');
+                  }}
+                  type="button"
                 >
                   <img src="/images/icons-fixxa/rating_8424553.png" alt="Reviews" className="action-icon-img" />
                   <span className="action-label">My Reviews</span>
