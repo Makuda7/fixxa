@@ -98,6 +98,10 @@ const WorkerDashboard = () => {
 
   // Availability
   const [isAvailable, setIsAvailable] = useState(false);
+
+  // Profile picture dropdown
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [uploadingProfilePic, setUploadingProfilePic] = useState(false);
   const [availabilitySchedule, setAvailabilitySchedule] = useState('weekdays');
 
   // Portfolio data
@@ -588,6 +592,60 @@ const WorkerDashboard = () => {
     }
   };
 
+  const handleProfilePictureUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingProfilePic(true);
+    const formData = new FormData();
+    formData.append('profileImage', file);
+
+    try {
+      const response = await workerAPI.uploadProfilePicture(formData);
+      if (response.data.success) {
+        setProfile({ ...profile, image: response.data.imageUrl });
+        setShowProfileMenu(false);
+        alert('Profile picture updated successfully!');
+      }
+    } catch (err) {
+      console.error('Error uploading profile picture:', err);
+      alert(err.response?.data?.error || 'Failed to upload profile picture');
+    } finally {
+      setUploadingProfilePic(false);
+    }
+  };
+
+  const handleViewProfilePicture = () => {
+    if (profile?.image) {
+      window.open(profile.image, '_blank');
+    }
+    setShowProfileMenu(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showProfileMenu && !event.target.closest('.profile-image-container')) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showProfileMenu]);
+
   const viewCertification = (url) => {
     window.open(url, '_blank');
   };
@@ -857,12 +915,43 @@ const WorkerDashboard = () => {
             {/* Profile Summary Card */}
             <section className="profile-summary-card">
               <div className="profile-header">
-                <div className="profile-image">
-                  {profile?.image ? (
-                    <img src={profile.image} alt={profile.name} />
-                  ) : (
-                    <div className="profile-placeholder">
-                      {profile?.name?.charAt(0) || 'W'}
+                <div className="profile-image-container">
+                  <div
+                    className="profile-image"
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  >
+                    {profile?.image ? (
+                      <img src={profile.image} alt={profile.name} />
+                    ) : (
+                      <div className="profile-placeholder">
+                        {profile?.name?.charAt(0) || 'W'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Profile Picture Dropdown Menu */}
+                  {showProfileMenu && (
+                    <div className="profile-menu-dropdown">
+                      {profile?.image && (
+                        <button
+                          className="profile-menu-item"
+                          onClick={handleViewProfilePicture}
+                        >
+                          <span className="menu-icon">👁️</span>
+                          View Profile Picture
+                        </button>
+                      )}
+                      <label className="profile-menu-item">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProfilePictureUpload}
+                          style={{ display: 'none' }}
+                          disabled={uploadingProfilePic}
+                        />
+                        <span className="menu-icon">📷</span>
+                        {uploadingProfilePic ? 'Uploading...' : (profile?.image ? 'Change Profile Picture' : 'Upload Profile Picture')}
+                      </label>
                     </div>
                   )}
                 </div>
