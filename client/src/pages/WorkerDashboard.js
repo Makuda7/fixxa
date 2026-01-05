@@ -72,6 +72,18 @@ const WorkerDashboard = () => {
   // Reviews data
   const [reviews, setReviews] = useState([]);
 
+  // Earnings data
+  const [earningsFilter, setEarningsFilter] = useState('all'); // all, this_month, last_month, this_year
+  const [earningsSummary, setEarningsSummary] = useState({
+    total: 0,
+    thisMonth: 0,
+    lastMonth: 0,
+    thisYear: 0,
+    pendingPayments: 0,
+    completedJobs: 0,
+  });
+  const [earningsTransactions, setEarningsTransactions] = useState([]);
+
   // Stats
   const [stats, setStats] = useState({
     totalBookings: 0,
@@ -123,6 +135,13 @@ const WorkerDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Fetch earnings when filter changes or tab is earnings
+  useEffect(() => {
+    if (activeTab === 'earnings') {
+      fetchEarnings();
+    }
+  }, [earningsFilter, activeTab]);
 
   // Show welcome video modal on first visit
   useEffect(() => {
@@ -281,6 +300,30 @@ const WorkerDashboard = () => {
       }
     } catch (err) {
       console.error('Error fetching bookings:', err);
+    }
+  };
+
+  const fetchEarnings = async () => {
+    try {
+      const [summaryResponse, earningsResponse] = await Promise.all([
+        workerAPI.getEarningsSummary(),
+        workerAPI.getEarnings(earningsFilter),
+      ]);
+
+      if (summaryResponse.data.summary) {
+        setEarningsSummary(summaryResponse.data.summary);
+        // Update total earnings in stats
+        setStats((prev) => ({
+          ...prev,
+          totalEarnings: summaryResponse.data.summary.total || 0,
+        }));
+      }
+
+      if (earningsResponse.data.earnings) {
+        setEarningsTransactions(earningsResponse.data.earnings);
+      }
+    } catch (err) {
+      console.error('Error fetching earnings:', err);
     }
   };
 
@@ -866,13 +909,21 @@ const WorkerDashboard = () => {
                     <div className="stat-label">Completed</div>
                   </div>
                 </button>
-                <div className="stat-card stat-earnings">
+                <button
+                  className="stat-card stat-earnings"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    changeTab('earnings');
+                  }}
+                  type="button"
+                >
                   <img src="/images/icons-fixxa/market_14157550.png" alt="Earnings" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">R{stats.totalEarnings?.toFixed(2) || '0.00'}</div>
                     <div className="stat-label">Total Earnings</div>
                   </div>
-                </div>
+                </button>
               </div>
             </section>
 
@@ -1965,6 +2016,161 @@ const WorkerDashboard = () => {
                 })()}
               </div>
             </section>
+            )}
+          </div>
+        )}
+
+        {/* Earnings Tab */}
+        {activeTab === 'earnings' && (
+          <div className="earnings-tab">
+            {/* Show loading state */}
+            {loading && (
+              <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <div className="loading-spinner"></div>
+                <p>Loading earnings...</p>
+              </div>
+            )}
+
+            {!loading && (
+              <>
+                {/* Summary Section */}
+                <section className="earnings-summary-section">
+                  <div className="section-header-with-description">
+                    <h3>Earnings Overview</h3>
+                    <p className="section-description">
+                      {earningsTransactions.length} transaction{earningsTransactions.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+
+                  {/* Main Summary Card */}
+                  <div className="main-earnings-card">
+                    <div className="earnings-label">Total Earnings</div>
+                    <div className="earnings-amount">R{(earningsSummary.total || 0).toFixed(2)}</div>
+                    <div className="earnings-subtext">
+                      From {earningsSummary.completedJobs || 0} completed job{earningsSummary.completedJobs !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+
+                  {/* Summary Grid */}
+                  <div className="earnings-summary-grid">
+                    <div className="earnings-summary-card">
+                      <div className="summary-card-label">This Month</div>
+                      <div className="summary-card-value">R{(earningsSummary.thisMonth || 0).toFixed(2)}</div>
+                    </div>
+                    <div className="earnings-summary-card">
+                      <div className="summary-card-label">Last Month</div>
+                      <div className="summary-card-value">R{(earningsSummary.lastMonth || 0).toFixed(2)}</div>
+                    </div>
+                    <div className="earnings-summary-card">
+                      <div className="summary-card-label">This Year</div>
+                      <div className="summary-card-value">R{(earningsSummary.thisYear || 0).toFixed(2)}</div>
+                    </div>
+                    <div className="earnings-summary-card pending-card">
+                      <div className="summary-card-label">Pending</div>
+                      <div className="summary-card-value">R{(earningsSummary.pendingPayments || 0).toFixed(2)}</div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Filter Section */}
+                <section className="earnings-filter-section">
+                  <div className="filter-chips">
+                    <button
+                      className={`filter-chip ${earningsFilter === 'all' ? 'active' : ''}`}
+                      onClick={() => setEarningsFilter('all')}
+                    >
+                      All Time
+                    </button>
+                    <button
+                      className={`filter-chip ${earningsFilter === 'this_month' ? 'active' : ''}`}
+                      onClick={() => setEarningsFilter('this_month')}
+                    >
+                      This Month
+                    </button>
+                    <button
+                      className={`filter-chip ${earningsFilter === 'last_month' ? 'active' : ''}`}
+                      onClick={() => setEarningsFilter('last_month')}
+                    >
+                      Last Month
+                    </button>
+                    <button
+                      className={`filter-chip ${earningsFilter === 'this_year' ? 'active' : ''}`}
+                      onClick={() => setEarningsFilter('this_year')}
+                    >
+                      This Year
+                    </button>
+                  </div>
+                </section>
+
+                {/* Transaction History */}
+                <section className="earnings-transactions-section">
+                  <h3>Transaction History</h3>
+
+                  {earningsTransactions.length === 0 ? (
+                    <div className="no-earnings">
+                      <div className="no-earnings-icon">💰</div>
+                      <p>No earnings yet</p>
+                      <p style={{ fontSize: '0.95rem', color: '#999', marginTop: '0.5rem' }}>
+                        {earningsFilter === 'this_month'
+                          ? 'No earnings this month'
+                          : earningsFilter === 'last_month'
+                          ? 'No earnings last month'
+                          : earningsFilter === 'this_year'
+                          ? 'No earnings this year'
+                          : 'Complete jobs to start earning'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="earnings-list">
+                      {earningsTransactions.map((earning) => {
+                        const getStatusColor = (status) => {
+                          switch (status?.toLowerCase()) {
+                            case 'paid':
+                            case 'completed':
+                              return '#28a745';
+                            case 'pending':
+                              return '#ffc107';
+                            case 'processing':
+                              return '#17a2b8';
+                            default:
+                              return '#6c757d';
+                          }
+                        };
+
+                        return (
+                          <div key={earning.id} className="earning-card">
+                            <div className="earning-header">
+                              <div className="earning-info">
+                                <h4 className="earning-service">{earning.service_type || 'Service'}</h4>
+                                <p className="earning-client">Client: {earning.client_name || 'N/A'}</p>
+                                <p className="earning-date">
+                                  {new Date(earning.completed_date || earning.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })}
+                                </p>
+                              </div>
+                              <div className="earning-amount-section">
+                                <div className="earning-amount">R{Number(earning.amount || 0).toFixed(2)}</div>
+                                <span
+                                  className="earning-status-badge"
+                                  style={{ backgroundColor: getStatusColor(earning.status) }}
+                                >
+                                  {earning.status || 'Paid'}
+                                </span>
+                              </div>
+                            </div>
+                            {earning.description && (
+                              <p className="earning-description">{earning.description}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              </>
             )}
           </div>
         )}

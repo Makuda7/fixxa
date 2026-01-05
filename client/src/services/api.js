@@ -50,7 +50,8 @@ export const workerAPI = {
   getBookings: () => api.get('/workers/jobs'),
   updateBookingStatus: (bookingId, status) =>
     api.put(`/workers/bookings/${bookingId}/status`, { status }),
-  getEarnings: () => api.get('/workers/earnings'),
+  getEarnings: (filter = 'all') => api.get(`/workers/earnings?filter=${filter}`),
+  getEarningsSummary: () => api.get('/workers/earnings/summary'),
   getServiceAreas: () => api.get('/workers/service-areas'),
   updateServiceAreas: (areas) => api.put('/workers/service-areas', { areas }),
 

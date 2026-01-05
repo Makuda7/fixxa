@@ -2996,3 +2996,219 @@ button.stat-card:active {
     align-items: flex-start;
   }
 }
+
+/* ============================================
+   EARNINGS TAB STYLES
+   ============================================ */
+
+.earnings-tab {
+  padding: 2rem;
+}
+
+.earnings-summary-section {
+  margin-bottom: 2rem;
+}
+
+.main-earnings-card {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  color: white;
+  margin: 1.5rem 0;
+  box-shadow: 0 8px 24px rgba(0, 123, 255, 0.25);
+}
+
+.earnings-label {
+  font-size: 0.9rem;
+  opacity: 0.95;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.earnings-amount {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.earnings-subtext {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.earnings-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.earnings-summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.earnings-summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.earnings-summary-card.pending-card {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+.summary-card-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.summary-card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.earnings-filter-section {
+  margin-bottom: 2rem;
+}
+
+.earnings-transactions-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.earnings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.earning-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s ease;
+}
+
+.earning-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.earning-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.earning-info {
+  flex: 1;
+}
+
+.earning-service {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+}
+
+.earning-client {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.25rem 0;
+}
+
+.earning-date {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0;
+}
+
+.earning-amount-section {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.earning-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #007bff;
+}
+
+.earning-status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: capitalize;
+}
+
+.earning-description {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e8e8e8;
+}
+
+.no-earnings {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.no-earnings-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-earnings p:first-of-type {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .earnings-tab {
+    padding: 1rem;
+  }
+
+  .earnings-amount {
+    font-size: 2.5rem;
+  }
+
+  .earnings-summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .earning-header {
+    flex-direction: column;
+  }
+
+  .earning-amount-section {
+    align-items: flex-start;
+    width: 100%;
+  }
+}
