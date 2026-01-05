@@ -37,6 +37,7 @@ const WorkerDashboard = () => {
   // Bookings data
   const [bookings, setBookings] = useState([]);
   const [bookingRequests, setBookingRequests] = useState([]);
+  const [bookingsFilter, setBookingsFilter] = useState('all'); // all, active, completed
 
   // Reviews data
   const [reviews, setReviews] = useState([]);
@@ -229,18 +230,22 @@ const WorkerDashboard = () => {
     try {
       const response = await workerAPI.getBookings();
       if (response.data.success) {
-        const allBookings = response.data.bookings || [];
+        const allBookings = response.data.jobs || [];
         setBookings(allBookings);
 
         // Calculate stats
         const totalBookings = allBookings.length;
+        const activeJobs = allBookings.filter(
+          (b) => b.status === 'Confirmed' || b.status === 'In Progress'
+        ).length;
         const completedJobs = allBookings.filter(
-          (b) => b.status === 'completed'
+          (b) => b.status === 'Completed'
         ).length;
 
         setStats((prev) => ({
           ...prev,
           totalBookings,
+          activeJobs,
           completedJobs,
         }));
       }
@@ -1501,94 +1506,125 @@ const WorkerDashboard = () => {
               </section>
             )}
 
-            {/* All Bookings Section - Confirmed & Completed */}
-            <section className="bookings-management">
-              <h3>All Bookings</h3>
+            {/* My Jobs Section with Filters */}
+            <section className="my-jobs-section">
+              <h3>My Jobs</h3>
 
-              {bookings.length === 0 ? (
-                <p className="no-data">No bookings yet</p>
-              ) : (
-                <div className="bookings-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Client</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bookings.map((booking) => (
-                        <tr
-                          key={booking.id}
-                          className={
-                            booking.status === 'cancelled' ||
-                            booking.status === 'declined'
-                              ? 'cancelled-row'
-                              : ''
-                          }
+              {/* Filter Chips */}
+              <div className="filter-chips">
+                <button
+                  className={`filter-chip ${bookingsFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setBookingsFilter('all')}
+                >
+                  All
+                </button>
+                <button
+                  className={`filter-chip ${bookingsFilter === 'active' ? 'active' : ''}`}
+                  onClick={() => setBookingsFilter('active')}
+                >
+                  Active
+                </button>
+                <button
+                  className={`filter-chip ${bookingsFilter === 'completed' ? 'active' : ''}`}
+                  onClick={() => setBookingsFilter('completed')}
+                >
+                  Completed
+                </button>
+              </div>
+
+              {/* Jobs Grid */}
+              <div className="jobs-grid">
+                {(() => {
+                  // Filter bookings based on selected filter
+                  let filteredBookings = bookings;
+                  if (bookingsFilter === 'active') {
+                    filteredBookings = bookings.filter(
+                      (b) => b.status === 'Confirmed' ||
+                             b.status === 'In Progress' ||
+                             b.status === 'Awaiting Client Confirmation'
+                    );
+                  } else if (bookingsFilter === 'completed') {
+                    filteredBookings = bookings.filter((b) => b.status === 'Completed');
+                  }
+
+                  if (filteredBookings.length === 0) {
+                    return (
+                      <div className="no-jobs">
+                        <div className="no-jobs-icon">📋</div>
+                        <p>No {bookingsFilter !== 'all' ? bookingsFilter : ''} jobs yet</p>
+                        {bookingsFilter !== 'all' && (
+                          <button
+                            className="btn-view-all"
+                            onClick={() => setBookingsFilter('all')}
+                          >
+                            View All Jobs
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return filteredBookings.map((job) => (
+                    <div key={job.id} className="job-card">
+                      <div className="job-card-header">
+                        <h4 className="job-service">
+                          {job.service || job.service_type || 'Service'}
+                        </h4>
+                        <span
+                          className={`job-status-badge status-${job.status?.toLowerCase().replace(' ', '-')}`}
                         >
-                          <td>{booking.client_name}</td>
-                          <td>
-                            {new Date(booking.booking_date).toLocaleDateString()}
-                          </td>
-                          <td>{booking.booking_time}</td>
-                          <td>
-                            <span
-                              className={`status-badge status-${booking.status}`}
-                            >
-                              {booking.status}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="booking-actions">
-                              {booking.status === 'pending' && (
-                                <>
-                                  <button
-                                    className="btn-approve"
-                                    onClick={() =>
-                                      handleBookingAction(booking.id, 'approve')
-                                    }
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    className="btn-decline"
-                                    onClick={() =>
-                                      handleBookingAction(booking.id, 'decline')
-                                    }
-                                  >
-                                    Decline
-                                  </button>
-                                </>
-                              )}
-                              <button
-                                className="btn-message"
-                                onClick={() => setActiveTab('messages')}
-                                style={{
-                                  background: '#2196F3',
-                                  color: 'white',
-                                  padding: '0.4rem 0.8rem',
-                                  borderRadius: '6px',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  fontSize: '0.85rem',
-                                  fontWeight: '500'
-                                }}
-                                title="Send a message to this client"
-                              >
-                                💬 Message
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                          {job.status}
+                        </span>
+                      </div>
+
+                      <div className="job-card-body">
+                        <p className="job-client">
+                          <strong>Client:</strong> {job.client_name}
+                        </p>
+
+                        {job.booking_date && (
+                          <p className="job-date">
+                            <strong>📅 Date:</strong>{' '}
+                            {new Date(job.booking_date).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        )}
+
+                        {job.booking_time && (
+                          <p className="job-time">
+                            <strong>🕐 Time:</strong> {job.booking_time}
+                          </p>
+                        )}
+
+                        {job.note && (
+                          <p className="job-note">
+                            <strong>Note:</strong> {job.note}
+                          </p>
+                        )}
+
+                        {(job.booking_amount || job.price) && (
+                          <p className="job-price">
+                            <strong>💰 Amount:</strong> R{(job.booking_amount || job.price)?.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="job-card-footer">
+                        <button
+                          className="btn-message-job"
+                          onClick={() => setActiveTab('messages')}
+                        >
+                          💬 Message Client
+                        </button>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
             </section>
           </div>
         )}

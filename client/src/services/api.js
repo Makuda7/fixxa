@@ -47,7 +47,7 @@ export const workerAPI = {
     api.post('/workers/upload-profile-picture', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
-  getBookings: () => api.get('/workers/bookings'),
+  getBookings: () => api.get('/workers/jobs'),
   updateBookingStatus: (bookingId, status) =>
     api.put(`/workers/bookings/${bookingId}/status`, { status }),
   getEarnings: () => api.get('/workers/earnings'),

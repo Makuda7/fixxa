@@ -2682,3 +2682,258 @@
     font-size: 1.5rem;
   }
 }
+
+/* ===== MY JOBS SECTION (BOOKINGS TAB) ===== */
+.my-jobs-section {
+  margin-top: 2rem;
+}
+
+.my-jobs-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+/* Filter Chips */
+.filter-chips {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: 0.5rem 1.25rem;
+  border-radius: 25px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  color: #666;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-chip:hover {
+  border-color: #007bff;
+  color: #007bff;
+  background: #f0f7ff;
+}
+
+.filter-chip.active {
+  border-color: #007bff;
+  background: #007bff;
+  color: white;
+}
+
+/* Jobs Grid */
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Job Card */
+.job-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.job-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Job Card Header */
+.job-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.job-service {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  flex: 1;
+}
+
+.job-status-badge {
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.job-status-badge.status-completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.job-status-badge.status-confirmed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.job-status-badge.status-in-progress {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.job-status-badge.status-awaiting-client-confirmation {
+  background: #ffeaa7;
+  color: #e17055;
+}
+
+.job-status-badge.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.job-status-badge.status-cancelled,
+.job-status-badge.status-declined {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Job Card Body */
+.job-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.job-card-body p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #555;
+}
+
+.job-card-body strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.job-client {
+  color: #333;
+  font-weight: 500;
+}
+
+.job-date,
+.job-time {
+  color: #555;
+}
+
+.job-note {
+  color: #666;
+  font-style: italic;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #007bff;
+}
+
+.job-price {
+  color: #28a745;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+/* Job Card Footer */
+.job-card-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-message-job {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #007bff;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-message-job:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* No Jobs State */
+.no-jobs {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #e0e0e0;
+}
+
+.no-jobs-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-jobs p {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0 0 1.5rem 0;
+}
+
+.btn-view-all {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #007bff;
+  background: white;
+  color: #007bff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-view-all:hover {
+  background: #007bff;
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .jobs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-chips {
+    justify-content: center;
+  }
+
+  .job-card {
+    padding: 1.25rem;
+  }
+
+  .job-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
