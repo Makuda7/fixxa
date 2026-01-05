@@ -702,9 +702,13 @@ const JobHistory = () => {
                         margin: '0 0 0.75rem 0',
                         color: '#856404',
                         fontSize: '1rem',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
                       }}>
-                        📍 Provide Service Address
+                        <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '20px', height: '20px' }} />
+                        Provide Service Address
                       </h4>
                       <p style={{
                         margin: '0 0 1rem 0',
@@ -802,7 +806,8 @@ const JobHistory = () => {
                         }}
                         onClick={() => setShowAddressForm(booking.id)}
                       >
-                        📍 Provide Address
+                        <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
+                        Provide Address
                       </button>
                     </>
                   )}
@@ -830,9 +835,13 @@ const JobHistory = () => {
                     margin: '0.5rem 0',
                     fontSize: '0.95rem',
                     color: '#155724',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    📍 {booking.service_address || serviceAddresses[booking.id]?.address}
+                    <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '16px', height: '16px' }} />
+                    {booking.service_address || serviceAddresses[booking.id]?.address}
                   </p>
                   {(booking.service_address_submitted_at || serviceAddresses[booking.id]?.submitted_at) && (
                     <p style={{

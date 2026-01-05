@@ -2126,7 +2126,10 @@ const WorkerDashboard = () => {
 
                           {job.location && (
                             <p className="job-location">
-                              <strong>📍 Location:</strong> {job.location}
+                              <strong>
+                                <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '14px', height: '14px', verticalAlign: 'middle', marginRight: '4px' }} />
+                                Location:
+                              </strong> {job.location}
                             </p>
                           )}
 
@@ -2250,7 +2253,9 @@ const WorkerDashboard = () => {
                           {/* Location */}
                           {quote.service_location && (
                             <div className="quote-location">
-                              <span className="quote-location-icon">📍</span>
+                              <span className="quote-location-icon">
+                                <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '14px', height: '14px', verticalAlign: 'middle' }} />
+                              </span>
                               <span className="quote-location-text">{quote.service_location}</span>
                             </div>
                           )}
@@ -2771,7 +2776,9 @@ const WorkerDashboard = () => {
             {/* Tip 2: Choose the Right Suburbs */}
             <section className="tip-card tip-blue">
               <h3>
-                <span className="tip-icon">📍</span>
+                <span className="tip-icon">
+                  <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '24px', height: '24px', verticalAlign: 'middle' }} />
+                </span>
                 Tip 2: Choose the Right Suburbs
               </h3>
               <p className="tip-impact">

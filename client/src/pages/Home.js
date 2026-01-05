@@ -168,7 +168,9 @@ const Home = () => {
       {showLocationModal && (
         <div className="location-modal-overlay">
           <div className="location-modal">
-            <div className="location-modal-icon">📍</div>
+            <div className="location-modal-icon">
+              <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '48px', height: '48px' }} />
+            </div>
             <h3>Enable Location Services</h3>
             <p>Fixxa would like to access your location to show you the nearest professionals in your area.</p>
             <div className="location-modal-actions">

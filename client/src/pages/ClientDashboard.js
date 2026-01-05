@@ -1023,7 +1023,7 @@ const ClientDashboard = () => {
                     alignItems: 'center',
                     gap: '0.5rem'
                   }}>
-                    <span style={{ fontSize: '1.25rem' }}>📍</span>
+                    <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '20px', height: '20px' }} />
                     <span style={{ fontSize: '0.9rem', color: '#856404', fontWeight: 500 }}>
                       Service address required - Click "View Details" to provide
                     </span>
@@ -1876,7 +1876,8 @@ const ClientDashboard = () => {
                       marginTop: '1rem'
                     }}>
                       <h4 style={{ margin: '0 0 0.5rem 0', color: '#856404', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        📍 Service Address Required
+                        <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '20px', height: '20px' }} />
+                        Service Address Required
                       </h4>
                       <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#856404' }}>
                         Please provide your service address so the professional can arrive for the job.

@@ -332,7 +332,7 @@ const Settings = () => {
           className={activeSection === 'location' ? 'active' : ''}
           onClick={() => { setActiveSection('location'); setShowMobileSidebar(false); }}
         >
-          <span>📍</span> Location
+          <span><img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '18px', height: '18px', verticalAlign: 'middle' }} /></span> Location
         </a>
         <a
           className={activeSection === 'notifications' ? 'active' : ''}

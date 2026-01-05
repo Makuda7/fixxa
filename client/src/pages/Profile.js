@@ -393,7 +393,8 @@ const Profile = () => {
 
               <div className="quick-specs">
                 <span className="spec-badge">
-                  📍 {worker.primary_suburb || worker.area}
+                  <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} />
+                  {worker.primary_suburb || worker.area}
                   {worker.province && `, ${worker.province}`}
                 </span>
                 <span className="spec-badge">⭐ {worker.experience} years experience</span>

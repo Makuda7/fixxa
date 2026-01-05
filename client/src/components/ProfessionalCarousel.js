@@ -108,7 +108,12 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
                   <div className="card-content">
                     <h3 className="card-name">{pro.name}</h3>
                     <p className="card-specialty">{pro.speciality || 'General Services'}</p>
-                    {pro.city && <p className="card-location">📍 {pro.city}</p>}
+                    {pro.city && (
+                      <p className="card-location">
+                        <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} />
+                        {pro.city}
+                      </p>
+                    )}
                     {pro.years_of_experience && (
                       <p className="card-experience">
                         {pro.years_of_experience} {pro.years_of_experience === 1 ? 'year' : 'years'} experience

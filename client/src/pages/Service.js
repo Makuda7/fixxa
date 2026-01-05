@@ -358,7 +358,8 @@ const Service = () => {
                 onClick={() => handleSort('distance')}
                 title="Sort by distance from your location"
               >
-                📍 Distance
+                <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} />
+                Distance
               </button>
             )}
           </div>
@@ -443,7 +444,8 @@ const Service = () => {
                         </p>
                         {distance && sortBy === 'distance' && (
                           <p className="distance-text">
-                            📍 {distance.toFixed(1)} km away
+                            <img src="/images/icons-fixxa/travel.png" alt="Location" style={{ width: '14px', height: '14px', verticalAlign: 'middle', marginRight: '4px' }} />
+                            {distance.toFixed(1)} km away
                           </p>
                         )}
                         <p className="experience-text" style={{ color: 'var(--fixxa-text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
