@@ -1330,8 +1330,16 @@ const WorkerDashboard = () => {
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (
           <div className="bookings-tab">
+            {/* Debug: Show loading state */}
+            {loading && (
+              <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <div className="loading-spinner"></div>
+                <p>Loading jobs...</p>
+              </div>
+            )}
+
             {/* Client Requests Section - Needs Action */}
-            {bookingRequests.length > 0 && (
+            {!loading && bookingRequests.length > 0 && (
               <section className="requests-section" style={{ marginBottom: '2rem' }}>
                 <h3>Client Requests ({bookingRequests.length})</h3>
                 <p style={{ color: '#666', marginBottom: '1rem' }}>
@@ -1507,6 +1515,7 @@ const WorkerDashboard = () => {
             )}
 
             {/* My Jobs Section with Filters */}
+            {!loading && (
             <section className="my-jobs-section">
               <h3>My Jobs</h3>
 
@@ -1626,6 +1635,7 @@ const WorkerDashboard = () => {
                 })()}
               </div>
             </section>
+            )}
           </div>
         )}
 

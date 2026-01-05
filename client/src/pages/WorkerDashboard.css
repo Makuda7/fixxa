@@ -2683,6 +2683,12 @@
   }
 }
 
+/* ===== BOOKINGS TAB ===== */
+.bookings-tab {
+  min-height: 400px;
+  background: transparent;
+}
+
 /* ===== MY JOBS SECTION (BOOKINGS TAB) ===== */
 .my-jobs-section {
   margin-top: 2rem;
