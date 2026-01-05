@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { workerAPI, certificationsAPI } from '../services/api';
@@ -12,18 +12,45 @@ const WorkerDashboard = () => {
   const { user, logout } = useAuth();
   const socket = useSocket();
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Handle tab from URL query parameter (only on initial load)
+  // Handle tab from URL hash
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    if (tabParam) {
-      setActiveTab(tabParam);
-      // Clear the query parameter to prevent history issues
-      window.history.replaceState({}, '', window.location.pathname);
+    const hash = window.location.hash.slice(1); // Remove the '#'
+    if (hash && hash !== activeTab) {
+      setActiveTab(hash);
+    } else if (!hash) {
+      setActiveTab('overview');
     }
-  }, []); // Run only once on mount
+  }, [location.hash]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        setActiveTab(hash);
+      } else {
+        setActiveTab('overview');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Custom setActiveTab wrapper that updates URL hash
+  const changeTab = useCallback((tab) => {
+    setActiveTab(tab);
+    if (tab === 'overview') {
+      // For overview, use replaceState to avoid adding to history
+      window.history.replaceState(null, '', window.location.pathname);
+    } else {
+      // For other tabs, push to history so back button works
+      window.history.pushState(null, '', `#${tab}`);
+    }
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -665,14 +692,14 @@ const WorkerDashboard = () => {
       <nav className="dashboard-nav">
         <button
           className={activeTab === 'overview' ? 'active' : ''}
-          onClick={() => setActiveTab('overview')}
+          onClick={() => changeTab('overview')}
         >
           Overview
         </button>
         <button
           className={activeTab === 'profile' ? 'active' : ''}
           onClick={() => {
-            setActiveTab('profile');
+            changeTab('profile');
             fetchPortfolioPhotos();
           }}
         >
@@ -685,7 +712,7 @@ const WorkerDashboard = () => {
         </button>
         <button
           className={activeTab === 'bookings' ? 'active' : ''}
-          onClick={() => setActiveTab('bookings')}
+          onClick={() => changeTab('bookings')}
         >
           Bookings
           {stats.pendingRequests > 0 && (
@@ -694,37 +721,37 @@ const WorkerDashboard = () => {
         </button>
         <button
           className={activeTab === 'reviews' ? 'active' : ''}
-          onClick={() => setActiveTab('reviews')}
+          onClick={() => changeTab('reviews')}
         >
           Reviews
         </button>
         <button
           className={activeTab === 'messages' ? 'active' : ''}
-          onClick={() => setActiveTab('messages')}
+          onClick={() => changeTab('messages')}
         >
           Messages
         </button>
         <button
           className={activeTab === 'getting-started' ? 'active' : ''}
-          onClick={() => setActiveTab('getting-started')}
+          onClick={() => changeTab('getting-started')}
         >
           🎬 Getting Started
         </button>
         <button
           className={activeTab === 'fixxa-tips' ? 'active' : ''}
-          onClick={() => setActiveTab('fixxa-tips')}
+          onClick={() => changeTab('fixxa-tips')}
         >
           💡 FixxaTips
         </button>
         <button
           className={activeTab === 'rules-guidelines' ? 'active' : ''}
-          onClick={() => setActiveTab('rules-guidelines')}
+          onClick={() => changeTab('rules-guidelines')}
         >
           📜 Rules & Guidelines
         </button>
         <button
           className={activeTab === 'contact-feedback' ? 'active' : ''}
-          onClick={() => setActiveTab('contact-feedback')}
+          onClick={() => changeTab('contact-feedback')}
         >
           📞 Contact & Feedback
         </button>
@@ -840,7 +867,7 @@ const WorkerDashboard = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveTab('bookings');
+                    changeTab('bookings');
                   }}
                   type="button"
                 >
@@ -855,7 +882,7 @@ const WorkerDashboard = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveTab('schedule');
+                    changeTab('schedule');
                   }}
                   type="button"
                 >
@@ -867,7 +894,7 @@ const WorkerDashboard = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveTab('profile');
+                    changeTab('profile');
                   }}
                   type="button"
                 >
@@ -879,7 +906,7 @@ const WorkerDashboard = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveTab('messages');
+                    changeTab('messages');
                   }}
                   type="button"
                 >
@@ -891,7 +918,7 @@ const WorkerDashboard = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveTab('reviews');
+                    changeTab('reviews');
                   }}
                   type="button"
                 >
@@ -1097,7 +1124,7 @@ const WorkerDashboard = () => {
                 </div>
                 <button
                   className="btn-view-all"
-                  onClick={() => setActiveTab('reviews')}
+                  onClick={() => changeTab('reviews')}
                 >
                   View All Reviews
                 </button>
@@ -1678,7 +1705,7 @@ const WorkerDashboard = () => {
                       <div className="job-card-footer">
                         <button
                           className="btn-message-job"
-                          onClick={() => setActiveTab('messages')}
+                          onClick={() => changeTab('messages')}
                         >
                           💬 Message Client
                         </button>
@@ -1909,7 +1936,7 @@ const WorkerDashboard = () => {
                         <div className="job-card-footer">
                           <button
                             className="btn-message-job"
-                            onClick={() => setActiveTab('messages')}
+                            onClick={() => changeTab('messages')}
                           >
                             💬 Message Client
                           </button>
@@ -2259,13 +2286,13 @@ const WorkerDashboard = () => {
               <div className="cta-buttons">
                 <button
                   className="btn-primary-cta"
-                  onClick={() => setActiveTab('profile')}
+                  onClick={() => changeTab('profile')}
                 >
                   Update My Profile
                 </button>
                 <button
                   className="btn-secondary-cta"
-                  onClick={() => setActiveTab('overview')}
+                  onClick={() => changeTab('overview')}
                 >
                   Back to Dashboard
                 </button>
