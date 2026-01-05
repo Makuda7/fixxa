@@ -3212,3 +3212,362 @@ button.stat-card:active {
     width: 100%;
   }
 }
+
+/* ============================================
+   MY QUOTES TAB STYLES
+   ============================================ */
+
+.quotes-tab {
+  padding: 2rem;
+}
+
+.no-quotes {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-top: 2rem;
+}
+
+.no-quotes-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+}
+
+.no-quotes p:first-of-type {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0;
+}
+
+.quotes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.quote-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s ease;
+}
+
+.quote-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.quote-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.quote-client-info {
+  flex: 1;
+}
+
+.quote-client-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+}
+
+.quote-booking-date {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+.quote-status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.quote-service-info {
+  margin-bottom: 1rem;
+}
+
+.quote-service-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+}
+
+.quote-service-description {
+  font-size: 1rem;
+  color: #333;
+  margin: 0;
+}
+
+.quote-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.quote-location-icon {
+  font-size: 1rem;
+}
+
+.quote-amount-container {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  padding: 1.25rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  border: 2px solid #4caf50;
+}
+
+.quote-amount-label {
+  font-size: 0.9rem;
+  color: #2e7d32;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.quote-amount-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1b5e20;
+}
+
+.quote-available-dates {
+  background: #f0f9ff;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #0ea5e9;
+}
+
+.quote-dates-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 0.75rem 0;
+}
+
+.quote-dates-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quote-date-chip {
+  background: #e0f2fe;
+  border: 1px solid #0ea5e9;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.quote-notes {
+  background: #f9f9f9;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.quote-notes-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+}
+
+.quote-notes-text {
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.quote-payment-methods {
+  margin-bottom: 1rem;
+}
+
+.quote-payment-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 0.75rem 0;
+}
+
+.quote-payment-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.quote-payment-badge {
+  background: #007bff;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.quote-line-items {
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.quote-line-items-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  margin: 0 0 0.75rem 0;
+}
+
+.quote-line-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.quote-line-item-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.quote-line-item-desc {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.quote-line-item-qty {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.quote-line-item-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #007bff;
+  white-space: nowrap;
+}
+
+.quote-sent-date {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0.75rem 0 0 0;
+}
+
+.quote-valid-until {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+  color: #856404;
+  font-weight: 600;
+}
+
+.quote-responded-date {
+  font-size: 0.85rem;
+  color: #999;
+  font-style: italic;
+  margin: 0.75rem 0;
+}
+
+.quote-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e8e8e8;
+}
+
+.btn-message-client {
+  flex: 1;
+  background: #007bff;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-message-client:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.btn-delete-quote {
+  background: #dc3545;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-delete-quote:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+@media (max-width: 768px) {
+  .quotes-tab {
+    padding: 1rem;
+  }
+
+  .quote-card {
+    padding: 1.25rem;
+  }
+
+  .quote-header {
+    flex-direction: column;
+  }
+
+  .quote-status-badge {
+    align-self: flex-start;
+  }
+
+  .quote-amount-value {
+    font-size: 1.75rem;
+  }
+
+  .quote-actions {
+    flex-direction: column;
+  }
+
+  .btn-message-client,
+  .btn-delete-quote {
+    width: 100%;
+  }
+}

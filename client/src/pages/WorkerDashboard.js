@@ -84,6 +84,9 @@ const WorkerDashboard = () => {
   });
   const [earningsTransactions, setEarningsTransactions] = useState([]);
 
+  // Quotes data
+  const [quotes, setQuotes] = useState([]);
+
   // Stats
   const [stats, setStats] = useState({
     totalBookings: 0,
@@ -142,6 +145,13 @@ const WorkerDashboard = () => {
       fetchEarnings();
     }
   }, [earningsFilter, activeTab]);
+
+  // Fetch quotes when tab is quotes
+  useEffect(() => {
+    if (activeTab === 'quotes') {
+      fetchQuotes();
+    }
+  }, [activeTab]);
 
   // Show welcome video modal on first visit
   useEffect(() => {
@@ -324,6 +334,35 @@ const WorkerDashboard = () => {
       }
     } catch (err) {
       console.error('Error fetching earnings:', err);
+    }
+  };
+
+  const fetchQuotes = async () => {
+    try {
+      const response = await workerAPI.getWorkerQuotes();
+      if (response.data.success && response.data.quotes) {
+        // Check for expired quotes and update status
+        const quotesWithExpiration = response.data.quotes.map(quote => {
+          if (quote.status === 'pending' && quote.valid_until) {
+            const validUntilDate = new Date(quote.valid_until);
+            const now = new Date();
+            if (now > validUntilDate) {
+              return { ...quote, status: 'expired' };
+            }
+          }
+          return quote;
+        });
+        setQuotes(quotesWithExpiration);
+
+        // Update pending quotes count
+        const pendingCount = quotesWithExpiration.filter(q => q.status === 'pending').length;
+        setStats((prev) => ({
+          ...prev,
+          pendingRequests: pendingCount,
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching quotes:', err);
     }
   };
 
@@ -870,13 +909,21 @@ const WorkerDashboard = () => {
             <section className="stats-section">
               <h3>Dashboard Overview</h3>
               <div className="stats-grid">
-                <div className="stat-card stat-pending">
+                <button
+                  className="stat-card stat-pending"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    changeTab('quotes');
+                  }}
+                  type="button"
+                >
                   <img src="/images/icons-fixxa/billing_18943497.png" alt="Pending" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">{stats.pendingRequests || 0}</div>
-                    <div className="stat-label">Pending Requests</div>
+                    <div className="stat-label">Pending Quotes</div>
                   </div>
-                </div>
+                </button>
                 <button
                   className="stat-card stat-active"
                   onClick={(e) => {
@@ -932,16 +979,16 @@ const WorkerDashboard = () => {
               <h3>Quick Actions</h3>
               <div className="quick-actions-grid">
                 <button
-                  className="action-tile action-bookings"
+                  className="action-tile action-quotes"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    changeTab('bookings');
+                    changeTab('quotes');
                   }}
                   type="button"
                 >
-                  <img src="/images/icons-fixxa/booking_5619606.png" alt="Job Requests" className="action-icon-img" />
-                  <span className="action-label">Job Requests</span>
+                  <img src="/images/icons-fixxa/booking_5619606.png" alt="My Quotes" className="action-icon-img" />
+                  <span className="action-label">My Quotes</span>
                   {stats.pendingRequests > 0 && (
                     <span className="action-badge">{stats.pendingRequests}</span>
                   )}
@@ -2016,6 +2063,242 @@ const WorkerDashboard = () => {
                 })()}
               </div>
             </section>
+            )}
+          </div>
+        )}
+
+        {/* My Quotes Tab */}
+        {activeTab === 'quotes' && (
+          <div className="quotes-tab">
+            {/* Show loading state */}
+            {loading && (
+              <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <div className="loading-spinner"></div>
+                <p>Loading quotes...</p>
+              </div>
+            )}
+
+            {!loading && (
+              <>
+                <div className="section-header-with-description">
+                  <h3>My Quotes</h3>
+                  <p className="section-description">
+                    {quotes.length} quote{quotes.length !== 1 ? 's' : ''} sent to clients
+                  </p>
+                </div>
+
+                {quotes.length === 0 ? (
+                  <div className="no-quotes">
+                    <div className="no-quotes-icon">📋</div>
+                    <p>No quotes sent yet</p>
+                    <p style={{ fontSize: '0.95rem', color: '#999', marginTop: '0.5rem' }}>
+                      When you send quotes to clients, they'll appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="quotes-list">
+                    {quotes.map((quote) => {
+                      const getStatusColor = (status) => {
+                        switch (status?.toLowerCase()) {
+                          case 'accepted':
+                            return '#28a745';
+                          case 'pending':
+                            return '#ffc107';
+                          case 'rejected':
+                          case 'declined':
+                            return '#dc3545';
+                          case 'expired':
+                            return '#6c757d';
+                          default:
+                            return '#6c757d';
+                        }
+                      };
+
+                      const getStatusText = (status) => {
+                        return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Unknown';
+                      };
+
+                      return (
+                        <div key={quote.id} className="quote-card">
+                          {/* Quote Header */}
+                          <div className="quote-header">
+                            <div className="quote-client-info">
+                              <h4 className="quote-client-name">{quote.client_name}</h4>
+                              {quote.booking_date && (
+                                <p className="quote-booking-date">
+                                  📅{' '}
+                                  {new Date(quote.booking_date).toLocaleDateString('en-US', {
+                                    weekday: 'short',
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}
+                                  {quote.booking_time && ` at ${quote.booking_time}`}
+                                </p>
+                              )}
+                            </div>
+                            <span
+                              className="quote-status-badge"
+                              style={{ backgroundColor: getStatusColor(quote.status) }}
+                            >
+                              {getStatusText(quote.status)}
+                            </span>
+                          </div>
+
+                          {/* Service Description */}
+                          {quote.service_description && (
+                            <div className="quote-service-info">
+                              <p className="quote-service-label">Service:</p>
+                              <p className="quote-service-description">{quote.service_description}</p>
+                            </div>
+                          )}
+
+                          {/* Location */}
+                          {quote.service_location && (
+                            <div className="quote-location">
+                              <span className="quote-location-icon">📍</span>
+                              <span className="quote-location-text">{quote.service_location}</span>
+                            </div>
+                          )}
+
+                          {/* Quote Amount */}
+                          <div className="quote-amount-container">
+                            <div className="quote-amount-label">Quote Amount:</div>
+                            <div className="quote-amount-value">R{Number(quote.total_amount || 0).toFixed(2)}</div>
+                          </div>
+
+                          {/* Available Start Dates */}
+                          {quote.available_dates && quote.available_dates.length > 0 && (
+                            <div className="quote-available-dates">
+                              <p className="quote-dates-label">Available Start Dates You Offered:</p>
+                              <div className="quote-dates-grid">
+                                {quote.available_dates.map((dateString, index) => (
+                                  <div key={index} className="quote-date-chip">
+                                    📅{' '}
+                                    {new Date(dateString).toLocaleDateString('en-US', {
+                                      weekday: 'short',
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Notes */}
+                          {quote.notes && (
+                            <div className="quote-notes">
+                              <p className="quote-notes-label">Your notes:</p>
+                              <p className="quote-notes-text">{quote.notes}</p>
+                            </div>
+                          )}
+
+                          {/* Payment Methods */}
+                          {quote.payment_methods && quote.payment_methods.length > 0 && (
+                            <div className="quote-payment-methods">
+                              <p className="quote-payment-label">Payment Methods Offered:</p>
+                              <div className="quote-payment-badges">
+                                {quote.payment_methods.map((method, index) => (
+                                  <span key={index} className="quote-payment-badge">
+                                    {method}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Line Items */}
+                          {quote.line_items && quote.line_items.length > 0 && (
+                            <div className="quote-line-items">
+                              <p className="quote-line-items-label">Quote Breakdown:</p>
+                              {quote.line_items.map((item, index) => (
+                                <div key={index} className="quote-line-item">
+                                  <div className="quote-line-item-left">
+                                    <span className="quote-line-item-desc">{item.description}</span>
+                                    {item.quantity > 1 && (
+                                      <span className="quote-line-item-qty">Qty: {item.quantity}</span>
+                                    )}
+                                  </div>
+                                  <span className="quote-line-item-price">R{Number(item.price || 0).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Quote Date */}
+                          <p className="quote-sent-date">
+                            Sent:{' '}
+                            {new Date(quote.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </p>
+
+                          {/* Valid Until */}
+                          {quote.status === 'pending' && quote.valid_until && (
+                            <div className="quote-valid-until">
+                              ⏰ Valid until:{' '}
+                              {new Date(quote.valid_until).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </div>
+                          )}
+
+                          {/* Response Info */}
+                          {quote.responded_at && (
+                            <p className="quote-responded-date">
+                              {quote.status === 'accepted' ? 'Accepted' : 'Responded'}:{' '}
+                              {new Date(quote.responded_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </p>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="quote-actions">
+                            <button
+                              className="btn-message-client"
+                              onClick={() => changeTab('messages')}
+                            >
+                              💬 Message {quote.client_name}
+                            </button>
+                            <button
+                              className="btn-delete-quote"
+                              onClick={async () => {
+                                if (
+                                  window.confirm(
+                                    `Are you sure you want to delete the quote for ${quote.client_name}? This action cannot be undone.`
+                                  )
+                                ) {
+                                  try {
+                                    const response = await workerAPI.deleteQuote(quote.id);
+                                    if (response.data.success) {
+                                      alert('Quote deleted successfully');
+                                      fetchQuotes();
+                                    }
+                                  } catch (error) {
+                                    console.error('Error deleting quote:', error);
+                                    alert('Failed to delete quote. Please try again.');
+                                  }
+                                }
+                              }}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

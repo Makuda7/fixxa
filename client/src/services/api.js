@@ -65,6 +65,8 @@ export const workerAPI = {
   // Quotes
   sendQuote: (quoteData) => api.post('/quotes/send', quoteData),
   getBookingQuotes: (bookingId) => api.get(`/quotes/booking/${bookingId}`),
+  getWorkerQuotes: () => api.get('/quotes/worker'),
+  deleteQuote: (quoteId) => api.delete(`/quotes/${quoteId}`),
 
   // Completion Requests
   submitCompletionRequest: (formData) =>
