@@ -1517,7 +1517,7 @@ const WorkerDashboard = () => {
             {/* My Jobs Section with Filters */}
             {!loading && (
             <section className="my-jobs-section">
-              <h3>My Jobs</h3>
+              <h3>My Jobs ({bookings.length})</h3>
 
               {/* Filter Chips */}
               <div className="filter-chips">
@@ -1560,7 +1560,16 @@ const WorkerDashboard = () => {
                     return (
                       <div className="no-jobs">
                         <div className="no-jobs-icon">📋</div>
-                        <p>No {bookingsFilter !== 'all' ? bookingsFilter : ''} jobs yet</p>
+                        <p>
+                          {bookingsFilter === 'all'
+                            ? 'No jobs yet'
+                            : `No ${bookingsFilter} jobs`}
+                        </p>
+                        <p style={{ fontSize: '0.95rem', color: '#999', marginTop: '0.5rem' }}>
+                          {bookingsFilter === 'all'
+                            ? 'Your bookings and jobs will appear here once clients book your services.'
+                            : 'Try viewing all jobs or wait for new bookings.'}
+                        </p>
                         {bookingsFilter !== 'all' && (
                           <button
                             className="btn-view-all"
