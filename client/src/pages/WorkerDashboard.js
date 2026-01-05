@@ -610,12 +610,12 @@ const WorkerDashboard = () => {
 
     setUploadingProfilePic(true);
     const formData = new FormData();
-    formData.append('profileImage', file);
+    formData.append('profilePicture', file);
 
     try {
       const response = await workerAPI.uploadProfilePicture(formData);
       if (response.data.success) {
-        setProfile({ ...profile, image: response.data.imageUrl });
+        setProfile({ ...profile, profile_picture: response.data.profile_picture });
         setShowProfileMenu(false);
         alert('Profile picture updated successfully!');
       }
@@ -628,8 +628,8 @@ const WorkerDashboard = () => {
   };
 
   const handleViewProfilePicture = () => {
-    if (profile?.image) {
-      window.open(profile.image, '_blank');
+    if (profile?.profile_picture) {
+      window.open(profile.profile_picture, '_blank');
     }
     setShowProfileMenu(false);
   };
@@ -920,8 +920,8 @@ const WorkerDashboard = () => {
                     className="profile-image"
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
                   >
-                    {profile?.image ? (
-                      <img src={profile.image} alt={profile.name} />
+                    {profile?.profile_picture ? (
+                      <img src={profile.profile_picture} alt={profile.name} />
                     ) : (
                       <div className="profile-placeholder">
                         {profile?.name?.charAt(0) || 'W'}
@@ -932,7 +932,7 @@ const WorkerDashboard = () => {
                   {/* Profile Picture Dropdown Menu */}
                   {showProfileMenu && (
                     <div className="profile-menu-dropdown">
-                      {profile?.image && (
+                      {profile?.profile_picture && (
                         <button
                           className="profile-menu-item"
                           onClick={handleViewProfilePicture}
@@ -950,7 +950,7 @@ const WorkerDashboard = () => {
                           disabled={uploadingProfilePic}
                         />
                         <span className="menu-icon">📷</span>
-                        {uploadingProfilePic ? 'Uploading...' : (profile?.image ? 'Change Profile Picture' : 'Upload Profile Picture')}
+                        {uploadingProfilePic ? 'Uploading...' : (profile?.profile_picture ? 'Change Profile Picture' : 'Upload Profile Picture')}
                       </label>
                     </div>
                   )}
