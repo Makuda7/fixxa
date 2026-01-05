@@ -14,14 +14,16 @@ const WorkerDashboard = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Handle tab from URL query parameter
+  // Handle tab from URL query parameter (only on initial load)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     if (tabParam) {
       setActiveTab(tabParam);
+      // Clear the query parameter to prevent history issues
+      window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [location.search]);
+  }, []); // Run only once on mount
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
