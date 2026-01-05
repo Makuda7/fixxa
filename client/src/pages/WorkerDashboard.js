@@ -38,6 +38,7 @@ const WorkerDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [bookingRequests, setBookingRequests] = useState([]);
   const [bookingsFilter, setBookingsFilter] = useState('all'); // all, active, completed
+  const [scheduleFilter, setScheduleFilter] = useState('upcoming'); // upcoming, today, week
 
   // Reviews data
   const [reviews, setReviews] = useState([]);
@@ -852,7 +853,7 @@ const WorkerDashboard = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setActiveTab('bookings');
+                    setActiveTab('schedule');
                   }}
                   type="button"
                 >
@@ -1682,6 +1683,238 @@ const WorkerDashboard = () => {
                       </div>
                     </div>
                   ));
+                })()}
+              </div>
+            </section>
+            )}
+          </div>
+        )}
+
+        {/* Schedule Tab */}
+        {activeTab === 'schedule' && (
+          <div className="schedule-tab">
+            {/* Show loading state */}
+            {loading && (
+              <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <div className="loading-spinner"></div>
+                <p>Loading schedule...</p>
+              </div>
+            )}
+
+            {/* My Schedule Section with Filters */}
+            {!loading && (
+            <section className="my-schedule-section">
+              <div className="section-header-with-description">
+                <h3>My Schedule</h3>
+                <p className="section-description">
+                  View your upcoming jobs and manage your schedule
+                </p>
+              </div>
+
+              {/* Filter Chips */}
+              <div className="filter-chips">
+                <button
+                  className={`filter-chip ${scheduleFilter === 'upcoming' ? 'active' : ''}`}
+                  onClick={() => setScheduleFilter('upcoming')}
+                >
+                  Upcoming
+                  <span className="filter-count">
+                    {bookings.filter(
+                      (b) => {
+                        const bookingDate = new Date(b.booking_date);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return (
+                          (b.status === 'Confirmed' || b.status === 'In Progress') &&
+                          bookingDate >= today
+                        );
+                      }
+                    ).length}
+                  </span>
+                </button>
+                <button
+                  className={`filter-chip ${scheduleFilter === 'today' ? 'active' : ''}`}
+                  onClick={() => setScheduleFilter('today')}
+                >
+                  Today
+                  <span className="filter-count">
+                    {bookings.filter(
+                      (b) => {
+                        const bookingDate = new Date(b.booking_date);
+                        const today = new Date();
+                        return (
+                          (b.status === 'Confirmed' || b.status === 'In Progress') &&
+                          bookingDate.toDateString() === today.toDateString()
+                        );
+                      }
+                    ).length}
+                  </span>
+                </button>
+                <button
+                  className={`filter-chip ${scheduleFilter === 'week' ? 'active' : ''}`}
+                  onClick={() => setScheduleFilter('week')}
+                >
+                  This Week
+                  <span className="filter-count">
+                    {bookings.filter(
+                      (b) => {
+                        const bookingDate = new Date(b.booking_date);
+                        const today = new Date();
+                        const weekFromNow = new Date();
+                        weekFromNow.setDate(today.getDate() + 7);
+                        return (
+                          (b.status === 'Confirmed' || b.status === 'In Progress') &&
+                          bookingDate >= today &&
+                          bookingDate <= weekFromNow
+                        );
+                      }
+                    ).length}
+                  </span>
+                </button>
+              </div>
+
+              {/* Schedule Grid */}
+              <div className="jobs-grid">
+                {(() => {
+                  // Filter bookings based on selected schedule filter
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+
+                  let filteredBookings = bookings.filter(
+                    (b) => b.status === 'Confirmed' || b.status === 'In Progress'
+                  );
+
+                  if (scheduleFilter === 'upcoming') {
+                    filteredBookings = filteredBookings.filter((b) => {
+                      const bookingDate = new Date(b.booking_date);
+                      return bookingDate >= today;
+                    });
+                  } else if (scheduleFilter === 'today') {
+                    filteredBookings = filteredBookings.filter((b) => {
+                      const bookingDate = new Date(b.booking_date);
+                      return bookingDate.toDateString() === today.toDateString();
+                    });
+                  } else if (scheduleFilter === 'week') {
+                    const weekFromNow = new Date();
+                    weekFromNow.setDate(today.getDate() + 7);
+                    filteredBookings = filteredBookings.filter((b) => {
+                      const bookingDate = new Date(b.booking_date);
+                      return bookingDate >= today && bookingDate <= weekFromNow;
+                    });
+                  }
+
+                  // Sort by date and time
+                  filteredBookings.sort((a, b) => {
+                    const dateA = new Date(a.booking_date);
+                    const dateB = new Date(b.booking_date);
+                    if (dateA.getTime() !== dateB.getTime()) {
+                      return dateA - dateB;
+                    }
+                    // If same date, sort by time
+                    return (a.booking_time || '').localeCompare(b.booking_time || '');
+                  });
+
+                  if (filteredBookings.length === 0) {
+                    return (
+                      <div className="no-jobs">
+                        <div className="no-jobs-icon">📅</div>
+                        <p>
+                          {scheduleFilter === 'upcoming'
+                            ? 'No upcoming jobs'
+                            : scheduleFilter === 'today'
+                            ? 'No jobs scheduled for today'
+                            : 'No jobs this week'}
+                        </p>
+                        <p style={{ fontSize: '0.95rem', color: '#999', marginTop: '0.5rem' }}>
+                          {scheduleFilter === 'upcoming'
+                            ? 'Your upcoming confirmed jobs will appear here.'
+                            : scheduleFilter === 'today'
+                            ? 'You have no jobs scheduled for today. Check your upcoming schedule.'
+                            : 'You have no jobs scheduled for this week.'}
+                        </p>
+                        {scheduleFilter !== 'upcoming' && (
+                          <button
+                            className="btn-view-all"
+                            onClick={() => setScheduleFilter('upcoming')}
+                          >
+                            View All Upcoming
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return filteredBookings.map((job) => {
+                    const jobDate = new Date(job.booking_date);
+                    const isToday = jobDate.toDateString() === new Date().toDateString();
+                    const isTomorrow = jobDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+
+                    return (
+                      <div key={job.id} className="job-card schedule-job-card">
+                        <div className="job-card-header">
+                          <h4 className="job-service">
+                            {job.service || job.service_type || 'Service'}
+                          </h4>
+                          <span
+                            className={`job-status-badge status-${job.status?.toLowerCase().replace(' ', '-')}`}
+                          >
+                            {job.status}
+                          </span>
+                        </div>
+
+                        <div className="job-card-body">
+                          <p className="job-client">
+                            <strong>Client:</strong> {job.client_name}
+                          </p>
+
+                          {job.booking_date && (
+                            <p className="job-date" style={{ fontSize: '1.05rem', fontWeight: '600', color: isToday ? '#007bff' : '#333' }}>
+                              <strong>📅 {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : 'Date'}:</strong>{' '}
+                              {new Date(job.booking_date).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          )}
+
+                          {job.booking_time && (
+                            <p className="job-time" style={{ fontSize: '1.05rem', fontWeight: '600' }}>
+                              <strong>🕐 Time:</strong> {job.booking_time}
+                            </p>
+                          )}
+
+                          {job.location && (
+                            <p className="job-location">
+                              <strong>📍 Location:</strong> {job.location}
+                            </p>
+                          )}
+
+                          {job.note && (
+                            <p className="job-note">
+                              <strong>Note:</strong> {job.note}
+                            </p>
+                          )}
+
+                          {(job.booking_amount || job.price) && (
+                            <p className="job-price">
+                              <strong>💰 Amount:</strong> R{Number(job.booking_amount || job.price || 0).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="job-card-footer">
+                          <button
+                            className="btn-message-job"
+                            onClick={() => setActiveTab('messages')}
+                          >
+                            💬 Message Client
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  });
                 })()}
               </div>
             </section>
