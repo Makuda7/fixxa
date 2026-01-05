@@ -834,20 +834,38 @@ const WorkerDashboard = () => {
                     <div className="stat-label">Pending Requests</div>
                   </div>
                 </div>
-                <div className="stat-card stat-active">
+                <button
+                  className="stat-card stat-active"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setBookingsFilter('active');
+                    changeTab('bookings');
+                  }}
+                  type="button"
+                >
                   <img src="/images/icons-fixxa/suitcase_1835273.png" alt="Active" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">{stats.activeJobs || 0}</div>
                     <div className="stat-label">Active Jobs</div>
                   </div>
-                </div>
-                <div className="stat-card stat-completed">
+                </button>
+                <button
+                  className="stat-card stat-completed"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setBookingsFilter('completed');
+                    changeTab('bookings');
+                  }}
+                  type="button"
+                >
                   <img src="/images/icons-fixxa/briefcase_9927577.png" alt="Completed" className="stat-icon-img" />
                   <div className="stat-content">
                     <div className="stat-value">{stats.completedJobs || 0}</div>
                     <div className="stat-label">Completed</div>
                   </div>
-                </div>
+                </button>
                 <div className="stat-card stat-earnings">
                   <img src="/images/icons-fixxa/market_14157550.png" alt="Earnings" className="stat-icon-img" />
                   <div className="stat-content">
@@ -871,8 +889,8 @@ const WorkerDashboard = () => {
                   }}
                   type="button"
                 >
-                  <img src="/images/icons-fixxa/booking_5619606.png" alt="Bookings" className="action-icon-img" />
-                  <span className="action-label">Bookings</span>
+                  <img src="/images/icons-fixxa/booking_5619606.png" alt="Job Requests" className="action-icon-img" />
+                  <span className="action-label">Job Requests</span>
                   {stats.pendingRequests > 0 && (
                     <span className="action-badge">{stats.pendingRequests}</span>
                   )}
