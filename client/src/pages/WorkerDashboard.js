@@ -1329,7 +1329,19 @@ const WorkerDashboard = () => {
 
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (
-          <div className="bookings-tab">
+          <div className="bookings-tab" style={{ minHeight: '500px', padding: '1rem' }}>
+            {/* Debug banner - ALWAYS visible */}
+            <div style={{
+              padding: '0.5rem 1rem',
+              background: '#f0f7ff',
+              borderRadius: '8px',
+              marginBottom: '1rem',
+              fontSize: '0.9rem',
+              border: '1px solid #007bff'
+            }}>
+              📊 Bookings Tab Loaded | Jobs: {bookings.length} | Loading: {loading ? 'Yes' : 'No'}
+            </div>
+
             {/* Debug: Show loading state */}
             {loading && (
               <div style={{ padding: '2rem', textAlign: 'center' }}>
