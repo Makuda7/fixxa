@@ -46,6 +46,15 @@
   font-size: 3rem;
   flex-shrink: 0;
   animation: pulse 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.registration-banner .banner-icon-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 @keyframes pulse {
@@ -273,6 +282,25 @@
 .badge.verified {
   background: #28a745;
   color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: help;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.badge.verified:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.badge.verified .badge-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 
 .badge.certified {

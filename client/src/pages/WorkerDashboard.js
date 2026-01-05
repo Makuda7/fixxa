@@ -759,12 +759,14 @@ const WorkerDashboard = () => {
         </div>
       )}
 
-      {/* Registration Complete Badge */}
+      {/* Active Status Badge */}
       {profile && profile.registration_complete && (
         <div className="registration-banner complete">
-          <div className="banner-icon">✅</div>
+          <div className="banner-icon">
+            <img src="/images/icons-fixxa/check-mark_4300471.png" alt="Active" className="banner-icon-img" />
+          </div>
           <div className="banner-content">
-            <h3>Registration Complete!</h3>
+            <h3>You are Active!</h3>
             <p>Your profile is fully set up and you're ready to receive job requests.</p>
           </div>
         </div>
@@ -873,7 +875,10 @@ const WorkerDashboard = () => {
                   </p>
                   <div className="profile-badges">
                     {profile?.is_verified && (
-                      <span className="badge verified">Verified</span>
+                      <span className="badge verified" title="Verified - All verification documents have been approved">
+                        <img src="/images/icons-fixxa/check-mark_4300471.png" alt="Verified" className="badge-icon" />
+                        Verified
+                      </span>
                     )}
                     {certifications.filter((c) => c.status === 'approved' && c.document_type === 'certification').length >
                       0 && <span className="badge certified">Certified</span>}
@@ -987,7 +992,7 @@ const WorkerDashboard = () => {
                   }}
                   type="button"
                 >
-                  <img src="/images/icons-fixxa/booking_5619606.png" alt="My Quotes" className="action-icon-img" />
+                  <img src="/images/icons-fixxa/consult_7075591.png" alt="My Quotes" className="action-icon-img" />
                   <span className="action-label">My Quotes</span>
                   {stats.pendingRequests > 0 && (
                     <span className="action-badge">{stats.pendingRequests}</span>
