@@ -758,7 +758,7 @@ const WorkerDashboard = () => {
                     {profile?.is_verified && (
                       <span className="badge verified">Verified</span>
                     )}
-                    {certifications.filter((c) => c.status === 'approved').length >
+                    {certifications.filter((c) => c.status === 'approved' && c.document_type === 'certification').length >
                       0 && <span className="badge certified">Certified</span>}
                   </div>
                 </div>
