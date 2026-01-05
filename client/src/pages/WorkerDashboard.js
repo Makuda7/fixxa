@@ -1679,7 +1679,7 @@ const WorkerDashboard = () => {
 
                         {(job.booking_amount || job.price) && (
                           <p className="job-price">
-                            <strong>💰 Amount:</strong> R{(job.booking_amount || job.price)?.toFixed(2)}
+                            <strong>💰 Amount:</strong> R{Number(job.booking_amount || job.price || 0).toFixed(2)}
                           </p>
                         )}
                       </div>
