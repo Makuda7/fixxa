@@ -381,7 +381,10 @@ const Service = () => {
                   <span className="verified-badge" title="Verified - Identity and documents confirmed">Verified</span>
                 ) : null;
                 const certifiedBadge = worker.approved_cert_count > 0 ? (
-                  <span className="verified-badge certified-badge">Certified</span>
+                  <span className="verified-badge certified-badge" title="Certified - Professional certifications approved">
+                    <img src="/images/icons-fixxa/user_11762352.png" alt="Certified" style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', marginRight: '4px' }} />
+                    Certified
+                  </span>
                 ) : null;
 
                 const location = worker.primary_suburb && worker.province

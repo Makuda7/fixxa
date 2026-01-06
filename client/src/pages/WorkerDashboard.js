@@ -970,7 +970,12 @@ const WorkerDashboard = () => {
                       </span>
                     )}
                     {certifications.filter((c) => c.status === 'approved' && c.document_type === 'certification').length >
-                      0 && <span className="badge certified">Certified</span>}
+                      0 && (
+                      <span className="badge certified" title="Certified - Professional certifications have been approved">
+                        <img src="/images/icons-fixxa/user_11762352.png" alt="Certified" className="badge-icon" />
+                        Certified
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

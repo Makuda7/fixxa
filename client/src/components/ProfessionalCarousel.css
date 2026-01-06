@@ -206,23 +206,61 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
   color: white;
   padding: 5px 12px;
   border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 2px 4px rgba(111, 66, 193, 0.2);
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
   display: inline-flex;
   align-items: center;
   gap: 4px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   z-index: 10;
+  cursor: help;
+  transition: all 0.3s ease;
+}
+
+.certified-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+}
+
+.certified-badge:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  animation: fadeIn 0.1s ease-in;
+}
+
+.certified-badge:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #333;
+  margin-bottom: 2px;
+  z-index: 1000;
+  animation: fadeIn 0.1s ease-in;
 }
 
 .certified-badge::before {
-  content: '🎓';
-  font-size: 0.9rem;
+  display: none;
 }
 
 .card-content {

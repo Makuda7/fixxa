@@ -412,6 +412,57 @@
 .badge.certified {
   background: #1976d2;
   color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: help;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.badge.certified:hover {
+  background: #1565c0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+}
+
+.badge.certified:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  animation: fadeIn 0.1s ease-in;
+}
+
+.badge.certified:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #333;
+  margin-bottom: 2px;
+  z-index: 1000;
+  animation: fadeIn 0.1s ease-in;
+}
+
+.badge.certified .badge-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 
 /* Availability Section */
