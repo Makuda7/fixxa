@@ -27,12 +27,13 @@ module.exports = (pool, logger) => {
           COUNT(DISTINCT r.id) as review_count,
           COUNT(DISTINCT b.id) as completed_jobs,
           STRING_AGG(DISTINCT s.name, ', ' ORDER BY s.name) as specialties,
-          0 as approved_cert_count
+          COUNT(DISTINCT CASE WHEN c.status = 'approved' AND c.document_type = 'certification' THEN c.id END) as approved_cert_count
         FROM workers w
         LEFT JOIN reviews r ON w.id = r.worker_id
         LEFT JOIN bookings b ON w.id = b.worker_id AND b.status = 'Completed'
         LEFT JOIN worker_specialties ws ON w.id = ws.worker_id
         LEFT JOIN specialties s ON ws.specialty_id = s.id
+        LEFT JOIN certifications c ON w.id = c.worker_id
         WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
       `;
 
