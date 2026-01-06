@@ -102,7 +102,7 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
                     <div className="card-image-placeholder" style={{ display: pro.profile_photo_url ? 'none' : 'flex' }}>
                       <div className="placeholder-initial">{pro.name?.charAt(0) || '?'}</div>
                     </div>
-                    {pro.is_verified && <div className="verified-badge">Verified</div>}
+                    {pro.is_verified && <div className="verified-badge" title="Verified - Identity and documents confirmed">Verified</div>}
                   </div>
 
                   <div className="card-content">

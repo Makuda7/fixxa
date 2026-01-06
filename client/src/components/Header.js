@@ -118,7 +118,10 @@ const Header = () => {
                     {user?.type === 'professional' ? (
                       <>
                         <Link to="/worker-dashboard?tab=getting-started" onClick={closeDropdown}>🎬 Getting Started</Link>
-                        <Link to="/worker-dashboard?tab=fixxa-tips" onClick={closeDropdown}>💡 FixxaTips</Link>
+                        <Link to="/worker-dashboard?tab=fixxa-tips" onClick={closeDropdown}>
+                          <img src="/images/icons-fixxa/lightbulb_857433.png" alt="Tips" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
+                          FixxaTips
+                        </Link>
                         <Link to="/worker-dashboard?tab=rules-guidelines" onClick={closeDropdown}>📜 Rules & Guidelines</Link>
                         <Link to="/worker-dashboard?tab=contact-feedback" onClick={closeDropdown}>📞 Contact & Feedback</Link>
                       </>

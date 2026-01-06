@@ -378,7 +378,7 @@ const Service = () => {
                 const rating = parseFloat(worker.avg_rating) || 0;
                 const stars = rating > 0 ? renderStars(rating) : '☆☆☆☆☆';
                 const verifiedBadge = worker.id_verified ? (
-                  <span className="verified-badge">Verified</span>
+                  <span className="verified-badge" title="Verified - Identity and documents confirmed">Verified</span>
                 ) : null;
                 const certifiedBadge = worker.approved_cert_count > 0 ? (
                   <span className="verified-badge certified-badge">Certified</span>
