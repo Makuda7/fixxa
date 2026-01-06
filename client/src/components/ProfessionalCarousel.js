@@ -103,6 +103,12 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
                       <div className="placeholder-initial">{pro.name?.charAt(0) || '?'}</div>
                     </div>
                     {pro.is_verified && <div className="verified-badge" title="Verified - Identity and documents confirmed">Verified</div>}
+                    {pro.approved_cert_count > 0 && (
+                      <div className="certified-badge" title="Certified - Professional certifications approved">
+                        <img src="/images/icons-fixxa/user_11762352.png" alt="Certified" style={{ width: '12px', height: '12px', filter: 'brightness(0) invert(1)' }} />
+                        Certified
+                      </div>
+                    )}
                   </div>
 
                   <div className="card-content">
