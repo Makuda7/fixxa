@@ -302,7 +302,9 @@ const Messages = () => {
           </>
         ) : (
           <div className="no-conversation-selected">
-            <div className="no-conversation-icon">💬</div>
+            <div className="no-conversation-icon">
+              <img src="/images/icons-fixxa/speech-bubble_159778.png" alt="Messages" />
+            </div>
             <h3>Select a conversation</h3>
             <p>Choose a conversation from the list to view and reply to messages</p>
           </div>

@@ -562,6 +562,12 @@
   filter: grayscale(0.3);
 }
 
+.no-conversation-icon img {
+  width: 120px;
+  height: 120px;
+  opacity: 0.6;
+}
+
 .no-conversation-selected h3 {
   margin: 0 0 0.75rem 0;
   color: #555;
