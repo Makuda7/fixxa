@@ -148,7 +148,7 @@ const Support = () => {
       action: 'mailto:support@fixxa.co.za'
     },
     {
-      icon: '📞',
+      icon: <img src="/images/icons-fixxa/phone-call_3059446.png" alt="Phone" style={{ width: '40px', height: '40px' }} />,
       title: 'Phone Support',
       description: 'Speak to our team',
       contact: '+27 (0) 11 234 5678',

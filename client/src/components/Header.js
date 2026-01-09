@@ -123,7 +123,10 @@ const Header = () => {
                           FixxaTips
                         </Link>
                         <Link to="/worker-dashboard?tab=rules-guidelines" onClick={closeDropdown}>📜 Rules & Guidelines</Link>
-                        <Link to="/worker-dashboard?tab=contact-feedback" onClick={closeDropdown}>📞 Contact & Feedback</Link>
+                        <Link to="/worker-dashboard?tab=contact-feedback" onClick={closeDropdown}>
+                          <img src="/images/icons-fixxa/phone-call_3059446.png" alt="Contact" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
+                          Contact & Feedback
+                        </Link>
                       </>
                     ) : (
                       /* Client menu items */

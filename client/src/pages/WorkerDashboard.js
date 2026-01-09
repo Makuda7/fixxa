@@ -895,7 +895,8 @@ const WorkerDashboard = () => {
           className={activeTab === 'contact-feedback' ? 'active' : ''}
           onClick={() => changeTab('contact-feedback')}
         >
-          📞 Contact & Feedback
+          <img src="/images/icons-fixxa/phone-call_3059446.png" alt="Contact" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
+          Contact & Feedback
         </button>
       </nav>
 
@@ -3129,11 +3130,11 @@ const WorkerDashboard = () => {
         {/* Contact & Feedback Tab */}
         {activeTab === 'contact-feedback' && (
           <div className="contact-feedback-tab">
-            <h1>📞 Contact & Feedback</h1>
+            <h1><img src="/images/icons-fixxa/phone-call_3059446.png" alt="Contact" style={{ width: '24px', height: '24px', verticalAlign: 'middle', marginRight: '8px' }} />Contact & Feedback</h1>
 
             {/* Contact Admin Section */}
             <section className="contact-section">
-              <h3>📞 Contact Admin Support</h3>
+              <h3><img src="/images/icons-fixxa/phone-call_3059446.png" alt="Contact" style={{ width: '20px', height: '20px', verticalAlign: 'middle', marginRight: '6px' }} />Contact Admin Support</h3>
               <p className="section-description">
                 Have a question, issue, or need help? Send us a message and we'll get back to you as soon as possible.
               </p>

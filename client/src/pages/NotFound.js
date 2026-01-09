@@ -58,7 +58,7 @@ const NotFound = () => {
   const popularPages = [
     { to: '/', label: 'Home', icon: '🏠' },
     { to: '/about', label: 'About Us', icon: 'ℹ️' },
-    { to: '/contact', label: 'Contact', icon: '📞' },
+    { to: '/contact', label: 'Contact', icon: <img src="/images/icons-fixxa/phone-call_3059446.png" alt="Contact" style={{ width: '20px', height: '20px' }} /> },
     { to: '/faq', label: 'FAQ', icon: '❓' },
   ];
 
