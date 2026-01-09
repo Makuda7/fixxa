@@ -1665,9 +1665,6 @@ button.stat-card:active {
 
 .messages-container {
   min-height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .coming-soon-message {
