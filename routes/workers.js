@@ -42,10 +42,13 @@ module.exports = (pool, logger, helpers) => {
   router.get('/', async (req, res) => {
     try {
       const result = await pool.query(
-        `SELECT id, name, email, speciality, area, primary_suburb, city, province, secondary_areas, bio, experience, rating, profile_picture, availability_schedule, is_available, latitude, longitude, service_radius, id_verified, approval_status, rate_type, rate_amount
-         FROM workers
-         WHERE is_active = true AND approval_status = 'approved'
-         ORDER BY name ASC`
+        `SELECT w.id, w.name, w.email, w.speciality, w.area, w.primary_suburb, w.city, w.province, w.secondary_areas, w.bio, w.experience, w.rating, w.profile_picture, w.availability_schedule, w.is_available, w.latitude, w.longitude, w.service_radius, w.id_verified, w.approval_status, w.rate_type, w.rate_amount,
+         COUNT(DISTINCT CASE WHEN c.status = 'approved' AND c.document_type = 'certification' THEN c.id END) as approved_cert_count
+         FROM workers w
+         LEFT JOIN certifications c ON w.id = c.worker_id
+         WHERE w.is_active = true AND w.approval_status = 'approved'
+         GROUP BY w.id
+         ORDER BY w.name ASC`
       );
 
       // Convert old local profile pic paths to default SVG
@@ -93,13 +96,16 @@ module.exports = (pool, logger, helpers) => {
       const maxRadius = parseFloat(radius);
 
       const result = await pool.query(`
-        SELECT id, name, email, speciality, area, primary_suburb, city, province, secondary_areas,
-               bio, experience, rating, profile_picture as image,
-               availability_schedule, is_available, latitude, longitude, service_radius, id_verified as is_verified,
-               rate_type, rate_amount
-        FROM workers
-        WHERE is_available = true AND is_active = true AND approval_status = 'approved'
-        ORDER BY name ASC
+        SELECT w.id, w.name, w.email, w.speciality, w.area, w.primary_suburb, w.city, w.province, w.secondary_areas,
+               w.bio, w.experience, w.rating, w.profile_picture as image,
+               w.availability_schedule, w.is_available, w.latitude, w.longitude, w.service_radius, w.id_verified as is_verified,
+               w.rate_type, w.rate_amount,
+               COUNT(DISTINCT CASE WHEN c.status = 'approved' AND c.document_type = 'certification' THEN c.id END) as approved_cert_count
+        FROM workers w
+        LEFT JOIN certifications c ON w.id = c.worker_id
+        WHERE w.is_available = true AND w.is_active = true AND w.approval_status = 'approved'
+        GROUP BY w.id
+        ORDER BY w.name ASC
       `);
 
       const workersWithDistance = result.rows
