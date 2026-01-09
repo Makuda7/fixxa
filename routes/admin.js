@@ -2633,5 +2633,64 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Check Clement and Nkululeko certifications
+  router.get('/check-clement-nkululeko-12345', async (req, res) => {
+    try {
+      const results = [];
+
+      // Find workers
+      const workers = await pool.query(`
+        SELECT id, name, email, is_verified, id_verified, approval_status
+        FROM workers
+        WHERE name ILIKE '%clement%' OR name ILIKE '%nkululeko%'
+      `);
+
+      results.push(`Found ${workers.rows.length} workers:`);
+
+      for (const worker of workers.rows) {
+        results.push(`\n=== ${worker.name} (ID: ${worker.id}) ===`);
+        results.push(`Email: ${worker.email}`);
+        results.push(`Verified: ${worker.is_verified}, ID Verified: ${worker.id_verified}`);
+        results.push(`Status: ${worker.approval_status}`);
+
+        // Get all certifications
+        const certs = await pool.query(`
+          SELECT id, document_name, document_type, status, uploaded_at
+          FROM certifications
+          WHERE worker_id = $1
+          ORDER BY uploaded_at DESC
+        `, [worker.id]);
+
+        results.push(`\nTotal certifications: ${certs.rows.length}`);
+
+        certs.rows.forEach(cert => {
+          results.push(`  - ${cert.document_name}`);
+          results.push(`    Type: ${cert.document_type}, Status: ${cert.status}`);
+        });
+
+        // Count approved professional certifications
+        const approvedCount = await pool.query(`
+          SELECT COUNT(*) as count
+          FROM certifications
+          WHERE worker_id = $1
+            AND status = 'approved'
+            AND document_type = 'certification'
+        `, [worker.id]);
+
+        results.push(`\nAPPROVED PROFESSIONAL CERTS: ${approvedCount.rows[0].count}`);
+      }
+
+      res.json({
+        success: true,
+        results: results
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
   return router;
 };
