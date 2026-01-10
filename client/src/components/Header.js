@@ -108,7 +108,6 @@ const Header = () => {
                     <Link to={user?.type === 'professional' ? '/worker-dashboard#profile' : '/client-dashboard'} onClick={closeDropdown}>
                       Profile
                     </Link>
-                    <Link to={user?.type === 'professional' ? '/worker-dashboard#profile' : '/settings'} onClick={closeDropdown}>Profile Settings</Link>
                     {user?.type === 'professional' && (
                       <Link to="/settings" onClick={closeDropdown}>⚙️ Account Settings</Link>
                     )}
