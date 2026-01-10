@@ -105,10 +105,10 @@ const Header = () => {
                         <span className="menu-notification-badge">{unreadCount}</span>
                       )}
                     </Link>
-                    <Link to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'} onClick={closeDropdown}>
+                    <Link to={user?.type === 'professional' ? '/worker-dashboard#profile' : '/client-dashboard'} onClick={closeDropdown}>
                       Profile
                     </Link>
-                    <Link to={user?.type === 'professional' ? '/worker-dashboard?tab=profile' : '/settings'} onClick={closeDropdown}>Profile Settings</Link>
+                    <Link to={user?.type === 'professional' ? '/worker-dashboard#profile' : '/settings'} onClick={closeDropdown}>Profile Settings</Link>
                     {user?.type === 'professional' && (
                       <Link to="/settings" onClick={closeDropdown}>⚙️ Account Settings</Link>
                     )}
