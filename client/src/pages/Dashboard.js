@@ -383,7 +383,7 @@ const Dashboard = () => {
               <h3>Quick Stats</h3>
               <div className="stats-grid">
                 <div className="stat-card">
-                  <div className="stat-icon">📅</div>
+                  <div className="stat-icon"><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /></div>
                   <div className="stat-value">{stats.totalBookings}</div>
                   <div className="stat-label">Total Bookings</div>
                 </div>

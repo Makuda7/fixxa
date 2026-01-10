@@ -57,7 +57,7 @@ const DashboardStats = () => {
         <StatCard
           title="Today's Bookings"
           value={loading ? '...' : stats?.todayBookings || 0}
-          icon="📅"
+          icon="<img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} />"
           color="blue"
           subtitle={
             stats?.todayBookings > 0

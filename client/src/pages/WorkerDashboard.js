@@ -1184,7 +1184,7 @@ const WorkerDashboard = () => {
                         <div className="request-header">
                           <h4>
                             {isNewBooking && '🆕 New Booking Request'}
-                            {isReschedule && '📅 Reschedule Request'}
+                            {isReschedule && (<><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Reschedule Request</>)}
                             {isCancellation && '❌ Cancellation Request'}
                           </h4>
                         </div>
@@ -1652,7 +1652,7 @@ const WorkerDashboard = () => {
                         <div className="request-header">
                           <h4>
                             {isNewBooking && '🆕 New Booking Request'}
-                            {isReschedule && '📅 Reschedule Request'}
+                            {isReschedule && (<><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Reschedule Request</>)}
                             {isCancellation && '❌ Cancellation Request'}
                           </h4>
                         </div>
@@ -1890,7 +1890,7 @@ const WorkerDashboard = () => {
 
                         {job.booking_date && (
                           <p className="job-date">
-                            <strong>📅 Date:</strong>{' '}
+                            <strong><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Date:</strong>{' '}
                             {new Date(job.booking_date).toLocaleDateString('en-US', {
                               weekday: 'short',
                               year: 'numeric',
@@ -2063,7 +2063,7 @@ const WorkerDashboard = () => {
                   if (filteredBookings.length === 0) {
                     return (
                       <div className="no-jobs">
-                        <div className="no-jobs-icon">📅</div>
+                        <div className="no-jobs-icon"><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /></div>
                         <p>
                           {scheduleFilter === 'upcoming'
                             ? 'No upcoming jobs'
@@ -2115,7 +2115,7 @@ const WorkerDashboard = () => {
 
                           {job.booking_date && (
                             <p className="job-date" style={{ fontSize: '1.05rem', fontWeight: '600', color: isToday ? '#007bff' : '#333' }}>
-                              <strong>📅 {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : 'Date'}:</strong>{' '}
+                              <strong><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : 'Date'}:</strong>{' '}
                               {new Date(job.booking_date).toLocaleDateString('en-US', {
                                 weekday: 'short',
                                 year: 'numeric',
@@ -2230,7 +2230,7 @@ const WorkerDashboard = () => {
                               <h4 className="quote-client-name">{quote.client_name}</h4>
                               {quote.booking_date && (
                                 <p className="quote-booking-date">
-                                  📅{' '}
+                                  <img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} />{' '}
                                   {new Date(quote.booking_date).toLocaleDateString('en-US', {
                                     weekday: 'short',
                                     year: 'numeric',
@@ -2280,7 +2280,7 @@ const WorkerDashboard = () => {
                               <div className="quote-dates-grid">
                                 {quote.available_dates.map((dateString, index) => (
                                   <div key={index} className="quote-date-chip">
-                                    📅{' '}
+                                    <img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} />{' '}
                                     {new Date(dateString).toLocaleDateString('en-US', {
                                       weekday: 'short',
                                       year: 'numeric',
@@ -3013,7 +3013,7 @@ const WorkerDashboard = () => {
 
             {/* Booking & Scheduling Rules */}
             <section className="rule-section">
-              <h3 className="rule-heading rule-info">📅 Booking & Scheduling Guidelines</h3>
+              <h3 className="rule-heading rule-info"><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Booking & Scheduling Guidelines</h3>
               <div className="rule-card rule-card-info">
                 <ul className="rule-list">
                   <li><strong>Accept/Decline Promptly:</strong> Respond to booking requests within 24 hours</li>

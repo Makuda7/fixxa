@@ -87,7 +87,7 @@ const Join = () => {
             </p>
             <ul className="benefits-list">
               <li><span className="emoji">👥</span>Manage multiple profiles</li>
-              <li><span className="emoji">📅</span>Bulk service offerings</li>
+              <li><span className="emoji"><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /></span>Bulk service offerings</li>
               <li><span className="emoji">📊</span>Analytics and reporting</li>
               <li><span className="emoji">🎯</span>Priority customer matching</li>
               <li><span className="emoji">🤝</span>Dedicated account management</li>

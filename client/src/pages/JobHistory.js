@@ -541,7 +541,7 @@ const JobHistory = () => {
 
               <div className="booking-details">
                 <div className="detail-row">
-                  <span className="label">📅 Date:</span>
+                  <span className="label"><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Date:</span>
                   <span className="value">{formatDate(booking.booking_date)}</span>
                 </div>
                 <div className="detail-row">

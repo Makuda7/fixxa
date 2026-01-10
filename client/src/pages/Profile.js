@@ -399,7 +399,7 @@ const Profile = () => {
                 </span>
                 <span className="spec-badge">⭐ {worker.experience} years experience</span>
                 <span className="spec-badge" title="Days this professional is available to work">
-                  📅 Works: {getAvailabilityText(worker.availability_schedule)}
+                  <img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Works: {getAvailabilityText(worker.availability_schedule)}
                 </span>
                 {completionRate && completionRate.totalJobs > 0 && (
                   <span
@@ -481,7 +481,7 @@ const Profile = () => {
             📧 Contact {worker.name.split(' ')[0]}
           </button>
           <button className="btn-secondary" onClick={handleBookNowClick}>
-            📅 Book Now
+            <img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Book Now
           </button>
         </div>
 
@@ -557,7 +557,7 @@ const Profile = () => {
             className={`form-container ${showBookingForm ? 'show' : ''}`}
             onSubmit={handleBookingSubmit}
           >
-            <h4>📅 Book an Appointment</h4>
+            <h4><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Book an Appointment</h4>
 
             <div className="booking-notice">
               <p>

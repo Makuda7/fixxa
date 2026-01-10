@@ -729,7 +729,7 @@ const Reviews = () => {
               </div>
 
               <div className="stat-card">
-                <div className="stat-icon">📅</div>
+                <div className="stat-icon"><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /></div>
                 <div className="stat-content">
                   <div className="stat-value">{statistics.thisMonthCount}</div>
                   <div className="stat-label">This Month</div>

@@ -108,7 +108,7 @@ const Support = () => {
       link: '/settings'
     },
     {
-      icon: '📅',
+      icon: <img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '40px', height: '40px' }} />,
       title: 'Bookings & Jobs',
       description: 'Learn about making bookings, managing jobs, and schedules',
       link: '/client-dashboard'

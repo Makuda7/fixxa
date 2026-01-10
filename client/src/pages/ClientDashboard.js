@@ -2073,7 +2073,7 @@ const ClientDashboard = () => {
                 padding: '1rem',
                 margin: '1rem 0'
               }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: '#1565c0' }}>📅 Reschedule Policy</h4>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#1565c0' }}><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Reschedule Policy</h4>
                 <p style={{ margin: 0, fontSize: '0.9rem', color: '#1565c0' }}>
                   <strong>Important:</strong> Reschedule requests must be made at least <strong>48 hours</strong> before your booking time.
                   The professional must approve your reschedule request before it takes effect.

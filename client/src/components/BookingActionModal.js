@@ -76,7 +76,7 @@ const BookingActionModal = ({ booking, action, onClose, onConfirm }) => {
       case 'reschedule':
         return {
           title: 'Reschedule Booking',
-          icon: '📅',
+          icon: '<img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} />',
           iconClass: 'icon-warning',
           message: `Select a new date and time for ${booking?.client_name}'s booking:`,
           confirmText: 'Reschedule Booking',
