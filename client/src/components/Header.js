@@ -99,6 +99,9 @@ const Header = () => {
                   </>
                 ) : (
                   <>
+                    <Link to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'} onClick={closeDropdown}>
+                      🏠 Dashboard
+                    </Link>
                     <Link to={user?.type === 'professional' ? '/worker-dashboard#messages' : '/messages'} className="menu-link-with-badge" onClick={closeDropdown}>
                       Messages
                       {unreadCount > 0 && (
