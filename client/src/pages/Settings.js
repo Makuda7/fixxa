@@ -50,18 +50,22 @@ const Settings = () => {
 
   const loadProfileData = async () => {
     try {
-      const res = await fetch('/api/user/profile', { credentials: 'include' });
+      // Use worker profile endpoint for professionals
+      const endpoint = user?.type === 'professional' ? '/api/workers/profile' : '/api/user/profile';
+      const res = await fetch(endpoint, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
+        // For workers, the data is in data.worker, for clients it's in data.user
+        const profileData = user?.type === 'professional' ? data.worker : data.user;
         setProfileData({
-          fullName: data.user.name || '',
-          phone: data.user.phone || '',
-          address: data.user.address || '',
-          city: data.user.city || '',
-          postalCode: data.user.postal_code || ''
+          fullName: profileData.name || '',
+          phone: profileData.phone || '',
+          address: profileData.address || profileData.area || '',
+          city: profileData.city || '',
+          postalCode: profileData.postal_code || ''
         });
-        if (data.user.profile_pic) {
-          setProfilePicPreview(data.user.profile_pic);
+        if (profileData.profile_picture || profileData.profile_pic) {
+          setProfilePicPreview(profileData.profile_picture || profileData.profile_pic);
         }
       }
     } catch (error) {
