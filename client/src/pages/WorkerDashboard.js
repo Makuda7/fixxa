@@ -141,6 +141,7 @@ const WorkerDashboard = () => {
   // Fetch all data on mount
   useEffect(() => {
     fetchDashboardData();
+    fetchEarnings(); // Fetch earnings summary on mount to populate stats
   }, [fetchDashboardData]);
 
   // Fetch earnings when filter changes or tab is earnings
