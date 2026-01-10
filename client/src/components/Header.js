@@ -100,7 +100,8 @@ const Header = () => {
                 ) : (
                   <>
                     <Link to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'} onClick={closeDropdown}>
-                      🏠 Dashboard
+                      <img src="/images/icons-fixxa/home_13317809.png" alt="Dashboard" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
+                      Dashboard
                     </Link>
                     <Link to={user?.type === 'professional' ? '/worker-dashboard#messages' : '/messages'} className="menu-link-with-badge" onClick={closeDropdown}>
                       Messages

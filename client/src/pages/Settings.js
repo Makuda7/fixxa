@@ -50,13 +50,13 @@ const Settings = () => {
 
   const loadProfileData = async () => {
     try {
-      // Use worker profile endpoint for professionals
-      const endpoint = user?.type === 'professional' ? '/api/workers/profile' : '/api/user/profile';
+      // Use worker profile endpoint for workers
+      const endpoint = user?.type === 'worker' ? '/api/workers/profile' : '/api/user/profile';
       const res = await fetch(endpoint, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         // For workers, the data is in data.worker, for clients it's in data.user
-        const profileData = user?.type === 'professional' ? data.worker : data.user;
+        const profileData = user?.type === 'worker' ? data.worker : data.user;
         setProfileData({
           fullName: profileData.name || '',
           phone: profileData.phone || '',
