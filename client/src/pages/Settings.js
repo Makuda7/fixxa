@@ -59,8 +59,8 @@ const Settings = () => {
       const data = await res.json();
       console.log('Profile data received:', data);
       if (data.success) {
-        // For workers, the data is in data.worker, for clients it's in data.user
-        const profile = user?.type === 'worker' ? data.worker : data.user;
+        // For workers, the data is in data.profile, for clients it's in data.user
+        const profile = user?.type === 'worker' ? data.profile : data.user;
         console.log('Extracted profile data:', profile);
         setProfileData({
           fullName: profile.name || '',
