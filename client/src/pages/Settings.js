@@ -43,20 +43,25 @@ const Settings = () => {
   });
 
   useEffect(() => {
-    loadProfileData();
+    if (user) {
+      loadProfileData();
+    }
     loadNotificationPreferences();
     loadLocationSettings();
-  }, []);
+  }, [user]);
 
   const loadProfileData = async () => {
     try {
       // Use worker profile endpoint for workers
       const endpoint = user?.type === 'worker' ? '/api/workers/profile' : '/api/user/profile';
+      console.log('Loading profile from:', endpoint, 'User type:', user?.type);
       const res = await fetch(endpoint, { credentials: 'include' });
       const data = await res.json();
+      console.log('Profile data received:', data);
       if (data.success) {
         // For workers, the data is in data.worker, for clients it's in data.user
         const profileData = user?.type === 'worker' ? data.worker : data.user;
+        console.log('Extracted profile data:', profileData);
         setProfileData({
           fullName: profileData.name || '',
           phone: profileData.phone || '',
