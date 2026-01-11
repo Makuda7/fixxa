@@ -43,48 +43,38 @@ const Settings = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      loadProfileData();
-    }
+    // Always try to load profile data - backend will handle auth
+    loadProfileData();
     loadNotificationPreferences();
     loadLocationSettings();
-  }, [user]);
+  }, []);
 
   const loadProfileData = async () => {
     try {
-      // Use worker profile endpoint for professionals/workers
-      const endpoint = user?.type === 'professional' ? '/api/workers/profile' : '/api/user/profile';
-      console.log('=== PROFILE LOAD DEBUG ===');
-      console.log('User object:', user);
-      console.log('User type:', user?.type);
-      console.log('Endpoint:', endpoint);
-      console.log('Full URL:', window.location.origin + endpoint);
-
-      const res = await fetch(endpoint, {
+      // Try worker endpoint first
+      let res = await fetch('/api/workers/profile', {
         credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
       });
-      console.log('Response status:', res.status);
-      console.log('Response URL:', res.url);
-      console.log('Content-Type:', res.headers.get('content-type'));
 
-      // Check if response is actually JSON
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await res.text();
-        console.error('Response is not JSON:', text.substring(0, 500));
-        throw new Error('Server returned non-JSON response');
+      // If worker endpoint fails with 403, try client endpoint
+      if (res.status === 403 || res.status === 401) {
+        res = await fetch('/api/user/profile', {
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' }
+        });
+      }
+
+      if (!res.ok) {
+        console.error('Profile fetch failed with status:', res.status);
+        return;
       }
 
       const data = await res.json();
-      console.log('Profile data received:', data);
       if (data.success) {
-        // For professionals/workers, the data is in data.profile, for clients it's in data.user
-        const profile = user?.type === 'professional' ? data.profile : data.user;
-        console.log('Extracted profile data:', profile);
+        // Try both possible data structures
+        const profile = data.profile || data.user;
+        console.log('Profile loaded successfully:', profile);
 
         if (profile) {
           setProfileData({
