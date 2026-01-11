@@ -58,6 +58,7 @@ const Settings = () => {
       const res = await fetch(endpoint, { credentials: 'include' });
       const data = await res.json();
       console.log('Profile data received:', data);
+      alert('API Response keys: ' + Object.keys(data).join(', ') + '\nHas profile: ' + (!!data.profile) + '\nSuccess: ' + data.success);
       if (data.success) {
         // For workers, the data is in data.profile, for clients it's in data.user
         const profile = user?.type === 'worker' ? data.profile : data.user;
