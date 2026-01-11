@@ -56,6 +56,16 @@ const Settings = () => {
       const endpoint = user?.type === 'professional' ? '/api/workers/profile' : '/api/user/profile';
       console.log('Loading profile from:', endpoint, 'User type:', user?.type);
       const res = await fetch(endpoint, { credentials: 'include' });
+      console.log('Response status:', res.status, 'Content-Type:', res.headers.get('content-type'));
+
+      // Check if response is actually JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('Response is not JSON:', text.substring(0, 500));
+        throw new Error('Server returned non-JSON response');
+      }
+
       const data = await res.json();
       console.log('Profile data received:', data);
       if (data.success) {
