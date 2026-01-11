@@ -55,7 +55,12 @@ const Settings = () => {
       // Use worker profile endpoint for professionals/workers
       const endpoint = user?.type === 'professional' ? '/api/workers/profile' : '/api/user/profile';
       console.log('Loading profile from:', endpoint, 'User type:', user?.type);
-      const res = await fetch(endpoint, { credentials: 'include' });
+      const res = await fetch(endpoint, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       console.log('Response status:', res.status, 'Content-Type:', res.headers.get('content-type'));
 
       // Check if response is actually JSON
