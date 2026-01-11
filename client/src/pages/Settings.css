@@ -22,14 +22,14 @@
 
 .settings-sidebar {
   position: fixed;
-  top: 60px;
+  top: 0;
   left: 0;
   width: 240px;
-  height: calc(100vh - 60px);
+  height: 100vh;
   background: white;
   border-right: 1px solid #ddd;
   padding: 1.5rem 0;
-  padding-top: 80px;
+  padding-top: 140px;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
