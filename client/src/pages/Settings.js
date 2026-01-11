@@ -62,16 +62,24 @@ const Settings = () => {
         // For workers, the data is in data.profile, for clients it's in data.user
         const profile = user?.type === 'worker' ? data.profile : data.user;
         console.log('Extracted profile data:', profile);
-        setProfileData({
-          fullName: profile.name || '',
-          phone: profile.phone || '',
-          address: profile.address || profile.area || '',
-          city: profile.city || '',
-          postalCode: profile.postal_code || ''
-        });
-        if (profile.profile_picture || profile.profile_pic) {
-          setProfilePicPreview(profile.profile_picture || profile.profile_pic);
+
+        if (profile) {
+          setProfileData({
+            fullName: profile.name || '',
+            phone: profile.phone || '',
+            address: profile.address || profile.area || '',
+            city: profile.city || '',
+            postalCode: profile.postal_code || ''
+          });
+          if (profile.profile_picture || profile.profile_pic) {
+            setProfilePicPreview(profile.profile_picture || profile.profile_pic);
+          }
+          console.log('Profile data state updated successfully');
+        } else {
+          console.error('Profile is null or undefined');
         }
+      } else {
+        console.error('API response success is false:', data);
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
