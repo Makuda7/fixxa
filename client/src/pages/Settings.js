@@ -60,17 +60,17 @@ const Settings = () => {
       console.log('Profile data received:', data);
       if (data.success) {
         // For workers, the data is in data.worker, for clients it's in data.user
-        const profileData = user?.type === 'worker' ? data.worker : data.user;
-        console.log('Extracted profile data:', profileData);
+        const profile = user?.type === 'worker' ? data.worker : data.user;
+        console.log('Extracted profile data:', profile);
         setProfileData({
-          fullName: profileData.name || '',
-          phone: profileData.phone || '',
-          address: profileData.address || profileData.area || '',
-          city: profileData.city || '',
-          postalCode: profileData.postal_code || ''
+          fullName: profile.name || '',
+          phone: profile.phone || '',
+          address: profile.address || profile.area || '',
+          city: profile.city || '',
+          postalCode: profile.postal_code || ''
         });
-        if (profileData.profile_picture || profileData.profile_pic) {
-          setProfilePicPreview(profileData.profile_picture || profileData.profile_pic);
+        if (profile.profile_picture || profile.profile_pic) {
+          setProfilePicPreview(profile.profile_picture || profile.profile_pic);
         }
       }
     } catch (error) {

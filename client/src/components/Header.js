@@ -104,6 +104,7 @@ const Header = () => {
                       Dashboard
                     </Link>
                     <Link to={user?.type === 'professional' ? '/worker-dashboard#messages' : '/messages'} className="menu-link-with-badge" onClick={closeDropdown}>
+                      <img src="/images/icons-fixxa/speech-bubble_159778.png" alt="Messages" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
                       Messages
                       {unreadCount > 0 && (
                         <span className="menu-notification-badge">{unreadCount}</span>
