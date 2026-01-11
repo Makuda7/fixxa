@@ -52,16 +52,15 @@ const Settings = () => {
 
   const loadProfileData = async () => {
     try {
-      // Use worker profile endpoint for workers
-      const endpoint = user?.type === 'worker' ? '/api/workers/profile' : '/api/user/profile';
+      // Use worker profile endpoint for professionals/workers
+      const endpoint = user?.type === 'professional' ? '/api/workers/profile' : '/api/user/profile';
       console.log('Loading profile from:', endpoint, 'User type:', user?.type);
       const res = await fetch(endpoint, { credentials: 'include' });
       const data = await res.json();
       console.log('Profile data received:', data);
-      alert('API Response keys: ' + Object.keys(data).join(', ') + '\nHas profile: ' + (!!data.profile) + '\nSuccess: ' + data.success);
       if (data.success) {
-        // For workers, the data is in data.profile, for clients it's in data.user
-        const profile = user?.type === 'worker' ? data.profile : data.user;
+        // For professionals/workers, the data is in data.profile, for clients it's in data.user
+        const profile = user?.type === 'professional' ? data.profile : data.user;
         console.log('Extracted profile data:', profile);
 
         if (profile) {
