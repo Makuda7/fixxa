@@ -35,7 +35,7 @@ const Loading = ({
   showMessage = true,
   fullScreen = false,
   // You can override with your own animation URL or local path
-  animationSrc = "https://lottie.host/58f368e6-8aa5-4355-892a-5f3759c09ecb/yEnNq7hE7V.json"
+  animationSrc = "/animations/fixxa-loader.json"
 }) => {
   const sizes = {
     small: 100,
