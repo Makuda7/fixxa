@@ -54,7 +54,8 @@ const Settings = () => {
       console.log('Loading profile data...');
 
       // Simple fetch without extra headers - just like CompleteRegistration does
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/workers/profile`, {
+      // NOTE: The endpoint is /workers/profile, NOT /api/workers/profile
+      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/workers/profile`, {
         credentials: 'include'
       });
 
