@@ -29,12 +29,12 @@
   background: white;
   border-right: 1px solid #ddd;
   padding: 1.5rem 0;
-  padding-top: 140px;
+  padding-top: 160px;  /* Increased to prevent header overlap */
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   overflow-y: auto;
-  z-index: 50;
+  z-index: 999;  /* Below header (1000) but above other content */
   transition: transform 0.3s ease;
 }
 

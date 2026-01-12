@@ -70,6 +70,18 @@ const Settings = () => {
         return;
       }
 
+      // Check if response is JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Response is not JSON, got:', contentType);
+        console.error('Response status:', res.status, 'URL:', res.url);
+        // User is likely not authenticated, redirect to login
+        if (res.status === 200 && res.url.includes('login')) {
+          window.location.href = '/login.html';
+        }
+        return;
+      }
+
       const data = await res.json();
       if (data.success) {
         // Try both possible data structures
