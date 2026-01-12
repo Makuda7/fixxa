@@ -38,6 +38,17 @@ module.exports = (pool, logger, helpers) => {
   const { requireAuth, workerOnly } = require('../middleware/auth');
   const { calculateDistance } = helpers;
 
+  // DEBUG ENDPOINT - Check session state
+  router.get('/debug-session', (req, res) => {
+    res.json({
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      sessionUser: req.session?.user || null,
+      cookieHeader: req.headers.cookie ? 'Present' : 'Missing',
+      allHeaders: req.headers
+    });
+  });
+
   // Get all active workers (approved only - home screen)
   router.get('/', async (req, res) => {
     try {
