@@ -358,12 +358,12 @@ const Settings = () => {
 
       {/* Settings Sidebar */}
       <nav className={`settings-sidebar ${showMobileSidebar ? 'show' : ''}`}>
-        <a
+        <Link
+          to="/profile"
           className={activeSection === 'profile' ? 'active' : ''}
-          onClick={() => { setActiveSection('profile'); setShowMobileSidebar(false); }}
         >
           <span>👤</span> Profile
-        </a>
+        </Link>
         <a
           className={activeSection === 'security' ? 'active' : ''}
           onClick={() => { setActiveSection('security'); setShowMobileSidebar(false); }}
