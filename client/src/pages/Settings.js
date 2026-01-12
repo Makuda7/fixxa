@@ -60,26 +60,38 @@ const Settings = () => {
 
       console.log('Response status:', response.status);
       console.log('Response OK:', response.ok);
+      console.log('Response URL:', response.url);
+      console.log('Response Content-Type:', response.headers.get('content-type'));
+
+      // Get the response text first to see what we're actually getting
+      const responseText = await response.text();
+      console.log('Response text (first 500 chars):', responseText.substring(0, 500));
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('Profile data received:', data);
+        try {
+          const data = JSON.parse(responseText);
+          console.log('Profile data received:', data);
 
-        if (data.success && data.profile) {
-          const profile = data.profile;
-          setProfileData({
-            fullName: profile.name || '',
-            phone: profile.phone || '',
-            address: profile.address || profile.area || '',
-            city: profile.city || '',
-            postalCode: profile.postal_code || ''
-          });
+          if (data.success && data.profile) {
+            const profile = data.profile;
+            setProfileData({
+              fullName: profile.name || '',
+              phone: profile.phone || '',
+              address: profile.address || profile.area || '',
+              city: profile.city || '',
+              postalCode: profile.postal_code || ''
+            });
 
-          if (profile.profile_picture) {
-            setProfilePicPreview(profile.profile_picture);
+            if (profile.profile_picture) {
+              setProfilePicPreview(profile.profile_picture);
+            }
+
+            console.log('Profile loaded successfully');
           }
-
-          console.log('Profile loaded successfully');
+        } catch (parseError) {
+          console.error('Failed to parse response as JSON:', parseError);
+          console.error('This means the server returned HTML instead of JSON');
+          console.error('Likely cause: session not recognized, middleware redirecting to login');
         }
       } else {
         console.error('Failed to load profile - status:', response.status);
