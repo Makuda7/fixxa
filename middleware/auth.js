@@ -2,6 +2,11 @@ const jwt = require('jsonwebtoken');
 
 // Authorization middleware functions
 function requireAuth(req, res, next) {
+  console.log('=== requireAuth middleware ===');
+  console.log('Session exists:', !!req.session);
+  console.log('Session user:', req.session?.user);
+  console.log('Path:', req.path);
+
   // Check for JWT token (mobile apps)
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -17,8 +22,13 @@ function requireAuth(req, res, next) {
   }
 
   // Check for session (web app)
-  if (req.session?.user?.id) next();
-  else res.status(401).json({ success: false, error: 'Authentication required' });
+  if (req.session?.user?.id) {
+    console.log('Auth successful');
+    next();
+  } else {
+    console.log('Auth failed - no session user');
+    res.status(401).json({ success: false, error: 'Authentication required' });
+  }
 }
 
 function clientOnly(req, res, next) {
