@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import QuoteModal from './QuoteModal';
+import Loading from './Loading';
 import './Messages.css';
 
 const Messages = () => {
@@ -190,7 +191,7 @@ const Messages = () => {
   if (loading) {
     return (
       <div className="messages-container">
-        <div className="messages-loading">Loading messages...</div>
+        <Loading message="Loading messages..." size="medium" />
       </div>
     );
   }
