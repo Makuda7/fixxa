@@ -51,44 +51,22 @@ const Settings = () => {
 
   const loadProfileData = async () => {
     try {
-      // Try worker endpoint first
-      let res = await fetch('/api/workers/profile', {
-        credentials: 'include',
-        headers: { 'Accept': 'application/json' }
+      console.log('Loading profile data...');
+
+      // Simple fetch without extra headers - just like CompleteRegistration does
+      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/workers/profile`, {
+        credentials: 'include'
       });
 
-      // If worker endpoint fails with 403, try client endpoint
-      if (res.status === 403 || res.status === 401) {
-        res = await fetch('/api/user/profile', {
-          credentials: 'include',
-          headers: { 'Accept': 'application/json' }
-        });
-      }
+      console.log('Response status:', response.status);
+      console.log('Response OK:', response.ok);
 
-      if (!res.ok) {
-        console.error('Profile fetch failed with status:', res.status);
-        return;
-      }
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Profile data received:', data);
 
-      // Check if response is JSON
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Response is not JSON, got:', contentType);
-        console.error('Response status:', res.status, 'URL:', res.url);
-        // User is likely not authenticated, redirect to login
-        if (res.status === 200 && res.url.includes('login')) {
-          window.location.href = '/login.html';
-        }
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        // Try both possible data structures
-        const profile = data.profile || data.user;
-        console.log('Profile loaded successfully:', profile);
-
-        if (profile) {
+        if (data.success && data.profile) {
+          const profile = data.profile;
           setProfileData({
             fullName: profile.name || '',
             phone: profile.phone || '',
@@ -96,18 +74,18 @@ const Settings = () => {
             city: profile.city || '',
             postalCode: profile.postal_code || ''
           });
-          if (profile.profile_picture || profile.profile_pic) {
-            setProfilePicPreview(profile.profile_picture || profile.profile_pic);
+
+          if (profile.profile_picture) {
+            setProfilePicPreview(profile.profile_picture);
           }
-          console.log('Profile data state updated successfully');
-        } else {
-          console.error('Profile is null or undefined');
+
+          console.log('Profile loaded successfully');
         }
       } else {
-        console.error('API response success is false:', data);
+        console.error('Failed to load profile - status:', response.status);
       }
     } catch (error) {
-      console.error('Failed to load profile:', error);
+      console.error('Error loading profile:', error);
     }
   };
 
@@ -358,12 +336,12 @@ const Settings = () => {
 
       {/* Settings Sidebar */}
       <nav className={`settings-sidebar ${showMobileSidebar ? 'show' : ''}`}>
-        <Link
-          to="/profile"
+        <a
           className={activeSection === 'profile' ? 'active' : ''}
+          onClick={() => { setActiveSection('profile'); setShowMobileSidebar(false); }}
         >
           <span>👤</span> Profile
-        </Link>
+        </a>
         <a
           className={activeSection === 'security' ? 'active' : ''}
           onClick={() => { setActiveSection('security'); setShowMobileSidebar(false); }}
