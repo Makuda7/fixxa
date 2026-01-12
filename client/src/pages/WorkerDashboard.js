@@ -6,6 +6,7 @@ import { workerAPI, certificationsAPI } from '../services/api';
 import PortfolioGallery from '../components/PortfolioGallery';
 import ProfileCompletionBanner from '../components/ProfileCompletionBanner';
 import Messages from '../components/Messages';
+import Loading from '../components/Loading';
 import './WorkerDashboard.css';
 
 const WorkerDashboard = () => {
@@ -780,8 +781,7 @@ const WorkerDashboard = () => {
   if (loading) {
     return (
       <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading your dashboard...</p>
+        <Loading message="Loading your dashboard..." size="medium" />
       </div>
     );
   }
@@ -1604,10 +1604,7 @@ const WorkerDashboard = () => {
           <div className="bookings-tab">
             {/* Show loading state */}
             {loading && (
-              <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <div className="loading-spinner"></div>
-                <p>Loading jobs...</p>
-              </div>
+              <Loading message="Loading jobs..." size="medium" />
             )}
 
             {/* Client Requests Section - Needs Action */}
@@ -1941,10 +1938,7 @@ const WorkerDashboard = () => {
           <div className="schedule-tab">
             {/* Show loading state */}
             {loading && (
-              <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <div className="loading-spinner"></div>
-                <p>Loading schedule...</p>
-              </div>
+              <Loading message="Loading schedule..." size="medium" />
             )}
 
             {/* My Schedule Section with Filters */}
@@ -2176,10 +2170,7 @@ const WorkerDashboard = () => {
           <div className="quotes-tab">
             {/* Show loading state */}
             {loading && (
-              <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <div className="loading-spinner"></div>
-                <p>Loading quotes...</p>
-              </div>
+              <Loading message="Loading quotes..." size="medium" />
             )}
 
             {!loading && (
@@ -2414,10 +2405,7 @@ const WorkerDashboard = () => {
           <div className="earnings-tab">
             {/* Show loading state */}
             {loading && (
-              <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <div className="loading-spinner"></div>
-                <p>Loading earnings...</p>
-              </div>
+              <Loading message="Loading earnings..." size="medium" />
             )}
 
             {!loading && (
