@@ -168,7 +168,7 @@ app.use(session({
   saveUninitialized: false,        // Don't create session until something stored
   rolling: SESSION_ROLLING,        // Reset expiry on every request (rolling session)
   cookie: {
-    secure: false, // Must be false in development for localhost
+    secure: process.env.NODE_ENV === 'production', // Secure cookies in production only
     httpOnly: true,
     maxAge: SESSION_IDLE_TIMEOUT,  // 30 minutes of inactivity
     sameSite: 'lax'
