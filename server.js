@@ -970,77 +970,67 @@ async function startServer() {
     await testConnection(logger);
     console.log('✅ Database connection verified');
 
-    // Run migrations
-    console.log('📦 Running migrations...');
-    await runNotificationsMigration();
-    await runPhoneNumbersMigration();
-    await runIdentificationMigration();
-    await runEmergencyContactsMigration();
-    await runProfilePictureMigration();
-    await runTermsAcceptanceMigration();
-    await runCompleteRegistrationMigration();
-    await runMessageImagesMigration();
-    await runVirusScanLogsMigration();
-    await runReferralSourceMigration();
-    await runPaymentFieldsMigration();
-    await runSuburbsMigration();
-    await runQuotesMigration();
-    await runBookingAddressMigration();
-    await runWorkerProfileUpdatesMigration();
-    await runCertificationColumnsMigration();
-    await runWorkerApprovalMigration();
-    await activatePendingWorkers();
+    // Run migrations with tracking to prevent re-execution
+    console.log('📦 Running database migrations...');
+    const MigrationRunner = require('./utils/migrationRunner');
+    const migrationRunner = new MigrationRunner(pool, logger);
 
-    // Quote requests migration
+    // Inline migrations (defined in server.js)
+    await migrationRunner.run('notifications', runNotificationsMigration);
+    await migrationRunner.run('phone_numbers', runPhoneNumbersMigration);
+    await migrationRunner.run('identification', runIdentificationMigration);
+    await migrationRunner.run('emergency_contacts', runEmergencyContactsMigration);
+    await migrationRunner.run('profile_picture', runProfilePictureMigration);
+    await migrationRunner.run('terms_acceptance', runTermsAcceptanceMigration);
+    await migrationRunner.run('complete_registration', runCompleteRegistrationMigration);
+    await migrationRunner.run('message_images', runMessageImagesMigration);
+    await migrationRunner.run('virus_scan_logs', runVirusScanLogsMigration);
+    await migrationRunner.run('referral_source', runReferralSourceMigration);
+    await migrationRunner.run('payment_fields', runPaymentFieldsMigration);
+    await migrationRunner.run('suburbs', runSuburbsMigration);
+    await migrationRunner.run('quotes', runQuotesMigration);
+    await migrationRunner.run('booking_address', runBookingAddressMigration);
+    await migrationRunner.run('worker_profile_updates', runWorkerProfileUpdatesMigration);
+    await migrationRunner.run('certification_columns', runCertificationColumnsMigration);
+    await migrationRunner.run('worker_approval', runWorkerApprovalMigration);
+    await migrationRunner.run('activate_pending_workers', activatePendingWorkers);
+
+    // External migrations (from separate files)
     const { runQuoteRequestsMigration } = require('./migrations/quote_requests');
-    await runQuoteRequestsMigration(pool, logger);
+    await migrationRunner.run('quote_requests', runQuoteRequestsMigration);
 
-    // Quote request ID migration (enables quotes from requests, not just bookings)
     const { runQuoteRequestIdMigration } = require('./migrations/add_quote_request_id_to_quotes');
-    await runQuoteRequestIdMigration(pool, logger);
+    await migrationRunner.run('quote_request_id', runQuoteRequestIdMigration);
 
-    // Available dates migration (enables workers to specify available start dates in quotes)
     const { runAvailableDatesMigration } = require('./migrations/add_available_dates_to_quotes');
-    await runAvailableDatesMigration(pool, logger);
+    await migrationRunner.run('available_dates', runAvailableDatesMigration);
 
-    // Worker specialties migration
     const { runWorkerSpecialtiesMigration } = require('./migrations/worker_specialties');
-    await runWorkerSpecialtiesMigration(pool, logger);
+    await migrationRunner.run('worker_specialties', runWorkerSpecialtiesMigration);
 
-    // Add completion email timestamp column
     const { addCompletionEmailTimestamp } = require('./migrations/add_completion_email_timestamp');
-    await addCompletionEmailTimestamp(pool, logger);
+    await migrationRunner.run('completion_email_timestamp', addCompletionEmailTimestamp);
 
-    // Add verification checkbox columns
     const { addVerificationCheckboxes } = require('./migrations/add_verification_checkboxes');
-    await addVerificationCheckboxes(pool, logger);
+    await migrationRunner.run('verification_checkboxes', addVerificationCheckboxes);
 
-    // Fix verification_status for existing verified workers
     const { fixVerificationStatus } = require('./migrations/fix_verification_status');
-    await fixVerificationStatus(pool, logger);
+    await migrationRunner.run('fix_verification_status', fixVerificationStatus);
 
-    // Add registration_complete column
     const { addRegistrationCompleteColumn } = require('./migrations/add_registration_complete');
-    await addRegistrationCompleteColumn(pool, logger);
+    await migrationRunner.run('registration_complete', addRegistrationCompleteColumn);
 
-    // Add portfolio_photos table
     const { addPortfolioPhotos } = require('./migrations/add_portfolio_photos');
-    await addPortfolioPhotos(pool, logger);
+    await migrationRunner.run('portfolio_photos', addPortfolioPhotos);
 
-    // Add review_photos table
     const { addReviewPhotos } = require('./migrations/add_review_photos');
-    await addReviewPhotos(pool, logger);
+    await migrationRunner.run('review_photos', addReviewPhotos);
 
-    console.log('DEBUG: About to load document_type migration...');
-    // Add document_type column to certifications table
     const { addDocumentType } = require('./migrations/add_document_type');
-    console.log('DEBUG: Loaded document_type migration, about to execute...');
-    await addDocumentType(pool, logger);
-    console.log('DEBUG: Finished document_type migration');
+    await migrationRunner.run('document_type', addDocumentType);
 
-    // Add line items columns to quotes table
     const { addLineItemsToQuotes } = require('./migrations/add_line_items_to_quotes');
-    await addLineItemsToQuotes(pool, logger);
+    await migrationRunner.run('line_items_to_quotes', addLineItemsToQuotes);
 
     console.log('✅ All migrations complete');
 
