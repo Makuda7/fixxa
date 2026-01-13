@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "FixxaMobile",
-    "slug": "FixxaMobile",
+    "name": "Fixxa",
+    "slug": "fixxa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,12 +13,21 @@
       "backgroundColor": "#228B22"
     },
     "ios": {
+      "bundleIdentifier": "com.fixxa.app",
+      "buildNumber": "1",
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Fixxa needs your location to find professionals near you and show distances to service providers."
+        "NSLocationWhenInUseUsageDescription": "Fixxa needs your location to find professionals near you and show distances to service providers.",
+        "NSCameraUsageDescription": "Fixxa needs access to your camera to upload photos of completed work and service documentation.",
+        "NSPhotoLibraryUsageDescription": "Fixxa needs access to your photo library to upload images for your profile, portfolio, and service documentation."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.fixxa.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -26,11 +35,26 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id-here"
+      }
+    },
+    "owner": "fixxa",
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
