@@ -2633,6 +2633,116 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Cleanup test data for a specific user (admin only)
+  router.delete('/cleanup-user-data/:userId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const adminEmail = req.session.user.email;
+
+      // Get user details first
+      const userResult = await pool.query(
+        'SELECT id, name, email FROM users WHERE id = $1',
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      const user = userResult.rows[0];
+      const results = {
+        reviews: 0,
+        messages: 0,
+        notifications: 0,
+        bookings: 0
+      };
+
+      // Start transaction
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        // 1. Delete reviews by this user
+        const reviewsResult = await client.query(
+          'DELETE FROM reviews WHERE client_id = $1 RETURNING id',
+          [userId]
+        );
+        results.reviews = reviewsResult.rowCount;
+
+        // 2. Delete messages where this user is involved
+        const messagesResult = await client.query(
+          'DELETE FROM messages WHERE client_id = $1 RETURNING id',
+          [userId]
+        );
+        results.messages = messagesResult.rowCount;
+
+        // 3. Delete notifications for this user
+        const notificationsResult = await client.query(
+          'DELETE FROM notifications WHERE user_id = $1 RETURNING id',
+          [userId]
+        );
+        results.notifications = notificationsResult.rowCount;
+
+        // 4. Delete bookings made by this user
+        const bookingsResult = await client.query(
+          'DELETE FROM bookings WHERE user_id = $1 RETURNING id',
+          [userId]
+        );
+        results.bookings = bookingsResult.rowCount;
+
+        await client.query('COMMIT');
+
+        logger.info('Admin cleaned up user test data', {
+          adminEmail,
+          userId,
+          userName: user.name,
+          userEmail: user.email,
+          results
+        });
+
+        res.json({
+          success: true,
+          message: `Test data cleaned up for ${user.name}`,
+          user: { id: user.id, name: user.name, email: user.email },
+          deleted: results
+        });
+
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      logger.error('Failed to cleanup user data', { error: error.message, userId: req.params.userId });
+      res.status(500).json({ success: false, error: 'Failed to cleanup user data' });
+    }
+  });
+
+  // Find user by name for cleanup
+  router.get('/find-user', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { name } = req.query;
+
+      if (!name) {
+        return res.status(400).json({ success: false, error: 'Name parameter is required' });
+      }
+
+      const result = await pool.query(
+        `SELECT id, name, email, created_at FROM users WHERE LOWER(name) LIKE LOWER($1)`,
+        [`%${name}%`]
+      );
+
+      res.json({
+        success: true,
+        users: result.rows
+      });
+    } catch (error) {
+      logger.error('Failed to find user', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to find user' });
+    }
+  });
+
   // Check Clement and Nkululeko certifications
   router.get('/check-clement-nkululeko-12345', async (req, res) => {
     try {
