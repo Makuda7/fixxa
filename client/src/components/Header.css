@@ -4,6 +4,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
   background: linear-gradient(to right, var(--fixxa-primary) 0%, rgba(34, 139, 34, 0.7) 30%, rgba(34, 139, 34, 0.3) 60%, white 85%);
   border-bottom: 1px solid #ddd;
   position: sticky;
