@@ -391,8 +391,6 @@ const Service = () => {
                   ? `${worker.primary_suburb}, ${worker.province}`
                   : worker.area || 'Location not set';
 
-                const isPending = worker.approval_status === 'pending' || worker.is_pending;
-
                 // Calculate distance if user location and worker location are available
                 let distance = null;
                 if (userLocation && worker.latitude && worker.longitude) {
@@ -405,21 +403,10 @@ const Service = () => {
                 }
 
                 return (
-                  <div key={worker.id} className={`worker-card-wrapper ${isPending ? 'pending' : ''}`}>
-                    {isPending && (
-                      <div className="coming-soon-overlay">
-                        <div className="coming-soon-content">
-                          <div className="coming-soon-icon">⏳</div>
-                          <h4>Coming Soon!</h4>
-                          <p>{worker.name} will be available shortly</p>
-                          <small>Currently under review</small>
-                        </div>
-                      </div>
-                    )}
+                  <div key={worker.id} className="worker-card-wrapper">
                     <Link
                       to={`/profile?id=${worker.id}`}
                       className="worker-card"
-                      style={{ opacity: isPending ? 0.6 : 1 }}
                     >
                       <div className="worker-card-image-wrapper">
                         <img

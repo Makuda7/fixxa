@@ -34,7 +34,7 @@ module.exports = (pool, logger) => {
         LEFT JOIN worker_specialties ws ON w.id = ws.worker_id
         LEFT JOIN specialties s ON ws.specialty_id = s.id
         LEFT JOIN certifications c ON w.id = c.worker_id
-        WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
+        WHERE w.is_active = true AND w.approval_status = 'approved'
       `;
 
       const params = [];
@@ -115,18 +115,14 @@ module.exports = (pool, logger) => {
 
       const result = await pool.query(query, params);
 
-      // Add is_pending flag to results
-      const workers = result.rows.map(worker => ({
-        ...worker,
-        is_pending: worker.approval_status === 'pending'
-      }));
+      const workers = result.rows;
 
       // Get total count for pagination
       let countQuery = `
         SELECT COUNT(DISTINCT w.id) as total
         FROM workers w
         LEFT JOIN reviews r ON w.id = r.worker_id
-        WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
+        WHERE w.is_active = true AND w.approval_status = 'approved'
       `;
 
       const countParams = [];
@@ -172,7 +168,7 @@ module.exports = (pool, logger) => {
             SELECT w.id
             FROM workers w
             LEFT JOIN reviews r ON w.id = r.worker_id
-            WHERE w.is_active = true AND w.approval_status IN ('approved', 'pending')
+            WHERE w.is_active = true AND w.approval_status = 'approved'
             ${speciality ? `AND LOWER(w.speciality) LIKE LOWER($1)` : ''}
             ${locationFilter}
             ${available === 'true' ? 'AND w.is_available = true' : ''}
