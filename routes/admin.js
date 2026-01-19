@@ -2719,6 +2719,34 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Delete ALL reviews (for pre-launch cleanup)
+  router.delete('/cleanup-all-reviews', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const adminEmail = req.session.user.email;
+
+      // Get count first
+      const countResult = await pool.query('SELECT COUNT(*) as count FROM reviews');
+      const totalCount = parseInt(countResult.rows[0].count);
+
+      // Delete all reviews
+      const deleteResult = await pool.query('DELETE FROM reviews RETURNING id');
+
+      logger.info('Admin deleted all reviews', {
+        adminEmail,
+        deletedCount: deleteResult.rowCount
+      });
+
+      res.json({
+        success: true,
+        message: `Deleted all ${deleteResult.rowCount} reviews`,
+        deletedCount: deleteResult.rowCount
+      });
+    } catch (error) {
+      logger.error('Failed to delete all reviews', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to delete reviews' });
+    }
+  });
+
   // Find user by name for cleanup
   router.get('/find-user', requireAuth, adminOnly, async (req, res) => {
     try {
