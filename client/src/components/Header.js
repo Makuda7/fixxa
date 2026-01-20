@@ -53,21 +53,6 @@ const Header = () => {
         <Link to="/about">About Us</Link>
         <Link to="/join">Join Our Team</Link>
 
-        {isAuthenticated && user?.type !== 'professional' && (
-          <>
-            <Link to="/messages" className="nav-link-with-badge">
-              Messages
-              {unreadCount > 0 && (
-                <span className="nav-notification-badge">{unreadCount}</span>
-              )}
-            </Link>
-            <Link to={user?.type === 'professional' ? '/worker-dashboard' : '/client-dashboard'}>
-              Profile
-            </Link>
-            <Link to="/settings">Settings</Link>
-          </>
-        )}
-
         {/* Menu Dropdown */}
         <div className="menu-dropdown-container">
           <button
@@ -113,9 +98,10 @@ const Header = () => {
                     <Link to={user?.type === 'professional' ? '/worker-dashboard#profile' : '/client-dashboard'} onClick={closeDropdown}>
                       Profile
                     </Link>
-                    {user?.type === 'professional' && (
-                      <Link to="/settings" onClick={closeDropdown}>⚙️ Account Settings</Link>
-                    )}
+                    <Link to="/settings" onClick={closeDropdown}>
+                      <img src="/images/icons-fixxa/settings_839374.png" alt="Settings" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
+                      Settings
+                    </Link>
                     <div className="menu-divider"></div>
 
                     {/* Worker-specific menu items */}
