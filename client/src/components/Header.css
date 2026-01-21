@@ -176,10 +176,11 @@
 .menu-logout-link {
   color: #dc3545 !important;
   font-weight: 600 !important;
+  background: transparent !important;
 }
 
 .menu-logout-link:hover {
-  background: rgba(220, 53, 69, 0.05) !important;
+  background: rgba(220, 53, 69, 0.1) !important;
   color: #c82333 !important;
 }
 
