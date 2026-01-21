@@ -104,6 +104,7 @@ const Header = () => {
                       )}
                     </Link>
                     <Link to={user?.type === 'professional' ? '/worker-dashboard#profile' : '/client-dashboard'} onClick={closeDropdown}>
+                      <img src="/images/icons-fixxa/user_11762352.png" alt="Profile" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
                       Profile
                     </Link>
                     <Link to="/settings" onClick={closeDropdown}>
