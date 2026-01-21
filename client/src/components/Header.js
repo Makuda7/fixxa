@@ -69,6 +69,14 @@ const Header = () => {
             <>
               <div className="menu-overlay" onClick={closeDropdown}></div>
               <div className="menu-dropdown">
+                {/* Mobile-only nav links */}
+                <div className="mobile-nav-links">
+                  <Link to="/" onClick={closeDropdown}>Find Service</Link>
+                  <Link to="/about" onClick={closeDropdown}>About Us</Link>
+                  <Link to="/join" onClick={closeDropdown}>Join Our Team</Link>
+                  <div className="menu-divider"></div>
+                </div>
+
                 {!isAuthenticated ? (
                   <>
                     <Link to="/login" className="menu-login-link" onClick={closeDropdown}>
