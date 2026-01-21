@@ -107,7 +107,7 @@ const Header = () => {
                       Profile
                     </Link>
                     <Link to="/settings" onClick={closeDropdown}>
-                      <img src="/images/icons-fixxa/settings_839374.png" alt="Settings" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
+                      <img src="/images/icons-fixxa/setting_5736401.png" alt="Settings" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} />
                       Settings
                     </Link>
                     <div className="menu-divider"></div>
