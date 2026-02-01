@@ -517,27 +517,39 @@
 
 /* Photo Nav Buttons */
 .photo-nav-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  font-size: 1.8rem;
-  line-height: 1;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 50%;
-  z-index: 10;
-  transition: background 0.2s;
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: white !important;
+  border: none !important;
+  font-size: 1.8rem !important;
+  line-height: 1 !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  border-radius: 50% !important;
+  z-index: 10 !important;
+  transition: background 0.2s !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  float: none !important;
+  text-align: center !important;
 }
 
 .photo-nav-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.8) !important;
+  transform: translateY(-50%) !important;
+  padding: 0 !important;
+  width: 44px !important;
+  height: 44px !important;
 }
 
 .photo-nav-prev {

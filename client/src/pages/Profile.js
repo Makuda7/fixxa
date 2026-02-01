@@ -385,7 +385,11 @@ const Profile = () => {
             <div className="profile-details">
               <div className="price-section">
                 <div className="rating-display">
-                  {rating > 0 ? `${rating}/5` : <span className="newly-joined">Newly Joined</span>}
+                  {rating > 0 ? `${rating}/5` : (
+                    worker.created_at && (new Date() - new Date(worker.created_at)) < 90 * 24 * 60 * 60 * 1000
+                      ? <span className="newly-joined">Newly Joined</span>
+                      : 'No ratings yet'
+                  )}
                 </div>
                 <div className="rating-stars">{rating > 0 ? stars : '☆☆☆☆☆'}</div>
                 {rating >= 4.5 && <span className="price-badge">Top Rated</span>}
