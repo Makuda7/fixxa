@@ -505,6 +505,16 @@
   width: 100%;
 }
 
+/* Photo Modal */
+.photo-modal {
+  max-width: 600px;
+  overflow: visible !important;
+}
+
+.photo-modal-image-wrapper {
+  position: relative;
+}
+
 /* Photo Nav Buttons */
 .photo-nav-btn {
   position: absolute;

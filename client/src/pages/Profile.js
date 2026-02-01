@@ -818,30 +818,32 @@ const Profile = () => {
       {/* Photo Modal */}
       {showPhotoModal && (
         <div className="reviews-modal-overlay" onClick={() => setShowPhotoModal(false)}>
-          <div className="reviews-modal" style={{ maxWidth: '600px', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+          <div className="reviews-modal photo-modal" onClick={(e) => e.stopPropagation()}>
             <button className="reviews-modal-close" onClick={() => setShowPhotoModal(false)}>
               &times;
             </button>
 
-            {photoSource === 'gallery' && gallery.length > 1 && (
-              <button className="photo-nav-btn photo-nav-prev" onClick={() => cyclePhoto(-1)}>&#8249;</button>
-            )}
+            <div className="photo-modal-image-wrapper">
+              {photoSource === 'gallery' && gallery.length > 1 && (
+                <button className="photo-nav-btn photo-nav-prev" onClick={() => cyclePhoto(-1)}>&#8249;</button>
+              )}
 
-            <img
-              src={selectedPhoto.url}
-              alt="Portfolio"
-              style={{
-                width: '100%',
-                height: 'auto',
-                maxHeight: '70vh',
-                objectFit: 'contain',
-                borderRadius: '8px'
-              }}
-            />
+              <img
+                src={selectedPhoto.url}
+                alt="Portfolio"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '70vh',
+                  objectFit: 'contain',
+                  borderRadius: '8px'
+                }}
+              />
 
-            {photoSource === 'gallery' && gallery.length > 1 && (
-              <button className="photo-nav-btn photo-nav-next" onClick={() => cyclePhoto(1)}>&#8250;</button>
-            )}
+              {photoSource === 'gallery' && gallery.length > 1 && (
+                <button className="photo-nav-btn photo-nav-next" onClick={() => cyclePhoto(1)}>&#8250;</button>
+              )}
+            </div>
 
             {selectedPhoto.caption && (
               <div style={{ textAlign: 'center', marginTop: '1rem', color: '#666', fontStyle: 'italic' }}>
