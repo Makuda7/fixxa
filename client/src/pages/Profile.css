@@ -513,9 +513,13 @@
   background: rgba(0, 0, 0, 0.5);
   color: white;
   border: none;
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   line-height: 1;
-  padding: 0.25rem 0.75rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   border-radius: 50%;
   z-index: 10;
@@ -527,20 +531,11 @@
 }
 
 .photo-nav-prev {
-  left: -20px;
+  left: 10px;
 }
 
 .photo-nav-next {
-  right: -20px;
-}
-
-@media (max-width: 640px) {
-  .photo-nav-prev {
-    left: 5px;
-  }
-  .photo-nav-next {
-    right: 5px;
-  }
+  right: 10px;
 }
 
 /* Action Buttons Container */
