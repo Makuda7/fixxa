@@ -23,6 +23,8 @@ const Profile = () => {
   const [showAllReviewsModal, setShowAllReviewsModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState({ url: '', caption: '' });
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [photoSource, setPhotoSource] = useState('gallery');
 
   const [contactMessage, setContactMessage] = useState('');
   const [bookingDate, setBookingDate] = useState('');
@@ -298,9 +300,19 @@ const Profile = () => {
     }, 100);
   };
 
-  const viewPhoto = (url, caption) => {
+  const viewPhoto = (url, caption, index = -1, source = 'other') => {
     setSelectedPhoto({ url, caption });
+    setSelectedPhotoIndex(index);
+    setPhotoSource(source);
     setShowPhotoModal(true);
+  };
+
+  const cyclePhoto = (direction) => {
+    if (photoSource !== 'gallery' || gallery.length === 0) return;
+    const newIndex = (selectedPhotoIndex + direction + gallery.length) % gallery.length;
+    const photo = gallery[newIndex];
+    setSelectedPhoto({ url: photo.photo_url, caption: photo.description || 'Portfolio' });
+    setSelectedPhotoIndex(newIndex);
   };
 
   const scrollToReviews = () => {
@@ -465,13 +477,13 @@ const Profile = () => {
                 <div
                   key={index}
                   className="gallery-thumb"
-                  onClick={() => viewPhoto(photo.photo_url, photo.description || 'Work example')}
+                  onClick={() => viewPhoto(photo.photo_url, photo.description || 'Portfolio', index, 'gallery')}
                 >
-                  <img src={photo.photo_url} alt={photo.description || 'Work example'} loading="lazy" />
+                  <img src={photo.photo_url} alt={photo.description || 'Portfolio'} loading="lazy" />
                 </div>
               ))
             ) : (
-              <div className="no-photos">No work photos available yet</div>
+              <div className="no-photos">No portfolio photos available yet</div>
             )}
           </div>
         </article>
@@ -806,13 +818,18 @@ const Profile = () => {
       {/* Photo Modal */}
       {showPhotoModal && (
         <div className="reviews-modal-overlay" onClick={() => setShowPhotoModal(false)}>
-          <div className="reviews-modal" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="reviews-modal" style={{ maxWidth: '600px', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
             <button className="reviews-modal-close" onClick={() => setShowPhotoModal(false)}>
               &times;
             </button>
+
+            {photoSource === 'gallery' && gallery.length > 1 && (
+              <button className="photo-nav-btn photo-nav-prev" onClick={() => cyclePhoto(-1)}>&#8249;</button>
+            )}
+
             <img
               src={selectedPhoto.url}
-              alt="Work example"
+              alt="Portfolio"
               style={{
                 width: '100%',
                 height: 'auto',
@@ -821,9 +838,20 @@ const Profile = () => {
                 borderRadius: '8px'
               }}
             />
+
+            {photoSource === 'gallery' && gallery.length > 1 && (
+              <button className="photo-nav-btn photo-nav-next" onClick={() => cyclePhoto(1)}>&#8250;</button>
+            )}
+
             {selectedPhoto.caption && (
               <div style={{ textAlign: 'center', marginTop: '1rem', color: '#666', fontStyle: 'italic' }}>
                 {selectedPhoto.caption}
+              </div>
+            )}
+
+            {photoSource === 'gallery' && gallery.length > 1 && (
+              <div style={{ textAlign: 'center', marginTop: '0.5rem', color: '#999', fontSize: '0.85rem' }}>
+                {selectedPhotoIndex + 1} / {gallery.length}
               </div>
             )}
           </div>
