@@ -58,6 +58,11 @@ const AdminDashboard = () => {
   // Bookings
   const [recentBookings, setRecentBookings] = useState([]);
 
+  // Analytics
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [referralData, setReferralData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   // Settings
   const [settings, setSettings] = useState({
     vacationMode: false
@@ -126,6 +131,7 @@ const AdminDashboard = () => {
     if (activeTab === 'workers') loadProfessionals();
     if (activeTab === 'clients') loadClients();
     if (activeTab === 'settings') loadSettings();
+    if (activeTab === 'analytics') loadAnalytics();
   }, [activeTab, profileUpdatesFilter, certFilter, supportFilter, suggestionsFilter]);
 
   // Auto-refresh stats and bookings every 30 seconds
@@ -166,6 +172,24 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const [platformRes, referralRes] = await Promise.all([
+        fetch('/admin/stats/platform', { credentials: 'include' }),
+        fetch('/admin/stats/referrals', { credentials: 'include' })
+      ]);
+      const platformData = await platformRes.json();
+      const referralDataRes = await referralRes.json();
+      if (platformData.success) setAnalyticsData(platformData.stats);
+      if (referralDataRes.success) setReferralData(referralDataRes.stats);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -1409,6 +1433,12 @@ const AdminDashboard = () => {
             Clients
           </button>
           <button
+            className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            Analytics
+          </button>
+          <button
             className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -2263,6 +2293,147 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="tab-content active">
+            {analyticsLoading ? (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>Loading analytics...</div>
+            ) : !analyticsData ? (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>No analytics data available.</div>
+            ) : (
+              <>
+                {/* Growth — last 7 & 30 days */}
+                <div className="table-section">
+                  <h3>📈 Growth</h3>
+                  <p style={{ color: '#666', marginBottom: '1rem' }}>New signups and activity over time</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+                    {[
+                      { label: 'New Workers (7d)', value: analyticsData.workers?.last7Days ?? '-' },
+                      { label: 'New Workers (30d)', value: analyticsData.workers?.last30Days ?? '-' },
+                      { label: 'New Clients (7d)', value: analyticsData.users?.last7Days ?? '-' },
+                      { label: 'New Clients (30d)', value: analyticsData.users?.last30Days ?? '-' },
+                      { label: 'Bookings (7d)', value: analyticsData.bookings?.last7Days ?? '-' },
+                      { label: 'Bookings (30d)', value: analyticsData.bookings?.last30Days ?? '-' },
+                      { label: 'Reviews (7d)', value: analyticsData.reviews?.last7Days ?? '-' },
+                      { label: 'Messages (24h)', value: analyticsData.messages?.last24Hours ?? '-' },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="stat-card" style={{ textAlign: 'center' }}>
+                        <div className="stat-number" style={{ fontSize: '1.8rem' }}>{value}</div>
+                        <div className="stat-label" style={{ fontSize: '0.8rem' }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Platform totals */}
+                <div className="table-section" style={{ marginTop: '1.5rem' }}>
+                  <h3>📊 Platform Totals</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '1.2rem' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: '#2d5016' }}>Workers</div>
+                      <div style={{ fontSize: '0.9rem', color: '#444', lineHeight: '1.8' }}>
+                        Total: <strong>{analyticsData.workers?.total ?? '-'}</strong><br />
+                        Active: <strong>{analyticsData.workers?.active ?? '-'}</strong><br />
+                        Pending Approval: <strong>{analyticsData.workers?.pending ?? '-'}</strong><br />
+                        Approved: <strong>{analyticsData.workers?.approved ?? '-'}</strong><br />
+                        Rejected: <strong>{analyticsData.workers?.rejected ?? '-'}</strong>
+                      </div>
+                    </div>
+                    <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '1.2rem' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: '#2d5016' }}>Clients</div>
+                      <div style={{ fontSize: '0.9rem', color: '#444', lineHeight: '1.8' }}>
+                        Total: <strong>{analyticsData.users?.total ?? '-'}</strong><br />
+                        Verified: <strong>{analyticsData.users?.verified ?? '-'}</strong>
+                      </div>
+                    </div>
+                    <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '1.2rem' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: '#2d5016' }}>Bookings</div>
+                      <div style={{ fontSize: '0.9rem', color: '#444', lineHeight: '1.8' }}>
+                        Total: <strong>{analyticsData.bookings?.total ?? '-'}</strong><br />
+                        Pending: <strong>{analyticsData.bookings?.pending ?? '-'}</strong><br />
+                        Confirmed: <strong>{analyticsData.bookings?.confirmed ?? '-'}</strong><br />
+                        Completed: <strong>{analyticsData.bookings?.completed ?? '-'}</strong><br />
+                        Cancelled: <strong>{analyticsData.bookings?.cancelled ?? '-'}</strong>
+                      </div>
+                    </div>
+                    <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '1.2rem' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: '#2d5016' }}>Reviews & Messages</div>
+                      <div style={{ fontSize: '0.9rem', color: '#444', lineHeight: '1.8' }}>
+                        Total Reviews: <strong>{analyticsData.reviews?.total ?? '-'}</strong><br />
+                        Avg Rating: <strong>{analyticsData.reviews?.averageRating ? Number(analyticsData.reviews.averageRating).toFixed(1) : '-'} ⭐</strong><br />
+                        Total Messages: <strong>{analyticsData.messages?.total ?? '-'}</strong>
+                      </div>
+                    </div>
+                    <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '1.2rem' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: '#2d5016' }}>Certifications</div>
+                      <div style={{ fontSize: '0.9rem', color: '#444', lineHeight: '1.8' }}>
+                        Total: <strong>{analyticsData.certifications?.total ?? '-'}</strong><br />
+                        Pending: <strong>{analyticsData.certifications?.pending ?? '-'}</strong><br />
+                        Approved: <strong>{analyticsData.certifications?.approved ?? '-'}</strong><br />
+                        Rejected: <strong>{analyticsData.certifications?.rejected ?? '-'}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Where users heard about Fixxa */}
+                {referralData && (
+                  <div className="table-section" style={{ marginTop: '1.5rem' }}>
+                    <h3>📣 Where Users Heard About Fixxa</h3>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                      <thead>
+                        <tr style={{ background: '#f0f7ec' }}>
+                          <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #d4e8c2' }}>Source</th>
+                          <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #d4e8c2' }}>Workers</th>
+                          <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #d4e8c2' }}>Clients</th>
+                          <th style={{ padding: '10px 12px', textAlign: 'center', borderBottom: '2px solid #d4e8c2' }}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(referralData.combined || []).map((row, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                            <td style={{ padding: '10px 12px' }}>{row.referral_source || 'Not specified'}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>{row.worker_count ?? 0}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>{row.client_count ?? 0}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{row.total_count ?? 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Error Log Summary */}
+                <div className="table-section" style={{ marginTop: '1.5rem' }}>
+                  <h3>⚠️ Error Log Summary</h3>
+                  <p style={{ color: '#666', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                    Failed attempts are logged to Railway. Check logs with <code>railway logs</code> and filter by keyword.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    {[
+                      { label: 'Registration Failures', keyword: 'Registration attempt failed', color: '#f8d7da', border: '#f5c6cb', text: '#721c24' },
+                      { label: 'Login Errors', keyword: 'Login error', color: '#fff3cd', border: '#ffeeba', text: '#856404' },
+                      { label: 'Email Send Failures', keyword: 'Failed to send verification email', color: '#d1ecf1', border: '#bee5eb', text: '#0c5460' },
+                      { label: 'Server Errors (500)', keyword: 'Registration error', color: '#f8d7da', border: '#f5c6cb', text: '#721c24' },
+                    ].map(({ label, keyword, color, border, text }) => (
+                      <div key={label} style={{ background: color, border: `1px solid ${border}`, borderRadius: '10px', padding: '1rem' }}>
+                        <div style={{ fontWeight: 700, color: text, marginBottom: '0.4rem' }}>{label}</div>
+                        <div style={{ fontSize: '0.8rem', color: text, opacity: 0.85 }}>
+                          Search logs for:<br />
+                          <code style={{ background: 'rgba(0,0,0,0.08)', padding: '2px 6px', borderRadius: '4px' }}>{keyword}</code>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '1rem', background: '#f8f9fa', borderRadius: '8px', padding: '1rem', fontSize: '0.85rem', color: '#555' }}>
+                    <strong>Tip:</strong> Run <code>railway logs | grep "attempt failed"</code> in your terminal to see all failed registrations with their reasons.
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
