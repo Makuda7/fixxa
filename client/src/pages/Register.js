@@ -92,6 +92,7 @@ const Register = () => {
       });
 
       const data = await res.json();
+      console.log('Registration response:', res.status, JSON.stringify(data));
 
       if (!res.ok && data.details && data.details.length > 0) {
         showMessage('Please fix the following:', 'error', data.details.map(d => d.message));
