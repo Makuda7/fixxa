@@ -97,6 +97,11 @@ const Register = () => {
 
       const data = await res.json();
 
+      if (!res.ok && data.details && data.details.length > 0) {
+        setMessage({ text: data.details.map(d => d.message).join('. '), type: 'error' });
+        return;
+      }
+
       if (data.success) {
         setMessage({
           text: data.message || 'Registration successful! Please check your email to verify your account.',
@@ -236,8 +241,8 @@ const Register = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="At least 6 characters"
-              minLength="6"
+              placeholder="Min 8 chars, uppercase, lowercase & number"
+              minLength="8"
               required
             />
           </div>
