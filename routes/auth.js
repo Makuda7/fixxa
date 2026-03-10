@@ -22,8 +22,27 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
     createPasswordResetEmail
   } = helpers; 
   
+  // Log failed registration attempts
+  const logRegistrationFailure = (req, res, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = (data) => {
+      if (res.statusCode >= 400 && !data.success) {
+        logger.warn('Registration attempt failed', {
+          email: req.body?.email || 'unknown',
+          type: req.body?.type || 'unknown',
+          status: res.statusCode,
+          reason: data.error || 'Validation failed',
+          details: data.details?.map(d => `${d.field}: ${d.message}`) || [],
+          ip: req.ip
+        });
+      }
+      return originalJson(data);
+    };
+    next();
+  };
+
   // Register
-  router.post('/register', registrationLimiter, registerValidation, async (req, res) => {
+  router.post('/register', registrationLimiter, logRegistrationFailure, registerValidation, async (req, res) => {
 
     const { type, name, email, phone, city, suburb, password, speciality, experience, acceptTerms, referralSource } = req.body;
 
