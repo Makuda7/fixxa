@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import './Register.css';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const messageRef = useRef(null);
 
   const [formData, setFormData] = useState({
     type: '',
@@ -23,8 +22,13 @@ const Register = () => {
     termsAccepted: false
   });
 
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const [message, setMessage] = useState({ text: '', items: [], type: '' });
   const [loading, setLoading] = useState(false);
+
+  const showMessage = (text, type, items = []) => {
+    setMessage({ text, items, type });
+    setTimeout(() => messageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -36,35 +40,27 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage({ text: '', type: '' });
+    setMessage({ text: '', items: [], type: '' });
 
-    // Validation
-    if (!formData.type) {
-      setMessage({ text: 'Please select account type.', type: 'error' });
-      return;
-    }
-    if (!formData.safetyAccepted) {
-      setMessage({ text: 'You must accept the Safety Guidelines to register.', type: 'error' });
-      return;
-    }
-    if (!formData.termsAccepted) {
-      setMessage({ text: 'You must accept the Terms of Service, Privacy Policy, and Safety Guidelines to register.', type: 'error' });
-      return;
-    }
-    if (!formData.referralSource) {
-      setMessage({ text: 'Please tell us how you heard about Fixxa.', type: 'error' });
-      return;
-    }
-    if (formData.password !== formData.password2) {
-      setMessage({ text: 'Passwords do not match!', type: 'error' });
-      return;
-    }
-    if (formData.type === 'professional' && !formData.speciality) {
-      setMessage({ text: 'Speciality is required for professionals.', type: 'error' });
-      return;
-    }
-    if (formData.type === 'professional' && !formData.experience) {
-      setMessage({ text: 'Years of experience is required for professionals.', type: 'error' });
+    // Collect all validation errors upfront
+    const errors = [];
+    if (!formData.type) errors.push('Please select account type.');
+    if (!formData.name) errors.push('Full name is required.');
+    if (!formData.email) errors.push('Email address is required.');
+    if (!formData.phone) errors.push('Phone number is required.');
+    if (!formData.city) errors.push('City/Town is required.');
+    if (!formData.password) errors.push('Password is required.');
+    else if (formData.password.length < 8) errors.push('Password must be at least 8 characters.');
+    else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) errors.push('Password must contain at least one uppercase letter, one lowercase letter, and one number.');
+    if (formData.password && formData.password !== formData.password2) errors.push('Passwords do not match.');
+    if (formData.type === 'professional' && !formData.speciality) errors.push('Speciality is required for professionals.');
+    if (formData.type === 'professional' && !formData.experience) errors.push('Years of experience is required for professionals.');
+    if (!formData.referralSource) errors.push('Please tell us how you heard about Fixxa.');
+    if (!formData.safetyAccepted) errors.push('You must accept the Safety Guidelines.');
+    if (!formData.termsAccepted) errors.push('You must accept the Terms of Service and Privacy Policy.');
+
+    if (errors.length > 0) {
+      showMessage('Please fix the following before submitting:', 'error', errors);
       return;
     }
 
@@ -98,36 +94,28 @@ const Register = () => {
       const data = await res.json();
 
       if (!res.ok && data.details && data.details.length > 0) {
-        setMessage({ text: data.details.map(d => d.message).join('. '), type: 'error' });
+        showMessage('Please fix the following:', 'error', data.details.map(d => d.message));
         return;
       }
 
       if (data.success) {
-        setMessage({
-          text: data.message || 'Registration successful! Please check your email to verify your account.',
-          type: 'success'
-        });
+        showMessage(data.message || 'Registration successful! Please check your email to verify your account.', 'success');
 
-        // If professional, show pending approval message
         if (formData.type === 'professional') {
           setTimeout(() => {
-            setMessage({
-              text: 'Your professional account is pending admin approval. You will receive an email once approved.',
-              type: 'info'
-            });
+            showMessage('Your professional account is pending admin approval. You will receive an email once approved.', 'info');
           }, 3000);
         } else {
-          // Auto-login for clients after email verification reminder
           setTimeout(() => {
             navigate('/login');
           }, 3000);
         }
       } else {
-        setMessage({ text: data.error || 'Registration failed', type: 'error' });
+        showMessage(data.error || 'Registration failed. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setMessage({ text: 'Network error. Please try again.', type: 'error' });
+      showMessage('Network error. Please check your connection and try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -142,6 +130,17 @@ const Register = () => {
           <h1>Create Account</h1>
         </Link>
         <p className="subtitle">Join Fixxa Today</p>
+
+        {message.text && (
+          <div ref={messageRef} className={`message ${message.type}`}>
+            <strong>{message.text}</strong>
+            {message.items.length > 0 && (
+              <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                {message.items.map((item, i) => <li key={i}>{item}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           {/* Account Type */}
@@ -373,12 +372,6 @@ const Register = () => {
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
-
-        {message.text && (
-          <div className={`message ${message.type}`}>
-            {message.text}
-          </div>
-        )}
 
         <div className="login-link">
           Already have an account? <Link to="/login">Log In</Link>
