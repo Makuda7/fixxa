@@ -1624,8 +1624,15 @@ const AdminDashboard = () => {
                 <div className="no-data">No pending applications</div>
               ) : (
                 <div className="worker-grid">
-                  {pendingWorkers.map(worker => {
-                    // Color coding based on email verification status
+                  {[...pendingWorkers]
+                    .sort((a, b) => {
+                      const readyA = a.email_verified && a.bio && a.city && a.phone ? 1 : 0;
+                      const readyB = b.email_verified && b.bio && b.city && b.phone ? 1 : 0;
+                      return readyB - readyA;
+                    })
+                    .map(worker => {
+                    const isReady = worker.email_verified && worker.bio && worker.city && worker.phone;
+                    // Color coding based on ready status
                     const emailStatusColor = worker.email_verified ? '#28a745' : '#dc3545';
                     const emailStatusBg = worker.email_verified ? '#d4edda' : '#f8d7da';
                     const emailStatusText = worker.email_verified ? 'Email Verified' : 'Email Not Verified';
@@ -1636,11 +1643,29 @@ const AdminDashboard = () => {
                         key={worker.id}
                         className="worker-card"
                         style={{
-                          border: `2px solid ${emailStatusColor}`,
-                          borderLeft: `6px solid ${emailStatusColor}`,
-                          boxShadow: worker.email_verified ? '0 2px 8px rgba(40, 167, 69, 0.1)' : '0 2px 8px rgba(220, 53, 69, 0.1)'
+                          border: isReady ? '2px solid #2d6a2d' : `2px solid ${emailStatusColor}`,
+                          borderLeft: isReady ? '6px solid #2d6a2d' : `6px solid ${emailStatusColor}`,
+                          boxShadow: isReady ? '0 2px 12px rgba(45, 106, 45, 0.2)' : worker.email_verified ? '0 2px 8px rgba(40, 167, 69, 0.1)' : '0 2px 8px rgba(220, 53, 69, 0.1)'
                         }}
                       >
+                        {/* Ready for Review Badge */}
+                        {isReady && (
+                          <div style={{
+                            background: '#2d6a2d',
+                            color: '#fff',
+                            padding: '0.4rem 0.75rem',
+                            marginBottom: '0.5rem',
+                            borderRadius: '6px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem'
+                          }}>
+                            ⭐ Ready for Review
+                          </div>
+                        )}
+
                         {/* Email Verification Status Banner */}
                         <div style={{
                           background: emailStatusBg,
@@ -1682,6 +1707,18 @@ const AdminDashboard = () => {
                             )}
                           </div>
                         </div>
+
+                      {!isReady && (
+                        <div style={{ margin: '0.5rem 0', padding: '0.6rem 0.75rem', background: '#fff3cd', borderRadius: '6px', fontSize: '0.8rem', color: '#856404' }}>
+                          <strong>Still needed:</strong>{' '}
+                          {[
+                            !worker.email_verified && 'email verification',
+                            !worker.phone && 'phone number',
+                            !worker.city && 'city',
+                            !worker.bio && 'bio'
+                          ].filter(Boolean).join(', ')}
+                        </div>
+                      )}
 
                       {worker.bio && (
                         <div style={{ margin: '1rem 0', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
