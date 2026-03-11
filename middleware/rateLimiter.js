@@ -61,7 +61,7 @@ const loginLimiter = rateLimit({
 // Registration rate limiter - prevent fake account spam
 const registrationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 registrations per hour
+  max: 10, // Limit each IP to 10 registrations per hour
   message: {
     success: false,
     error: 'Too many registration attempts. Please try again in 1 hour.'

@@ -91,8 +91,12 @@ const Register = () => {
         body: JSON.stringify(payload)
       });
 
+      if (res.status === 429) {
+        showMessage('Too many registration attempts. Please wait 1 hour and try again.', 'error');
+        return;
+      }
+
       const data = await res.json();
-      console.log('Registration response:', res.status, JSON.stringify(data));
 
       if (!res.ok) {
         if (data.details && data.details.length > 0) {
