@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Register.css';
 
 const Register = () => {
   const navigate = useNavigate();
-  const messageRef = useRef(null);
 
+  const [modal, setModal] = useState({ visible: false, text: '', items: [], type: '' });
   const [formData, setFormData] = useState({
     type: '',
     name: '',
@@ -22,12 +22,10 @@ const Register = () => {
     termsAccepted: false
   });
 
-  const [message, setMessage] = useState({ text: '', items: [], type: '' });
   const [loading, setLoading] = useState(false);
 
   const showMessage = (text, type, items = []) => {
-    setMessage({ text, items, type });
-    setTimeout(() => messageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+    setModal({ visible: true, text, items, type });
   };
 
   const handleChange = (e) => {
@@ -353,17 +351,6 @@ const Register = () => {
             </div>
           </div>
 
-          {message.text && (
-            <div ref={messageRef} className={`message ${message.type}`} style={{ marginBottom: '12px' }}>
-              <strong>{message.text}</strong>
-              {message.items.length > 0 && (
-                <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-                  {message.items.map((item, i) => <li key={i}>{item}</li>)}
-                </ul>
-              )}
-            </div>
-          )}
-
           <button type="submit" className="btn-register" disabled={loading}>
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
@@ -373,6 +360,20 @@ const Register = () => {
           Already have an account? <Link to="/login">Log In</Link>
         </div>
       </div>
+
+      {modal.visible && (
+        <div className="reg-modal-overlay">
+          <div className={`reg-modal reg-modal--${modal.type}`}>
+            <p><strong>{modal.text}</strong></p>
+            {modal.items.length > 0 && (
+              <ul>
+                {modal.items.map((item, i) => <li key={i}>{item}</li>)}
+              </ul>
+            )}
+            <button className="reg-modal-ok" onClick={() => setModal({ ...modal, visible: false })}>OK</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
