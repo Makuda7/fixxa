@@ -108,15 +108,6 @@ const Register = () => {
       if (data.success) {
         showMessage(data.message || 'Registration successful! Please check your email to verify your account.', 'success');
 
-        if (formData.type === 'professional') {
-          setTimeout(() => {
-            showMessage('Your professional account is pending admin approval. You will receive an email once approved.', 'info');
-          }, 3000);
-        } else {
-          setTimeout(() => {
-            navigate('/login');
-          }, 3000);
-        }
       } else {
         showMessage(data.error || 'Registration failed. Please try again.', 'error');
       }
@@ -370,7 +361,10 @@ const Register = () => {
                 {modal.items.map((item, i) => <li key={i}>{item}</li>)}
               </ul>
             )}
-            <button className="reg-modal-ok" onClick={() => setModal({ ...modal, visible: false })}>OK</button>
+            <button className="reg-modal-ok" onClick={() => {
+              setModal({ ...modal, visible: false });
+              if (modal.type === 'success') navigate('/login');
+            }}>OK</button>
           </div>
         </div>
       )}
