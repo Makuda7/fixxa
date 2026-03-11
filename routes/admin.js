@@ -2731,15 +2731,15 @@ module.exports = (pool, logger, helpers) => {
       }
       const worker = workerResult.rows[0];
 
+      // Delete related records that may not have CASCADE, then the worker (CASCADE handles the rest)
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-        await client.query('DELETE FROM certifications WHERE worker_id = $1', [workerId]);
-        await client.query('DELETE FROM reviews WHERE worker_id = $1', [workerId]);
-        await client.query('DELETE FROM messages WHERE worker_id = $1', [workerId]);
-        await client.query('DELETE FROM notifications WHERE worker_id = $1', [workerId]);
-        await client.query('DELETE FROM bookings WHERE worker_id = $1', [workerId]);
-        await client.query('DELETE FROM worker_specialties WHERE worker_id = $1', [workerId]);
+        // Tables that may lack CASCADE — delete explicitly
+        await client.query('DELETE FROM quote_requests WHERE worker_id = $1', [workerId]).catch(() => {});
+        await client.query('DELETE FROM booking_requests WHERE worker_id = $1', [workerId]).catch(() => {});
+        await client.query('DELETE FROM worker_profile_updates WHERE worker_id = $1', [workerId]).catch(() => {});
+        // Delete the worker — CASCADE handles certifications, bookings, messages, reviews, notifications, specialties
         await client.query('DELETE FROM workers WHERE id = $1', [workerId]);
         await client.query('COMMIT');
       } catch (err) {
@@ -2772,10 +2772,10 @@ module.exports = (pool, logger, helpers) => {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-        await client.query('DELETE FROM reviews WHERE client_id = $1', [userId]);
-        await client.query('DELETE FROM messages WHERE client_id = $1', [userId]);
-        await client.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
-        await client.query('DELETE FROM bookings WHERE user_id = $1', [userId]);
+        // Tables that may lack CASCADE — delete explicitly
+        await client.query('DELETE FROM quote_requests WHERE client_id = $1', [userId]).catch(() => {});
+        await client.query('DELETE FROM booking_requests WHERE user_id = $1', [userId]).catch(() => {});
+        // Delete the user — CASCADE handles bookings, messages, reviews, notifications
         await client.query('DELETE FROM users WHERE id = $1', [userId]);
         await client.query('COMMIT');
       } catch (err) {
