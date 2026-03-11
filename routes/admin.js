@@ -2719,6 +2719,80 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Delete a worker account (admin only)
+  router.delete('/worker/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const adminEmail = req.session.user.email;
+
+      const workerResult = await pool.query('SELECT id, name, email FROM workers WHERE id = $1', [workerId]);
+      if (workerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Worker not found' });
+      }
+      const worker = workerResult.rows[0];
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM certifications WHERE worker_id = $1', [workerId]);
+        await client.query('DELETE FROM reviews WHERE worker_id = $1', [workerId]);
+        await client.query('DELETE FROM messages WHERE worker_id = $1', [workerId]);
+        await client.query('DELETE FROM notifications WHERE worker_id = $1', [workerId]);
+        await client.query('DELETE FROM bookings WHERE worker_id = $1', [workerId]);
+        await client.query('DELETE FROM worker_specialties WHERE worker_id = $1', [workerId]);
+        await client.query('DELETE FROM workers WHERE id = $1', [workerId]);
+        await client.query('COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+
+      logger.warn('Admin deleted worker account', { adminEmail, workerId, workerName: worker.name, workerEmail: worker.email });
+      res.json({ success: true, message: `Worker ${worker.name} deleted successfully` });
+    } catch (error) {
+      logger.error('Failed to delete worker', { error: error.message, workerId: req.params.workerId });
+      res.status(500).json({ success: false, error: 'Failed to delete worker account' });
+    }
+  });
+
+  // Delete a user (client) account (admin only)
+  router.delete('/user/:userId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const adminEmail = req.session.user.email;
+
+      const userResult = await pool.query('SELECT id, name, email FROM users WHERE id = $1', [userId]);
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+      const user = userResult.rows[0];
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM reviews WHERE client_id = $1', [userId]);
+        await client.query('DELETE FROM messages WHERE client_id = $1', [userId]);
+        await client.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM bookings WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM users WHERE id = $1', [userId]);
+        await client.query('COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+
+      logger.warn('Admin deleted user account', { adminEmail, userId, userName: user.name, userEmail: user.email });
+      res.json({ success: true, message: `Client ${user.name} deleted successfully` });
+    } catch (error) {
+      logger.error('Failed to delete user', { error: error.message, userId: req.params.userId });
+      res.status(500).json({ success: false, error: 'Failed to delete user account' });
+    }
+  });
+
   // Delete ALL reviews (for pre-launch cleanup)
   router.delete('/cleanup-all-reviews', requireAuth, adminOnly, async (req, res) => {
     try {

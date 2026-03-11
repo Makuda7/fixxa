@@ -77,6 +77,9 @@ const AdminDashboard = () => {
   const [workerDetailData, setWorkerDetailData] = useState(null);
   const [workerChangeHistory, setWorkerChangeHistory] = useState([]);
 
+  // Delete confirmation modal
+  const [deleteConfirm, setDeleteConfirm] = useState({ visible: false, type: '', id: null, name: '', email: '' });
+
   // Worker approval form fields
   const [editProvince, setEditProvince] = useState('');
   const [editPrimarySuburb, setEditPrimarySuburb] = useState('');
@@ -1206,6 +1209,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const deleteAccount = async () => {
+    const { type, id } = deleteConfirm;
+    setDeleteConfirm({ visible: false, type: '', id: null, name: '', email: '' });
+    try {
+      const url = type === 'worker' ? `/admin/worker/${id}` : `/admin/user/${id}`;
+      const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        showMessage(data.message, 'success');
+        if (type === 'worker') { loadProfessionals(); loadPendingWorkers(); }
+        else loadClients();
+      } else {
+        showMessage(data.error || 'Failed to delete account', 'error');
+      }
+    } catch (err) {
+      showMessage('Network error. Please try again.', 'error');
+    }
+  };
+
   const toggleProfessional = async (id) => {
     try {
       const response = await fetch(`/admin/toggle-professional/${id}`, {
@@ -1746,6 +1768,13 @@ const AdminDashboard = () => {
                           style={{ flex: '0 0 auto' }}
                         >
                           ❌ Reject
+                        </button>
+                        <button
+                          className="btn btn-small"
+                          style={{ width: '100%', marginTop: '0.25rem', background: '#dc3545', color: '#fff', border: 'none', padding: '0.5rem' }}
+                          onClick={() => setDeleteConfirm({ visible: true, type: 'worker', id: worker.id, name: worker.name, email: worker.email })}
+                        >
+                          🗑 Delete Account
                         </button>
                       </div>
                     </div>
@@ -2289,6 +2318,13 @@ const AdminDashboard = () => {
                         >
                           {worker.is_verified ? 'Unverify' : 'Verify'}
                         </button>
+                        <button
+                          className="btn btn-small"
+                          style={{ gridColumn: '1 / -1', background: '#dc3545', color: '#fff', border: 'none' }}
+                          onClick={() => setDeleteConfirm({ visible: true, type: 'worker', id: worker.id, name: worker.name, email: worker.email })}
+                        >
+                          🗑 Delete Account
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -2325,6 +2361,13 @@ const AdminDashboard = () => {
                           <div style={{ fontSize: '0.75rem', color: '#666' }}>Bookings</div>
                         </div>
                       </div>
+                      <button
+                        className="btn btn-small"
+                        style={{ width: '100%', marginTop: '0.75rem', background: '#dc3545', color: '#fff', border: 'none' }}
+                        onClick={() => setDeleteConfirm({ visible: true, type: 'client', id: client.id, name: client.name, email: client.email })}
+                      >
+                        🗑 Delete Account
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -2572,6 +2615,39 @@ const AdminDashboard = () => {
                   <p><strong>Document:</strong> {selectedCert.document_name}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.visible && (
+        <div className="modal show">
+          <div className="modal-content" style={{ maxWidth: '440px' }}>
+            <div className="modal-header" style={{ background: '#dc3545', color: '#fff' }}>
+              <h3>⚠️ Delete Account</h3>
+            </div>
+            <div className="modal-body" style={{ padding: '1.5rem' }}>
+              <p style={{ marginBottom: '0.5rem' }}>Are you sure you want to permanently delete this account?</p>
+              <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{deleteConfirm.name}</p>
+              <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>{deleteConfirm.email}</p>
+              <p style={{ color: '#dc3545', fontSize: '0.85rem' }}>This cannot be undone. All their data will be removed.</p>
+            </div>
+            <div className="modal-footer" style={{ display: 'flex', gap: '0.75rem', padding: '1rem 1.5rem' }}>
+              <button
+                className="btn"
+                style={{ flex: 1, background: '#6c757d', color: '#fff', border: 'none' }}
+                onClick={() => setDeleteConfirm({ visible: false, type: '', id: null, name: '', email: '' })}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn"
+                style={{ flex: 1, background: '#dc3545', color: '#fff', border: 'none' }}
+                onClick={deleteAccount}
+              >
+                Yes, Delete
+              </button>
             </div>
           </div>
         </div>
