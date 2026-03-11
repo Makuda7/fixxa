@@ -140,17 +140,6 @@ const Register = () => {
         </Link>
         <p className="subtitle">Join Fixxa Today</p>
 
-        {message.text && (
-          <div ref={messageRef} className={`message ${message.type}`}>
-            <strong>{message.text}</strong>
-            {message.items.length > 0 && (
-              <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-                {message.items.map((item, i) => <li key={i}>{item}</li>)}
-              </ul>
-            )}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit}>
           {/* Account Type */}
           <div className="form-group">
@@ -363,6 +352,17 @@ const Register = () => {
               </label>
             </div>
           </div>
+
+          {message.text && (
+            <div ref={messageRef} className={`message ${message.type}`} style={{ marginBottom: '12px' }}>
+              <strong>{message.text}</strong>
+              {message.items.length > 0 && (
+                <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                  {message.items.map((item, i) => <li key={i}>{item}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
 
           <button type="submit" className="btn-register" disabled={loading}>
             {loading ? 'Creating Account...' : 'Create Account'}
