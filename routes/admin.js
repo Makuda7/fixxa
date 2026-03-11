@@ -569,7 +569,8 @@ module.exports = (pool, logger, helpers) => {
           w.last_completion_email_sent,
           w.profile_pic,
           COUNT(c.id) as cert_count,
-          COUNT(CASE WHEN c.status = 'approved' THEN 1 END) as approved_cert_count
+          COUNT(CASE WHEN c.status = 'approved' THEN 1 END) as approved_cert_count,
+          COUNT(CASE WHEN c.document_type = 'verification_document' THEN 1 END) as verification_doc_count
         FROM workers w
         LEFT JOIN certifications c ON w.id = c.worker_id
         WHERE w.approval_status = 'pending'
