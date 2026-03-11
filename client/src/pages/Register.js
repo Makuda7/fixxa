@@ -152,7 +152,6 @@ const Register = () => {
               name="type"
               value={formData.type}
               onChange={handleChange}
-              required
             >
               <option value="">Select account type</option>
               <option value="client">Client (Looking for help)</option>
@@ -177,7 +176,6 @@ const Register = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Your full name"
-              required
             />
           </div>
 
@@ -190,7 +188,6 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="your@email.com"
-              required
             />
           </div>
 
@@ -203,7 +200,6 @@ const Register = () => {
               value={formData.phone}
               onChange={handleChange}
               placeholder="e.g., 0821234567"
-              required
             />
             <small>10-digit mobile number</small>
           </div>
@@ -217,7 +213,6 @@ const Register = () => {
               value={formData.city}
               onChange={handleChange}
               placeholder="e.g., Johannesburg, Cape Town"
-              required
             />
           </div>
 
@@ -242,8 +237,6 @@ const Register = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Min 8 chars, uppercase, lowercase & number"
-              minLength="8"
-              required
             />
           </div>
 
@@ -256,7 +249,6 @@ const Register = () => {
               value={formData.password2}
               onChange={handleChange}
               placeholder="Re-enter password"
-              required
             />
           </div>
 
@@ -272,7 +264,6 @@ const Register = () => {
                   value={formData.speciality}
                   onChange={handleChange}
                   placeholder="e.g., Plumber, Electrician, Carpenter, Painter"
-                  required={isProfessional}
                 />
                 <small>Examples: Plumber, Electrician, Carpenter, Painter, Gardener, Cleaner, etc.</small>
               </div>
@@ -284,7 +275,6 @@ const Register = () => {
                   name="experience"
                   value={formData.experience}
                   onChange={handleChange}
-                  required={isProfessional}
                 >
                   <option value="">Select experience level</option>
                   <option value="Less than 1 year">Less than 1 year</option>
@@ -312,7 +302,6 @@ const Register = () => {
               name="referralSource"
               value={formData.referralSource}
               onChange={handleChange}
-              required
             >
               <option value="">Please select</option>
               <option value="Google Search">Google Search</option>
@@ -333,7 +322,6 @@ const Register = () => {
                 name="safetyAccepted"
                 checked={formData.safetyAccepted}
                 onChange={handleChange}
-                required
               />
               <label htmlFor="safetyAccepted">
                 I confirm that I am at least 18 years old and agree to Fixxa's{' '}
@@ -350,7 +338,6 @@ const Register = () => {
                 name="termsAccepted"
                 checked={formData.termsAccepted}
                 onChange={handleChange}
-                required
               />
               <label htmlFor="termsAccepted">
                 I agree to Fixxa's{' '}
