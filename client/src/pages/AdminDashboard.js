@@ -1648,12 +1648,12 @@ const AdminDashboard = () => {
                 <div className="worker-grid">
                   {[...pendingWorkers]
                     .sort((a, b) => {
-                      const readyA = a.email_verified && a.bio && a.city && a.phone ? 1 : 0;
-                      const readyB = b.email_verified && b.bio && b.city && b.phone ? 1 : 0;
+                      const readyA = a.email_verified && a.bio && a.city && a.phone && a.profile_pic && parseInt(a.cert_count) > 0 ? 1 : 0;
+                      const readyB = b.email_verified && b.bio && b.city && b.phone && b.profile_pic && parseInt(b.cert_count) > 0 ? 1 : 0;
                       return readyB - readyA;
                     })
                     .map(worker => {
-                    const isReady = worker.email_verified && worker.bio && worker.city && worker.phone;
+                    const isReady = worker.email_verified && worker.bio && worker.city && worker.phone && worker.profile_pic && parseInt(worker.cert_count) > 0;
                     // Color coding based on ready status
                     const emailStatusColor = worker.email_verified ? '#28a745' : '#dc3545';
                     const emailStatusBg = worker.email_verified ? '#d4edda' : '#f8d7da';
@@ -1735,9 +1735,11 @@ const AdminDashboard = () => {
                           <strong>Still needed:</strong>{' '}
                           {[
                             !worker.email_verified && 'email verification',
+                            !worker.profile_pic && 'profile photo',
                             !worker.phone && 'phone number',
                             !worker.city && 'city',
-                            !worker.bio && 'bio'
+                            !worker.bio && 'bio',
+                            !(parseInt(worker.cert_count) > 0) && 'at least 1 document'
                           ].filter(Boolean).join(', ')}
                         </div>
                       )}

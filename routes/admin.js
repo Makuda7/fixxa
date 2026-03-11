@@ -567,6 +567,7 @@ module.exports = (pool, logger, helpers) => {
           w.email_verified,
           w.created_at,
           w.last_completion_email_sent,
+          w.profile_pic,
           COUNT(c.id) as cert_count,
           COUNT(CASE WHEN c.status = 'approved' THEN 1 END) as approved_cert_count
         FROM workers w
