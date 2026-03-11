@@ -38,7 +38,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage({ text: '', items: [], type: '' });
+    setModal({ visible: false, text: '', items: [], type: '' });
 
     // Collect all validation errors upfront
     const errors = [];
