@@ -1648,13 +1648,13 @@ const AdminDashboard = () => {
                 <div className="worker-grid">
                   {[...pendingWorkers]
                     .sort((a, b) => {
-                      const readyA = a.email_verified && a.bio && a.city && a.phone && parseInt(a.verification_doc_count) >= 2 ? 1 : 0;
-                      const readyB = b.email_verified && b.bio && b.city && b.phone && parseInt(b.verification_doc_count) >= 2 ? 1 : 0;
+                      const readyA = a.email_verified && a.bio && a.city && a.phone && a.profile_pic && parseInt(a.verification_doc_count) >= 2 ? 1 : 0;
+                      const readyB = b.email_verified && b.bio && b.city && b.phone && b.profile_pic && parseInt(b.verification_doc_count) >= 2 ? 1 : 0;
                       return readyB - readyA;
                     })
                     .map(worker => {
                     const hasVerificationDocs = parseInt(worker.verification_doc_count) >= 2;
-                    const isReady = worker.email_verified && worker.bio && worker.city && worker.phone && hasVerificationDocs;
+                    const isReady = worker.email_verified && worker.bio && worker.city && worker.phone && worker.profile_pic && hasVerificationDocs;
                     // Color coding based on ready status
                     const emailStatusColor = worker.email_verified ? '#28a745' : '#dc3545';
                     const emailStatusBg = worker.email_verified ? '#d4edda' : '#f8d7da';
@@ -1736,11 +1736,12 @@ const AdminDashboard = () => {
                           <strong>Still needed:</strong>{' '}
                           {[
                             !worker.email_verified && 'email verification',
+                            !worker.profile_pic && 'profile photo',
                             !worker.phone && 'phone number',
                             !worker.city && 'city',
                             !worker.bio && 'bio',
                             parseInt(worker.verification_doc_count) < 1 && 'ID/passport copy',
-                            parseInt(worker.verification_doc_count) < 2 && parseInt(worker.verification_doc_count) >= 1 && 'proof of residence'
+                            parseInt(worker.verification_doc_count) === 1 && 'proof of residence'
                           ].filter(Boolean).join(', ')}
                         </div>
                       )}
