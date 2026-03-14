@@ -84,9 +84,9 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       if (type === USER_TYPES.PROFESSIONAL) {
         result = await pool.query(
-          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, experience, is_active, verification_status, approval_status, verification_token, terms_accepted, terms_accepted_at, terms_version, referral_source)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, 'pending', 'pending', $9, true, CURRENT_TIMESTAMP, $10, $11) RETURNING id, name, email, phone, city, speciality, experience`,
-          [name, email, phone, city, suburb || null, hashedPassword, speciality, experience || null, verificationToken, termsVersion, referralSource]
+          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, experience, is_active, verification_status, approval_status, email_verified, terms_accepted, terms_accepted_at, terms_version, referral_source)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, 'pending', 'pending', true, true, CURRENT_TIMESTAMP, $9, $10) RETURNING id, name, email, phone, city, speciality, experience`,
+          [name, email, phone, city, suburb || null, hashedPassword, speciality, experience || null, termsVersion, referralSource]
         );
       } else {
         result = await pool.query(
@@ -98,28 +98,25 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
 
       const user = result.rows[0];
 
-      // Send email verification
-      const verificationUrl = generateVerificationUrl(verificationToken, type);
-      const verificationEmail = createVerificationEmail(name, verificationUrl);
-
-      await sendEmail(user.email, verificationEmail.subject, verificationEmail.html).catch(err => {
-        logger.error('Failed to send verification email', {
-          error: err.message,
-          email: user.email
+      // Send email verification for clients only
+      if (type !== USER_TYPES.PROFESSIONAL) {
+        const verificationUrl = generateVerificationUrl(verificationToken, type);
+        const verificationEmail = createVerificationEmail(name, verificationUrl);
+        await sendEmail(user.email, verificationEmail.subject, verificationEmail.html).catch(err => {
+          logger.error('Failed to send verification email', { error: err.message, email: user.email });
         });
-        // Don't fail registration if email fails
-      });
+      }
 
       logger.info('User registered successfully', {
         email,
         userId: user.id,
         type,
         termsAccepted: true,
-        emailVerificationSent: true
+        emailVerificationSent: type !== USER_TYPES.PROFESSIONAL
       });
 
       const message = type === USER_TYPES.PROFESSIONAL
-        ? 'Registration successful! Please check your email to verify your account. Your application will be reviewed once verified.'
+        ? 'Account created! You can now log in and complete your profile. Once reviewed and approved, you will go live on Fixxa.'
         : 'Registration successful! Please check your email to verify your account before logging in.';
 
       res.json({
@@ -447,7 +444,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
         return res.status(401).json({ success: false, error: 'Invalid email or password' });
       }
 
-      if (!user.email_verified) {
+      if (!user.email_verified && type !== USER_TYPES.PROFESSIONAL) {
         return res.status(403).json({
           success: false,
           error: 'Please verify your email before logging in. Check your inbox for the verification link.',
