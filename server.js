@@ -1095,7 +1095,27 @@ async function startServer() {
     try {
       await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS cloudinary_id_document_id VARCHAR(500)`);
       await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_document_type VARCHAR(50)`);
-      console.log('✓ DB migration: cloudinary_id_document_id and id_document_type columns ensured');
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS specialties (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          description TEXT,
+          icon VARCHAR(50),
+          is_active BOOLEAN DEFAULT true,
+          display_order INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS worker_specialties (
+          id SERIAL PRIMARY KEY,
+          worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
+          specialty_id INTEGER REFERENCES specialties(id) ON DELETE CASCADE,
+          created_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(worker_id, specialty_id)
+        )
+      `);
+      console.log('✓ DB migration: all columns and tables ensured');
     } catch (migrationError) {
       console.error('Migration warning:', migrationError.message);
     }
