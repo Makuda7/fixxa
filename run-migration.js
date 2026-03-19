@@ -48,6 +48,9 @@ async function runMigration() {
     await client.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS service VARCHAR(255)`);
     console.log('✓ Service column added to bookings');
 
+    await client.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS cloudinary_id_document_id VARCHAR(500)`);
+    console.log('✓ cloudinary_id_document_id column added to workers');
+
     console.log('\n✅ Migration completed successfully!');
     process.exit(0);
   } catch (error) {
