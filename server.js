@@ -1095,6 +1095,23 @@ async function startServer() {
     try {
       await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS cloudinary_id_document_id VARCHAR(500)`);
       await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_document_type VARCHAR(50)`);
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS cloudinary_profile_id VARCHAR(255)`);
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS verified_profile_pic BOOLEAN DEFAULT false`);
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS verified_id_info BOOLEAN DEFAULT false`);
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS verified_emergency BOOLEAN DEFAULT false`);
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS verified_professional BOOLEAN DEFAULT false`);
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS verified_documents BOOLEAN DEFAULT false`);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS worker_change_history (
+          id SERIAL PRIMARY KEY,
+          worker_id INTEGER REFERENCES workers(id) ON DELETE CASCADE,
+          field_changed VARCHAR(100),
+          old_value TEXT,
+          new_value TEXT,
+          changed_by VARCHAR(255),
+          changed_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
       await pool.query(`
         CREATE TABLE IF NOT EXISTS specialties (
           id SERIAL PRIMARY KEY,
