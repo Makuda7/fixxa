@@ -1091,6 +1091,14 @@ async function startServer() {
       res.send(html);
     });
 
+    // Run pending migrations
+    try {
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS cloudinary_id_document_id VARCHAR(500)`);
+      console.log('✓ DB migration: cloudinary_id_document_id column ensured');
+    } catch (migrationError) {
+      console.error('Migration warning:', migrationError.message);
+    }
+
     // Start server
     server.listen(PORT, () => {
       const serverUrl = process.env.BASE_URL || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : `http://localhost:${PORT}`);
