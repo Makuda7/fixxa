@@ -1094,7 +1094,8 @@ async function startServer() {
     // Run pending migrations
     try {
       await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS cloudinary_id_document_id VARCHAR(500)`);
-      console.log('✓ DB migration: cloudinary_id_document_id column ensured');
+      await pool.query(`ALTER TABLE workers ADD COLUMN IF NOT EXISTS id_document_type VARCHAR(50)`);
+      console.log('✓ DB migration: cloudinary_id_document_id and id_document_type columns ensured');
     } catch (migrationError) {
       console.error('Migration warning:', migrationError.message);
     }
