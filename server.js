@@ -1014,8 +1014,11 @@ async function startServer() {
     const { addVerificationCheckboxes } = require('./migrations/add_verification_checkboxes');
     await migrationRunner.run('verification_checkboxes', addVerificationCheckboxes);
 
-    const { fixVerificationStatus } = require('./migrations/fix_verification_status');
-    await migrationRunner.run('fix_verification_status', fixVerificationStatus);
+    await migrationRunner.run('fix_verification_status', async (pool) => {
+      try {
+        await pool.query(`UPDATE workers SET verification_status = 'verified' WHERE email_verified = true AND (verification_status IS NULL OR verification_status != 'verified')`);
+      } catch (e) { console.log('fix_verification_status skipped:', e.message); }
+    });
 
     const { addRegistrationCompleteColumn } = require('./migrations/add_registration_complete');
     await migrationRunner.run('registration_complete', addRegistrationCompleteColumn);
