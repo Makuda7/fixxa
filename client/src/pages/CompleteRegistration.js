@@ -255,41 +255,24 @@ const CompleteRegistration = () => {
         break;
 
       case 2:
-        console.log('Checking step 2 fields:', {
-          documentType: formData.documentType,
-          idDocument: formData.idDocument,
-          idNumber: formData.idNumber,
-          passportNumber: formData.passportNumber
-        });
-
-        if (!formData.idDocument) {
-          console.log('Step 2 validation failed: missing document upload');
-          setMessage({ text: 'Please upload your identification document', type: 'error' });
-          return false;
-        }
-
-        if (formData.documentType === 'id') {
-          if (!formData.idNumber || formData.idNumber.length < 8) {
-            console.log('Step 2 validation failed: invalid ID number');
-            setMessage({ text: 'Please enter a valid ID number', type: 'error' });
-            return false;
-          }
-        } else if (formData.documentType === 'passport') {
-          if (!formData.passportNumber || formData.passportNumber.length < 5) {
-            console.log('Step 2 validation failed: invalid passport number');
-            setMessage({ text: 'Please enter a valid passport number', type: 'error' });
-            return false;
+        // ID document is optional - skip validation if nothing entered
+        if (formData.idDocument || formData.idNumber || formData.passportNumber) {
+          if (formData.documentType === 'id') {
+            if (formData.idNumber && formData.idNumber.length < 8) {
+              setMessage({ text: 'Please enter a valid ID number (at least 8 digits)', type: 'error' });
+              return false;
+            }
+          } else if (formData.documentType === 'passport') {
+            if (formData.passportNumber && formData.passportNumber.length < 5) {
+              setMessage({ text: 'Please enter a valid passport number', type: 'error' });
+              return false;
+            }
           }
         }
-
-        console.log('Step 2 validation passed!');
         break;
 
       case 3:
-        if (!formData.proofOfAddress) {
-          setMessage({ text: 'Please upload proof of address', type: 'error' });
-          return false;
-        }
+        // Proof of address is optional - skip validation
         break;
 
       case 4:
@@ -297,19 +280,12 @@ const CompleteRegistration = () => {
         break;
 
       case 5:
-        // Require at least one reference
-        if (formData.references.length === 0) {
-          setMessage({ text: 'Please provide at least one reference', type: 'error' });
-          return false;
-        }
-
-        // Validate each reference that has been added
+        // References are optional - only validate if something was entered
         for (let i = 0; i < formData.references.length; i++) {
           const ref = formData.references[i];
-          // First reference is required, others are optional
-          if (i === 0 || ref.name || ref.phone || ref.relationship || ref.email) {
+          if (ref.name || ref.phone || ref.relationship || ref.email) {
             if (!ref.name || !ref.phone || !ref.relationship) {
-              setMessage({ text: `Please complete all required fields for Reference ${i + 1}`, type: 'error' });
+              setMessage({ text: `Please complete name, phone, and relationship for Reference ${i + 1}`, type: 'error' });
               return false;
             }
             if (ref.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ref.email)) {
@@ -567,8 +543,8 @@ const CompleteRegistration = () => {
         return (
           <div className="step-content">
             <div className="step-header">
-              <h2>Identification Document</h2>
-              <p>Upload a clear copy of your ID or Passport</p>
+              <h2>Identification Document <span style={{fontSize:'0.8em', color:'#888', fontWeight:'normal'}}>(Optional)</span></h2>
+              <p>Upload your ID or Passport to get your <strong>Verified badge</strong> and receive more bookings. You can skip this and add it later.</p>
             </div>
 
             <div className="form-group">
@@ -614,11 +590,11 @@ const CompleteRegistration = () => {
             )}
 
             <DocumentUpload
-              label={`Upload ${formData.documentType === 'id' ? 'ID' : 'Passport'} Document`}
+              label={`Upload ${formData.documentType === 'id' ? 'ID' : 'Passport'} Document (Optional)`}
               accept=".pdf,.jpg,.jpeg,.png"
               maxSize={5}
-              required={true}
-              hint={`Please upload a clear, legible copy of your ${formData.documentType === 'id' ? 'ID' : 'passport'} (PDF, JPG, or PNG, max 5MB)`}
+              required={false}
+              hint={`Optional — upload later from your dashboard to earn your Verified badge`}
               onChange={(file) => handleFileUpload('idDocument', file)}
               existingFiles={formData.idDocument ? [formData.idDocument] : []}
               onRemove={() => handleInputChange('idDocument', null)}
@@ -630,8 +606,8 @@ const CompleteRegistration = () => {
         return (
           <div className="step-content">
             <div className="step-header">
-              <h2>Proof of Address</h2>
-              <p>Upload a recent proof of residence (not older than 3 months)</p>
+              <h2>Proof of Address <span style={{fontSize:'0.8em', color:'#888', fontWeight:'normal'}}>(Optional)</span></h2>
+              <p>Upload proof of residence to complete your <strong>Verified badge</strong>. You can skip this and add it later from your dashboard.</p>
             </div>
 
             <div className="info-box">
@@ -648,11 +624,11 @@ const CompleteRegistration = () => {
             </div>
 
             <DocumentUpload
-              label="Upload Proof of Address"
+              label="Upload Proof of Address (Optional)"
               accept=".pdf,.jpg,.jpeg,.png"
               maxSize={5}
-              required={true}
-              hint="Document must not be older than 3 months"
+              required={false}
+              hint="Optional — upload later from your dashboard. Document must not be older than 3 months."
               onChange={(file) => handleFileUpload('proofOfAddress', file)}
               existingFiles={formData.proofOfAddress ? [formData.proofOfAddress] : []}
               onRemove={() => handleInputChange('proofOfAddress', null)}
@@ -695,8 +671,8 @@ const CompleteRegistration = () => {
         return (
           <div className="step-content">
             <div className="step-header">
-              <h2>Professional References</h2>
-              <p>Provide at least one professional reference who can vouch for your work</p>
+              <h2>Professional References <span style={{fontSize:'0.8em', color:'#888', fontWeight:'normal'}}>(Optional)</span></h2>
+              <p>Add references to build trust with clients. You can skip this and add them later.</p>
             </div>
 
             {formData.references.map((reference, index) => (

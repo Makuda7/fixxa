@@ -801,19 +801,18 @@ const WorkerDashboard = () => {
       {/* Registration Completion Banner */}
       {profile && !profile.registration_complete && (
         <div className="registration-banner incomplete">
-          <div className="banner-icon">⚠️</div>
+          <div className="banner-icon">🎯</div>
           <div className="banner-content">
-            <h3>Complete Your Registration</h3>
+            <h3>Get Your Verified Badge</h3>
             <p>
-              Finish setting up your profile to start receiving job requests.
-              Add your documents, certifications, and references to build trust with clients.
+              You're live on Fixxa! Add your documents to earn a <strong>Verified badge</strong> — verified professionals get more bookings. Everything is optional, takes 2 minutes.
             </p>
           </div>
           <button
             className="btn-complete-registration"
             onClick={() => window.location.href = '/complete-registration'}
           >
-            Complete Registration →
+            Get Verified →
           </button>
         </div>
       )}
