@@ -268,6 +268,11 @@ module.exports = (pool, logger, helpers) => {
           w.is_verified,
           w.verification_status,
           w.email_verified,
+          w.verified_profile_pic,
+          w.verified_id_info,
+          w.verified_emergency,
+          w.verified_professional,
+          w.verified_documents,
           w.created_at,
           COUNT(DISTINCT b.id) as total_bookings,
           COUNT(DISTINCT CASE WHEN b.status = 'Completed' THEN b.id END) as completed_bookings,
@@ -734,14 +739,10 @@ module.exports = (pool, logger, helpers) => {
       const hasApprovedCerts = certResult.rows[0].count > 0;
       console.log('Has approved certifications:', hasApprovedCerts);
 
-      // Build update query dynamically based on provided suburb data
-      // Always set is_verified = true when approving a worker
-      // The "Verified" badge indicates admin approval, not certifications
-      // Certifications create the separate "Certified" badge
+      // Approval = visible on site only. Verified badge is granted separately.
       let updateQuery = `UPDATE workers
          SET approval_status = 'approved',
              is_active = true,
-             is_verified = true,
              approval_date = NOW(),
              approved_by = $1`;
 

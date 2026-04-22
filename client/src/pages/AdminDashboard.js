@@ -751,13 +751,6 @@ const AdminDashboard = () => {
   const approveWorkerFromVerification = async () => {
     if (!verificationWorker) return;
 
-    // Check that all verification checkboxes are checked
-    const allChecked = Object.values(verificationStates).every(v => v === true);
-    if (!allChecked) {
-      showMessage('❌ All 5 verification steps must be completed before approval', 'error');
-      return;
-    }
-
     // Validate required fields
     if (!editPrimarySuburb.trim()) {
       showMessage('Primary suburb is required', 'error');
@@ -2405,6 +2398,23 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Verification checklist — what's missing */}
+                      <div style={{ margin: '0.75rem 0', padding: '0.6rem 0.75rem', background: worker.is_verified ? '#e8f5e9' : '#fff8e1', borderRadius: 6, border: `1px solid ${worker.is_verified ? '#c8e6c9' : '#ffe082'}`, fontSize: '0.78rem' }}>
+                        <div style={{ fontWeight: 700, marginBottom: '0.35rem', color: worker.is_verified ? '#2e7d32' : '#795548' }}>
+                          {worker.is_verified ? '✓ Verified' : '⚠ Not yet verified — missing:'}
+                        </div>
+                        {!worker.is_verified && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                            {!worker.profile_picture && <span style={{ background: '#ffccbc', color: '#bf360c', padding: '1px 6px', borderRadius: 10 }}>Profile photo</span>}
+                            {!worker.verified_profile_pic && <span style={{ background: '#ffccbc', color: '#bf360c', padding: '1px 6px', borderRadius: 10 }}>Photo verified</span>}
+                            {!worker.verified_id_info && <span style={{ background: '#ffccbc', color: '#bf360c', padding: '1px 6px', borderRadius: 10 }}>ID document</span>}
+                            {!worker.verified_emergency && <span style={{ background: '#ffccbc', color: '#bf360c', padding: '1px 6px', borderRadius: 10 }}>Emergency contact</span>}
+                            {!worker.verified_professional && <span style={{ background: '#ffccbc', color: '#bf360c', padding: '1px 6px', borderRadius: 10 }}>Professional check</span>}
+                            {!worker.verified_documents && <span style={{ background: '#ffccbc', color: '#bf360c', padding: '1px 6px', borderRadius: 10 }}>Documents</span>}
+                          </div>
+                        )}
+                      </div>
 
                       <div className="cert-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         <button
@@ -4148,19 +4158,11 @@ const AdminDashboard = () => {
 
                 <button
                   onClick={approveWorkerFromVerification}
-                  disabled={!Object.values(verificationStates).every(v => v === true)}
                   className="btn"
-                  style={{
-                    flex: 1,
-                    minWidth: '150px',
-                    background: Object.values(verificationStates).every(v => v === true) ? '#4a7c59' : '#ccc',
-                    color: 'white',
-                    opacity: Object.values(verificationStates).every(v => v === true) ? 1 : 0.7,
-                    cursor: Object.values(verificationStates).every(v => v === true) ? 'pointer' : 'not-allowed'
-                  }}
-                  title={!Object.values(verificationStates).every(v => v === true) ? 'Complete all 5 verification steps first' : 'Approve worker'}
+                  style={{ flex: 1, minWidth: '150px', background: '#4a7c59', color: 'white' }}
+                  title="Make worker visible on the site"
                 >
-                  ✅ Approve Worker
+                  👁 Make Visible
                 </button>
 
                 <button
