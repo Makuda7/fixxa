@@ -230,6 +230,7 @@
   display: flex;
   flex-direction: column;
   width: 300px;
+  height: 480px;
 }
 
 .worker-card > *:first-child {
@@ -294,11 +295,26 @@
 }
 
 .worker-card-content {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   text-align: center;
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* Clamp speciality to 2 lines so cards stay uniform height */
+.worker-card-content .worker-speciality {
+  color: var(--fixxa-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 0.4rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+  min-height: 2.4em;
 }
 
 .worker-card h3 {
@@ -625,5 +641,6 @@
 
   .worker-card {
     width: 100%;
+    height: auto;
   }
 }

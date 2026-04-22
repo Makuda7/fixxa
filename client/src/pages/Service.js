@@ -430,7 +430,7 @@ const Service = () => {
                       </div>
                       <div className="worker-card-content">
                         <h3>{worker.name}</h3>
-                        <p style={{ color: 'var(--fixxa-primary)', fontWeight: 600, fontSize: '1rem', margin: '0 0 0.5rem 0' }}>
+                        <p className="worker-speciality">
                           {worker.speciality}
                         </p>
                         <p style={{ color: 'var(--fixxa-text-light)', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>
