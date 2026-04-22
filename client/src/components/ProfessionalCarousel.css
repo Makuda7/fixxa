@@ -218,8 +218,8 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: linear-gradient(90deg, #b8860b 0%, #FFD700 40%, #fffacd 60%, #FFD700 80%, #b8860b 100%);
-  background-size: 200% auto;
+  background: linear-gradient(90deg, #c9a800 0%, #FFD700 35%, #fff8dc 50%, #FFD700 65%, #c9a800 100%);
+  background-size: 300% auto;
   color: #3a2f00;
   padding: 5px 12px;
   border-radius: 16px;

@@ -282,19 +282,20 @@
   color: var(--fixxa-text-dark);
 }
 
+/* Verified badge — gold */
 .verified-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
+  background: linear-gradient(135deg, #c9a800 0%, #FFD700 50%, #c9a800 100%);
+  color: #3a2f00;
   padding: 5px 12px;
   border-radius: 16px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-left: 0.25rem;
-  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5), 0 0 12px rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   cursor: help;
   position: relative;
   transition: all 0.3s ease;
@@ -302,26 +303,29 @@
 
 .verified-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
 .verified-badge:hover::after {
-  content: attr(title);
+  content: "✓ Identity verified  |  ID document checked  |  Proof of residence confirmed\AFixxa-verified professionals are safer to hire and held to a higher standard.";
+  white-space: pre;
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
-  background: #333;
+  background: #1a1a1a;
   color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   font-size: 0.75rem;
-  white-space: nowrap;
+  line-height: 1.6;
   z-index: 1000;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   pointer-events: none;
-  animation: fadeIn 0.1s ease-in;
+  border-left: 3px solid #FFD700;
+  min-width: 260px;
+  text-align: left;
+  font-weight: 400;
 }
 
 .verified-badge:hover::before {
@@ -330,11 +334,10 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: #333;
-  margin-bottom: 2px;
+  border: 7px solid transparent;
+  border-top-color: #1a1a1a;
+  margin-bottom: 3px;
   z-index: 1000;
-  animation: fadeIn 0.1s ease-in;
 }
 
 .verified-badge::before {
@@ -344,42 +347,52 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+@keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Certified badge — gold shimmer */
 .certified-badge {
-  background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
-  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
+  background: linear-gradient(90deg, #c9a800 0%, #FFD700 35%, #fff8dc 50%, #FFD700 65%, #c9a800 100%);
+  background-size: 300% auto;
+  color: #3a2f00;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5), 0 0 12px rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  animation: shimmer 3s linear infinite;
   cursor: help;
 }
 
 .certified-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
 .certified-badge:hover::after {
-  content: attr(title);
+  content: "★ Trade-certified professional\AQualifications reviewed and approved by Fixxa.\ACertified pros bring proven skills to every job.";
+  white-space: pre;
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
-  background: #333;
+  background: #1a1a1a;
   color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   font-size: 0.75rem;
-  white-space: nowrap;
+  line-height: 1.6;
   z-index: 1000;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   pointer-events: none;
-  animation: fadeIn 0.1s ease-in;
+  border-left: 3px solid #FFD700;
+  min-width: 240px;
+  text-align: left;
+  font-weight: 400;
 }
 
 .certified-badge:hover::before {
@@ -388,11 +401,10 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: #333;
-  margin-bottom: 2px;
+  border: 7px solid transparent;
+  border-top-color: #1a1a1a;
+  margin-bottom: 3px;
   z-index: 1000;
-  animation: fadeIn 0.1s ease-in;
 }
 
 .certified-badge::before {
