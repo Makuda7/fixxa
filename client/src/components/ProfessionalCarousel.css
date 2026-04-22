@@ -149,11 +149,11 @@
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.verified-badge {
+.card-image-wrapper .verified-badge {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: linear-gradient(135deg, #c9a800 0%, #FFD700 50%, #c9a800 100%);
+  background: linear-gradient(135deg, #c9a800 0%, #FFD700 50%, #c9a800 100%) !important;
   color: #3a2f00;
   padding: 5px 12px;
   border-radius: 16px;
@@ -169,12 +169,12 @@
   transition: all 0.3s ease;
 }
 
-.verified-badge:hover {
+.card-image-wrapper .verified-badge:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
-.verified-badge:hover::after {
+.card-image-wrapper .verified-badge:hover::after {
   content: "✓ Identity verified  |  ID document checked  |  Proof of residence confirmed\AFixxa-verified professionals are safer to hire and held to a higher standard.";
   white-space: pre;
   position: absolute;
@@ -196,7 +196,7 @@
   font-weight: 400;
 }
 
-.verified-badge:hover::before {
+.card-image-wrapper .verified-badge:hover::before {
   content: '';
   position: absolute;
   bottom: 100%;
@@ -208,17 +208,17 @@
   z-index: 1000;
 }
 
-.verified-badge::before {
+.card-image-wrapper .verified-badge::before {
   content: '✓';
   font-weight: bold;
   font-size: 0.9rem;
 }
 
-.certified-badge {
+.card-image-wrapper .certified-badge {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: linear-gradient(90deg, #c9a800 0%, #FFD700 35%, #fff8dc 50%, #FFD700 65%, #c9a800 100%);
+  background: linear-gradient(90deg, #c9a800 0%, #FFD700 35%, #fff8dc 50%, #FFD700 65%, #c9a800 100%) !important;
   background-size: 300% auto;
   color: #3a2f00;
   padding: 5px 12px;
@@ -241,12 +241,12 @@
   100% { background-position: -200% center; }
 }
 
-.certified-badge:hover {
+.card-image-wrapper .certified-badge:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
-.certified-badge:hover::after {
+.card-image-wrapper .certified-badge:hover::after {
   content: "★ Trade-certified professional\AQualifications reviewed and approved by Fixxa.\ACertified pros bring proven skills to every job.";
   white-space: pre;
   position: absolute;
@@ -268,7 +268,7 @@
   font-weight: 400;
 }
 
-.certified-badge:hover::before {
+.card-image-wrapper .certified-badge:hover::before {
   content: '';
   position: absolute;
   bottom: 100%;
@@ -280,7 +280,7 @@
   z-index: 1000;
 }
 
-.certified-badge::before {
+.card-image-wrapper .certified-badge::before {
   display: none;
 }
 

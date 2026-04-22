@@ -431,17 +431,17 @@ const Service = () => {
                         <p className="experience-text" style={{ color: 'var(--fixxa-text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
                           {worker.experience || 'N/A'} years experience
                         </p>
-                        {rating > 0 ? (
-                          <div className="rating-display" style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--fixxa-border-light)' }}>
-                            <span className="rating-number">{rating.toFixed(1)}</span>
-                            <span className="rating-stars">{stars}</span>
-                            <span className="review-count">({worker.review_count || 0})</span>
-                          </div>
-                        ) : (
-                          <div className="no-reviews" style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--fixxa-border-light)' }}>
-                            No reviews yet
-                          </div>
-                        )}
+                        <div className="rating-display" style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--fixxa-border-light)' }}>
+                          {rating > 0 ? (
+                            <>
+                              <span className="rating-number">{rating.toFixed(1)}</span>
+                              <span className="rating-stars">{stars}</span>
+                              <span className="review-count">({worker.review_count || 0})</span>
+                            </>
+                          ) : (
+                            <span className="rating-stars" style={{ color: '#ddd', fontSize: '1.2rem' }}>☆☆☆☆☆</span>
+                          )}
+                        </div>
                       </div>
                     </Link>
                     <button
