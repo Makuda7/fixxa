@@ -220,7 +220,7 @@
 .worker-card {
   background: white;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
@@ -228,6 +228,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
+}
+
+.worker-card > *:first-child {
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
 }
 
 .worker-card:hover {
