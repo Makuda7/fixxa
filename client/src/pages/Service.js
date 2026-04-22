@@ -28,6 +28,9 @@ const Service = () => {
   const [specialties, setSpecialties] = useState([]);
   const [loadingSpecialties, setLoadingSpecialties] = useState(true);
 
+  // Portfolio cache for cards
+  const [portfolioCache, setPortfolioCache] = useState({});
+
   // Sort state
   const [sortBy, setSortBy] = useState('rating');
 
@@ -126,7 +129,18 @@ const Service = () => {
         throw new Error(data.error || 'Search failed');
       }
 
-      setWorkers(data.workers || []);
+      const workerList = data.workers || [];
+      setWorkers(workerList);
+      // Fetch portfolio photos for all workers
+      workerList.forEach(async (w) => {
+        try {
+          const pr = await fetch(`${process.env.REACT_APP_API_URL || ''}/workers/portfolio/${w.id}`);
+          if (pr.ok) {
+            const pd = await pr.json();
+            setPortfolioCache(prev => ({ ...prev, [w.id]: pd.photos || [] }));
+          }
+        } catch { /* silently skip */ }
+      });
     } catch (err) {
       console.error('Failed to load workers:', err);
       setError('Unable to load professionals. Please try again.');
@@ -379,7 +393,7 @@ const Service = () => {
                 const stars = rating > 0 ? renderStars(rating) : '☆☆☆☆☆';
                 const isVerified = worker.id_verified || worker.is_verified || false;
                 const verifiedBadge = isVerified ? (
-                  <span className="verified-badge">✓ Verified</span>
+                  <span className="verified-badge">Verified</span>
                 ) : null;
                 const certifiedBadge = worker.approved_cert_count > 0 ? (
                   <span className="verified-badge certified-badge">★ Certified</span>
@@ -431,7 +445,7 @@ const Service = () => {
                         <p className="experience-text" style={{ color: 'var(--fixxa-text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
                           {worker.experience || 'N/A'} years experience
                         </p>
-                        <div className="rating-display" style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--fixxa-border-light)' }}>
+                        <div className="rating-display" style={{ paddingTop: '1rem', borderTop: '1px solid var(--fixxa-border-light)' }}>
                           {rating > 0 ? (
                             <>
                               <span className="rating-number">{rating.toFixed(1)}</span>
@@ -442,6 +456,22 @@ const Service = () => {
                             <span className="rating-stars" style={{ color: '#ddd', fontSize: '1.2rem' }}>☆☆☆☆☆</span>
                           )}
                         </div>
+
+                        {portfolioCache[worker.id] && portfolioCache[worker.id].length > 0 && (
+                          <div className="card-portfolio-strip">
+                            <p className="card-portfolio-label">Work examples</p>
+                            <div className="card-portfolio-thumbs">
+                              {portfolioCache[worker.id].slice(0, 3).map((photo, pi) => (
+                                <img
+                                  key={pi}
+                                  src={photo.photo_url}
+                                  alt={photo.description || `Work ${pi + 1}`}
+                                  className="card-portfolio-thumb"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </Link>
                     <button

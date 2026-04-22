@@ -18,7 +18,7 @@
 
 .carousel-3d {
   position: relative;
-  height: 500px;
+  height: 600px;
   perspective: 1200px;
   display: flex;
   align-items: center;
@@ -35,7 +35,7 @@
 .carousel-card {
   position: absolute;
   width: 320px;
-  height: 500px;
+  height: 580px;
   background: white;
   border-radius: var(--radius-xl);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -46,7 +46,7 @@
   left: 50%;
   top: 50%;
   margin-left: -160px;
-  margin-top: -250px;
+  margin-top: -290px;
   border: 3px solid transparent;
 }
 
@@ -153,8 +153,8 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: linear-gradient(135deg, #c9a800 0%, #FFD700 50%, #c9a800 100%) !important;
-  color: #3a2f00;
+  background: linear-gradient(135deg, #1a8a3a 0%, #28a745 50%, #1a8a3a 100%) !important;
+  color: white !important;
   padding: 5px 12px;
   border-radius: 16px;
   font-size: 0.75rem;
@@ -162,8 +162,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5), 0 0 12px rgba(255, 215, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.5), 0 0 12px rgba(40, 167, 69, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   z-index: 10;
   cursor: help;
   transition: all 0.3s ease;
@@ -171,7 +171,7 @@
 
 .card-image-wrapper .verified-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.7), 0 0 20px rgba(40, 167, 69, 0.4);
 }
 
 .card-image-wrapper .verified-badge:hover::after {
@@ -190,7 +190,7 @@
   z-index: 1000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   pointer-events: none;
-  border-left: 3px solid #FFD700;
+  border-left: 3px solid #28a745;
   min-width: 260px;
   text-align: left;
   font-weight: 400;
@@ -209,9 +209,7 @@
 }
 
 .card-image-wrapper .verified-badge::before {
-  content: '✓';
-  font-weight: bold;
-  font-size: 0.9rem;
+  display: none;
 }
 
 .card-image-wrapper .certified-badge {
