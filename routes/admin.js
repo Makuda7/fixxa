@@ -1,28 +1,45 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const Busboy = require('busboy');
 const { cloudinary } = require('../config/cloudinary');
 
-// Memory storage for all admin uploads — we pipe to Cloudinary manually
+// Memory storage for non-upload routes that already work
 const adminUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const isImage = file.mimetype.startsWith('image/');
-    const isPDF = file.mimetype === 'application/pdf';
-    const isDoc = file.mimetype === 'application/msword' ||
-      file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    if (isImage || isPDF || isDoc) return cb(null, true);
-    cb(new Error('Only images, PDFs, and Word documents are allowed'));
-  }
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-// Upload buffer to Cloudinary via data URI — no streaming needed
+// Parse multipart form directly with busboy — bypasses multer/Express5 issues
+const parseMultipart = (req) => new Promise((resolve, reject) => {
+  const fields = {};
+  let fileBuffer = null;
+  let fileMimetype = null;
+  let fileFieldname = null;
+
+  const bb = Busboy({ headers: req.headers, limits: { fileSize: 10 * 1024 * 1024 } });
+
+  bb.on('file', (name, stream, info) => {
+    fileFieldname = name;
+    fileMimetype = info.mimeType;
+    const chunks = [];
+    stream.on('data', (chunk) => chunks.push(chunk));
+    stream.on('end', () => { fileBuffer = Buffer.concat(chunks); });
+    stream.on('error', reject);
+  });
+
+  bb.on('field', (name, value) => { fields[name] = value; });
+  bb.on('finish', () => resolve({ fields, fileBuffer, fileMimetype, fileFieldname }));
+  bb.on('error', reject);
+
+  req.pipe(bb);
+});
+
+// Upload buffer to Cloudinary via data URI
 const uploadToCloudinary = async (buffer, mimeType, options) => {
   const b64 = buffer.toString('base64');
   const dataUri = `data:${mimeType};base64,${b64}`;
-  const { transformation, ...uploadOptions } = options;
-  return cloudinary.uploader.upload(dataUri, uploadOptions);
+  return cloudinary.uploader.upload(dataUri, options);
 };
 
 module.exports = (pool, logger, helpers) => {
@@ -1858,29 +1875,35 @@ module.exports = (pool, logger, helpers) => {
   });
 
   // Upload worker profile photo (admin only)
-  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, adminUpload.single('profilePicture'), async (req, res) => {
+  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, async (req, res) => {
     try {
+      console.log('upload-worker-photo: parsing multipart');
+      const { fields, fileBuffer, fileMimetype } = await parseMultipart(req);
+      console.log('upload-worker-photo: parsed, fileBuffer length:', fileBuffer?.length);
       const { workerId } = req.params;
-      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+      if (!fileBuffer) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
       const existing = await pool.query('SELECT cloudinary_profile_id FROM workers WHERE id = $1', [workerId]);
       if (existing.rows[0]?.cloudinary_profile_id) {
         try { await cloudinary.uploader.destroy(existing.rows[0].cloudinary_profile_id); } catch (e) {}
       }
 
-      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, {
+      console.log('upload-worker-photo: uploading to cloudinary');
+      const result = await uploadToCloudinary(fileBuffer, fileMimetype || 'image/jpeg', {
         folder: 'fixxa/profile-pictures',
         resource_type: 'image',
         public_id: `worker-admin-${workerId}-${Date.now()}`
       });
+      console.log('upload-worker-photo: cloudinary done', result.secure_url);
 
       await pool.query('UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2 WHERE id = $3',
         [result.secure_url, result.public_id, workerId]);
 
       res.json({ success: true, imageUrl: result.secure_url, message: 'Profile picture updated successfully' });
     } catch (error) {
-      logger.error('Failed to upload worker profile photo', { error: error.message, stack: error.stack });
-      res.status(500).json({ success: false, error: 'Failed to upload profile picture: ' + error.message });
+      console.error('upload-worker-photo ERROR:', error.message, error.stack);
+      logger.error('Failed to upload worker profile photo', { error: error.message });
+      if (!res.headersSent) res.status(500).json({ success: false, error: 'Failed to upload: ' + error.message });
     }
   });
 
@@ -2260,15 +2283,16 @@ module.exports = (pool, logger, helpers) => {
   });
 
   // Upload certification for worker (admin helping worker)
-  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, adminUpload.single('certification'), async (req, res) => {
+  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, async (req, res) => {
     try {
+      const { fields, fileBuffer, fileMimetype } = await parseMultipart(req);
       const { workerId } = req.params;
-      const documentName = req.body.documentName;
-      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+      const documentName = fields.documentName;
+      if (!fileBuffer) return res.status(400).json({ success: false, error: 'No file uploaded' });
       if (!documentName?.trim()) return res.status(400).json({ success: false, error: 'Document name is required' });
 
-      const isImage = req.file.mimetype.startsWith('image/');
-      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, {
+      const isImage = (fileMimetype || '').startsWith('image/');
+      const result = await uploadToCloudinary(fileBuffer, fileMimetype || 'application/octet-stream', {
         folder: 'fixxa/certifications',
         resource_type: isImage ? 'image' : 'raw',
         public_id: `cert-admin-${workerId}-${Date.now()}`
@@ -2282,20 +2306,21 @@ module.exports = (pool, logger, helpers) => {
 
       res.json({ success: true, message: 'Certification uploaded successfully', certification: insertResult.rows[0] });
     } catch (error) {
-      logger.error('Failed to upload worker certification', { error: error.message, stack: error.stack });
-      res.status(500).json({ success: false, error: 'Failed to upload certification: ' + error.message });
+      console.error('upload-worker-certification ERROR:', error.message, error.stack);
+      if (!res.headersSent) res.status(500).json({ success: false, error: 'Failed to upload certification: ' + error.message });
     }
   });
 
   // Upload ID/Passport document for worker (admin helping worker)
-  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, adminUpload.single('idDocument'), async (req, res) => {
+  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, async (req, res) => {
     try {
+      const { fields, fileBuffer, fileMimetype } = await parseMultipart(req);
       const { workerId } = req.params;
-      const documentType = req.body.documentType || 'id';
-      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+      const documentType = fields.documentType || 'id';
+      if (!fileBuffer) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
-      const isImage = req.file.mimetype.startsWith('image/');
-      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, {
+      const isImage = (fileMimetype || '').startsWith('image/');
+      const result = await uploadToCloudinary(fileBuffer, fileMimetype || 'application/octet-stream', {
         folder: 'fixxa/id-documents',
         resource_type: isImage ? 'image' : 'raw',
         public_id: `id-admin-${workerId}-${Date.now()}`
@@ -2308,8 +2333,8 @@ module.exports = (pool, logger, helpers) => {
 
       res.json({ success: true, message: 'ID document uploaded successfully', id_document_url: result.secure_url, id_document_type: documentType });
     } catch (error) {
-      logger.error('Failed to upload worker ID document', { error: error.message, stack: error.stack });
-      res.status(500).json({ success: false, error: 'Failed to upload ID document: ' + error.message });
+      console.error('upload-worker-id ERROR:', error.message, error.stack);
+      if (!res.headersSent) res.status(500).json({ success: false, error: 'Failed to upload ID: ' + error.message });
     }
   });
 
