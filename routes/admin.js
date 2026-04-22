@@ -20,7 +20,9 @@ const adminUpload = multer({
 
 // Helper: upload buffer to Cloudinary using Node built-in Readable
 const uploadToCloudinary = (buffer, options) => new Promise((resolve, reject) => {
-  const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+  // Remove transformation — not supported in upload_stream options directly
+  const { transformation, ...streamOptions } = options;
+  const stream = cloudinary.uploader.upload_stream(streamOptions, (error, result) => {
     if (error) return reject(error);
     resolve(result);
   });
