@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { cloudinary, profilePicStorage, certificationStorage } = require('../config/cloudinary');
+const { cloudinary, profilePicStorage, certificationStorage, portfolioStorage } = require('../config/cloudinary');
 
 // Configure multer for profile picture uploads
 const profilePicUpload = multer({
@@ -2903,6 +2903,96 @@ module.exports = (pool, logger, helpers) => {
         success: false,
         error: error.message
       });
+    }
+  });
+
+  // Upload ID document for a worker (admin only)
+  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, certificationUpload.single('idDocument'), async (req, res) => {
+    try {
+      const workerId = req.params.workerId;
+      const documentType = req.body.documentType || 'id';
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      const fileUrl = req.file.path;
+      const cloudinaryId = req.file.filename;
+
+      await pool.query(
+        `UPDATE workers SET id_document_url = $1, id_document_cloudinary_id = $2, id_type = $3, id_submitted_at = CURRENT_TIMESTAMP WHERE id = $4`,
+        [fileUrl, cloudinaryId, documentType, workerId]
+      );
+
+      res.json({ success: true, id_document_url: fileUrl, id_document_type: documentType });
+    } catch (error) {
+      logger.error('Admin upload worker ID error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to upload ID document' });
+    }
+  });
+
+  // Upload certification for a worker (admin only)
+  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, certificationUpload.single('certification'), async (req, res) => {
+    try {
+      const workerId = req.params.workerId;
+      const documentName = req.body.documentName || 'Certification';
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      const fileUrl = req.file.path;
+      const cloudinaryId = req.file.filename;
+      const fileType = req.file.mimetype;
+
+      const result = await pool.query(
+        `INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status, document_type)
+         VALUES ($1, $2, $3, $4, $5, 'approved', 'certification') RETURNING *`,
+        [workerId, fileUrl, cloudinaryId, documentName, fileType]
+      );
+
+      // Update approved cert count
+      await pool.query(
+        `UPDATE workers SET approved_cert_count = (
+          SELECT COUNT(*) FROM certifications WHERE worker_id = $1 AND status = 'approved' AND document_type = 'certification'
+        ) WHERE id = $1`,
+        [workerId]
+      );
+
+      res.json({ success: true, certification: result.rows[0] });
+    } catch (error) {
+      logger.error('Admin upload worker certification error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to upload certification' });
+    }
+  });
+
+  // Upload profile photo for a worker (admin only)
+  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, profilePicUpload.single('profilePhoto'), async (req, res) => {
+    try {
+      const workerId = req.params.workerId;
+
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      const fileUrl = req.file.path;
+      const cloudinaryId = req.file.filename;
+
+      // Delete old profile pic from Cloudinary if exists
+      const existing = await pool.query('SELECT cloudinary_profile_id FROM workers WHERE id = $1', [workerId]);
+      if (existing.rows[0]?.cloudinary_profile_id) {
+        try { await cloudinary.uploader.destroy(existing.rows[0].cloudinary_profile_id); } catch (e) {}
+      }
+
+      await pool.query(
+        `UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2 WHERE id = $3`,
+        [fileUrl, cloudinaryId, workerId]
+      );
+
+      res.json({ success: true, profile_picture: fileUrl });
+    } catch (error) {
+      logger.error('Admin upload worker photo error', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to upload profile photo' });
     }
   });
 
