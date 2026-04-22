@@ -1899,7 +1899,7 @@ module.exports = (pool, logger, helpers) => {
       await pool.query('UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2 WHERE id = $3',
         [result.secure_url, result.public_id, workerId]);
 
-      res.json({ success: true, imageUrl: result.secure_url, message: 'Profile picture updated successfully' });
+      res.json({ success: true, profile_picture: result.secure_url, imageUrl: result.secure_url, message: 'Profile picture updated successfully' });
     } catch (error) {
       console.error('upload-worker-photo ERROR:', error.message, error.stack);
       logger.error('Failed to upload worker profile photo', { error: error.message });

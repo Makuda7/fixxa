@@ -989,11 +989,11 @@ const AdminDashboard = () => {
         showMessage(`✅ ${idDocumentType === 'id' ? 'ID' : 'Passport'} uploaded successfully!`, 'success');
 
         // Update the verification worker with the new ID document info
-        setVerificationWorker({
-          ...verificationWorker,
+        setVerificationWorker(prev => ({
+          ...prev,
           id_document_url: data.id_document_url,
           id_document_type: data.id_document_type
-        });
+        }));
 
         if (idInputRef.current) {
           idInputRef.current.value = '';
@@ -3387,69 +3387,92 @@ const AdminDashboard = () => {
                       <div style={{
                         marginTop: '1rem',
                         padding: '1rem',
-                        background: '#f8f9fa',
+                        background: verificationWorker.id_document_url ? '#e8f5e9' : '#f8f9fa',
                         borderRadius: '6px',
-                        border: '1px dashed #4a7c59'
+                        border: verificationWorker.id_document_url ? '2px solid #4caf50' : '1px dashed #4a7c59'
                       }}>
-                        <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: '#4a7c59' }}>
-                          📎 Upload ID/Passport for Worker
-                        </h5>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {verificationWorker.id_document_url ? (
                           <div>
-                            <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem', fontWeight: '500' }}>
-                              Document Type:
-                            </label>
-                            <select
-                              value={idDocumentType}
-                              onChange={(e) => setIdDocumentType(e.target.value)}
-                              disabled={uploadingID}
-                              style={{
-                                width: '100%',
-                                padding: '0.5rem',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                fontSize: '0.9rem',
-                                background: 'white'
-                              }}
-                            >
-                              <option value="id">ID Document</option>
-                              <option value="passport">Passport</option>
-                            </select>
+                            <p style={{ margin: '0 0 0.5rem 0', fontWeight: '700', color: '#2e7d32', fontSize: '1rem' }}>
+                              ✅ {verificationWorker.id_document_type === 'passport' ? 'Passport' : 'ID Document'} uploaded successfully!
+                            </p>
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                              <a
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); openPdfViewer(verificationWorker.id_document_url); }}
+                                style={{ color: '#1976d2', textDecoration: 'underline', fontSize: '0.9rem' }}
+                              >
+                                View Document
+                              </a>
+                              <button
+                                onClick={() => setVerificationWorker({ ...verificationWorker, id_document_url: null })}
+                                style={{ background: 'none', border: 'none', color: '#888', fontSize: '0.8rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                              >
+                                Replace
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <input
-                              type="file"
-                              ref={idInputRef}
-                              onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                  uploadIDForWorker(file);
-                                }
-                              }}
-                              accept=".pdf,.jpg,.jpeg,.png"
-                              disabled={uploadingID}
-                              style={{ display: 'none' }}
-                            />
-                            <button
-                              onClick={() => idInputRef.current?.click()}
-                              disabled={uploadingID}
-                              className="btn"
-                              style={{
-                                background: uploadingID ? '#6c757d' : '#4a7c59',
-                                color: 'white',
-                                padding: '0.5rem 1rem',
-                                fontSize: '0.9rem',
-                                cursor: uploadingID ? 'not-allowed' : 'pointer',
-                                width: '100%'
-                              }}
-                            >
-                              {uploadingID ? '⏳ Uploading...' : '📤 Choose & Upload File'}
-                            </button>
-                          </div>
-                          <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>
-                            Accepted: PDF, JPG, PNG (max 10MB)
-                          </p>
-                        </div>
+                        ) : (
+                          <>
+                            <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: '#4a7c59' }}>
+                              📎 Upload ID/Passport for Worker
+                            </h5>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                              <div>
+                                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem', fontWeight: '500' }}>
+                                  Document Type:
+                                </label>
+                                <select
+                                  value={idDocumentType}
+                                  onChange={(e) => setIdDocumentType(e.target.value)}
+                                  disabled={uploadingID}
+                                  style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '4px',
+                                    fontSize: '0.9rem',
+                                    background: 'white'
+                                  }}
+                                >
+                                  <option value="id">ID Document</option>
+                                  <option value="passport">Passport</option>
+                                </select>
+                              </div>
+                              <div>
+                                <input
+                                  type="file"
+                                  ref={idInputRef}
+                                  onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) uploadIDForWorker(file);
+                                  }}
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  disabled={uploadingID}
+                                  style={{ display: 'none' }}
+                                />
+                                <button
+                                  onClick={() => idInputRef.current?.click()}
+                                  disabled={uploadingID}
+                                  className="btn"
+                                  style={{
+                                    background: uploadingID ? '#6c757d' : '#4a7c59',
+                                    color: 'white',
+                                    padding: '0.5rem 1rem',
+                                    fontSize: '0.9rem',
+                                    cursor: uploadingID ? 'not-allowed' : 'pointer',
+                                    width: '100%'
+                                  }}
+                                >
+                                  {uploadingID ? '⏳ Uploading... please wait' : '📤 Choose & Upload File'}
+                                </button>
+                              </div>
+                              <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>
+                                Accepted: PDF, JPG, PNG (max 10MB)
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
