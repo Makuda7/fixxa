@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const streamifier = require('streamifier');
+const { Readable } = require('stream');
 const { cloudinary } = require('../config/cloudinary');
 
 // Memory storage for all admin uploads — we pipe to Cloudinary manually
@@ -18,13 +18,16 @@ const adminUpload = multer({
   }
 });
 
-// Helper: upload buffer to Cloudinary
+// Helper: upload buffer to Cloudinary using Node built-in Readable
 const uploadToCloudinary = (buffer, options) => new Promise((resolve, reject) => {
   const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
     if (error) return reject(error);
     resolve(result);
   });
-  streamifier.createReadStream(buffer).pipe(stream);
+  const readable = new Readable();
+  readable.push(buffer);
+  readable.push(null);
+  readable.pipe(stream);
 });
 
 module.exports = (pool, logger, helpers) => {
