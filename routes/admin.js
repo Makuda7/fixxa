@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { Readable } = require('stream');
 const { cloudinary } = require('../config/cloudinary');
 
 // Memory storage for all admin uploads — we pipe to Cloudinary manually
@@ -18,26 +17,13 @@ const adminUpload = multer({
   }
 });
 
-// Helper: upload buffer to Cloudinary using Node built-in Readable
-const uploadToCloudinary = (buffer, options) => new Promise((resolve, reject) => {
-  const { transformation, ...streamOptions } = options;
-  const stream = cloudinary.uploader.upload_stream(streamOptions, (error, result) => {
-    if (error) return reject(error);
-    resolve(result);
-  });
-  const readable = new Readable();
-  readable.push(buffer);
-  readable.push(null);
-  readable.pipe(stream);
-});
-
-// Helper: run multer middleware as a promise so errors are always caught
-const runMulter = (middleware, req, res) => new Promise((resolve, reject) => {
-  middleware(req, res, (err) => {
-    if (err) return reject(err);
-    resolve();
-  });
-});
+// Upload buffer to Cloudinary via data URI — no streaming needed
+const uploadToCloudinary = async (buffer, mimeType, options) => {
+  const b64 = buffer.toString('base64');
+  const dataUri = `data:${mimeType};base64,${b64}`;
+  const { transformation, ...uploadOptions } = options;
+  return cloudinary.uploader.upload(dataUri, uploadOptions);
+};
 
 module.exports = (pool, logger, helpers) => {
   const { requireAuth, adminOnly } = require('../middleware/auth');
@@ -1872,9 +1858,8 @@ module.exports = (pool, logger, helpers) => {
   });
 
   // Upload worker profile photo (admin only)
-  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, async (req, res) => {
+  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, adminUpload.single('profilePicture'), async (req, res) => {
     try {
-      await runMulter(adminUpload.single('profilePicture'), req, res);
       const { workerId } = req.params;
       if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
@@ -1883,7 +1868,7 @@ module.exports = (pool, logger, helpers) => {
         try { await cloudinary.uploader.destroy(existing.rows[0].cloudinary_profile_id); } catch (e) {}
       }
 
-      const result = await uploadToCloudinary(req.file.buffer, {
+      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, {
         folder: 'fixxa/profile-pictures',
         resource_type: 'image',
         public_id: `worker-admin-${workerId}-${Date.now()}`
@@ -2275,16 +2260,15 @@ module.exports = (pool, logger, helpers) => {
   });
 
   // Upload certification for worker (admin helping worker)
-  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, async (req, res) => {
+  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, adminUpload.single('certification'), async (req, res) => {
     try {
-      await runMulter(adminUpload.single('certification'), req, res);
       const { workerId } = req.params;
       const documentName = req.body.documentName;
       if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
       if (!documentName?.trim()) return res.status(400).json({ success: false, error: 'Document name is required' });
 
       const isImage = req.file.mimetype.startsWith('image/');
-      const result = await uploadToCloudinary(req.file.buffer, {
+      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, {
         folder: 'fixxa/certifications',
         resource_type: isImage ? 'image' : 'raw',
         public_id: `cert-admin-${workerId}-${Date.now()}`
@@ -2304,15 +2288,14 @@ module.exports = (pool, logger, helpers) => {
   });
 
   // Upload ID/Passport document for worker (admin helping worker)
-  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, async (req, res) => {
+  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, adminUpload.single('idDocument'), async (req, res) => {
     try {
-      await runMulter(adminUpload.single('idDocument'), req, res);
       const { workerId } = req.params;
       const documentType = req.body.documentType || 'id';
       if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
       const isImage = req.file.mimetype.startsWith('image/');
-      const result = await uploadToCloudinary(req.file.buffer, {
+      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, {
         folder: 'fixxa/id-documents',
         resource_type: isImage ? 'image' : 'raw',
         public_id: `id-admin-${workerId}-${Date.now()}`
