@@ -100,6 +100,9 @@ const Home = () => {
         workersData = [];
       }
 
+      // Only show verified workers in the carousel
+      workersData = workersData.filter(w => w.is_verified);
+
       // Sort by rating if not already sorted by distance
       if (!location || workersData.length === 0) {
         workersData.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
