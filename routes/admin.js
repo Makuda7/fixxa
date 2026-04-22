@@ -1877,9 +1877,10 @@ module.exports = (pool, logger, helpers) => {
   // Upload worker profile photo (admin only)
   router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, async (req, res) => {
     try {
+      console.log('upload-worker-photo: content-type:', req.headers['content-type']);
       console.log('upload-worker-photo: parsing multipart');
       const { fields, fileBuffer, fileMimetype } = await parseMultipart(req);
-      console.log('upload-worker-photo: parsed, fileBuffer length:', fileBuffer?.length);
+      console.log('upload-worker-photo: parsed, fileBuffer length:', fileBuffer?.length, 'mimetype:', fileMimetype);
       const { workerId } = req.params;
       if (!fileBuffer) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
@@ -2327,7 +2328,7 @@ module.exports = (pool, logger, helpers) => {
       });
 
       await pool.query(
-        `UPDATE workers SET id_document_url = $1, id_document_cloudinary_id = $2, id_type = $3, id_submitted_at = CURRENT_TIMESTAMP WHERE id = $4`,
+        `UPDATE workers SET id_document_url = $1, cloudinary_id_document_id = $2, id_type = $3, id_submitted_at = CURRENT_TIMESTAMP WHERE id = $4`,
         [result.secure_url, result.public_id, documentType, workerId]
       );
 
