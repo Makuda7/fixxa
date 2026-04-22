@@ -41,6 +41,7 @@
     "nodemailer": "^7.0.6",
     "pg": "^8.16.3",
     "socket.io": "^4.8.1",
+    "streamifier": "^0.1.1",
     "winston": "^3.17.0",
     "xss": "^1.0.15"
   },

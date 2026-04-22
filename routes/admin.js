@@ -1,36 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { cloudinary, profilePicStorage, certificationStorage, portfolioStorage } = require('../config/cloudinary');
+const streamifier = require('streamifier');
+const { cloudinary } = require('../config/cloudinary');
 
-// Configure multer for profile picture uploads
-const profilePicUpload = multer({
-  storage: profilePicStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+// Memory storage for all admin uploads — we pipe to Cloudinary manually
+const adminUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|webp/;
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (mimetype) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only JPEG, PNG, and WEBP images are allowed'));
-    }
+    const isImage = file.mimetype.startsWith('image/');
+    const isPDF = file.mimetype === 'application/pdf';
+    const isDoc = file.mimetype === 'application/msword' ||
+      file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (isImage || isPDF || isDoc) return cb(null, true);
+    cb(new Error('Only images, PDFs, and Word documents are allowed'));
   }
 });
 
-// Configure multer for certification uploads
-const certificationUpload = multer({
-  storage: certificationStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document/;
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (mimetype) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only PDF, JPG, PNG, DOC, and DOCX files are allowed'));
-    }
-  }
+// Helper: upload buffer to Cloudinary
+const uploadToCloudinary = (buffer, options) => new Promise((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+    if (error) return reject(error);
+    resolve(result);
+  });
+  streamifier.createReadStream(buffer).pipe(stream);
 });
 
 module.exports = (pool, logger, helpers) => {
@@ -2907,92 +2901,91 @@ module.exports = (pool, logger, helpers) => {
   });
 
   // Upload ID document for a worker (admin only)
-  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, certificationUpload.single('idDocument'), async (req, res) => {
+  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, adminUpload.single('idDocument'), async (req, res) => {
     try {
       const workerId = req.params.workerId;
       const documentType = req.body.documentType || 'id';
 
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
-      }
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
-      const fileUrl = req.file.path;
-      const cloudinaryId = req.file.filename;
+      const isImage = req.file.mimetype.startsWith('image/');
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'fixxa/id-documents',
+        resource_type: isImage ? 'image' : 'raw',
+        public_id: `id-${workerId}-${Date.now()}`,
+        transformation: isImage ? [{ width: 1200, height: 1600, crop: 'limit', quality: 'auto' }] : undefined
+      });
 
       await pool.query(
         `UPDATE workers SET id_document_url = $1, id_document_cloudinary_id = $2, id_type = $3, id_submitted_at = CURRENT_TIMESTAMP WHERE id = $4`,
-        [fileUrl, cloudinaryId, documentType, workerId]
+        [result.secure_url, result.public_id, documentType, workerId]
       );
 
-      res.json({ success: true, id_document_url: fileUrl, id_document_type: documentType });
+      res.json({ success: true, id_document_url: result.secure_url, id_document_type: documentType });
     } catch (error) {
       logger.error('Admin upload worker ID error', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to upload ID document' });
+      res.status(500).json({ success: false, error: 'Failed to upload ID document: ' + error.message });
     }
   });
 
   // Upload certification for a worker (admin only)
-  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, certificationUpload.single('certification'), async (req, res) => {
+  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, adminUpload.single('certification'), async (req, res) => {
     try {
       const workerId = req.params.workerId;
       const documentName = req.body.documentName || 'Certification';
 
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
-      }
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
-      const fileUrl = req.file.path;
-      const cloudinaryId = req.file.filename;
-      const fileType = req.file.mimetype;
+      const isImage = req.file.mimetype.startsWith('image/');
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'fixxa/certifications',
+        resource_type: isImage ? 'image' : 'raw',
+        public_id: `cert-admin-${workerId}-${Date.now()}`,
+        transformation: isImage ? [{ width: 1200, height: 1600, crop: 'limit', quality: 'auto' }] : undefined
+      });
 
-      const result = await pool.query(
+      const dbResult = await pool.query(
         `INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status, document_type)
          VALUES ($1, $2, $3, $4, $5, 'approved', 'certification') RETURNING *`,
-        [workerId, fileUrl, cloudinaryId, documentName, fileType]
+        [workerId, result.secure_url, result.public_id, documentName, req.file.mimetype]
       );
 
-      // Update approved cert count
-      await pool.query(
-        `UPDATE workers SET approved_cert_count = (
-          SELECT COUNT(*) FROM certifications WHERE worker_id = $1 AND status = 'approved' AND document_type = 'certification'
-        ) WHERE id = $1`,
-        [workerId]
-      );
-
-      res.json({ success: true, certification: result.rows[0] });
+      res.json({ success: true, certification: dbResult.rows[0] });
     } catch (error) {
       logger.error('Admin upload worker certification error', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to upload certification' });
+      res.status(500).json({ success: false, error: 'Failed to upload certification: ' + error.message });
     }
   });
 
   // Upload profile photo for a worker (admin only)
-  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, profilePicUpload.single('profilePhoto'), async (req, res) => {
+  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, adminUpload.single('profilePhoto'), async (req, res) => {
     try {
       const workerId = req.params.workerId;
 
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
-      }
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
-      const fileUrl = req.file.path;
-      const cloudinaryId = req.file.filename;
-
-      // Delete old profile pic from Cloudinary if exists
+      // Delete old photo from Cloudinary if exists
       const existing = await pool.query('SELECT cloudinary_profile_id FROM workers WHERE id = $1', [workerId]);
       if (existing.rows[0]?.cloudinary_profile_id) {
         try { await cloudinary.uploader.destroy(existing.rows[0].cloudinary_profile_id); } catch (e) {}
       }
 
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'fixxa/profile-pictures',
+        resource_type: 'image',
+        public_id: `worker-admin-${workerId}-${Date.now()}`,
+        transformation: [{ width: 400, height: 400, crop: 'fill', quality: 'auto' }]
+      });
+
       await pool.query(
         `UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2 WHERE id = $3`,
-        [fileUrl, cloudinaryId, workerId]
+        [result.secure_url, result.public_id, workerId]
       );
 
-      res.json({ success: true, profile_picture: fileUrl });
+      res.json({ success: true, profile_picture: result.secure_url });
     } catch (error) {
       logger.error('Admin upload worker photo error', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to upload profile photo' });
+      res.status(500).json({ success: false, error: 'Failed to upload photo: ' + error.message });
     }
   });
 
