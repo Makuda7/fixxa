@@ -404,7 +404,7 @@ const Service = () => {
                   <div key={worker.id} className="worker-card-wrapper">
                     <Link
                       to={`/profile?id=${worker.id}`}
-                      className="worker-card"
+                      className={`worker-card${isVerified ? ' verified-worker-card' : ''}`}
                     >
                       <div className="worker-card-image-wrapper" style={{ position: 'relative' }}>
                         <img
