@@ -1874,6 +1874,62 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
+  // Update worker profile fields (admin)
+  router.post('/update-worker-profile/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { workerId } = req.params;
+      const { name, speciality, bio, experience, primary_suburb, province, area } = req.body;
+      await pool.query(
+        `UPDATE workers SET name=$1, speciality=$2, bio=$3, experience=$4, primary_suburb=$5, province=$6, area=$7 WHERE id=$8`,
+        [name, speciality, bio, experience, primary_suburb, province, area, workerId]
+      );
+      res.json({ success: true, message: 'Profile updated' });
+    } catch (error) {
+      console.error('update-worker-profile ERROR:', error.message);
+      res.status(500).json({ success: false, error: 'Failed to update profile: ' + error.message });
+    }
+  });
+
+  // Upload portfolio photo for worker (admin)
+  router.post('/upload-worker-portfolio/:workerId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { fields, fileBuffer, fileMimetype } = await parseMultipart(req);
+      const { workerId } = req.params;
+      if (!fileBuffer) return res.status(400).json({ success: false, error: 'No file uploaded' });
+
+      const result = await uploadToCloudinary(fileBuffer, fileMimetype || 'image/jpeg', {
+        folder: 'fixxa/portfolio',
+        resource_type: 'image',
+        public_id: `portfolio-admin-${workerId}-${Date.now()}`
+      });
+
+      const insertResult = await pool.query(
+        `INSERT INTO portfolio_photos (worker_id, photo_url, cloudinary_id) VALUES ($1, $2, $3) RETURNING *`,
+        [workerId, result.secure_url, result.public_id]
+      );
+
+      res.json({ success: true, photo: insertResult.rows[0] });
+    } catch (error) {
+      console.error('upload-worker-portfolio ERROR:', error.message);
+      res.status(500).json({ success: false, error: 'Failed to upload portfolio photo: ' + error.message });
+    }
+  });
+
+  // Delete portfolio photo (admin)
+  router.delete('/delete-portfolio-photo/:photoId', requireAuth, adminOnly, async (req, res) => {
+    try {
+      const { photoId } = req.params;
+      const result = await pool.query('DELETE FROM portfolio_photos WHERE id = $1 RETURNING cloudinary_id', [photoId]);
+      if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Photo not found' });
+      if (result.rows[0].cloudinary_id) {
+        try { await cloudinary.uploader.destroy(result.rows[0].cloudinary_id); } catch (e) {}
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to delete photo' });
+    }
+  });
+
   // Upload worker profile photo (admin only)
   router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, async (req, res) => {
     try {

@@ -116,6 +116,18 @@ const AdminDashboard = () => {
   const [pdfViewerUrl, setPdfViewerUrl] = useState('');
   const [pdfViewerTitle, setPdfViewerTitle] = useState('Document Viewer');
 
+  // Edit Profile modal (Professionals tab)
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editProfileWorker, setEditProfileWorker] = useState(null);
+  const [editProfileData, setEditProfileData] = useState({});
+  const [editProfileSaving, setEditProfileSaving] = useState(false);
+  const [editProfilePhotoPreview, setEditProfilePhotoPreview] = useState(null);
+  const [editProfilePhotoFile, setEditProfilePhotoFile] = useState(null);
+  const [editProfilePortfolioUploading, setEditProfilePortfolioUploading] = useState(false);
+  const [editProfilePortfolioPhotos, setEditProfilePortfolioPhotos] = useState([]);
+  const editProfilePhotoRef = React.useRef(null);
+  const editProfilePortfolioRef = React.useRef(null);
+
   useEffect(() => {
     // Check if user is admin using the isAdmin flag from backend
     if (!user || user.isAdmin !== true) {
@@ -1083,6 +1095,94 @@ const AdminDashboard = () => {
     }
   };
 
+  const openEditProfileModal = async (worker) => {
+    setEditProfileWorker(worker);
+    setEditProfileData({
+      name: worker.name || '',
+      speciality: worker.speciality || '',
+      bio: worker.bio || '',
+      experience: worker.experience || '',
+      primary_suburb: worker.primary_suburb || '',
+      province: worker.province || '',
+      area: worker.area || '',
+    });
+    setEditProfilePhotoPreview(null);
+    setEditProfilePhotoFile(null);
+    // Load portfolio
+    try {
+      const res = await fetch(`/workers/portfolio/${worker.id}`, { credentials: 'include' });
+      if (res.ok) { const d = await res.json(); setEditProfilePortfolioPhotos(d.photos || []); }
+    } catch (e) { setEditProfilePortfolioPhotos([]); }
+    setShowEditProfileModal(true);
+  };
+
+  const saveEditProfile = async () => {
+    if (!editProfileWorker) return;
+    setEditProfileSaving(true);
+    try {
+      // Upload photo first if selected
+      if (editProfilePhotoFile) {
+        const fd = new FormData();
+        fd.append('profilePicture', editProfilePhotoFile);
+        const r = await fetch(`/admin/upload-worker-photo/${editProfileWorker.id}`, { method: 'POST', credentials: 'include', body: fd });
+        const d = await r.json();
+        if (!d.success) { showMessage('Photo upload failed: ' + d.error, 'error'); setEditProfileSaving(false); return; }
+      }
+      // Save profile fields
+      const r = await fetch(`/admin/update-worker-profile/${editProfileWorker.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(editProfileData)
+      });
+      const d = await r.json();
+      if (d.success) {
+        showMessage('Profile updated successfully', 'success');
+        setShowEditProfileModal(false);
+        await loadProfessionals();
+      } else {
+        showMessage(d.error || 'Failed to save profile', 'error');
+      }
+    } catch (e) {
+      showMessage('Error saving profile', 'error');
+    } finally {
+      setEditProfileSaving(false);
+    }
+  };
+
+  const uploadPortfolioPhoto = async (file) => {
+    if (!editProfileWorker) return;
+    setEditProfilePortfolioUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('photo', file);
+      const r = await fetch(`/admin/upload-worker-portfolio/${editProfileWorker.id}`, { method: 'POST', credentials: 'include', body: fd });
+      const d = await r.json();
+      if (d.success) {
+        setEditProfilePortfolioPhotos(prev => [...prev, d.photo]);
+        showMessage('Portfolio photo added', 'success');
+      } else {
+        showMessage(d.error || 'Failed to upload photo', 'error');
+      }
+    } catch (e) {
+      showMessage('Error uploading portfolio photo', 'error');
+    } finally {
+      setEditProfilePortfolioUploading(false);
+    }
+  };
+
+  const deletePortfolioPhoto = async (photoId) => {
+    if (!window.confirm('Delete this portfolio photo?')) return;
+    try {
+      const r = await fetch(`/admin/delete-portfolio-photo/${photoId}`, { method: 'DELETE', credentials: 'include' });
+      const d = await r.json();
+      if (d.success) {
+        setEditProfilePortfolioPhotos(prev => prev.filter(p => p.id !== photoId));
+        showMessage('Photo deleted', 'success');
+      }
+    } catch (e) { showMessage('Error deleting photo', 'error'); }
+  };
+
   const openPdfViewer = (url) => {
     // Extract filename from URL for better title
     const fileName = url.split('/').pop().split('?')[0];
@@ -1228,30 +1328,34 @@ const AdminDashboard = () => {
     }
   };
 
-  const toggleProfessional = async (id) => {
+  const toggleProfessional = async (id, currentIsActive) => {
     try {
       const response = await fetch(`/admin/toggle-professional/${id}`, {
         method: 'POST',
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isActive: !currentIsActive })
       });
       const data = await response.json();
       if (data.success) {
         showMessage(data.message, 'success');
         await loadProfessionals();
       } else {
-        showMessage(data.error || 'Failed to toggle professional', 'error');
+        showMessage(data.error || 'Failed to toggle visibility', 'error');
       }
     } catch (error) {
-      console.error('Error toggling professional:', error);
-      showMessage('Error toggling professional', 'error');
+      console.error('Error toggling visibility:', error);
+      showMessage('Error toggling visibility', 'error');
     }
   };
 
-  const toggleVerified = async (workerId) => {
+  const toggleVerified = async (workerId, currentIsVerified) => {
     try {
       const response = await fetch(`/admin/toggle-verified/${workerId}`, {
         method: 'POST',
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ is_verified: !currentIsVerified })
       });
       const data = await response.json();
       if (data.success) {
@@ -2305,22 +2409,30 @@ const AdminDashboard = () => {
                       <div className="cert-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         <button
                           className="btn btn-info btn-small"
-                          onClick={() => showWorkerDetail(worker)}
-                          style={{ gridColumn: '1 / -1' }}
+                          onClick={() => openEditProfileModal(worker)}
+                          style={{ gridColumn: '1 / -1', background: '#4a7c59', color: '#fff', border: 'none' }}
                         >
-                          📋 View Details
+                          ✏️ Edit Profile
                         </button>
                         <button
                           className="btn btn-secondary btn-small"
-                          onClick={() => toggleProfessional(worker.id)}
+                          onClick={() => showWorkerDetail(worker)}
                         >
-                          {worker.availability === 'available' ? 'Deactivate' : 'Activate'}
+                          📋 Details
                         </button>
                         <button
-                          className="btn btn-primary btn-small"
-                          onClick={() => toggleVerified(worker.id)}
+                          className="btn btn-small"
+                          style={{ background: worker.is_active ? '#6c757d' : '#28a745', color: '#fff', border: 'none' }}
+                          onClick={() => toggleProfessional(worker.id, worker.is_active)}
                         >
-                          {worker.is_verified ? 'Unverify' : 'Verify'}
+                          {worker.is_active ? '👁 Hide' : '👁 Show'}
+                        </button>
+                        <button
+                          className="btn btn-small"
+                          style={{ gridColumn: '1 / -1', background: worker.is_verified ? '#ffc107' : '#17a2b8', color: worker.is_verified ? '#000' : '#fff', border: 'none' }}
+                          onClick={() => toggleVerified(worker.id, worker.is_verified)}
+                        >
+                          {worker.is_verified ? '✓ Verified — Remove Badge' : '☐ Mark as Verified'}
                         </button>
                         <button
                           className="btn btn-small"
@@ -4340,6 +4452,111 @@ const AdminDashboard = () => {
               borderTop: '1px solid #ddd'
             }}>
               If the document doesn't display, click the Download button above to view it locally.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEditProfileModal && editProfileWorker && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '12px', width: '700px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#4a7c59', color: 'white' }}>
+              <h3 style={{ margin: 0 }}>✏️ Edit Profile — {editProfileWorker.name}</h3>
+              <button onClick={() => setShowEditProfileModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.8rem', cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+              {/* Profile Photo */}
+              <div>
+                <h4 style={{ margin: '0 0 0.75rem 0', color: '#4a7c59' }}>Profile Photo</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <img
+                    src={editProfilePhotoPreview || editProfileWorker.profile_picture || 'https://via.placeholder.com/80'}
+                    alt="profile"
+                    style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid #4a7c59' }}
+                  />
+                  <div>
+                    <input type="file" ref={editProfilePhotoRef} accept="image/*" style={{ display: 'none' }}
+                      onChange={e => {
+                        const f = e.target.files[0];
+                        if (f) { setEditProfilePhotoFile(f); setEditProfilePhotoPreview(URL.createObjectURL(f)); }
+                      }} />
+                    <button className="btn" style={{ background: '#4a7c59', color: 'white', fontSize: '0.85rem' }} onClick={() => editProfilePhotoRef.current?.click()}>
+                      Choose Photo
+                    </button>
+                    {editProfilePhotoFile && <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>{editProfilePhotoFile.name}</p>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Fields */}
+              <div>
+                <h4 style={{ margin: '0 0 0.75rem 0', color: '#4a7c59' }}>Profile Details</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {[
+                    { label: 'Full Name', key: 'name' },
+                    { label: 'Speciality / Trade', key: 'speciality' },
+                    { label: 'Experience (e.g. 5 years)', key: 'experience' },
+                    { label: 'Primary Suburb', key: 'primary_suburb' },
+                    { label: 'Province', key: 'province' },
+                    { label: 'Area', key: 'area' },
+                  ].map(({ label, key }) => (
+                    <div key={key}>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem', color: '#555' }}>{label}</label>
+                      <input
+                        value={editProfileData[key] || ''}
+                        onChange={e => setEditProfileData(prev => ({ ...prev, [key]: e.target.value }))}
+                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  ))}
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem', color: '#555' }}>Bio</label>
+                    <textarea
+                      value={editProfileData.bio || ''}
+                      onChange={e => setEditProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                      rows={3}
+                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.9rem', resize: 'vertical', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Portfolio Photos */}
+              <div>
+                <h4 style={{ margin: '0 0 0.75rem 0', color: '#4a7c59' }}>Work Examples (Portfolio)</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  {editProfilePortfolioPhotos.map(photo => (
+                    <div key={photo.id} style={{ position: 'relative' }}>
+                      <img src={photo.photo_url} alt="portfolio" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }} />
+                      <button
+                        onClick={() => deletePortfolioPhoto(photo.id)}
+                        style={{ position: 'absolute', top: -6, right: -6, background: '#dc3545', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: '0.7rem', cursor: 'pointer', lineHeight: '20px', textAlign: 'center', padding: 0 }}
+                      >×</button>
+                    </div>
+                  ))}
+                  {editProfilePortfolioPhotos.length === 0 && <p style={{ color: '#999', fontSize: '0.85rem', margin: 0 }}>No portfolio photos yet</p>}
+                </div>
+                <input type="file" ref={editProfilePortfolioRef} accept="image/*" style={{ display: 'none' }}
+                  onChange={e => { const f = e.target.files[0]; if (f) uploadPortfolioPhoto(f); e.target.value = ''; }} />
+                <button className="btn" style={{ background: '#17a2b8', color: 'white', fontSize: '0.85rem' }}
+                  disabled={editProfilePortfolioUploading}
+                  onClick={() => editProfilePortfolioRef.current?.click()}>
+                  {editProfilePortfolioUploading ? '⏳ Uploading...' : '📷 Add Photo'}
+                </button>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #ddd', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#f8f9fa' }}>
+              <button className="btn btn-secondary" onClick={() => setShowEditProfileModal(false)}>Cancel</button>
+              <button className="btn" style={{ background: '#4a7c59', color: 'white' }} disabled={editProfileSaving} onClick={saveEditProfile}>
+                {editProfileSaving ? '⏳ Saving...' : '💾 Save Profile'}
+              </button>
             </div>
           </div>
         </div>
