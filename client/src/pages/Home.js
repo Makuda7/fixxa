@@ -11,7 +11,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-  const [featuredTitle, setFeaturedTitle] = useState('Top Rated Professionals');
+  const [featuredTitle, setFeaturedTitle] = useState('Verified Professionals');
 
   // Search form state
   const [searchForm, setSearchForm] = useState({
@@ -85,11 +85,11 @@ const Home = () => {
           console.warn('Nearby workers failed, falling back to all workers');
           response = await fetch('/workers', { credentials: 'include' });
         } else {
-          setFeaturedTitle('Nearest Top Rated Professionals');
+          setFeaturedTitle('Verified Professionals Near You');
         }
       } else {
         response = await fetch('/workers', { credentials: 'include' });
-        setFeaturedTitle('Top Rated Professionals');
+        setFeaturedTitle('Verified Professionals');
       }
 
       let workersData = await response.json();
