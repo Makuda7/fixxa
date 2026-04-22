@@ -22,6 +22,8 @@ const Register = () => {
     termsAccepted: false
   });
 
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const showMessage = (text, type, items = []) => {
@@ -34,6 +36,21 @@ const Register = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showMessage('Please upload an image file (JPG, PNG, etc.)', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage('Photo must be under 5MB.', 'error');
+      return;
+    }
+    setProfilePhoto(file);
+    setProfilePhotoPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e) => {
@@ -53,6 +70,7 @@ const Register = () => {
     if (formData.password && formData.password !== formData.password2) errors.push('Passwords do not match.');
     if (formData.type === 'professional' && !formData.speciality) errors.push('Speciality is required for professionals.');
     if (formData.type === 'professional' && !formData.experience) errors.push('Years of experience is required for professionals.');
+    if (formData.type === 'professional' && !profilePhoto) errors.push('A profile photo is required so clients can see who they are hiring.');
     if (!formData.referralSource) errors.push('Please tell us how you heard about Fixxa.');
     if (!formData.safetyAccepted) errors.push('You must accept the Safety Guidelines.');
     if (!formData.termsAccepted) errors.push('You must accept the Terms of Service and Privacy Policy.');
@@ -65,28 +83,26 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const payload = {
-        type: formData.type,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        city: formData.city,
-        password: formData.password,
-        acceptTerms: formData.termsAccepted,
-        referralSource: formData.referralSource
-      };
-
-      if (formData.suburb) payload.suburb = formData.suburb;
+      const payload = new FormData();
+      payload.append('type', formData.type);
+      payload.append('name', formData.name);
+      payload.append('email', formData.email);
+      payload.append('phone', formData.phone);
+      payload.append('city', formData.city);
+      payload.append('password', formData.password);
+      payload.append('acceptTerms', formData.termsAccepted);
+      payload.append('referralSource', formData.referralSource);
+      if (formData.suburb) payload.append('suburb', formData.suburb);
       if (formData.type === 'professional') {
-        payload.speciality = formData.speciality;
-        payload.experience = formData.experience;
+        payload.append('speciality', formData.speciality);
+        payload.append('experience', formData.experience);
+        if (profilePhoto) payload.append('profilePhoto', profilePhoto);
       }
 
       const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
       });
 
       if (res.status === 429) {
@@ -241,6 +257,33 @@ const Register = () => {
           {/* Professional Fields */}
           {isProfessional && (
             <>
+              <div className="form-group">
+                <label htmlFor="profilePhoto">Profile Photo <span style={{color:'red'}}>*</span></label>
+                <div className="photo-upload-area" onClick={() => document.getElementById('profilePhotoInput').click()}>
+                  {profilePhotoPreview ? (
+                    <img src={profilePhotoPreview} alt="Preview" className="photo-preview" />
+                  ) : (
+                    <div className="photo-placeholder">
+                      <span style={{fontSize:'2.5rem'}}>📷</span>
+                      <p>Click to upload your photo</p>
+                      <small>JPG, PNG — max 5MB. Clients will see this before hiring you.</small>
+                    </div>
+                  )}
+                </div>
+                <input
+                  id="profilePhotoInput"
+                  type="file"
+                  accept="image/*"
+                  style={{display:'none'}}
+                  onChange={handlePhotoChange}
+                />
+                {profilePhotoPreview && (
+                  <button type="button" className="btn-change-photo" onClick={() => { setProfilePhoto(null); setProfilePhotoPreview(null); }}>
+                    Change Photo
+                  </button>
+                )}
+              </div>
+
               <div className="form-group">
                 <label htmlFor="speciality">Speciality:</label>
                 <input

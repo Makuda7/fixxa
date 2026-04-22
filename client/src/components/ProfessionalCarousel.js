@@ -79,7 +79,7 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
             return (
               <div
                 key={pro.id}
-                className={`carousel-card ${isCenter ? 'center' : ''} position-${position}`}
+                className={`carousel-card ${isCenter ? 'center' : ''} position-${position} ${pro.is_verified ? 'verified-card' : ''}`}
                 style={{
                   '--position': position,
                 }}

@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 const router = express.Router();
 const { SALT_ROUNDS, VERIFICATION_TOKEN_EXPIRY, PASSWORD_RESET_TOKEN_EXPIRY, USER_TYPES } = require('../config/constants');
 const {
@@ -11,6 +12,8 @@ const {
   resendVerificationValidation
 } = require('../middleware/validation');
 const { authLimiter, loginLimiter, registrationLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
+const { cloudinary, profilePicStorage } = require('../config/cloudinary');
+const profilePicUpload = multer({ storage: profilePicStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   const {
@@ -42,7 +45,7 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
   };
 
   // Register
-  router.post('/register', registrationLimiter, logRegistrationFailure, registerValidation, async (req, res) => {
+  router.post('/register', registrationLimiter, logRegistrationFailure, profilePicUpload.single('profilePhoto'), registerValidation, async (req, res) => {
 
     const { type, name, email, phone, city, suburb, password, speciality, experience, acceptTerms, referralSource } = req.body;
 
@@ -83,10 +86,12 @@ module.exports = (pool, logger, sendEmail, emailTemplates, helpers) => {
       let result;
 
       if (type === USER_TYPES.PROFESSIONAL) {
+        const profilePicUrl = req.file ? req.file.path : null;
+        const profilePicCloudinaryId = req.file ? req.file.filename : null;
         result = await pool.query(
-          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, experience, is_active, verification_status, approval_status, email_verified, terms_accepted, terms_accepted_at, terms_version, referral_source)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, 'pending', 'pending', true, true, CURRENT_TIMESTAMP, $9, $10) RETURNING id, name, email, phone, city, speciality, experience`,
-          [name, email, phone, city, suburb || null, hashedPassword, speciality, experience || null, termsVersion, referralSource]
+          `INSERT INTO workers (name, email, phone, city, suburb, password, speciality, experience, is_active, verification_status, approval_status, email_verified, terms_accepted, terms_accepted_at, terms_version, referral_source, profile_picture, cloudinary_profile_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, 'pending', 'pending', true, true, CURRENT_TIMESTAMP, $9, $10, $11, $12) RETURNING id, name, email, phone, city, speciality, experience`,
+          [name, email, phone, city, suburb || null, hashedPassword, speciality, experience || null, termsVersion, referralSource, profilePicUrl, profilePicCloudinaryId]
         );
       } else {
         result = await pool.query(

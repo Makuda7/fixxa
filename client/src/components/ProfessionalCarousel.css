@@ -47,6 +47,16 @@
   top: 50%;
   margin-left: -160px;
   margin-top: -250px;
+  border: 3px solid transparent;
+}
+
+.carousel-card.verified-card {
+  border: 3px solid #FFD700;
+  box-shadow: 0 10px 40px rgba(255, 215, 0, 0.35), 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.carousel-card.verified-card.center {
+  box-shadow: 0 15px 50px rgba(255, 215, 0, 0.5), 0 0 30px rgba(255, 215, 0, 0.3);
 }
 
 .carousel-card .card-link {
@@ -143,17 +153,17 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
+  background: linear-gradient(135deg, #c9a800 0%, #FFD700 50%, #c9a800 100%);
+  color: #3a2f00;
   padding: 5px 12px;
   border-radius: 16px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5), 0 0 12px rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   z-index: 10;
   cursor: help;
   transition: all 0.3s ease;
@@ -161,26 +171,29 @@
 
 .verified-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
 .verified-badge:hover::after {
-  content: attr(title);
+  content: "✓ Identity verified  |  ID document checked  |  Proof of residence confirmed\AFixxa-verified professionals are safer to hire and held to a higher standard.";
+  white-space: pre;
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
-  background: #333;
+  background: #1a1a1a;
   color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   font-size: 0.75rem;
-  white-space: nowrap;
+  line-height: 1.6;
   z-index: 1000;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   pointer-events: none;
-  animation: fadeIn 0.1s ease-in;
+  border-left: 3px solid #FFD700;
+  min-width: 260px;
+  text-align: left;
+  font-weight: 400;
 }
 
 .verified-badge:hover::before {
@@ -189,11 +202,10 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: #333;
-  margin-bottom: 2px;
+  border: 7px solid transparent;
+  border-top-color: #1a1a1a;
+  margin-bottom: 3px;
   z-index: 1000;
-  animation: fadeIn 0.1s ease-in;
 }
 
 .verified-badge::before {

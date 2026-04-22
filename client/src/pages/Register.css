@@ -314,3 +314,62 @@
     font-size: 24px;
   }
 }
+
+/* Profile photo upload */
+.photo-upload-area {
+  border: 2px dashed var(--fixxa-primary, #2d6a2d);
+  border-radius: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.2s;
+  background: #f9f9f9;
+}
+
+.photo-upload-area:hover {
+  border-color: var(--fixxa-secondary, #4a9a4a);
+  background: #f0f7f0;
+}
+
+.photo-placeholder {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.photo-placeholder p {
+  margin: 8px 0 4px;
+  font-weight: 600;
+  color: var(--fixxa-primary, #2d6a2d);
+}
+
+.photo-placeholder small {
+  color: #999;
+  font-size: 12px;
+}
+
+.photo-preview {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.btn-change-photo {
+  margin-top: 8px;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #555;
+}
+
+.btn-change-photo:hover {
+  border-color: var(--fixxa-primary, #2d6a2d);
+  color: var(--fixxa-primary, #2d6a2d);
+}
