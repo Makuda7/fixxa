@@ -1863,68 +1863,31 @@ module.exports = (pool, logger, helpers) => {
   });
 
   // Upload worker profile photo (admin only)
-  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, profilePicUpload.single('profilePicture'), async (req, res) => {
+  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, adminUpload.single('profilePicture'), async (req, res) => {
     try {
       const { workerId } = req.params;
-      const adminEmail = req.session.user.email;
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
+      const existing = await pool.query('SELECT cloudinary_profile_id FROM workers WHERE id = $1', [workerId]);
+      if (existing.rows.length === 0) return res.status(404).json({ success: false, error: 'Worker not found' });
+      if (existing.rows[0]?.cloudinary_profile_id) {
+        try { await cloudinary.uploader.destroy(existing.rows[0].cloudinary_profile_id); } catch (e) {}
       }
 
-      // Get the worker's current profile picture to delete old one
-      const workerResult = await pool.query(
-        'SELECT profile_picture FROM workers WHERE id = $1',
-        [workerId]
-      );
-
-      if (workerResult.rows.length === 0) {
-        return res.status(404).json({ success: false, error: 'Worker not found' });
-      }
-
-      const oldProfilePic = workerResult.rows[0].profile_picture;
-
-      // Delete old profile picture from Cloudinary if it exists
-      if (oldProfilePic && oldProfilePic.includes('cloudinary')) {
-        try {
-          const urlParts = oldProfilePic.split('/');
-          const publicIdWithExt = urlParts[urlParts.length - 1];
-          const publicId = `profile_pictures/${publicIdWithExt.split('.')[0]}`;
-          await cloudinary.uploader.destroy(publicId);
-        } catch (deleteError) {
-          logger.warn('Failed to delete old profile picture from Cloudinary', {
-            error: deleteError.message,
-            oldProfilePic
-          });
-        }
-      }
-
-      // Get the new image URL from Cloudinary
-      const imageUrl = req.file.path;
-
-      // Update worker's profile picture in database
-      await pool.query(
-        'UPDATE workers SET profile_picture = $1 WHERE id = $2',
-        [imageUrl, workerId]
-      );
-
-      logger.info('Admin uploaded worker profile photo', {
-        workerId,
-        imageUrl,
-        adminEmail
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'fixxa/profile-pictures',
+        resource_type: 'image',
+        public_id: `worker-admin-${workerId}-${Date.now()}`,
+        transformation: [{ width: 400, height: 400, crop: 'fill', quality: 'auto' }]
       });
 
-      res.json({
-        success: true,
-        imageUrl,
-        message: 'Profile picture updated successfully'
-      });
+      await pool.query('UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2 WHERE id = $3',
+        [result.secure_url, result.public_id, workerId]);
+
+      res.json({ success: true, imageUrl: result.secure_url, message: 'Profile picture updated successfully' });
     } catch (error) {
-      logger.error('Failed to upload worker profile photo', {
-        error: error.message,
-        workerId: req.params.workerId
-      });
-      res.status(500).json({ success: false, error: 'Failed to upload profile picture' });
+      logger.error('Failed to upload worker profile photo', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to upload profile picture: ' + error.message });
     }
   });
 
@@ -2303,265 +2266,59 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
-  // Upload profile photo for worker (admin helping worker)
-  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, profilePicUpload.single('profilePicture'), async (req, res) => {
-    try {
-      const { workerId } = req.params;
-
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
-      }
-
-      // Get current worker photo to delete from Cloudinary if exists
-      const workerResult = await pool.query(
-        'SELECT profile_picture, cloudinary_profile_id FROM workers WHERE id = $1',
-        [workerId]
-      );
-
-      if (workerResult.rows.length === 0) {
-        // Delete uploaded file from Cloudinary since worker doesn't exist
-        if (req.file.cloudinaryId) {
-          await cloudinary.uploader.destroy(req.file.cloudinaryId);
-        }
-        return res.status(404).json({ success: false, error: 'Worker not found' });
-      }
-
-      const oldCloudinaryId = workerResult.rows[0].cloudinary_profile_id;
-
-      // Update worker with new profile picture
-      await pool.query(
-        'UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2, updated_at = NOW() WHERE id = $3',
-        [req.file.path, req.file.filename, workerId]
-      );
-
-      // Delete old profile picture from Cloudinary if it exists
-      if (oldCloudinaryId) {
-        try {
-          await cloudinary.uploader.destroy(oldCloudinaryId);
-        } catch (deleteError) {
-          logger.warn('Failed to delete old profile picture from Cloudinary', {
-            error: deleteError.message,
-            cloudinaryId: oldCloudinaryId
-          });
-        }
-      }
-
-      logger.info('Admin uploaded profile photo for worker', {
-        workerId,
-        adminEmail: req.session.user.email,
-        cloudinaryId: req.file.filename
-      });
-
-      res.json({
-        success: true,
-        message: 'Profile photo uploaded successfully',
-        profile_picture: req.file.path
-      });
-    } catch (error) {
-      logger.error('Failed to upload worker profile photo', {
-        error: error.message,
-        workerId: req.params.workerId
-      });
-
-      // Try to clean up uploaded file if database update failed
-      if (req.file && req.file.filename) {
-        try {
-          await cloudinary.uploader.destroy(req.file.filename);
-        } catch (cleanupError) {
-          logger.error('Failed to cleanup uploaded file after error', {
-            error: cleanupError.message,
-            cloudinaryId: req.file.filename
-          });
-        }
-      }
-
-      res.status(500).json({ success: false, error: 'Failed to upload profile photo' });
-    }
-  });
-
   // Upload certification for worker (admin helping worker)
-  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, certificationUpload.single('certification'), async (req, res) => {
+  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, adminUpload.single('certification'), async (req, res) => {
     try {
       const { workerId } = req.params;
-      const { documentName } = req.body;
+      const documentName = req.body.documentName;
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+      if (!documentName?.trim()) return res.status(400).json({ success: false, error: 'Document name is required' });
 
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
-      }
+      const isImage = req.file.mimetype.startsWith('image/');
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'fixxa/certifications',
+        resource_type: isImage ? 'image' : 'raw',
+        public_id: `cert-admin-${workerId}-${Date.now()}`,
+        transformation: isImage ? [{ width: 1200, height: 1600, crop: 'limit', quality: 'auto' }] : undefined
+      });
 
-      if (!documentName || !documentName.trim()) {
-        // Delete uploaded file from Cloudinary since no document name provided
-        if (req.file.filename) {
-          await cloudinary.uploader.destroy(req.file.filename, {
-            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
-          });
-        }
-        return res.status(400).json({ success: false, error: 'Document name is required' });
-      }
-
-      // Verify worker exists
-      const workerResult = await pool.query('SELECT id, name FROM workers WHERE id = $1', [workerId]);
-
-      if (workerResult.rows.length === 0) {
-        // Delete uploaded file from Cloudinary since worker doesn't exist
-        if (req.file.filename) {
-          await cloudinary.uploader.destroy(req.file.filename, {
-            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
-          });
-        }
-        return res.status(404).json({ success: false, error: 'Worker not found' });
-      }
-
-      // Determine file type for database
-      let fileType = 'document';
-      if (req.file.mimetype === 'application/pdf') {
-        fileType = 'pdf';
-      } else if (req.file.mimetype.startsWith('image/')) {
-        fileType = 'image';
-      }
-
-      // Insert certification into database (mark as professional certification, not verification doc)
       const insertResult = await pool.query(
-        `INSERT INTO certifications
-         (worker_id, document_name, document_url, cloudinary_id, file_type, document_type, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, 'certification', 'pending', NOW())
-         RETURNING id, document_name, document_url, file_type, status, created_at`,
-        [workerId, documentName.trim(), req.file.path, req.file.filename, fileType]
+        `INSERT INTO certifications (worker_id, document_name, document_url, cloudinary_id, file_type, document_type, status, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'certification', 'approved', NOW()) RETURNING *`,
+        [workerId, documentName.trim(), result.secure_url, result.public_id, isImage ? 'image' : 'pdf']
       );
 
-      logger.info('Admin uploaded certification for worker', {
-        workerId,
-        workerName: workerResult.rows[0].name,
-        adminEmail: req.session.user.email,
-        documentName: documentName.trim(),
-        cloudinaryId: req.file.filename,
-        fileType
-      });
-
-      res.json({
-        success: true,
-        message: 'Certification uploaded successfully',
-        certification: insertResult.rows[0]
-      });
+      res.json({ success: true, message: 'Certification uploaded successfully', certification: insertResult.rows[0] });
     } catch (error) {
-      logger.error('Failed to upload worker certification', {
-        error: error.message,
-        workerId: req.params.workerId
-      });
-
-      // Try to clean up uploaded file if database insert failed
-      if (req.file && req.file.filename) {
-        try {
-          await cloudinary.uploader.destroy(req.file.filename, {
-            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
-          });
-        } catch (cleanupError) {
-          logger.error('Failed to cleanup uploaded file after error', {
-            error: cleanupError.message,
-            cloudinaryId: req.file.filename
-          });
-        }
-      }
-
-      res.status(500).json({ success: false, error: 'Failed to upload certification' });
+      logger.error('Failed to upload worker certification', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to upload certification: ' + error.message });
     }
   });
 
   // Upload ID/Passport document for worker (admin helping worker)
-  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, certificationUpload.single('idDocument'), async (req, res) => {
+  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, adminUpload.single('idDocument'), async (req, res) => {
     try {
       const { workerId } = req.params;
-      const { documentType } = req.body; // 'id' or 'passport'
+      const documentType = req.body.documentType || 'id';
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
 
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
-      }
+      const isImage = req.file.mimetype.startsWith('image/');
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'fixxa/id-documents',
+        resource_type: isImage ? 'image' : 'raw',
+        public_id: `id-admin-${workerId}-${Date.now()}`,
+        transformation: isImage ? [{ width: 1200, height: 1600, crop: 'limit', quality: 'auto' }] : undefined
+      });
 
-      if (!documentType || !['id', 'passport'].includes(documentType)) {
-        // Delete uploaded file from Cloudinary since invalid document type
-        if (req.file.filename) {
-          await cloudinary.uploader.destroy(req.file.filename, {
-            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
-          });
-        }
-        return res.status(400).json({ success: false, error: 'Valid document type is required (id or passport)' });
-      }
-
-      // Verify worker exists
-      const workerResult = await pool.query('SELECT id, name, cloudinary_id_document_id FROM workers WHERE id = $1', [workerId]);
-
-      if (workerResult.rows.length === 0) {
-        // Delete uploaded file from Cloudinary since worker doesn't exist
-        if (req.file.filename) {
-          await cloudinary.uploader.destroy(req.file.filename, {
-            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
-          });
-        }
-        return res.status(404).json({ success: false, error: 'Worker not found' });
-      }
-
-      const oldCloudinaryId = workerResult.rows[0].cloudinary_id_document_id;
-
-      // Update worker with ID/Passport document
       await pool.query(
-        `UPDATE workers
-         SET id_document_url = $1,
-             id_document_type = $2,
-             cloudinary_id_document_id = $3,
-             updated_at = NOW()
-         WHERE id = $4`,
-        [req.file.path, documentType, req.file.filename, workerId]
+        `UPDATE workers SET id_document_url = $1, id_document_cloudinary_id = $2, id_type = $3, id_submitted_at = CURRENT_TIMESTAMP WHERE id = $4`,
+        [result.secure_url, result.public_id, documentType, workerId]
       );
 
-      // Delete old ID document from Cloudinary if it exists
-      if (oldCloudinaryId) {
-        try {
-          await cloudinary.uploader.destroy(oldCloudinaryId, {
-            resource_type: 'raw' // ID documents are stored as raw files
-          });
-        } catch (deleteError) {
-          logger.warn('Failed to delete old ID document from Cloudinary', {
-            error: deleteError.message,
-            cloudinaryId: oldCloudinaryId
-          });
-        }
-      }
-
-      logger.info('Admin uploaded ID/Passport document for worker', {
-        workerId,
-        workerName: workerResult.rows[0].name,
-        adminEmail: req.session.user.email,
-        documentType,
-        cloudinaryId: req.file.filename
-      });
-
-      res.json({
-        success: true,
-        message: `${documentType === 'passport' ? 'Passport' : 'ID'} document uploaded successfully`,
-        id_document_url: req.file.path,
-        id_document_type: documentType
-      });
+      res.json({ success: true, message: 'ID document uploaded successfully', id_document_url: result.secure_url, id_document_type: documentType });
     } catch (error) {
-      logger.error('Failed to upload worker ID document', {
-        error: error.message,
-        workerId: req.params.workerId
-      });
-
-      // Try to clean up uploaded file if database update failed
-      if (req.file && req.file.filename) {
-        try {
-          await cloudinary.uploader.destroy(req.file.filename, {
-            resource_type: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
-          });
-        } catch (cleanupError) {
-          logger.error('Failed to cleanup uploaded file after error', {
-            error: cleanupError.message,
-            cloudinaryId: req.file.filename
-          });
-        }
-      }
-
-      res.status(500).json({ success: false, error: 'Failed to upload ID document' });
+      logger.error('Failed to upload worker ID document', { error: error.message });
+      res.status(500).json({ success: false, error: 'Failed to upload ID document: ' + error.message });
     }
   });
 
@@ -2903,94 +2660,6 @@ module.exports = (pool, logger, helpers) => {
     }
   });
 
-  // Upload ID document for a worker (admin only)
-  router.post('/upload-worker-id/:workerId', requireAuth, adminOnly, adminUpload.single('idDocument'), async (req, res) => {
-    try {
-      const workerId = req.params.workerId;
-      const documentType = req.body.documentType || 'id';
-
-      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-
-      const isImage = req.file.mimetype.startsWith('image/');
-      const result = await uploadToCloudinary(req.file.buffer, {
-        folder: 'fixxa/id-documents',
-        resource_type: isImage ? 'image' : 'raw',
-        public_id: `id-${workerId}-${Date.now()}`,
-        transformation: isImage ? [{ width: 1200, height: 1600, crop: 'limit', quality: 'auto' }] : undefined
-      });
-
-      await pool.query(
-        `UPDATE workers SET id_document_url = $1, id_document_cloudinary_id = $2, id_type = $3, id_submitted_at = CURRENT_TIMESTAMP WHERE id = $4`,
-        [result.secure_url, result.public_id, documentType, workerId]
-      );
-
-      res.json({ success: true, id_document_url: result.secure_url, id_document_type: documentType });
-    } catch (error) {
-      logger.error('Admin upload worker ID error', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to upload ID document: ' + error.message });
-    }
-  });
-
-  // Upload certification for a worker (admin only)
-  router.post('/upload-worker-certification/:workerId', requireAuth, adminOnly, adminUpload.single('certification'), async (req, res) => {
-    try {
-      const workerId = req.params.workerId;
-      const documentName = req.body.documentName || 'Certification';
-
-      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-
-      const isImage = req.file.mimetype.startsWith('image/');
-      const result = await uploadToCloudinary(req.file.buffer, {
-        folder: 'fixxa/certifications',
-        resource_type: isImage ? 'image' : 'raw',
-        public_id: `cert-admin-${workerId}-${Date.now()}`,
-        transformation: isImage ? [{ width: 1200, height: 1600, crop: 'limit', quality: 'auto' }] : undefined
-      });
-
-      const dbResult = await pool.query(
-        `INSERT INTO certifications (worker_id, document_url, cloudinary_id, document_name, file_type, status, document_type)
-         VALUES ($1, $2, $3, $4, $5, 'approved', 'certification') RETURNING *`,
-        [workerId, result.secure_url, result.public_id, documentName, req.file.mimetype]
-      );
-
-      res.json({ success: true, certification: dbResult.rows[0] });
-    } catch (error) {
-      logger.error('Admin upload worker certification error', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to upload certification: ' + error.message });
-    }
-  });
-
-  // Upload profile photo for a worker (admin only)
-  router.post('/upload-worker-photo/:workerId', requireAuth, adminOnly, adminUpload.single('profilePhoto'), async (req, res) => {
-    try {
-      const workerId = req.params.workerId;
-
-      if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
-
-      // Delete old photo from Cloudinary if exists
-      const existing = await pool.query('SELECT cloudinary_profile_id FROM workers WHERE id = $1', [workerId]);
-      if (existing.rows[0]?.cloudinary_profile_id) {
-        try { await cloudinary.uploader.destroy(existing.rows[0].cloudinary_profile_id); } catch (e) {}
-      }
-
-      const result = await uploadToCloudinary(req.file.buffer, {
-        folder: 'fixxa/profile-pictures',
-        resource_type: 'image',
-        public_id: `worker-admin-${workerId}-${Date.now()}`,
-        transformation: [{ width: 400, height: 400, crop: 'fill', quality: 'auto' }]
-      });
-
-      await pool.query(
-        `UPDATE workers SET profile_picture = $1, cloudinary_profile_id = $2 WHERE id = $3`,
-        [result.secure_url, result.public_id, workerId]
-      );
-
-      res.json({ success: true, profile_picture: result.secure_url });
-    } catch (error) {
-      logger.error('Admin upload worker photo error', { error: error.message });
-      res.status(500).json({ success: false, error: 'Failed to upload photo: ' + error.message });
-    }
-  });
 
   return router;
 };
