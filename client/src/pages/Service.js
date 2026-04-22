@@ -377,14 +377,12 @@ const Service = () => {
               workers.map((worker) => {
                 const rating = parseFloat(worker.avg_rating) || 0;
                 const stars = rating > 0 ? renderStars(rating) : '☆☆☆☆☆';
-                const verifiedBadge = worker.id_verified ? (
-                  <span className="verified-badge" title="Verified - Identity and documents confirmed">Verified</span>
+                const isVerified = worker.id_verified || worker.is_verified || false;
+                const verifiedBadge = isVerified ? (
+                  <span className="verified-badge">✓ Verified</span>
                 ) : null;
                 const certifiedBadge = worker.approved_cert_count > 0 ? (
-                  <span className="verified-badge certified-badge" title="Certified - Professional certifications approved">
-                    <img src="/images/icons-fixxa/user_11762352.png" alt="Certified" style={{ width: '14px', height: '14px', filter: 'brightness(0) invert(1)', marginRight: '4px' }} />
-                    Certified
-                  </span>
+                  <span className="verified-badge certified-badge">★ Certified</span>
                 ) : null;
 
                 const location = worker.primary_suburb && worker.province
