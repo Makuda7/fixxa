@@ -466,7 +466,7 @@ const Service = () => {
                                   key={pi}
                                   src={photo.photo_url}
                                   alt={photo.description || `Work ${pi + 1}`}
-                                  className="card-portfolio-thumb"
+                                  style={{ width: 70, height: 52, objectFit: 'cover', borderRadius: 6, border: '1px solid #eee', flexShrink: 0 }}
                                 />
                               ))}
                             </div>
