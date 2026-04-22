@@ -406,21 +406,13 @@ const Service = () => {
                       to={`/profile?id=${worker.id}`}
                       className="worker-card"
                     >
-                      <div className="worker-card-image-wrapper">
+                      <div className="worker-card-image-wrapper" style={{ position: 'relative' }}>
                         <img
                           src={worker.profile_picture || '/images/default-profile.svg'}
                           alt={worker.name}
                         />
-                        {verifiedBadge && (
-                          <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
-                            {verifiedBadge}
-                          </div>
-                        )}
-                        {certifiedBadge && (
-                          <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                            {certifiedBadge}
-                          </div>
-                        )}
+                        {verifiedBadge}
+                        {certifiedBadge}
                       </div>
                       <div className="worker-card-content">
                         <h3>{worker.name}</h3>

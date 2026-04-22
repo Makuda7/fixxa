@@ -5,6 +5,33 @@ import './ProfessionalCarousel.css';
 const ProfessionalCarousel = ({ professionals = [] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [portfolioCache, setPortfolioCache] = useState({});
+
+  // Fetch portfolio photos for visible cards
+  useEffect(() => {
+    const visibleIds = professionals
+      .filter((_, i) => {
+        const total = professionals.length;
+        const diff = ((i - currentIndex) % total + total) % total;
+        return diff <= 1 || diff >= total - 1;
+      })
+      .map(p => p.id)
+      .filter(id => !portfolioCache[id]);
+
+    visibleIds.forEach(async (id) => {
+      try {
+        const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/workers/portfolio/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPortfolioCache(prev => ({ ...prev, [id]: data.photos || [] }));
+        } else {
+          setPortfolioCache(prev => ({ ...prev, [id]: [] }));
+        }
+      } catch {
+        setPortfolioCache(prev => ({ ...prev, [id]: [] }));
+      }
+    });
+  }, [currentIndex, professionals]);
 
   // Auto-rotate carousel every 4 seconds
   useEffect(() => {
@@ -134,6 +161,22 @@ const ProfessionalCarousel = ({ professionals = [] }) => {
                       </div>
                     ) : (
                       <p className="no-reviews">No reviews yet</p>
+                    )}
+
+                    {portfolioCache[pro.id] && portfolioCache[pro.id].length > 0 && (
+                      <div className="card-portfolio-strip">
+                        <p className="card-portfolio-label">Work examples</p>
+                        <div className="card-portfolio-thumbs">
+                          {portfolioCache[pro.id].slice(0, 3).map((photo, pi) => (
+                            <img
+                              key={pi}
+                              src={photo.photo_url}
+                              alt={photo.description || `Work ${pi + 1}`}
+                              className="card-portfolio-thumb"
+                            />
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </Link>

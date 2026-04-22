@@ -351,6 +351,41 @@
   border-top: 1px solid var(--fixxa-border-light);
 }
 
+/* Portfolio strip */
+.card-portfolio-strip {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--fixxa-border-light);
+}
+
+.card-portfolio-label {
+  font-size: 0.7rem;
+  color: var(--fixxa-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.4rem 0;
+  font-weight: 600;
+}
+
+.card-portfolio-thumbs {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.card-portfolio-thumb {
+  width: 70px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--fixxa-border-light);
+  transition: transform 0.2s ease;
+}
+
+.card-portfolio-thumb:hover {
+  transform: scale(1.05);
+}
+
 /* Navigation Buttons */
 .carousel-nav {
   position: absolute;
