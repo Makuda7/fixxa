@@ -457,21 +457,23 @@ const Service = () => {
                           )}
                         </div>
 
-                        {portfolioCache[worker.id] && portfolioCache[worker.id].length > 0 && (
-                          <div className="card-portfolio-strip">
-                            <p className="card-portfolio-label">Work examples</p>
-                            <div className="card-portfolio-thumbs">
-                              {portfolioCache[worker.id].slice(0, 3).map((photo, pi) => (
+                        <div className="card-portfolio-strip">
+                          <p className="card-portfolio-label">Work examples</p>
+                          <div className="card-portfolio-thumbs">
+                            {portfolioCache[worker.id] && portfolioCache[worker.id].length > 0 ? (
+                              portfolioCache[worker.id].slice(0, 3).map((photo, pi) => (
                                 <img
                                   key={pi}
                                   src={photo.photo_url}
                                   alt={photo.description || `Work ${pi + 1}`}
                                   style={{ width: 70, height: 52, objectFit: 'cover', borderRadius: 6, border: '1px solid #eee', flexShrink: 0 }}
                                 />
-                              ))}
-                            </div>
+                              ))
+                            ) : (
+                              <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>No photos yet</span>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </Link>
                     <button

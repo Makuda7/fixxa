@@ -230,8 +230,7 @@
   display: flex;
   flex-direction: column;
   width: 300px;
-  min-height: 480px;
-  height: auto;
+  height: 570px;
 }
 
 .workers-grid .worker-card > *:first-child {
@@ -304,6 +303,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   overflow: hidden;
 }
 
