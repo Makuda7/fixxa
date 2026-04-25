@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './Service.css';
 
 const Service = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -454,6 +456,22 @@ const Service = () => {
                             </>
                           ) : (
                             <span className="rating-stars" style={{ color: '#ddd', fontSize: '1.2rem' }}>☆☆☆☆☆</span>
+                          )}
+                        </div>
+
+                        <div className="card-contact-row">
+                          {user ? (
+                            worker.phone ? (
+                              <a href={`tel:${worker.phone}`} className="card-phone-btn" onClick={e => e.stopPropagation()}>
+                                📞 {worker.phone}
+                              </a>
+                            ) : (
+                              <span className="card-phone-unavailable">📞 No number listed</span>
+                            )
+                          ) : (
+                            <button className="card-phone-btn card-phone-login" onClick={e => { e.preventDefault(); navigate('/login'); }}>
+                              📞 Log in to view number
+                            </button>
                           )}
                         </div>
 

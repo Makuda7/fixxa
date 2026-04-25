@@ -230,7 +230,7 @@
   display: flex;
   flex-direction: column;
   width: 300px;
-  height: 570px;
+  height: 610px;
 }
 
 .workers-grid .worker-card > *:first-child {
@@ -530,6 +530,47 @@
 
 .error-message {
   color: #dc3545;
+}
+
+/* Phone number reveal */
+.card-contact-row {
+  margin: 0.5rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.card-phone-btn {
+  display: inline-block;
+  background: #4a7c59;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.card-phone-btn:hover {
+  background: #3a6347;
+  color: white;
+}
+
+.card-phone-login {
+  background: #6c757d;
+  font-size: 0.8rem;
+}
+
+.card-phone-login:hover {
+  background: #5a6268;
+}
+
+.card-phone-unavailable {
+  font-size: 0.78rem;
+  color: #bbb;
 }
 
 /* Portfolio strip on service cards */
