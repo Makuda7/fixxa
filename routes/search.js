@@ -18,14 +18,11 @@ module.exports = (pool, logger) => {
         offset = 0
       } = req.query;
 
-      const isLoggedIn = !!(req.session && req.session.user);
-
       let query = `
         SELECT
           w.id, w.name, w.speciality,
           w.primary_suburb, w.province, w.area,
           w.bio, w.profile_picture, w.is_available, w.id_verified, w.approval_status, w.experience,
-          ${isLoggedIn ? 'w.phone,' : ''}
           COALESCE(AVG(r.overall_rating), 0) as avg_rating,
           COUNT(DISTINCT r.id) as review_count,
           COUNT(DISTINCT b.id) as completed_jobs,

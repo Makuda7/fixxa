@@ -52,8 +52,10 @@ module.exports = (pool, logger, helpers) => {
   // Get all active workers (approved only - home screen)
   router.get('/', async (req, res) => {
     try {
+      const isLoggedIn = !!(req.session && req.session.user);
       const result = await pool.query(
-        `SELECT w.id, w.name, w.email, w.speciality, w.area, w.primary_suburb, w.city, w.province, w.secondary_areas, w.bio, w.experience, w.rating, w.profile_picture, w.availability_schedule, w.is_available, w.latitude, w.longitude, w.service_radius, w.id_verified, w.approval_status, w.rate_type, w.rate_amount, w.created_at,
+        `SELECT w.id, w.name, w.email, w.speciality, w.area, w.primary_suburb, w.city, w.province, w.secondary_areas, w.bio, w.experience, w.rating, w.profile_picture, w.availability_schedule, w.is_available, w.latitude, w.longitude, w.service_radius, w.id_verified, w.approval_status, w.rate_type, w.rate_amount, w.created_at, w.is_verified,
+         ${isLoggedIn ? 'w.phone,' : ''}
          COUNT(DISTINCT CASE WHEN c.status = 'approved' AND c.document_type = 'certification' THEN c.id END) as approved_cert_count
          FROM workers w
          LEFT JOIN certifications c ON w.id = c.worker_id

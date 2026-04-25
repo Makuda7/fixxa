@@ -459,22 +459,6 @@ const Service = () => {
                           )}
                         </div>
 
-                        <div className="card-contact-row">
-                          {user ? (
-                            worker.phone ? (
-                              <a href={`tel:${worker.phone}`} className="card-phone-btn" onClick={e => e.stopPropagation()}>
-                                📞 {worker.phone}
-                              </a>
-                            ) : (
-                              <span className="card-phone-unavailable">📞 No number listed</span>
-                            )
-                          ) : (
-                            <button className="card-phone-btn card-phone-login" onClick={e => { e.preventDefault(); navigate('/login'); }}>
-                              📞 Log in to view number
-                            </button>
-                          )}
-                        </div>
-
                         {portfolioCache[worker.id] && portfolioCache[worker.id].length > 0 && (
                           <Link
                             to={`/worker/${worker.id}`}

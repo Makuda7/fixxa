@@ -501,6 +501,23 @@ const Profile = () => {
           </button>
         </div>
 
+        {/* Phone number — logged-in users only */}
+        <div style={{ textAlign: 'center', margin: '0.75rem 0' }}>
+          {isAuthenticated ? (
+            worker.phone ? (
+              <a href={`tel:${worker.phone}`} style={{ display: 'inline-block', background: '#4a7c59', color: 'white', borderRadius: '24px', padding: '0.5rem 1.5rem', fontWeight: 700, fontSize: '1rem', textDecoration: 'none', letterSpacing: '0.5px' }}>
+                📞 {worker.phone}
+              </a>
+            ) : (
+              <span style={{ color: '#999', fontSize: '0.9rem' }}>No phone number listed</span>
+            )
+          ) : (
+            <button onClick={() => navigate('/login')} style={{ background: 'transparent', border: '1.5px solid #4a7c59', color: '#4a7c59', borderRadius: '24px', padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+              📞 Log in to view phone number
+            </button>
+          )}
+        </div>
+
         {submitMessage && <div className="submit-message">{submitMessage}</div>}
 
         <div className="forms-container">
