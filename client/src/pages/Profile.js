@@ -17,9 +17,6 @@ const Profile = () => {
   const [completionRate, setCompletionRate] = useState(null);
 
   const [showContactForm, setShowContactForm] = useState(false);
-  const [showBookingForm, setShowBookingForm] = useState(false);
-  const [showQuoteRequestForm, setShowQuoteRequestForm] = useState(false);
-  const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [showAllReviewsModal, setShowAllReviewsModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState({ url: '', caption: '' });
@@ -27,10 +24,6 @@ const Profile = () => {
   const [photoSource, setPhotoSource] = useState('gallery');
 
   const [contactMessage, setContactMessage] = useState('');
-  const [bookingDate, setBookingDate] = useState('');
-  const [bookingTime, setBookingTime] = useState('');
-  const [bookingNote, setBookingNote] = useState('');
-  const [quoteRequestDetails, setQuoteRequestDetails] = useState('');
   const [submitMessage, setSubmitMessage] = useState('');
 
   const workerId = parseInt(searchParams.get('id'), 10);
@@ -192,109 +185,12 @@ const Profile = () => {
     }
   };
 
-  const handleQuoteRequest = async (e) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    if (!quoteRequestDetails.trim()) {
-      alert('Please describe what you need a quote for');
-      return;
-    }
-
-    try {
-      const message = `📋 Quote Request:\n\n${quoteRequestDetails.trim()}\n\n(This is a request for a quote. Please provide pricing details when you respond.)`;
-
-      const res = await fetch('/api/messages/contact', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workerId: worker.id, message })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setSubmitMessage('Quote request sent successfully! The professional will respond with pricing details.');
-        setQuoteRequestDetails('');
-        setShowContactForm(false);
-        setTimeout(() => setSubmitMessage(''), 5000);
-      } else {
-        alert(data.error || 'Failed to send quote request');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('An error occurred while sending your quote request');
-    }
-  };
-
-  const handleBookingSubmit = async (e) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    if (!bookingDate || !bookingTime) {
-      alert('Please select a date and time');
-      return;
-    }
-
-    try {
-      const res = await fetch('/bookings', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          workerId: worker.id,
-          booking_date: bookingDate,
-          booking_time: bookingTime,
-          note: bookingNote
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setSubmitMessage('Booking submitted successfully!');
-        setBookingDate('');
-        setBookingTime('');
-        setBookingNote('');
-        setShowBookingForm(false);
-        setTimeout(() => setSubmitMessage(''), 3000);
-      } else {
-        alert(data.error || 'Failed to submit booking');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('An error occurred while submitting booking');
-    }
-  };
-
-  const handleBookNowClick = () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    setShowSafetyModal(true);
-  };
-
-  const handleContinueBooking = () => {
-    setShowSafetyModal(false);
-    setShowBookingForm(true);
-    setShowContactForm(false);
-    setTimeout(() => {
-      document.getElementById('booking-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-  };
-
   const handleContactClick = () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
     setShowContactForm(!showContactForm);
-    setShowBookingForm(false);
     setTimeout(() => {
       document.getElementById('contact-form-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
@@ -540,55 +436,6 @@ const Profile = () => {
             </div>
           )}
 
-          <form
-            id="booking-form-container"
-            className={`form-container ${showBookingForm ? 'show' : ''}`}
-            onSubmit={handleBookingSubmit}
-          >
-            <h4><img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Book an Appointment</h4>
-
-            <div className="booking-notice">
-              <p>
-                <strong>⚠️ Important:</strong> Please message the professional first to check their availability before booking.
-                This helps avoid disappointment if they're not available on your preferred date/time.
-                Your booking will require professional approval.
-              </p>
-            </div>
-
-            <div className="booking-datetime">
-              <div>
-                <label htmlFor="booking-date">📆 Date</label>
-                <input
-                  type="date"
-                  id="booking-date"
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="booking-time">🕐 Time</label>
-                <input
-                  type="time"
-                  id="booking-time"
-                  value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="booking-note">Additional Details (Optional)</label>
-              <textarea
-                id="booking-note"
-                placeholder="Any specific requirements or notes for the professional..."
-                value={bookingNote}
-                onChange={(e) => setBookingNote(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="btn-primary">✓ Submit Booking Request</button>
-          </form>
         </div>
 
         <div className="profile-sections" id="reviews-section">
@@ -670,71 +517,6 @@ const Profile = () => {
         </div>
       </main>
 
-      {/* Safety Modal */}
-      {showSafetyModal && (
-        <div className="safety-modal show" onClick={() => setShowSafetyModal(false)}>
-          <div className="safety-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="safety-modal-header">
-              <span style={{ fontSize: '2rem' }}>🛡️</span>
-              <h2>Safety & Best Practices</h2>
-            </div>
-            <div className="safety-modal-body">
-              <p className="safety-intro">
-                Before booking, please review these important safety tips for a secure experience:
-              </p>
-
-              <div className="safety-tip">
-                <div className="safety-tip-icon">💬</div>
-                <div className="safety-tip-content">
-                  <h3>Keep Communication on Platform</h3>
-                  <p>Always message through Fixxa. Never share phone numbers, emails, or move conversations off-platform.</p>
-                </div>
-              </div>
-
-              <div className="safety-tip">
-                <div className="safety-tip-icon">💳</div>
-                <div className="safety-tip-content">
-                  <h3>Payment Safety Tips</h3>
-                  <p>Always ask for a receipt. Use bank transfer when possible for a clear payment trail.</p>
-                </div>
-              </div>
-
-              <div className="safety-tip">
-                <div className="safety-tip-icon">🏠</div>
-                <div className="safety-tip-content">
-                  <h3>Meet in Safe Locations</h3>
-                  <p>Ensure someone knows about your appointment. Consider having someone present during the service.</p>
-                </div>
-              </div>
-
-              <div className="safety-tip">
-                <div className="safety-tip-icon">✅</div>
-                <div className="safety-tip-content">
-                  <h3>Check Professional's Profile</h3>
-                  <p>Review ratings, reviews, certifications, and verification status before booking.</p>
-                </div>
-              </div>
-
-              <div className="safety-tip">
-                <div className="safety-tip-icon">🚩</div>
-                <div className="safety-tip-content">
-                  <h3>Report Suspicious Behavior</h3>
-                  <p>Report any inappropriate behavior or requests to pay outside the platform immediately.</p>
-                </div>
-              </div>
-            </div>
-            <div className="safety-modal-footer">
-              <button className="btn-skip" onClick={() => setShowSafetyModal(false)}>Skip</button>
-              <button className="btn-read-full" onClick={() => window.open('/safety', '_blank')}>
-                Read Full Guide
-              </button>
-              <button className="btn-continue" onClick={handleContinueBooking}>
-                I Understand, Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* All Reviews Modal */}
       {showAllReviewsModal && (
