@@ -496,92 +496,47 @@ const Profile = () => {
           <button className="btn-primary" onClick={handleContactClick}>
             📧 Contact {worker.name.split(' ')[0]}
           </button>
-          <button className="btn-secondary" onClick={handleBookNowClick}>
-            <img src="/images/icons-fixxa/calendar_16926328.png" alt="Calendar" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '4px' }} /> Book Now
-          </button>
         </div>
 
         {/* Phone number — logged-in users only */}
-        <div style={{ textAlign: 'center', margin: '0.75rem 0' }}>
-          {isAuthenticated ? (
-            worker.phone ? (
-              <a href={`tel:${worker.phone}`} style={{ display: 'inline-block', background: '#4a7c59', color: 'white', borderRadius: '24px', padding: '0.5rem 1.5rem', fontWeight: 700, fontSize: '1rem', textDecoration: 'none', letterSpacing: '0.5px' }}>
-                📞 {worker.phone}
-              </a>
-            ) : (
-              <span style={{ color: '#999', fontSize: '0.9rem' }}>No phone number listed</span>
-            )
-          ) : (
-            <button onClick={() => navigate('/login')} style={{ background: 'transparent', border: '1.5px solid #4a7c59', color: '#4a7c59', borderRadius: '24px', padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
-              📞 Log in to view phone number
-            </button>
-          )}
-        </div>
 
         {submitMessage && <div className="submit-message">{submitMessage}</div>}
 
         <div className="forms-container">
           {showContactForm && (
             <div id="contact-form-container" className="form-container show">
-              <div className="contact-tabs">
-                <button
-                  type="button"
-                  className={`tab-btn ${!showQuoteRequestForm ? 'active' : ''}`}
-                  onClick={() => setShowQuoteRequestForm(false)}
-                >
-                  📧 Send Message
-                </button>
-                <button
-                  type="button"
-                  className={`tab-btn ${showQuoteRequestForm ? 'active' : ''}`}
-                  onClick={() => setShowQuoteRequestForm(true)}
-                >
-                  💰 Request Quote
-                </button>
+              {/* Phone number */}
+              <div style={{ textAlign: 'center', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #eee' }}>
+                {isAuthenticated ? (
+                  worker.phone ? (
+                    <a href={`tel:${worker.phone}`} style={{ display: 'inline-block', background: '#4a7c59', color: 'white', borderRadius: '24px', padding: '0.5rem 1.5rem', fontWeight: 700, fontSize: '1rem', textDecoration: 'none' }}>
+                      📞 Call {worker.name.split(' ')[0]} — {worker.phone}
+                    </a>
+                  ) : (
+                    <span style={{ color: '#999', fontSize: '0.9rem' }}>No phone number listed</span>
+                  )
+                ) : (
+                  <button onClick={() => navigate('/login')} style={{ background: 'transparent', border: '1.5px solid #4a7c59', color: '#4a7c59', borderRadius: '24px', padding: '0.5rem 1.5rem', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}>
+                    📞 Log in to view phone number
+                  </button>
+                )}
               </div>
 
-              {!showQuoteRequestForm ? (
-                <form onSubmit={handleContactSubmit}>
-                  <div>
-                    <label htmlFor="visitor-message">Your Message</label>
-                    <textarea
-                      id="visitor-message"
-                      placeholder="Tell the professional what you need help with..."
-                      value={contactMessage}
-                      onChange={(e) => setContactMessage(e.target.value)}
-                      required
-                      rows="5"
-                    />
-                  </div>
-                  <button type="submit" className="btn-primary">📤 Send Message</button>
-                </form>
-              ) : (
-                <form onSubmit={handleQuoteRequest}>
-                  <div className="quote-request-info">
-                    <p>
-                      <strong>💡 Tip:</strong> Be specific about what you need. Include details like:
-                    </p>
-                    <ul>
-                      <li>What work needs to be done</li>
-                      <li>Size/scope of the project</li>
-                      <li>Any materials you've already purchased</li>
-                      <li>Your timeline or deadline</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <label htmlFor="quote-details">Project Details</label>
-                    <textarea
-                      id="quote-details"
-                      placeholder="Describe your project in detail so the professional can provide an accurate quote..."
-                      value={quoteRequestDetails}
-                      onChange={(e) => setQuoteRequestDetails(e.target.value)}
-                      required
-                      rows="6"
-                    />
-                  </div>
-                  <button type="submit" className="btn-primary">💰 Request Quote</button>
-                </form>
-              )}
+              {/* Send Message */}
+              <form onSubmit={handleContactSubmit}>
+                <div>
+                  <label htmlFor="visitor-message">Send a Message</label>
+                  <textarea
+                    id="visitor-message"
+                    placeholder="Tell the professional what you need help with..."
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    required
+                    rows="5"
+                  />
+                </div>
+                <button type="submit" className="btn-primary">📤 Send Message</button>
+              </form>
             </div>
           )}
 
