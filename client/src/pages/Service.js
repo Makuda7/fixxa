@@ -459,14 +459,15 @@ const Service = () => {
                           )}
                         </div>
 
-                        <Link
-                          to={`/worker/${worker.id}`}
-                          className="card-see-work-btn"
-                          onClick={e => e.stopPropagation()}
-                        >
-                          📷 See My Work
-                          {portfolioCache[worker.id] && portfolioCache[worker.id].length > 0 && ` (${portfolioCache[worker.id].length})`}
-                        </Link>
+                        {portfolioCache[worker.id] !== undefined && portfolioCache[worker.id].length > 0 && (
+                          <Link
+                            to={`/worker/${worker.id}`}
+                            className="card-see-work-btn"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            📷 See My Work ({portfolioCache[worker.id].length})
+                          </Link>
+                        )}
                       </div>
                     </Link>
                     <button
